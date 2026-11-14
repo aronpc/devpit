@@ -1,6 +1,7 @@
-//! Each transcript is a recorded ACP conversation: `>` what devpit wrote, `<`
-//! what the agent did. A stand-in plays the agent's half, line for line, and
-//! the test holds devpit to the other half.
+//! Each transcript is an ACP conversation: `>` what devpit writes, `<` what
+//! the agent says. OpenCode's handshake was recorded from its CLI; the other
+//! agents' halves follow each CLI's documented ACP behaviour. A stand-in plays
+//! the agent's half line for line, and the test holds devpit to the other.
 
 use std::path::Path;
 use std::sync::{Arc, Mutex};
@@ -13,7 +14,15 @@ use super::{too_old, Acp};
 use crate::control::{Control, Prompt};
 use crate::talk::{Said, Say};
 
-fn transcript(name: &str) -> Vec<(String, Value)> {
+/// One line of a transcript: who says it, what, and how long the agent
+/// waits first. `exit` ends the agent there.
+struct Line {
+    dir: String,
+    msg: Value,
+    wait: f64,
+}
+
+fn transcript(name: &str) -> Vec<Line> {
     let path = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("tests/fixtures/acp")
         .join(name);
@@ -22,10 +31,11 @@ fn transcript(name: &str) -> Vec<(String, Value)> {
         .lines()
         .map(|line| {
             let entry: Value = serde_json::from_str(line).expect("json");
-            (
-                entry["dir"].as_str().expect("dir").to_owned(),
-                entry["msg"].clone(),
-            )
+            Line {
+                dir: entry["dir"].as_str().expect("dir").to_owned(),
+                msg: entry["msg"].clone(),
+                wait: entry["wait"].as_f64().unwrap_or_default(),
+            }
         })
         .collect()
 }
@@ -42,20 +52,25 @@ fn filled(msg: &Value, cwd: &Path) -> Value {
 /// A shell script that plays the agent's half: it reads each line devpit is
 /// to write before saying what follows it.
 #[cfg(unix)]
-fn stand_in(dir: &Path, played: &[(String, Value)]) -> String {
+fn stand_in(dir: &Path, played: &[Line]) -> String {
     use std::os::unix::fs::PermissionsExt;
 
     let heard = dir.join("heard");
     let mut script = String::from("#!/bin/sh\n");
-    for (dir, msg) in played {
-        if dir == ">" {
-            script.push_str(&format!(
+    for line in played {
+        if line.wait > 0.0 {
+            script.push_str(&format!("sleep {}\n", line.wait));
+        }
+        match line.dir.as_str() {
+            ">" => script.push_str(&format!(
                 "read -r line; printf '%s\\n' \"$line\" >> '{}'\n",
                 heard.display()
-            ));
-        } else {
-            let said = msg.to_string().replace('\'', "'\\''");
-            script.push_str(&format!("printf '%s\\n' '{said}'\n"));
+            )),
+            "exit" => script.push_str("exit 0\n"),
+            _ => {
+                let said = line.msg.to_string().replace('\'', "'\\''");
+                script.push_str(&format!("printf '%s\\n' '{said}'\n"));
+            }
         }
     }
     script.push_str("while read -r _rest; do :; done\n");
@@ -153,11 +168,7 @@ fn play(name: &str, setup: Turn) -> Played {
         .lines()
         .map(|line| serde_json::from_str(line).expect("devpit writes json"))
         .collect();
-    let expected = played
-        .iter()
-        .filter(|(dir, _)| dir == ">")
-        .map(|(_, msg)| filled(msg, dir.path()))
-        .collect();
+    let expected = expected(&played, dir.path());
     let asked = std::mem::take(&mut *asked.lock().expect("asked"));
     Played {
         said,
@@ -166,6 +177,108 @@ fn play(name: &str, setup: Turn) -> Played {
         heard,
         expected,
     }
+}
+
+fn expected(played: &[Line], cwd: &Path) -> Vec<Value> {
+    played
+        .iter()
+        .filter(|line| line.dir == ">")
+        .map(|line| filled(&line.msg, cwd))
+        .collect()
+}
+
+fn heard_in(dir: &Path) -> Vec<Value> {
+    std::fs::read_to_string(dir.join("heard"))
+        .unwrap_or_default()
+        .lines()
+        .map(|line| serde_json::from_str(line).expect("devpit writes json"))
+        .collect()
+}
+
+/// What a resident process said, in the order it said it.
+#[derive(Debug, PartialEq)]
+enum Spoke {
+    Text(String),
+    Ended(Option<String>, bool),
+    Gone,
+}
+
+/// A resident process over a transcript, the way every chat outside
+/// Supervised holds its conversation.
+#[cfg(unix)]
+fn resident(
+    name: &str,
+) -> (
+    crate::resident::Resident,
+    std::sync::mpsc::Receiver<Spoke>,
+    tempfile::TempDir,
+) {
+    use crate::resident::{Heard, Resident};
+
+    let dir = tempfile::tempdir().expect("tempdir");
+    let command = stand_in(dir.path(), &transcript(name));
+    let (tell, said) = std::sync::mpsc::channel();
+    let turn = Say {
+        command: &command,
+        env: &[],
+        prompt: "",
+        cwd: dir.path(),
+        model: None,
+        budget_usd: None,
+        session_id: None,
+        fork_at: None,
+        permission: Some("acceptEdits"),
+        disallowed: &[],
+        settings: None,
+        setting_sources: None,
+        mcp_config: None,
+        effort: None,
+        control: None,
+        on_session: None,
+        add_dirs: &[],
+        name: None,
+    };
+    let resident = (0..5)
+        .find_map(|_| {
+            let tell = tell.clone();
+            let started = Resident::start(
+                Box::new(Acp::new(&[])),
+                &turn,
+                Arc::new(|_: &str| {}),
+                move |heard| {
+                    let said = match heard {
+                        Heard::Part(Part::Text { text, .. }) => Spoke::Text(text),
+                        Heard::Ended(said) => Spoke::Ended(said.end.stop_reason, said.end.is_error),
+                        Heard::Gone => Spoke::Gone,
+                        _ => return,
+                    };
+                    let _ = tell.send(said);
+                },
+            );
+            match started {
+                Err(crate::AgentError::NotInstalled) => {
+                    std::thread::sleep(std::time::Duration::from_millis(50));
+                    None
+                }
+                other => Some(other.expect("started")),
+            }
+        })
+        .expect("the stand-in started within five tries");
+    (resident, said, dir)
+}
+
+/// What the resident says until its turn ends, or it is gone.
+#[cfg(unix)]
+fn until_ended(said: &std::sync::mpsc::Receiver<Spoke>) -> Vec<Spoke> {
+    let mut all = Vec::new();
+    while let Ok(one) = said.recv_timeout(std::time::Duration::from_secs(5)) {
+        let over = matches!(one, Spoke::Ended(..) | Spoke::Gone);
+        all.push(one);
+        if over {
+            break;
+        }
+    }
+    all
 }
 
 fn text_of(parts: &[Part]) -> String {
@@ -378,4 +491,69 @@ fn a_cli_older_than_the_first_that_serves_acp_is_told_to_update() {
         None,
         "no version, no refusal"
     );
+}
+
+/// Stop while the session still opens: the held message is never sent, the
+/// turn ends stopped, and the same process takes the next message.
+#[cfg(unix)]
+#[test]
+fn stop_while_the_session_opens_sends_nothing_and_the_process_goes_on() {
+    let (resident, said, dir) = resident("resident-stopped-early.jsonl");
+    assert!(resident.say("First"));
+    assert!(
+        resident.interrupt(),
+        "a stop is taken before the session opens"
+    );
+    assert_eq!(
+        until_ended(&said),
+        vec![Spoke::Ended(Some("cancelled".to_owned()), false)]
+    );
+    assert!(resident.say("Next"));
+    assert_eq!(
+        until_ended(&said),
+        vec![
+            Spoke::Text("Ready.".to_owned()),
+            Spoke::Ended(Some("end_turn".to_owned()), false)
+        ]
+    );
+    assert_eq!(
+        heard_in(dir.path()),
+        expected(&transcript("resident-stopped-early.jsonl"), dir.path())
+    );
+    resident.close();
+}
+
+/// A session refused while signed out opens on the next message.
+#[cfg(unix)]
+#[test]
+fn a_refused_session_opens_on_the_next_message() {
+    let (resident, said, dir) = resident("resident-signed-in-later.jsonl");
+    assert!(resident.say("Hi"));
+    let first = until_ended(&said);
+    assert!(
+        matches!(first.last(), Some(Spoke::Ended(_, true))),
+        "{first:?}"
+    );
+    assert!(resident.say("Again"));
+    assert_eq!(
+        until_ended(&said),
+        vec![
+            Spoke::Text("Signed in now.".to_owned()),
+            Spoke::Ended(Some("end_turn".to_owned()), false)
+        ]
+    );
+    assert_eq!(
+        heard_in(dir.path()),
+        expected(&transcript("resident-signed-in-later.jsonl"), dir.path())
+    );
+    resident.close();
+}
+
+/// An agent that is gone takes no message, so the chat starts another.
+#[cfg(unix)]
+#[test]
+fn a_process_gone_before_its_session_opened_takes_no_message() {
+    let (resident, said, _dir) = resident("gone-in-handshake.jsonl");
+    assert_eq!(until_ended(&said), vec![Spoke::Gone]);
+    assert!(!resident.say("Hi"));
 }

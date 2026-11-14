@@ -15,7 +15,7 @@ fn claudes_wire_writes_the_lines_stream_json_takes() {
     assert_eq!(wire.prompt("hi"), vec![user_line("hi")]);
     assert_eq!(wire.steer("more", "u-1"), Some(steer_line("more", "u-1")));
     assert_eq!(wire.stop_task("t-1"), Some(stop_task_request("t-1")));
-    let stops = wire.interrupt();
+    let stops = wire.interrupt().expect("a stop");
     assert_eq!(stops.len(), 1, "one control request stops the turn");
     let interrupt: Value = serde_json::from_str(&stops[0]).expect("json");
     let before: Value = serde_json::from_str(&interrupt_request()).expect("json");
@@ -88,8 +88,8 @@ impl Wire for Greeting {
         vec![format!("say {text}")]
     }
 
-    fn interrupt(&self) -> Vec<String> {
-        Vec::new()
+    fn interrupt(&self) -> Option<Vec<String>> {
+        None
     }
 
     fn asked(&self, line: &str, session_id: Option<&str>) -> Option<Asked> {

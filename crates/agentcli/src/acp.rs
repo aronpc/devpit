@@ -91,6 +91,14 @@ pub(crate) struct Session {
     /// Messages from the person written before the session was ready.
     pub held: Vec<String>,
     pub ready: bool,
+    /// A handshake request is out: the next message waits for it.
+    pub opening: bool,
+    /// What the agent offered at `initialize`, once it answered.
+    pub offered: Option<Value>,
+    /// Stopped before the session opened: its message is dropped, and the
+    /// turn ends once the session answers.
+    pub cancelled: bool,
+    pub stop_now: bool,
     pub cwd: String,
     pub resume: Option<String>,
     pub model: Option<String>,
@@ -433,6 +441,14 @@ impl Driver for Acp {
         }
         if let Some(why) = session.failed.take() {
             return Read::Failed(why);
+        }
+        if std::mem::take(&mut session.stop_now) {
+            return Read::Ended {
+                stop_reason: Some("cancelled".to_owned()),
+                cost_usd: None,
+                is_error: false,
+                context: session.context,
+            };
         }
         let Some(id) = said["id"].as_u64() else {
             return Read::Nothing;

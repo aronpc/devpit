@@ -119,6 +119,7 @@ impl Session {
                 if let Some(why) = error_of(said) {
                     return self.fail(why);
                 }
+                self.offered = Some(said["result"]["agentCapabilities"].clone());
                 self.open(&said["result"]["agentCapabilities"])
             }
             Sent::Open(opening) => {
@@ -160,15 +161,32 @@ impl Session {
 
     /// The session takes messages now: the ones held are sent.
     fn ready(&mut self) -> Vec<String> {
-        self.ready = true;
+        (self.ready, self.opening) = (true, false);
         let held = std::mem::take(&mut self.held);
+        if std::mem::take(&mut self.cancelled) {
+            self.stop_now = true;
+            return Vec::new();
+        }
         held.iter().map(|text| self.prompt(text)).collect()
     }
 
+    /// The session did not open: the turn waiting on it ends with why, and
+    /// the next message tries again.
     fn fail(&mut self, why: String) -> Vec<String> {
         self.held.clear();
+        (self.opening, self.cancelled) = (false, false);
         self.failed = Some(why);
         Vec::new()
+    }
+
+    fn greeting(&mut self) -> String {
+        self.opening = true;
+        let params = json!({
+            "protocolVersion": VERSION,
+            "clientCapabilities": { "fs": { "readTextFile": false, "writeTextFile": false }, "terminal": false },
+            "clientInfo": { "name": "devpit", "version": env!("CARGO_PKG_VERSION") },
+        });
+        self.request("initialize", params, Sent::Initialize)
     }
 }
 
@@ -186,41 +204,52 @@ impl Wire for AcpWire {
             .filter(|model| *model != "default")
             .map(str::to_owned);
         session.mode = turn.permission.map(str::to_owned);
-        let params = json!({
-            "protocolVersion": VERSION,
-            "clientCapabilities": { "fs": { "readTextFile": false, "writeTextFile": false }, "terminal": false },
-            "clientInfo": { "name": "devpit", "version": env!("CARGO_PKG_VERSION") },
-        });
-        vec![session.request("initialize", params, Sent::Initialize)]
+        vec![session.greeting()]
     }
 
+    /// Held while the session opens; a session that failed to open is opened
+    /// again first.
     fn prompt(&self, text: &str) -> Vec<String> {
         let mut session = held(&self.session);
-        if !session.ready {
-            session.held.push(text.to_owned());
+        if session.ready {
+            return vec![session.prompt(text)];
+        }
+        session.held.push(text.to_owned());
+        if session.opening {
             return Vec::new();
         }
-        vec![session.prompt(text)]
+        session.opening = true;
+        match session.offered.clone() {
+            Some(offered) => session.open(&offered),
+            None => vec![session.greeting()],
+        }
     }
 
     /// `session/cancel`, and every permission request still waiting answered
-    /// cancelled, as the protocol asks. Nothing before the session opens: only
-    /// ending the process stops a handshake.
-    fn interrupt(&self) -> Vec<String> {
+    /// cancelled, as the protocol asks. Before the session opens, the held
+    /// message is dropped and the turn ends once the session answers.
+    fn interrupt(&self) -> Option<Vec<String>> {
         let mut session = held(&self.session);
         let Some(id) = session.id.clone().filter(|_| session.ready) else {
-            return Vec::new();
+            if session.held.is_empty() {
+                return None;
+            }
+            session.held.clear();
+            session.cancelled = true;
+            return Some(Vec::new());
         };
         let cancel =
             json!({ "jsonrpc": "2.0", "method": "session/cancel", "params": { "sessionId": id } });
         let waiting: Vec<Waiting> = session.waiting.drain().map(|(_, one)| one).collect();
-        std::iter::once(cancel.to_string())
-            .chain(
-                waiting
-                    .iter()
-                    .map(|one| response(&one.id, json!({ "outcome": { "outcome": "cancelled" } }))),
-            )
-            .collect()
+        Some(
+            std::iter::once(cancel.to_string())
+                .chain(
+                    waiting.iter().map(|one| {
+                        response(&one.id, json!({ "outcome": { "outcome": "cancelled" } }))
+                    }),
+                )
+                .collect(),
+        )
     }
 
     fn asked(&self, line: &str, session_id: Option<&str>) -> Option<Asked> {

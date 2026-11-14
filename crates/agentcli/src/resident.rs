@@ -159,6 +159,8 @@ impl Resident {
                     break;
                 }
             }
+            // Gone, it takes no message: one written into its stdin would wait forever.
+            reading.close();
             let _ = child.wait();
             tell(Heard::Gone);
         });

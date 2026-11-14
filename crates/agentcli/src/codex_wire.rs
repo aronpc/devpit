@@ -309,15 +309,15 @@ impl Wire for CodexWire {
         Some(thread.request("turn/steer", params, Sent::Other))
     }
 
-    /// Empty before the app-server has named the turn: there is nothing yet
+    /// None before the app-server has named the turn: there is nothing yet
     /// to interrupt, and devpit stops it the other way.
-    fn interrupt(&self) -> Vec<String> {
+    fn interrupt(&self) -> Option<Vec<String>> {
         let mut thread = held(&self.thread);
         let (Some(id), Some(turn)) = (thread.id.clone(), thread.turn.clone()) else {
-            return Vec::new();
+            return None;
         };
         let params = json!({ "threadId": id, "turnId": turn });
-        vec![thread.request("turn/interrupt", params, Sent::Other)]
+        Some(vec![thread.request("turn/interrupt", params, Sent::Other)])
     }
 
     fn asked(&self, line: &str, session_id: Option<&str>) -> Option<Asked> {

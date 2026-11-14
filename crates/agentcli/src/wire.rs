@@ -48,8 +48,9 @@ pub trait Wire: Send + Sync {
         None
     }
 
-    /// Stops the turn in flight and keeps the process. Empty when it cannot.
-    fn interrupt(&self) -> Vec<String>;
+    /// Stops the turn in flight and keeps the process: the lines that tell
+    /// the CLI, none when the wire stopped it alone. `None` when it cannot.
+    fn interrupt(&self) -> Option<Vec<String>>;
 
     /// Stops one background task, by the id the CLI gave it.
     fn stop_task(&self, _task_id: &str) -> Option<String> {
@@ -94,8 +95,8 @@ impl Wire for Claude {
         Some(steer_line(text, uuid))
     }
 
-    fn interrupt(&self) -> Vec<String> {
-        vec![interrupt_request()]
+    fn interrupt(&self) -> Option<Vec<String>> {
+        Some(vec![interrupt_request()])
     }
 
     fn stop_task(&self, task_id: &str) -> Option<String> {

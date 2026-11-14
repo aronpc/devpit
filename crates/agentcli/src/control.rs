@@ -147,8 +147,9 @@ impl Control {
     /// Asks the CLI to stop the turn it is on, and keep running: what stopping
     /// is for a process that stays to hear the next message.
     pub fn interrupt(&self) -> bool {
-        let lines = self.wire().interrupt();
-        !lines.is_empty() && self.write_all(lines)
+        self.wire()
+            .interrupt()
+            .is_some_and(|lines| self.write_all(lines))
     }
 
     /// A switch under `id`, in the CLI's shape: written now when it is a
