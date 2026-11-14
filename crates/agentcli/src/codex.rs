@@ -117,15 +117,10 @@ fn text(text: impl Into<String>) -> Part {
     }
 }
 
-/// The command as the agent wrote it, without the login shell around it.
+/// The command exactly as it will run. `commandActions` is a summary for
+/// display that drops pipeline stages, so it never stands in for it.
 fn command_of(item: &Value) -> String {
-    match item["commandActions"].as_array().map(Vec::as_slice) {
-        Some([one]) => one["command"].as_str(),
-        _ => None,
-    }
-    .or_else(|| item["command"].as_str())
-    .unwrap_or_default()
-    .to_owned()
+    item["command"].as_str().unwrap_or_default().to_owned()
 }
 
 /// A tool call's name and input, as devpit's acts and questions read them.

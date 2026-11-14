@@ -338,7 +338,7 @@ fn a_turn_streams_its_answer_shows_the_command_and_the_edit_and_asks_before_each
     );
     let calls = calls(&parts);
     assert_eq!(calls[0].0, "Bash");
-    assert_eq!(calls[0].1["command"], "ls -a");
+    assert_eq!(calls[0].1["command"], "/usr/bin/zsh -lc 'ls -a'");
     assert_eq!(calls[1].0, "Edit");
     let file = dir.path().join("hello.txt").display().to_string();
     assert_eq!(calls[1].1["file_path"], file.as_str());
@@ -348,7 +348,7 @@ fn a_turn_streams_its_answer_shows_the_command_and_the_edit_and_asks_before_each
 
     let tools: Vec<&str> = asked.iter().map(|one| one.tool.as_str()).collect();
     assert_eq!(tools, ["Bash", "Edit"], "each change waited for the person");
-    assert_eq!(asked[0].input["command"], "ls -a");
+    assert_eq!(asked[0].input["command"], "/usr/bin/zsh -lc 'ls -a'");
     assert_eq!(asked[0].session_id.as_deref(), Some(THREAD));
 
     assert_eq!(said.session_id.as_deref(), Some(THREAD));
@@ -376,7 +376,10 @@ fn a_turn_streams_its_answer_shows_the_command_and_the_edit_and_asks_before_each
 fn a_refused_command_is_declined_and_the_turn_goes_on() {
     let (said, parts, asked, _dir) = said_once("declined", false);
     assert_eq!(asked.len(), 1);
-    assert_eq!(asked[0].input["command"], "touch denied.txt");
+    assert_eq!(
+        asked[0].input["command"],
+        "/usr/bin/zsh -lc 'touch denied.txt'"
+    );
     assert_eq!(results(&parts), [("declined".to_owned(), true)]);
     assert!(answer_of(&parts).ends_with("The command `touch denied.txt` was refused."));
     assert_eq!(said.end.stop_reason.as_deref(), Some("completed"));
@@ -387,7 +390,7 @@ fn a_refused_command_is_declined_and_the_turn_goes_on() {
 fn stop_interrupts_the_turn_and_keeps_the_process() {
     let run = staying("stopped", "bypassPermissions", "/codex/a", None);
     let (said, parts) = run.until_ended(|resident| assert!(resident.interrupt()));
-    assert_eq!(calls(&parts)[0].1["command"], "sleep 30");
+    assert_eq!(calls(&parts)[0].1["command"], "/usr/bin/zsh -lc 'sleep 30'");
     assert_eq!(said.end.stop_reason.as_deref(), Some("interrupted"));
     assert!(!said.end.is_error);
     run.heard_all();
@@ -726,4 +729,35 @@ fn a_request_devpit_does_not_serve_is_refused_rather_than_left_waiting() {
     let said: Value = serde_json::from_str(&said[0]).expect("json");
     assert_eq!(said["id"], 7);
     assert_eq!(said["error"]["code"], -32601);
+}
+
+/// Codex's `commandActions` is a summary for display that drops pipeline
+/// stages: the person is asked about, and "always" keeps, what will run.
+#[test]
+fn an_approval_names_the_command_that_runs_not_its_summary() {
+    let codex = Codex::default();
+    let wire = codex.wire();
+    let control = Control::new();
+    let dir = Path::new("/work");
+    wire.hello(&turn("codex", &[], dir, "", "manual", None, &control));
+    wire.replies(r#"{"id":0,"result":{}}"#);
+    wire.replies(r#"{"id":1,"result":{"thread":{"id":"t"},"model":"m"}}"#);
+    let runs = "/usr/bin/zsh -lc 'ls | xargs rm -rf'";
+    let item = json!({ "type": "commandExecution", "id": "exec-1", "command": runs, "cwd": "/work",
+        "commandActions": [{ "type": "listFiles", "command": "ls", "path": null }] });
+    let started = json!({ "method": "item/started", "params": { "item": item } }).to_string();
+    let Read::Parts(parts) = codex.read(&started) else {
+        panic!("a call");
+    };
+    assert_eq!(calls(&parts)[0].1["command"], runs);
+    let asking = json!({ "id": 3, "method": "item/commandExecution/requestApproval", "params": {
+        "kind": "command", "itemId": "exec-1", "command": runs, "cwd": "/work",
+        "commandActions": [{ "type": "listFiles", "command": "ls", "path": null }] } })
+    .to_string();
+    assert!(wire.replies(&asking).is_empty(), "waits for the person");
+    let prompt = wire
+        .asked(&asking, None)
+        .and_then(|asked| asked.prompt)
+        .expect("asked");
+    assert_eq!(prompt.input["command"], runs);
 }
