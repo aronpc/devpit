@@ -37,6 +37,8 @@ pub struct Supported {
     /// What follows the program to sign in. Empty when starting it signs in.
     pub login: &'static [&'static str],
     pub keeps: Keeps,
+    /// The variable naming a folder that has to exist before the CLI starts.
+    pub made: Option<&'static str>,
 }
 
 /// The CLIs Settings → Providers lists, in its order.
@@ -47,6 +49,7 @@ pub const SUPPORTED: &[Supported] = &[
         install_windows: "irm https://claude.ai/install.ps1 | iex",
         login: &["auth", "login"],
         keeps: Keeps::Claude,
+        made: None,
     },
     Supported {
         id: "codex",
@@ -54,6 +57,7 @@ pub const SUPPORTED: &[Supported] = &[
         install_windows: "npm install -g @openai/codex",
         login: &["login"],
         keeps: Keeps::Codex,
+        made: Some("CODEX_HOME"),
     },
     Supported {
         id: "opencode",
@@ -61,6 +65,7 @@ pub const SUPPORTED: &[Supported] = &[
         install_windows: "npm install -g opencode-ai",
         login: &["auth", "login"],
         keeps: Keeps::OpenCode,
+        made: None,
     },
     Supported {
         id: "cursor",
@@ -68,6 +73,7 @@ pub const SUPPORTED: &[Supported] = &[
         install_windows: "irm 'https://cursor.com/install?win32=true' | iex",
         login: &["login"],
         keeps: Keeps::Cursor,
+        made: None,
     },
     Supported {
         id: "grok",
@@ -75,6 +81,7 @@ pub const SUPPORTED: &[Supported] = &[
         install_windows: "irm https://x.ai/cli/install.ps1 | iex",
         login: &["login"],
         keeps: Keeps::Nowhere,
+        made: None,
     },
     Supported {
         id: "agy",
@@ -82,6 +89,7 @@ pub const SUPPORTED: &[Supported] = &[
         install_windows: "irm https://antigravity.google/cli/install.ps1 | iex",
         login: &[],
         keeps: Keeps::Nowhere,
+        made: None,
     },
 ];
 
@@ -91,22 +99,36 @@ const VERSION_WAIT: Duration = Duration::from_secs(5);
 /// The most of a sign-in file read to tell whether it holds one.
 const READ_CEILING: u64 = 256 * 1024;
 
+/// Makes the folder a CLI refuses to start without: Codex exits when its
+/// `CODEX_HOME` does not exist. Only an absolute path is made.
+pub fn prepare(base: &str, env: &[(String, String)]) -> std::io::Result<()> {
+    let Some(var) = supported(base).and_then(|one| one.made) else {
+        return Ok(());
+    };
+    for (name, value) in env {
+        if name == var && Path::new(value).is_absolute() {
+            std::fs::create_dir_all(value)?;
+        }
+    }
+    Ok(())
+}
+
 pub fn supported(id: &str) -> Option<&'static Supported> {
     SUPPORTED.iter().find(|one| one.id == id)
 }
 
 /// The first runnable file called `program` on the `PATH`-style `path`; on
-/// Windows also its `.exe`, `.cmd` or `.bat`.
+/// Windows its `.exe`, `.cmd` or `.bat` first.
 pub fn locate(program: &str, path: &OsStr) -> Option<PathBuf> {
-    if let Some(found) = devpit_pty::host_env::found_on(path, OsStr::new(program)) {
-        return Some(found);
-    }
+    let on_path = |name: &str| devpit_pty::host_env::found_on(path, OsStr::new(name));
     if !cfg!(windows) {
-        return None;
+        return on_path(program);
     }
-    ["exe", "cmd", "bat"].iter().find_map(|ext| {
-        devpit_pty::host_env::found_on(path, OsStr::new(&format!("{program}.{ext}")))
-    })
+    // Before the bare name: npm puts an sh script there that Windows cannot run.
+    ["exe", "cmd", "bat"]
+        .iter()
+        .find_map(|ext| on_path(&format!("{program}.{ext}")))
+        .or_else(|| on_path(program))
 }
 
 /// The version in what `--version` printed: its first word that starts with

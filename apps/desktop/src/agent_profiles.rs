@@ -152,6 +152,14 @@ pub(crate) fn agent_profile_save_now(declared: Declared) -> Result<Vec<Profile>,
         .map_err(|why| RpcError::new(ErrorCode::Invalid, why.to_string()))?;
     let home = crate::installations::home()?;
     let mut declared = devpit_agentcli::declaring::at_home(declared, &home.to_string_lossy());
+    // Made on save, so the profile starts in a terminal too, not only after Sign in.
+    let env: Vec<(String, String)> = declared
+        .env
+        .iter()
+        .map(|var| (var.name.clone(), var.value.clone()))
+        .collect();
+    devpit_agentcli::providers::prepare(&declared.base, &env)
+        .map_err(|err| RpcError::internal(format!("could not make its folder: {err}")))?;
 
     declared.label = declared.label.trim().to_owned();
     if declared.id.trim().is_empty() {

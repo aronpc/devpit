@@ -1,7 +1,7 @@
 //! The shell a terminal window starts, and the startup file behind it.
 
 use std::collections::HashSet;
-use std::sync::{Arc, OnceLock, RwLock};
+use std::sync::{Arc, Mutex, OnceLock, RwLock};
 
 use devpit_core::Store;
 use devpit_rpc::{AgentLaunch, KnownAgent, MissingSignIn, PaneRunning, RpcError};
@@ -320,19 +320,37 @@ fn names_to_probe() -> Vec<String> {
 /// name. Warmed at startup by [`warm_installed`], so no menu waits for it;
 /// asked again only by Settings' "Scan again" ([`ask_shell_again`]).
 pub(crate) fn shell_knows() -> Arc<HashSet<String>> {
-    if let Some(found) = known_names().read().ok().and_then(|kept| kept.clone()) {
+    if let Some(found) = kept_names() {
         return found;
     }
-    ask_shell_again()
+    // One probe at a time: a caller that waited takes the answer that landed.
+    let _one = probing();
+    kept_names().unwrap_or_else(probe_now)
 }
 
 /// Asks the shell now, for a CLI installed since devpit started.
 pub(crate) fn ask_shell_again() -> Arc<HashSet<String>> {
+    let _one = probing();
+    probe_now()
+}
+
+fn probe_now() -> Arc<HashSet<String>> {
     let found = Arc::new(ask_the_shell(&names_to_probe()));
     if let Ok(mut kept) = known_names().write() {
         *kept = Some(found.clone());
     }
     found
+}
+
+fn kept_names() -> Option<Arc<HashSet<String>>> {
+    known_names().read().ok().and_then(|kept| kept.clone())
+}
+
+fn probing() -> std::sync::MutexGuard<'static, ()> {
+    static PROBING: Mutex<()> = Mutex::new(());
+    PROBING
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
 }
 
 fn known_names() -> &'static RwLock<Option<Arc<HashSet<String>>>> {

@@ -87,6 +87,20 @@ pub(crate) fn login_for(profiles: &[Profile], id: &str) -> Result<String, RpcErr
     })
 }
 
+/// The login for `id`, once it may run: a profile still waiting for the
+/// person is refused, and the folder its CLI needs is made first.
+pub(crate) fn login_ready(store: &devpit_core::Store, id: &str) -> Result<String, RpcError> {
+    if let Some(why) = crate::profile_waiting::blocked(store, id) {
+        return Err(RpcError::new(ErrorCode::Conflict, why));
+    }
+    let profiles = crate::agent_profiles::all(store)?;
+    if let Some(profile) = profiles.iter().find(|one| one.id == id && one.mine) {
+        providers::prepare(&profile.base, &runner(profile).env)
+            .map_err(|err| RpcError::internal(format!("could not make its folder: {err}")))?;
+    }
+    login_for(&profiles, id)
+}
+
 /// `agent.login` — types the CLI's own login into a pane of the project,
 /// with the profile's variables, for the person to finish there.
 #[tauri::command]
@@ -97,13 +111,8 @@ pub async fn agent_login(
     pane_id: String,
     id: String,
 ) -> Result<AgentLaunch, RpcError> {
-    let line = crate::off_main::blocking(move || {
-        login_for(
-            &crate::agent_profiles::all(&crate::projects::store()?)?,
-            &id,
-        )
-    })
-    .await?;
+    let line =
+        crate::off_main::blocking(move || login_ready(&crate::projects::store()?, &id)).await?;
     let layout = crate::sessions::holding(&project_id, &pane_id)?;
     let target = crate::pane_io::target_in(&layout, &pane_id);
     let waiting = target.clone();

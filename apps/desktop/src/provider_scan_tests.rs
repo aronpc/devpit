@@ -80,3 +80,47 @@ fn a_profile_of_another_cli_has_no_provider_sign_in() {
     other.base = "elsewhere".to_owned();
     assert!(profile_sign_ins(&[other], home.path(), &|_| None).is_empty());
 }
+
+fn stored(declared: Declared) -> (tempfile::TempDir, devpit_core::Store) {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let store = devpit_core::Store::open(&dir.path().join("state.db")).expect("open");
+    crate::agent_profiles::save(&store, &[declared]).expect("save");
+    (dir, store)
+}
+
+#[test]
+fn a_second_codex_profile_gets_its_codex_home_made_before_it_signs_in() {
+    let root = tempfile::tempdir().expect("root");
+    let work = root.path().join("codex-work");
+    let (_dir, store) = stored(codex_work(&work.to_string_lossy()));
+
+    let line = login_ready(&store, "codex-work").expect("a login");
+
+    assert!(
+        work.is_dir(),
+        "codex refuses a CODEX_HOME that does not exist"
+    );
+    assert!(line.ends_with("codex login"), "{line}");
+}
+
+#[test]
+fn a_profile_that_arrived_from_another_computer_signs_in_only_once_taken() {
+    use devpit_sync::profiles::{keep, kept, Held};
+    let (_dir, store) = stored(codex_work("/nowhere/codex-work"));
+    let mut all = kept(&store);
+    all.profiles.insert(
+        "codex-work".to_owned(),
+        Held {
+            arrived: true,
+            ..Held::default()
+        },
+    );
+    keep(&store, &all).expect("kept");
+
+    let refused = login_ready(&store, "codex-work").expect_err("waits for the person");
+    assert!(
+        refused.message.contains("another computer"),
+        "{}",
+        refused.message
+    );
+}

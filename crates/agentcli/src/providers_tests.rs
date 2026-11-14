@@ -206,6 +206,8 @@ fn the_login_runs_with_the_profiles_variables_and_without_its_arguments() {
 #[test]
 fn a_cmd_shim_on_the_path_is_found() {
     let bin = tempfile::tempdir().expect("bin");
+    // npm writes an extensionless sh script beside the .cmd, which Windows cannot run.
+    std::fs::write(bin.path().join("codex"), "#!/bin/sh").expect("sh shim");
     std::fs::write(bin.path().join("codex.cmd"), "@echo codex-cli 0.160.0").expect("shim");
     assert_eq!(
         locate("codex", bin.path().as_os_str()),
@@ -225,4 +227,25 @@ fn a_cli_under_the_home_folder_is_shown_from_it() {
         row(&rows, "opencode").path.as_deref(),
         Some("~/.local/bin/opencode")
     );
+}
+
+#[test]
+fn a_codex_home_that_does_not_exist_yet_is_made_before_codex_starts() {
+    let root = tempfile::tempdir().expect("root");
+    let work = root.path().join("codex-work");
+    let claude = root.path().join("claude-work");
+    let env = |name: &str, at: &std::path::Path| {
+        vec![(name.to_owned(), at.to_string_lossy().into_owned())]
+    };
+
+    prepare("codex", &env("CODEX_HOME", &work)).expect("made");
+    assert!(work.is_dir());
+    prepare("claude", &env("CLAUDE_CONFIG_DIR", &claude)).expect("left alone");
+    assert!(!claude.exists());
+    prepare(
+        "codex",
+        &[("CODEX_HOME".to_owned(), "relative/home".to_owned())],
+    )
+    .expect("left alone");
+    assert!(!std::path::Path::new("relative/home").exists());
 }
