@@ -1,6 +1,7 @@
 //! What devpit writes to an ACP agent: the handshake, the person's messages,
 //! permission answers and stops.
 
+use std::path::Path;
 use std::sync::{Arc, Mutex};
 
 use serde_json::{json, Value};
@@ -15,6 +16,9 @@ const VERSION: u64 = 1;
 
 /// The JSON-RPC code for a method the receiver does not serve.
 const NOT_SERVED: i64 = -32601;
+
+/// Why a chat cannot run in Plan on an agent with no read-only mode.
+pub(crate) const NO_PLAN: &str = "This agent offers no read-only mode, so this chat cannot run in Plan: choose Supervised to approve each change instead.";
 
 pub(crate) struct AcpWire {
     args: &'static [&'static str],
@@ -156,7 +160,8 @@ impl Session {
     }
 
     fn opening(&mut self, method: &str, opening: Opening) -> String {
-        let mut params = json!({ "cwd": self.cwd, "mcpServers": [] });
+        let servers = self.servers.clone().unwrap_or_else(|| json!([]));
+        let mut params = json!({ "cwd": self.cwd, "mcpServers": servers });
         if opening == Opening::New {
             self.cost_from = Some(0.0);
         } else {
@@ -199,14 +204,18 @@ impl Session {
                     .map(str::to_owned)
                     .or_else(|| self.resume.clone());
                 self.options(&said["result"]);
-                let wanted = self
-                    .model
-                    .clone()
-                    .filter(|model| self.current_model.as_deref() != Some(model.as_str()));
-                match wanted.and_then(|model| self.pick(&model, Sent::Model)) {
-                    Some(picking) => vec![picking],
-                    None => self.ready(),
+                self.settle()
+            }
+            Sent::Mode => {
+                self.sent.remove(&id);
+                if let Some(why) = error_of(said) {
+                    let asked = self.mode_asked.take().unwrap_or_default();
+                    return self.fail(format!(
+                        "The agent did not switch to its {asked} mode: {why}"
+                    ));
                 }
+                self.mode_taken(&said["result"]);
+                self.settle()
             }
             Sent::Model => {
                 self.sent.remove(&id);
@@ -214,6 +223,27 @@ impl Session {
                 self.ready()
             }
             Sent::Switch(_) | Sent::Prompt => Vec::new(),
+        }
+    }
+
+    /// What the session is set to before the person's message goes: the
+    /// agent's mode for the chat's, then the model; ready once both hold.
+    fn settle(&mut self) -> Vec<String> {
+        if self.plan_refused() {
+            return self.fail(NO_PLAN.to_owned());
+        }
+        if let Some(mode) = self.mode_wanted() {
+            if let Some(request) = self.set_mode(&mode, Sent::Mode) {
+                return vec![request];
+            }
+        }
+        let wanted = self
+            .model
+            .clone()
+            .filter(|model| self.current_model.as_deref() != Some(model.as_str()));
+        match wanted.and_then(|model| self.pick(&model, Sent::Model)) {
+            Some(picking) => vec![picking],
+            None => self.ready(),
         }
     }
 
@@ -262,6 +292,9 @@ impl Wire for AcpWire {
             .filter(|model| *model != "default")
             .map(str::to_owned);
         session.mode = turn.permission.map(str::to_owned);
+        session.servers = turn.mcp_config.map(|file| {
+            crate::wire::mcp_servers::acp(&crate::wire::mcp_servers::read(Path::new(file)))
+        });
         vec![session.greeting()]
     }
 
@@ -346,14 +379,24 @@ impl Wire for AcpWire {
         Some(chosen(&waiting.id, &waiting.options, kinds))
     }
 
-    /// The mode is devpit's own, kept here; a model goes to the agent when it
-    /// offers to switch one.
+    /// The mode is devpit's own, kept here, and goes to the agent as its own
+    /// read-only mode for Plan; a model goes to the agent when it offers to
+    /// switch one. Plan on an agent without one takes a new process, whose
+    /// session says why it cannot open.
     fn control(&self, id: &str, request: Value) -> Option<Switch> {
         let mut session = held(&self.session);
         match request["subtype"].as_str()? {
             "set_permission_mode" => {
                 session.mode = request["mode"].as_str().map(str::to_owned);
-                Some(Switch::Kept)
+                if session.plan_refused() {
+                    return None;
+                }
+                match session.mode_wanted() {
+                    Some(mode) => session
+                        .set_mode(&mode, Sent::Switch(id.to_owned()))
+                        .map(Switch::Write),
+                    None => Some(Switch::Kept),
+                }
             }
             "set_model" => {
                 let model = request["model"]
@@ -379,9 +422,10 @@ impl Wire for AcpWire {
         };
         session.sent.remove(&id);
         let subtype = if said.get("error").is_some() {
+            session.mode_asked = None;
             "error"
         } else {
-            session.options(&said["result"]);
+            session.mode_taken(&said["result"]);
             "success"
         };
         Some(json!({ "subtype": subtype, "request_id": switch }))

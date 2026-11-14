@@ -53,6 +53,8 @@ pub(crate) enum Sent {
     Open(Opening),
     /// A model set while the session opens; the person's message waits for it.
     Model,
+    /// A session mode set while the session opens, as the chat's mode asks.
+    Mode,
     /// A model switched on request, answered under the switch's own id.
     Switch(String),
     Prompt,
@@ -65,6 +67,18 @@ pub(crate) enum Opening {
     Resume,
     Load,
 }
+
+/// The session modes an agent offers, and how it takes one: through the
+/// config option it named, or `session/set_mode` where it reports `modes`.
+#[derive(Debug, Clone, Default, PartialEq)]
+pub(crate) struct Modes {
+    pub option: Option<String>,
+    pub offered: Vec<String>,
+    pub current: Option<String>,
+}
+
+/// The mode devpit's Plan asks of an agent: its own read-only one.
+pub(crate) const PLAN: &str = "plan";
 
 /// How an agent takes a model: through the config option it named, or by
 /// the model's id where it reports `models` instead.
@@ -103,6 +117,14 @@ pub(crate) struct Session {
     pub resume: Option<String>,
     pub model: Option<String>,
     pub mode: Option<String>,
+    /// devpit's MCP servers, as the session request takes them.
+    pub servers: Option<Value>,
+    /// The session modes the agent offered, once it opened one.
+    pub modes: Option<Modes>,
+    /// The agent's own mode the session opened in, to go back to from Plan.
+    pub mode_before: Option<String>,
+    /// A mode asked of the agent and not answered yet.
+    pub mode_asked: Option<String>,
     /// History a loaded session replays: not this turn's answer.
     pub replaying: bool,
     /// Said with the turn once the session opens.
@@ -160,6 +182,89 @@ impl Session {
         } else if let Some(current) = result["models"]["currentModelId"].as_str() {
             self.picks = Some(Picks::ById);
             self.current_model = Some(current.to_owned());
+        }
+        let values = |all: &Value, key: &str| -> Vec<String> {
+            all.as_array()
+                .map(|all| {
+                    all.iter()
+                        .filter_map(|one| one[key].as_str())
+                        .map(str::to_owned)
+                        .collect()
+                })
+                .unwrap_or_default()
+        };
+        let modes = match options.and_then(|all| all.iter().find(|one| one["category"] == "mode")) {
+            Some(mode) => Some(Modes {
+                option: mode["id"].as_str().map(str::to_owned),
+                offered: values(&mode["options"], "value"),
+                current: mode["currentValue"].as_str().map(str::to_owned),
+            }),
+            None => result["modes"].as_object().map(|modes| Modes {
+                option: None,
+                offered: values(&modes["availableModes"], "id"),
+                current: modes["currentModeId"].as_str().map(str::to_owned),
+            }),
+        };
+        if let Some(modes) = modes {
+            if self.mode_before.is_none() {
+                self.mode_before = modes.current.clone().filter(|one| one != PLAN);
+            }
+            self.modes = Some(modes);
+        }
+    }
+
+    /// The agent's mode the chat's mode asks for, when it is not the one the
+    /// session is in: its read-only one for Plan, and back from it otherwise.
+    pub fn mode_wanted(&self) -> Option<String> {
+        let modes = self.modes.as_ref()?;
+        let wanted = match self.mode.as_deref() == Some(PLAN) {
+            true => PLAN.to_owned(),
+            false if modes.current.as_deref() == Some(PLAN) => self
+                .mode_before
+                .clone()
+                .or_else(|| modes.offered.iter().find(|one| *one != PLAN).cloned())?,
+            false => return None,
+        };
+        (modes.current.as_ref() != Some(&wanted)).then_some(wanted)
+    }
+
+    /// Plan, on an agent that offers no read-only mode: refused rather than
+    /// run as if it were one.
+    pub fn plan_refused(&self) -> bool {
+        self.mode.as_deref() == Some(PLAN)
+            && !self
+                .modes
+                .as_ref()
+                .is_some_and(|modes| modes.offered.iter().any(|one| one == PLAN))
+    }
+
+    /// The request that puts the session in the agent's mode `value`.
+    pub fn set_mode(&mut self, value: &str, sent: Sent) -> Option<String> {
+        let session = self.id.clone()?;
+        let modes = self.modes.as_ref()?;
+        if !modes.offered.iter().any(|one| one == value) {
+            return None;
+        }
+        let (method, params) = match &modes.option {
+            Some(option) => (
+                "session/set_config_option",
+                json!({ "sessionId": session, "configId": option, "value": value }),
+            ),
+            None => (
+                "session/set_mode",
+                json!({ "sessionId": session, "modeId": value }),
+            ),
+        };
+        self.mode_asked = Some(value.to_owned());
+        Some(self.request(method, params, sent))
+    }
+
+    /// The agent took the mode asked: an answer that does not say so means it did.
+    pub fn mode_taken(&mut self, result: &Value) {
+        let asked = self.mode_asked.take();
+        self.options(result);
+        if let (Some(modes), Some(asked)) = (self.modes.as_mut(), asked) {
+            modes.current = Some(asked);
         }
     }
 

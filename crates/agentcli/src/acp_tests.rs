@@ -638,3 +638,136 @@ fn a_turn_stopped_before_its_agent_exits_ends_stopped() {
     );
     assert_eq!(until_ended(&said), vec![Spoke::Gone]);
 }
+
+/// A turn on an ACP agent, as far as its wire: in `mode`, handed `mcp`.
+fn wired(
+    mode: &str,
+    mcp: Option<&str>,
+    session: Option<&str>,
+) -> (Acp, Arc<dyn crate::wire::Wire>) {
+    let acp = Acp::new(&[]);
+    let wire = crate::driver::Driver::wire(&acp);
+    let turn = Say {
+        command: "opencode",
+        env: &[],
+        prompt: "",
+        cwd: Path::new("/work"),
+        model: None,
+        budget_usd: None,
+        session_id: session,
+        fork_at: None,
+        permission: Some(mode),
+        disallowed: &[],
+        settings: None,
+        setting_sources: None,
+        mcp_config: mcp,
+        effort: None,
+        control: None,
+        on_session: None,
+        add_dirs: &[],
+        name: None,
+    };
+    wire.hello(&turn);
+    (acp, wire)
+}
+
+fn line(text: &str) -> Value {
+    serde_json::from_str(text).expect("json")
+}
+
+/// OpenCode's answer to `initialize`, as recorded.
+const OPENCODE_HELLO: &str = r#"{"jsonrpc":"2.0","id":0,"result":{"protocolVersion":1,"agentCapabilities":{"loadSession":true,"sessionCapabilities":{"resume":{}}}}}"#;
+/// OpenCode's session, in its `build` mode with `plan` beside it, as recorded.
+const OPENCODE_SESSION: &str = r#"{"jsonrpc":"2.0","id":1,"result":{"sessionId":"ses_1","configOptions":[{"id":"mode","name":"Session Mode","category":"mode","type":"select","currentValue":"build","options":[{"value":"build","name":"build"},{"value":"plan","name":"plan"}]}]}}"#;
+
+/// The session request hands the agent devpit's server, new or resumed.
+#[test]
+fn an_acp_session_is_opened_with_devpits_tools() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let file = dir.path().join("mcp-opencode.json");
+    let server = serde_json::json!({ "mcpServers": { "devpit": {
+        "command": "/opt/devpit", "args": ["mcp"], "env": { "DEVPIT_AGENT_ID": "opencode" }, "timeout": 1_260_000,
+    } } });
+    std::fs::write(&file, server.to_string()).expect("file");
+    let handed = serde_json::json!([{
+        "name": "devpit", "command": "/opt/devpit", "args": ["mcp"],
+        "env": [{ "name": "DEVPIT_AGENT_ID", "value": "opencode" }],
+    }]);
+    for (session, method) in [(None, "session/new"), (Some("ses_1"), "session/resume")] {
+        let (_, wire) = wired("manual", file.to_str(), session);
+        let opened = line(&wire.replies(OPENCODE_HELLO)[0]);
+        assert_eq!(opened["method"], method);
+        assert_eq!(opened["params"]["mcpServers"], handed, "{method}");
+    }
+    let (_, wire) = wired("manual", None, None);
+    assert_eq!(
+        line(&wire.replies(OPENCODE_HELLO)[0])["params"]["mcpServers"],
+        serde_json::json!([])
+    );
+}
+
+/// Plan is the agent's own read-only mode, set before the message goes; and
+/// out of Plan the session goes back to the mode it opened in.
+#[test]
+fn plan_puts_the_agent_in_its_own_plan_mode_and_back() {
+    let (_, wire) = wired("plan", None, None);
+    wire.replies(OPENCODE_HELLO);
+    assert!(
+        wire.prompt("Look around").is_empty(),
+        "held while the session opens"
+    );
+    let set = line(&wire.replies(OPENCODE_SESSION)[0]);
+    assert_eq!(set["method"], "session/set_config_option");
+    assert_eq!(
+        set["params"],
+        serde_json::json!({ "sessionId": "ses_1", "configId": "mode", "value": "plan" })
+    );
+    let sent = wire.replies(r#"{"jsonrpc":"2.0","id":2,"result":{}}"#);
+    assert_eq!(
+        line(&sent[0])["method"],
+        "session/prompt",
+        "then the message"
+    );
+
+    let Some(crate::wire::Switch::Write(back)) = wire.control(
+        "s-1",
+        serde_json::json!({ "subtype": "set_permission_mode", "mode": "manual" }),
+    ) else {
+        panic!("the agent is asked to leave plan");
+    };
+    assert_eq!(line(&back)["params"]["value"], "build");
+}
+
+/// An agent that reports `modes` rather than a config option takes `session/set_mode`.
+#[test]
+fn plan_on_an_agent_with_session_modes_sets_its_mode() {
+    let (_, wire) = wired("plan", None, None);
+    wire.replies(OPENCODE_HELLO);
+    let session = r#"{"jsonrpc":"2.0","id":1,"result":{"sessionId":"s","modes":{"currentModeId":"code","availableModes":[{"id":"code","name":"Code"},{"id":"plan","name":"Plan"}]}}}"#;
+    let set = line(&wire.replies(session)[0]);
+    assert_eq!(set["method"], "session/set_mode");
+    assert_eq!(set["params"]["modeId"], "plan");
+}
+
+/// With no read-only mode to put the agent in, Plan is refused, saying so,
+/// rather than run as a chat that may still write.
+#[test]
+fn plan_on_an_agent_without_a_read_only_mode_is_refused_saying_why() {
+    let (acp, wire) = wired("plan", None, None);
+    wire.replies(OPENCODE_HELLO);
+    assert!(wire.prompt("Look around").is_empty());
+    let session = r#"{"jsonrpc":"2.0","id":1,"result":{"sessionId":"agy-1","configOptions":[{"id":"model","category":"model","currentValue":"agy-pro","options":[{"value":"agy-pro"}]}]}}"#;
+    assert!(wire.replies(session).is_empty(), "the message is not sent");
+    assert_eq!(
+        crate::driver::Driver::read(&acp, session),
+        crate::driver::Read::Failed(super::acp_wire::NO_PLAN.to_owned())
+    );
+    assert!(
+        wire.control(
+            "s-2",
+            serde_json::json!({ "subtype": "set_permission_mode", "mode": "plan" })
+        )
+        .is_none(),
+        "switched to Plan, it takes a new process, whose session says why"
+    );
+}
