@@ -129,6 +129,18 @@ fn person_said(entry: &Value) -> Option<Said> {
     })
 }
 
+/// What the person said in a turn devpit sent to a CLI whose log it does not
+/// read: `text` as sent, devpit's notices above it. Nothing for a turn devpit
+/// started itself.
+pub fn said_in(id: &str, text: &str) -> Option<Said> {
+    let (said, sent_from) = without_notices(text)?;
+    Some(Said {
+        id: id.to_owned(),
+        text: said.trim().to_owned(),
+        from: sent_from.unwrap_or(From::Composer),
+    })
+}
+
 /// `text` without devpit's notices above it, and where the first said the
 /// person sent it from: the Remote, or a channel. Only the first, which is
 /// where devpit puts it: words typed under it cannot pass for another door.

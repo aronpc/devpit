@@ -20,6 +20,66 @@ pub(crate) struct Wanted<'a> {
     pub name: Option<&'a str>,
     /// The model it runs in, for this session alone (`--model`).
     pub model: Option<&'a str>,
+    /// The profile it runs as, when not the orchestrator's own.
+    pub profile: Option<&'a str>,
+}
+
+/// The profile a session an orchestrator speaking as `own` starts runs as:
+/// `asked`, or its own. A Claude Code orchestrator's Claude Code sessions are
+/// its own account's, which is where it lists them.
+pub(crate) fn runs_as(own: &str, asked: Option<&str>) -> Result<String, String> {
+    let Some(asked) = asked
+        .map(str::trim)
+        .filter(|one| !one.is_empty() && *one != own)
+    else {
+        return Ok(own.to_owned());
+    };
+    let store = crate::projects::store().map_err(|err| err.message)?;
+    let profile = crate::agent_profiles::all(&store)
+        .map_err(|err| err.message)?
+        .into_iter()
+        .find(|one| one.id == asked)
+        .ok_or_else(|| format!("no profile called {asked}: Settings → Providers lists them"))?;
+    may_run_as(crate::live_sessions::on_claude(own), &profile)?;
+    Ok(profile.id)
+}
+
+/// Whether an orchestrator, on Claude Code or not, may start a session as
+/// `profile`.
+pub(crate) fn may_run_as(own_on_claude: bool, profile: &devpit_rpc::Profile) -> Result<(), String> {
+    if profile.path.is_none() {
+        return Err(format!(
+            "devpit has not read what {} runs yet — open it in Settings → Providers",
+            profile.command
+        ));
+    }
+    if own_on_claude && cli_of(profile) == crate::claude_accounts::DRIVER {
+        return Err(
+            "a Claude Code orchestrator's Claude Code sessions run as its own account: leave `profile` out"
+                .to_owned(),
+        );
+    }
+    Ok(())
+}
+
+/// Whether a session `runs_as` starts for the orchestrator speaking as `own`
+/// is kept by devpit, and so reaches it through devpit's bus rather than
+/// Claude Code's SendMessage.
+pub(crate) fn by_bus(own: &str, runs_as: &str) -> bool {
+    crate::pane_sessions::keeps(
+        crate::live_sessions::on_claude(own),
+        base_of(runs_as) == crate::claude_accounts::DRIVER,
+    )
+}
+
+/// Whether the session `runs_as` starts for the orchestrator speaking as
+/// `own` is kept by devpit, and if so, remembered at its pane.
+pub(crate) fn kept(own: &str, runs_as: &str, started: crate::pane_sessions::Kept) -> bool {
+    let keeps = by_bus(own, runs_as);
+    if keeps {
+        crate::pane_sessions::began(started);
+    }
+    keeps
 }
 
 pub(crate) fn open(
@@ -57,15 +117,30 @@ pub(crate) fn open(
             }),
         &crate::handing::live_names(profile_id),
     );
+    let runs_as = wanted.profile.unwrap_or(profile_id);
     let tab_id = fresh_tab();
     let pane_id = typed_in(
         app,
         &project.id,
         &tab_id,
         std::path::Path::new(&project.root_path),
-        &launched(profile_id, &project.id, &name, prompt, wanted.model)?,
-        Some(profile_id),
+        &launched(runs_as, &project.id, &name, prompt, wanted.model)?,
+        Some(runs_as),
     )?;
+    let kept = kept(
+        profile_id,
+        runs_as,
+        crate::pane_sessions::Kept {
+            profile: profile_id.to_owned(),
+            runs_as: runs_as.to_owned(),
+            name: name.clone(),
+            project_id: project.id.clone(),
+            project_name: Some(project.name.clone()),
+            card_id: None,
+            cwd: project.root_path.clone(),
+            pane_id: pane_id.clone(),
+        },
+    );
     let _ = app.emit(
         TAB_OPENED,
         json!({ "projectId": project.id, "tabId": tab_id, "paneId": pane_id }),
@@ -74,6 +149,7 @@ pub(crate) fn open(
         "name": name,
         "project": project.name,
         "cwd": project.root_path,
+        "kept": kept,
         "next": "It runs in a new terminal tab of that project. Message it by this name with SendMessage once it is up, and pass notify_when_idle to hear when it is done.",
     }))
 }
@@ -104,7 +180,8 @@ pub(crate) fn typeable(text: &str) -> Result<(), RpcError> {
     }
 }
 
-/// The account's Claude Code, named and briefed, as one line to type.
+/// The profile's CLI, named when it is Claude Code and briefed, as one line
+/// to type.
 pub(crate) fn launched(
     profile_id: &str,
     project_id: &str,
@@ -128,12 +205,47 @@ pub(crate) fn launched(
         Some(one) => format!(" --model {}", devpit_agentcli::declaring::quoted(one)),
         None => String::new(),
     };
+    let base = base_of(profile_id);
+    let brief = devpit_agentcli::declaring::quoted(prompt);
+    // Only Claude Code takes a name; devpit keeps the name of any other.
+    let rest = if base == crate::claude_accounts::DRIVER {
+        format!(
+            " --name {}{model} {brief}",
+            devpit_agentcli::declaring::quoted(name)
+        )
+    } else {
+        let flag = devpit_pty::agents::known(&base)
+            .and_then(|one| one.prompt_flag)
+            .ok_or_else(|| {
+                RpcError::new(
+                    ErrorCode::Invalid,
+                    format!("devpit does not know how {base} starts with a brief: start the session on another CLI"),
+                )
+            })?;
+        format!("{model} {}", flag.replace("{}", &brief))
+    };
     Ok(format!(
-        "{} --name {}{model} {}",
-        crate::shell_launch::to_start_in(profile_id, Some(project_id))?,
-        devpit_agentcli::declaring::quoted(name),
-        devpit_agentcli::declaring::quoted(prompt)
+        "{}{rest}",
+        crate::shell_launch::to_start_in(profile_id, Some(project_id))?
     ))
+}
+
+/// The CLI a profile runs, by the id it is known by.
+pub(crate) fn base_of(profile_id: &str) -> String {
+    crate::projects::store()
+        .ok()
+        .and_then(|store| crate::agent_profiles::all(&store).ok())
+        .and_then(|all| all.into_iter().find(|one| one.id == profile_id))
+        .map_or_else(|| profile_id.to_owned(), |one| cli_of(&one).to_owned())
+}
+
+/// The CLI `profile` runs: its base, or itself for a command devpit found.
+pub(crate) fn cli_of(profile: &devpit_rpc::Profile) -> &str {
+    if profile.base.is_empty() {
+        &profile.id
+    } else {
+        &profile.base
+    }
 }
 
 /// Opens tab `tab_id` of the project with its pane in `cwd`, and types `line`
@@ -251,6 +363,27 @@ mod tests {
             Some("opus; rm -rf ~")
         )
         .is_err());
+    }
+
+    /// Each CLI is briefed as it takes a first message, and only Claude Code
+    /// is given a name; a CLI whose start nobody checked is refused.
+    #[test]
+    fn a_session_on_another_cli_starts_with_its_brief_as_that_cli_takes_it() {
+        let line = launched("codex", "prj_none", "fix-it", "the brief", None).expect("codex");
+        assert!(
+            line.starts_with("codex") && line.ends_with(" 'the brief'"),
+            "{line}"
+        );
+        assert!(!line.contains("--name"), "{line}");
+        let line =
+            launched("opencode", "prj_none", "fix-it", "the brief", Some("x/y")).expect("opencode");
+        assert!(
+            line.ends_with(" --model 'x/y' --prompt 'the brief'"),
+            "{line}"
+        );
+        let line = launched("gemini", "prj_none", "fix-it", "the brief", None).expect("gemini");
+        assert!(line.ends_with(" -i 'the brief'"), "{line}");
+        assert!(launched("aider", "prj_none", "fix-it", "the brief", None).is_err());
     }
 
     /// Ctrl-C and Ctrl-U are keys at a terminal: inside a typed brief they end

@@ -187,6 +187,7 @@ mod pane_asking;
 mod pane_io;
 mod pane_said;
 mod pane_screen;
+mod pane_sessions;
 mod pane_snapshot;
 mod pane_socket;
 mod pane_tmux;

@@ -132,9 +132,7 @@ pub(crate) fn address_of(project_id: &str) -> Option<String> {
     address(&root)
 }
 
-/// The profile, if an orchestrator can speak as it: Claude Code, since only it
-/// reaches its other sessions, and one devpit can start rather than a shell
-/// function it has not read yet.
+/// The profile, if an orchestrator can speak as it.
 fn orchestrable(
     store: &devpit_core::Store,
     profile_id: &str,
@@ -148,22 +146,27 @@ fn orchestrable(
                 format!("no profile called {profile_id}"),
             )
         })?;
-    if profile.driver != "claude" {
-        return Err(RpcError::new(
-            ErrorCode::Invalid,
-            "an orchestrator runs on Claude Code",
+    may_orchestrate(&profile).map_err(|why| RpcError::new(ErrorCode::Invalid, why))?;
+    Ok(profile)
+}
+
+/// Whether an orchestrator can speak as `profile`: a CLI devpit holds a chat
+/// with, since an orchestrator is a chat, and one devpit can start rather
+/// than a shell function it has not read yet.
+pub(crate) fn may_orchestrate(profile: &devpit_rpc::Profile) -> Result<(), String> {
+    if devpit_agentcli::driver::driver_for(&profile.driver, &profile.base).is_none() {
+        return Err(format!(
+            "{} is terminal only here: an orchestrator is a chat, and runs on a CLI devpit holds a chat with",
+            profile.label
         ));
     }
     if profile.path.is_none() {
-        return Err(RpcError::new(
-            ErrorCode::Invalid,
-            format!(
-                "devpit has not read what {} runs yet — open it in Settings → Providers",
-                profile.command
-            ),
+        return Err(format!(
+            "devpit has not read what {} runs yet — open it in Settings → Providers",
+            profile.command
         ));
     }
-    Ok(profile)
+    Ok(())
 }
 
 /// Which account an orchestrator speaks as, kept by its folder.
@@ -304,3 +307,7 @@ pub(crate) fn seed_all_on_start() {
 #[cfg(test)]
 #[path = "orchestrator_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "orchestrator_on_codex_tests.rs"]
+mod on_codex_tests;

@@ -40,6 +40,9 @@ pub struct Known {
     /// How this CLI is told to continue a session by id, with `{}` where the id
     /// goes — or nothing, for one whose resume nobody here has checked.
     pub resume_flag: Option<&'static str>,
+    /// How its interactive start is given a first message, with `{}` where
+    /// the quoted message goes — or nothing, for one nobody here has checked.
+    pub prompt_flag: Option<&'static str>,
     /// Which driver reads its output when it is run headless, empty when none
     /// can: Claude Code's own stream, Codex's app-server, or `acp` for a CLI
     /// that serves the Agent Client Protocol. The rest are terminal-only until a
@@ -78,6 +81,7 @@ pub const KNOWN: &[Known] = &[
         settings_flag: Some("--settings {}"),
         // `--resume <id>`, measured with `claude -p --resume` on 2.1.270.
         resume_flag: Some("--resume {}"),
+        prompt_flag: Some("{}"),
         driver: "claude",
         chat_args: &[],
         chat_since: None,
@@ -92,6 +96,7 @@ pub const KNOWN: &[Known] = &[
         settings_flag: None,
         // `codex resume <id>`, a subcommand after the options; measured on 0.160.
         resume_flag: Some("resume {}"),
+        prompt_flag: Some("{}"),
         driver: "codex",
         chat_args: &[],
         chat_since: None,
@@ -106,6 +111,7 @@ pub const KNOWN: &[Known] = &[
         settings_flag: None,
         // `--resume <uuid>` as well as an index, per 0.55's own error text.
         resume_flag: Some("--resume {}"),
+        prompt_flag: Some("-i {}"),
         driver: "",
         chat_args: &[],
         chat_since: None,
@@ -120,6 +126,7 @@ pub const KNOWN: &[Known] = &[
         settings_flag: None,
         // `--session <id>`, per `opencode --help` on 1.17.
         resume_flag: Some("--session {}"),
+        prompt_flag: Some("--prompt {}"),
         driver: "acp",
         // `opencode acp`, per its docs: an ACP server over stdio.
         chat_args: &["acp"],
@@ -135,6 +142,7 @@ pub const KNOWN: &[Known] = &[
         settings_flag: None,
         // `--resume [chatId]`, per `cursor-agent --help`.
         resume_flag: Some("--resume {}"),
+        prompt_flag: Some("{}"),
         driver: "acp",
         chat_args: &["acp"],
         chat_since: Some("2026.08.11"),
@@ -148,6 +156,7 @@ pub const KNOWN: &[Known] = &[
         wears: &["copilot"],
         settings_flag: None,
         resume_flag: None,
+        prompt_flag: None,
         driver: "",
         chat_args: &[],
         chat_since: None,
@@ -161,6 +170,7 @@ pub const KNOWN: &[Known] = &[
         wears: &["amp"],
         settings_flag: None,
         resume_flag: None,
+        prompt_flag: None,
         driver: "",
         chat_args: &[],
         chat_since: None,
@@ -174,6 +184,7 @@ pub const KNOWN: &[Known] = &[
         wears: &["droid"],
         settings_flag: None,
         resume_flag: None,
+        prompt_flag: None,
         driver: "",
         chat_args: &[],
         chat_since: None,
@@ -187,6 +198,7 @@ pub const KNOWN: &[Known] = &[
         wears: &["grok"],
         settings_flag: None,
         resume_flag: None,
+        prompt_flag: None,
         driver: "acp",
         // `grok agent stdio`, per its docs, without the update check its docs
         // say to skip when a program drives it.
@@ -202,6 +214,7 @@ pub const KNOWN: &[Known] = &[
         wears: &["agy"],
         settings_flag: None,
         resume_flag: None,
+        prompt_flag: None,
         driver: "acp",
         // `agy acp`: the CLI serves ACP itself from 1.5.0.
         chat_args: &["acp"],
@@ -216,6 +229,7 @@ pub const KNOWN: &[Known] = &[
         wears: &["aider"],
         settings_flag: None,
         resume_flag: None,
+        prompt_flag: None,
         driver: "",
         chat_args: &[],
         chat_since: None,
@@ -229,6 +243,7 @@ pub const KNOWN: &[Known] = &[
         wears: &["goose"],
         settings_flag: None,
         resume_flag: None,
+        prompt_flag: None,
         driver: "",
         chat_args: &[],
         chat_since: None,
@@ -242,6 +257,7 @@ pub const KNOWN: &[Known] = &[
         wears: &["crush"],
         settings_flag: None,
         resume_flag: None,
+        prompt_flag: None,
         driver: "",
         chat_args: &[],
         chat_since: None,

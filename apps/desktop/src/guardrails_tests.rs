@@ -141,3 +141,45 @@ fn the_chat_is_in_full_access_only_when_its_newest_conversation_is() {
         .expect("touch");
     assert!(!full_access(dir.path()));
 }
+
+/// Follow chat permission, Always ask and Never ask decide the same on every
+/// CLI an orchestrator runs on: the chat's mode is devpit's word for it,
+/// kept in the conversation's head whatever CLI holds the chat.
+#[test]
+fn every_guardrail_mode_decides_the_same_on_every_provider() {
+    for profile in ["claude", "codex", "opencode"] {
+        for (mode, full, waits_on) in [
+            (GuardrailMode::Follow, false, true),
+            (GuardrailMode::Follow, true, false),
+            (GuardrailMode::Always, true, true),
+            (GuardrailMode::Never, false, false),
+        ] {
+            let dir = tempfile::tempdir().expect("tempdir");
+            let permission = if full {
+                "bypassPermissions"
+            } else {
+                "acceptEdits"
+            };
+            let head = crate::chat_turn::opening(
+                None,
+                profile,
+                None,
+                None,
+                Some(permission.to_owned()),
+                None,
+                0.0,
+            );
+            write_head(&head_path(dir.path(), "conv_1"), &head).expect("head");
+            std::fs::write(dir.path().join("conv_1.jsonl"), "").expect("transcript");
+            let mut settings = json!({});
+            for one in [Guardrail::Stop, Guardrail::ForceStop, Guardrail::SendDraft] {
+                set(&mut settings, one, mode);
+                assert_eq!(
+                    waits(&settings, dir.path(), one),
+                    waits_on,
+                    "{profile}: {one:?} on {mode:?} in {permission}"
+                );
+            }
+        }
+    }
+}

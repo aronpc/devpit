@@ -250,9 +250,9 @@ const LONGEST_BRIEF: usize = 8000;
 
 /// Whom a session reports to: the orchestrator's own name, which outlives a
 /// restart of its chat where the one the CLI makes up does not.
-pub(crate) fn report_to(folder: &Path) -> Option<String> {
+pub(crate) fn report_to(folder: &Path, by_bus: bool) -> Option<String> {
     let name = crate::orchestrator::address(folder)?;
-    Some(report_line(&name, !without_send_message(folder)))
+    Some(report_line(&name, !by_bus))
 }
 
 /// How a session reaches `name`: Claude Code's own SendMessage, or devpit's
@@ -267,26 +267,17 @@ pub(crate) fn report_line(name: &str, send_message: bool) -> String {
     )
 }
 
-/// Whether the orchestrator in `folder` speaks as a profile that is not
-/// Claude Code's, whose sessions it starts under the same profile.
-fn without_send_message(folder: &Path) -> bool {
-    let Ok(store) = crate::projects::store() else {
-        return false;
-    };
-    let profile = store
-        .orchestrator_settings(folder)
-        .ok()
-        .and_then(|all| all["profile"].as_str().map(str::to_owned));
-    let profiles = crate::agent_profiles::all(&store).unwrap_or_default();
-    profile
-        .and_then(|id| profiles.into_iter().find(|one| one.id == id))
-        .is_some_and(|one| one.driver != "claude")
-}
-
 /// A session's brief, with whom to report to, the person's standing rules
 /// and those of the session's own project after it — cut to what still
 /// fits, so they never make a brief too long to start.
-pub(crate) fn briefed(folder: &Path, prompt: &str, project: Option<ProjectName>) -> String {
+/// A session that reports `by_bus` is one devpit keeps, with no SendMessage
+/// to the orchestrator.
+pub(crate) fn briefed(
+    folder: &Path,
+    prompt: &str,
+    project: Option<ProjectName>,
+    by_bus: bool,
+) -> String {
     if prompt.trim().is_empty() {
         return prompt.to_owned();
     }
@@ -295,7 +286,7 @@ pub(crate) fn briefed(folder: &Path, prompt: &str, project: Option<ProjectName>)
         .unwrap_or_default();
     let mut brief = prompt.trim_end().to_owned();
     let added = [
-        ("Reporting back".to_owned(), report_to(folder)),
+        ("Reporting back".to_owned(), report_to(folder, by_bus)),
         ("Rules for sessions".to_owned(), rules_in(&preferences)),
         (
             format!("Rules for sessions: {}", project.map_or("", |one| one.name)),

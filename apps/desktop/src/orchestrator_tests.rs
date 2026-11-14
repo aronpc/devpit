@@ -1,4 +1,4 @@
-use super::{brief, free_folder, seed, seed_all, slug, speaks_as};
+use super::{brief, free_folder, may_orchestrate, seed, seed_all, slug, speaks_as};
 
 #[test]
 fn a_new_orchestrator_starts_with_its_brief_and_folders() {
@@ -161,4 +161,56 @@ fn the_brief_keeps_send_message_for_this_accounts_sessions() {
     }
     assert!(brief.contains("`devpit_session_message`"));
     assert!(brief.contains("`devpit_session_notify_idle`"));
+}
+
+fn profile(id: &str, base: &str, driver: &str, path: Option<&str>) -> devpit_rpc::Profile {
+    devpit_rpc::Profile {
+        id: id.to_owned(),
+        label: id.to_owned(),
+        command: id.to_owned(),
+        driver: driver.to_owned(),
+        path: path.map(str::to_owned),
+        reach: devpit_rpc::Reach::Runnable,
+        base: base.to_owned(),
+        args: Vec::new(),
+        env: Vec::new(),
+        mine: true,
+        models: Vec::new(),
+        own_models: Vec::new(),
+        offered: Vec::new(),
+        efforts: Vec::new(),
+        effort_default: None,
+        metered: true,
+        enabled: true,
+    }
+}
+
+/// Any CLI devpit holds a chat with can orchestrate; a terminal-only one is
+/// refused saying so, and one devpit has not read yet is still sent to Providers.
+#[test]
+fn an_orchestrator_runs_on_any_cli_that_holds_a_chat() {
+    for (base, driver) in [
+        ("claude", "claude"),
+        ("codex", "codex"),
+        ("opencode", "acp"),
+    ] {
+        let one = profile(base, base, driver, Some("/usr/bin/x"));
+        assert!(may_orchestrate(&one).is_ok(), "{base} is refused");
+    }
+    let gemini = profile("gemini", "gemini", "", Some("/usr/bin/gemini"));
+    let refused = may_orchestrate(&gemini).expect_err("gemini holds no chat");
+    assert!(refused.contains("terminal only"), "{refused}");
+    let unread = profile("codex2", "codex", "codex", None);
+    let refused = may_orchestrate(&unread).expect_err("not read yet");
+    assert!(refused.contains("Settings → Providers"), "{refused}");
+}
+
+/// An orchestrator on a CLI without SendMessage is pointed at the bus for
+/// every session, and starts sessions on any CLI.
+#[test]
+fn the_brief_points_an_orchestrator_on_any_cli_at_the_bus() {
+    let brief = brief();
+    assert!(brief.contains("or every session when you run on a CLI other than Claude Code"));
+    assert!(brief.contains("`devpit_session_notify_idle` for any other"));
+    assert!(brief.contains("on another with\n    `profile`"));
 }

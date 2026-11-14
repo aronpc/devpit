@@ -84,8 +84,15 @@ pub(crate) type Noticed = (String, String, Option<TurnFrom>);
 /// person's preferences for a CLI no hook hands them to.
 pub(crate) fn with_notice(noticed: &Noticed, prompt: &str, now_ms: f64) -> String {
     let (project_id, profile_id, from) = noticed;
+    let root = crate::projects::store()
+        .ok()
+        .and_then(|store| crate::projects::locate(&store, project_id).ok())
+        .map(|(_, root)| root);
     let since = since(project_id, profile_id, now_ms);
     let said = notices(from.as_ref(), since.as_deref(), prompt);
+    if let Some(root) = &root {
+        crate::draft_sending::hear(profile_id, root, &said);
+    }
     crate::orchestrator_brief::headed(project_id, profile_id, &said)
 }
 

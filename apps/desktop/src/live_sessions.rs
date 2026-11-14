@@ -397,13 +397,18 @@ fn terminal_named(profile_id: &str, name: &str) -> Result<Option<String>, RpcErr
     let listed = listed_dirs(profile_id)?
         .iter()
         .flat_map(|dir| listed_running(dir))
-        .find(|listed| listed.name.as_deref() == Some(name))
-        .ok_or_else(|| {
-            RpcError::new(
-                ErrorCode::NotFound,
-                format!("no session called {name} is running"),
-            )
-        })?;
+        .find(|listed| listed.name.as_deref() == Some(name));
+    if listed.is_none() {
+        if let Some(target) = crate::pane_sessions::target_named(profile_id, name) {
+            return Ok(Some(target));
+        }
+    }
+    let listed = listed.ok_or_else(|| {
+        RpcError::new(
+            ErrorCode::NotFound,
+            format!("no session called {name} is running"),
+        )
+    })?;
     let found = terminal_listed(&listed, &windows_now(), ptyd_pane_of);
     Ok(found.map(|(target, _)| target))
 }
@@ -447,10 +452,14 @@ pub(crate) fn running_named(profile_id: &str, name: &str) -> Result<Vec<Running>
         })
         .collect();
     if found.is_empty() {
-        return Err(RpcError::new(
-            ErrorCode::NotFound,
-            format!("no session called {name} is running"),
-        ));
+        return crate::pane_sessions::running_named(profile_id, name)
+            .map(|one| vec![one])
+            .ok_or_else(|| {
+                RpcError::new(
+                    ErrorCode::NotFound,
+                    format!("no session called {name} is running"),
+                )
+            });
     }
     Ok(found)
 }
@@ -608,12 +617,23 @@ pub(crate) fn orchestrator_sessions_now(profile_id: &str) -> Result<LiveSessions
         )
     };
     let own = config_of(profile_id)?;
-    let mut sessions = listing(&own.join("sessions"));
-    sessions.extend(in_their_accounts(
-        &crate::claude_accounts::read(),
-        listing,
-        &own,
-    ));
+    // An orchestrator on another CLI has no Claude Code account to list.
+    let mut sessions = if on_claude(profile_id) {
+        let mut listed = listing(&own.join("sessions"));
+        listed.extend(in_their_accounts(
+            &crate::claude_accounts::read(),
+            listing,
+            &own,
+        ));
+        listed
+    } else {
+        Vec::new()
+    };
+    for kept in crate::pane_sessions::rows(profile_id) {
+        if !sessions.iter().any(|one| one.name == kept.name) {
+            sessions.push(kept);
+        }
+    }
     sessions.sort_by(|a, b| a.name.cmp(&b.name));
     // Started here and stopped before the CLI lists it — on the folder's
     // trust question, most often.
@@ -657,6 +677,9 @@ pub(crate) fn in_their_accounts(
 /// Every folder this profile's sessions are listed in: its own account's,
 /// and that of each project with an account of its own, where it starts them.
 fn listed_dirs(profile_id: &str) -> Result<Vec<std::path::PathBuf>, RpcError> {
+    if !on_claude(profile_id) {
+        return Ok(Vec::new());
+    }
     let mut dirs = vec![config_of(profile_id)?.join("sessions")];
     let accounts = crate::claude_accounts::read();
     for one in &accounts.projects {
@@ -685,6 +708,16 @@ pub(crate) fn config_of(profile_id: &str) -> Result<std::path::PathBuf, RpcError
                 format!("no profile called {profile_id}"),
             )
         })
+}
+
+/// Whether `profile_id` runs Claude Code, whose registry lists its sessions.
+/// A profile devpit no longer has is read as it always was: Claude Code's.
+pub(crate) fn on_claude(profile_id: &str) -> bool {
+    crate::projects::store()
+        .ok()
+        .and_then(|store| crate::agent_profiles::all(&store).ok())
+        .and_then(|all| all.into_iter().find(|one| one.id == profile_id))
+        .is_none_or(|one| one.driver == crate::claude_accounts::DRIVER)
 }
 
 /// Where a profile's Claude Code keeps its config — and so its sessions.

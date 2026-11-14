@@ -9,7 +9,8 @@
 //! Words that do not let it go leave it waiting for the person's click, and
 //! from a channel's chat a word lets nothing go: there it is their press.
 
-use std::path::Path;
+use std::collections::HashMap;
+use std::path::{Path, PathBuf};
 use std::sync::{Mutex, OnceLock};
 
 use devpit_agentcli::person::{authorises, bare, last_said, From, Said};
@@ -125,9 +126,53 @@ pub(crate) fn send(
     Ok(json!({ "sent": name, "from": said.from.label(), "words": drafted }))
 }
 
+/// The person's last word to each orchestrator on a CLI whose log devpit does
+/// not read, by its folder: what devpit sent it, read as each turn starts.
+fn heard() -> &'static Mutex<HashMap<PathBuf, Said>> {
+    static HEARD: OnceLock<Mutex<HashMap<PathBuf, Said>>> = OnceLock::new();
+    HEARD.get_or_init(Mutex::default)
+}
+
+/// Keeps what the person said in a turn `sent` to the orchestrator in `root`
+/// speaking as `profile`, when its log is not one devpit reads.
+pub(crate) fn hear(profile: &str, root: &Path, sent: &str) {
+    if !crate::live_sessions::on_claude(profile) {
+        heard_in(root, sent);
+    }
+}
+
+/// [`hear`], for a CLI whose log devpit does not read. A turn devpit started
+/// itself leaves the person's last word as it was.
+pub(crate) fn heard_in(root: &Path, sent: &str) {
+    let id = format!("said_{}", ulid::Ulid::generate());
+    if let (Some(said), Ok(mut heard)) =
+        (devpit_agentcli::person::said_in(&id, sent), heard().lock())
+    {
+        heard.insert(at(root), said);
+    }
+}
+
+fn at(root: &Path) -> PathBuf {
+    root.canonicalize().unwrap_or_else(|_| root.to_path_buf())
+}
+
+/// What devpit heard the person last say to the orchestrator in `root`.
+pub(crate) fn heard_last(root: &Path) -> Result<Said, String> {
+    heard()
+        .lock()
+        .ok()
+        .and_then(|heard| heard.get(&at(root)).cloned())
+        .ok_or_else(|| {
+            "devpit has heard nothing the person said in this chat since it started".to_owned()
+        })
+}
+
 /// The person's last message in the log of `profile`'s orchestrator,
-/// standing in `root`.
+/// standing in `root`: Claude Code's own, else what devpit heard.
 pub(crate) fn last_word(profile: &str, root: &Path) -> Result<Said, String> {
+    if !crate::live_sessions::on_claude(profile) {
+        return heard_last(root);
+    }
     last_said(&log_tail(profile, root)?)
         .ok_or_else(|| "devpit found nothing the person said in this conversation".to_owned())
 }

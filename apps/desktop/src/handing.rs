@@ -61,36 +61,47 @@ pub(crate) fn hand(
     // The last handoff on the card, so a new session starts where one stopped.
     let comments = store.comments(card_id).map_err(|err| err.to_string())?;
     let prompt = crate::handoff::briefed(prompt, crate::handoff::latest(&comments));
-    let line =
-        crate::opening::launched(profile_id, &board.project_id, &name, &prompt, wanted.model)
+    let runs_as = wanted.profile.unwrap_or(profile_id);
+    let line = crate::opening::launched(runs_as, &board.project_id, &name, &prompt, wanted.model)
+        .map_err(|err| err.message)?;
+    let pane_id =
+        crate::opening::typed_in(app, &board.project_id, &tab_id, &cwd, &line, Some(runs_as))
             .map_err(|err| err.message)?;
-    let pane_id = crate::opening::typed_in(
-        app,
-        &board.project_id,
-        &tab_id,
-        &cwd,
-        &line,
-        Some(profile_id),
-    )
-    .map_err(|err| err.message)?;
+    let project_name = crate::projects::project_list_unread_now()
+        .ok()
+        .and_then(|list| {
+            list.projects
+                .into_iter()
+                .find(|one| one.id == board.project_id)
+                .map(|one| one.name)
+        });
+    let kept = crate::opening::kept(
+        profile_id,
+        runs_as,
+        crate::pane_sessions::Kept {
+            profile: profile_id.to_owned(),
+            runs_as: runs_as.to_owned(),
+            name: name.clone(),
+            project_id: board.project_id.clone(),
+            project_name: project_name.clone(),
+            card_id: Some(card_id.to_owned()),
+            cwd: cwd.display().to_string(),
+            pane_id: pane_id.clone(),
+        },
+    );
     // Looked for from now: before the CLI lists it, it may already be stopped
     // on a question only the person can answer.
-    crate::starting::began(crate::starting::Starting {
-        profile: profile_id.to_owned(),
-        name: name.clone(),
-        project_id: board.project_id.clone(),
-        project_name: crate::projects::project_list_unread_now()
-            .ok()
-            .and_then(|list| {
-                list.projects
-                    .into_iter()
-                    .find(|one| one.id == board.project_id)
-                    .map(|one| one.name)
-            }),
-        cwd: cwd.display().to_string(),
-        pane_id: pane_id.clone(),
-        at: std::time::Instant::now(),
-    });
+    if !kept {
+        crate::starting::began(crate::starting::Starting {
+            profile: profile_id.to_owned(),
+            name: name.clone(),
+            project_id: board.project_id.clone(),
+            project_name,
+            cwd: cwd.display().to_string(),
+            pane_id: pane_id.clone(),
+            at: std::time::Instant::now(),
+        });
+    }
     let _ = tauri::Emitter::emit(
         app,
         crate::opening::TAB_OPENED,
@@ -103,6 +114,7 @@ pub(crate) fn hand(
 
     Ok(json!({
         "name": name,
+        "kept": kept,
         "cardId": card_id,
         "cwd": cwd.display().to_string(),
         "next": "It runs in a terminal tab of the project, where the person can watch it. Message it by this name with SendMessage once it is up, and pass notify_when_idle to hear when it is done.",

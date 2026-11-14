@@ -1,7 +1,8 @@
 use serde_json::json;
 
 use super::{
-    asks_to_stop, authorises, from_channel, last_said, on_proposals, From, Verdict, FROM_THE_REMOTE,
+    asks_to_stop, authorises, by_devpit, from_channel, last_said, on_proposals, said_in, From,
+    Verdict, FROM_THE_REMOTE,
 };
 
 /// A log, one entry per line, in the shapes Claude Code 2.1.294 writes.
@@ -442,4 +443,24 @@ fn a_word_or_a_mark_alone_approves_or_discards_the_proposals_put_to_the_person()
     ] {
         assert_eq!(on_proposals(said), None, "{said}");
     }
+}
+
+/// A turn sent to a CLI whose log devpit does not read is read as sent: the
+/// person's words under devpit's notices, from where the first one says, and
+/// nothing for a turn devpit started itself.
+#[test]
+fn a_turn_sent_to_another_cli_is_read_as_the_persons_words() {
+    let said = said_in(
+        "t1",
+        "[devpit, not the person] Since your last message: api ended.\n\nstop api",
+    )
+    .expect("the person's");
+    assert_eq!(said.text, "stop api");
+    assert_eq!(said.from, From::Composer);
+    let telegram = format!("{}\n\n✅", from_channel("telegram").expect("a channel"));
+    assert_eq!(
+        said_in("t2", &telegram).map(|said| said.from),
+        Some(From::Channel("telegram"))
+    );
+    assert!(said_in("t3", &by_devpit("a message from session api.")).is_none());
 }

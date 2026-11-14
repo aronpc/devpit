@@ -46,14 +46,14 @@ fn the_rules_for_sessions_go_with_every_brief() {
     let folder = dir.path().join("workspace");
     std::fs::create_dir_all(folder.join("context")).expect("context");
     std::fs::write(folder.join("context/preferences.md"), text).expect("prefs");
-    let brief = super::briefed(&folder, "Fix the invoice total.", None);
+    let brief = super::briefed(&folder, "Fix the invoice total.", None, false);
     assert_eq!(
         brief,
         "Fix the invoice total.\n\n## Reporting back\n\nThe orchestrator that started you is `orchestrator-workspace`: SendMessage to that name to report back. It keeps the name when its chat restarts.\n\n## Rules for sessions\n\n- Never push to main.\n- Write commit messages in English."
     );
     // Too long already, it goes as it is rather than being refused.
     let long = "x".repeat(7990);
-    assert_eq!(super::briefed(&folder, &long, None), long);
+    assert_eq!(super::briefed(&folder, &long, None, false), long);
 }
 
 /// A session reports to the orchestrator by a name taken from its folder, so
@@ -65,12 +65,12 @@ fn a_session_is_told_the_orchestrators_lasting_name() {
         crate::orchestrator::address(folder).as_deref(),
         Some("orchestrator-workspace")
     );
-    let brief = super::briefed(folder, "Ship it.", None);
+    let brief = super::briefed(folder, "Ship it.", None, false);
     assert!(brief.starts_with("Ship it.\n\n## Reporting back\n\n"));
     assert!(brief.contains("SendMessage to that name"));
     assert!(brief.contains("`orchestrator-workspace`"));
     // Nothing to brief, nothing added.
-    assert_eq!(super::briefed(folder, "  ", None), "  ");
+    assert_eq!(super::briefed(folder, "  ", None, false), "  ");
 }
 
 /// How an orchestrator's preferences read today: the rules in the middle,
@@ -223,7 +223,7 @@ fn the_brief_takes_the_rules_up_to_the_next_heading() {
     for text in [REORGANISED, RULES_LAST] {
         let (_dir, folder) = preferences_in(text);
         assert_eq!(
-            briefed(&folder, "Go.", Some(BILLING)),
+            briefed(&folder, "Go.", Some(BILLING), false),
             format!("Go.\n\n{REPORTING}\n\n{GENERAL}")
         );
     }
@@ -237,7 +237,7 @@ fn the_brief_takes_the_rules_up_to_the_next_heading() {
     )
     .expect("note");
     assert_eq!(
-        briefed(&folder, "Go.", Some(BILLING)),
+        briefed(&folder, "Go.", Some(BILLING), false),
         format!("Go.\n\n{REPORTING}\n\n{GENERAL}")
     );
 }
@@ -248,7 +248,7 @@ fn a_session_gets_its_own_projects_rules_and_no_one_elses() {
         "{RULES_LAST}\n## Rules for sessions: billing\n- Deploy only after the gate.\n\n## Rules for sessions: shop, prj_billing\n- Ask before a migration.\n\n## Rules for sessions: shop\n- The shop's DNS is the person's.\n"
     );
     let (_dir, folder) = preferences_in(&text);
-    let billing = briefed(&folder, "Go.", Some(BILLING));
+    let billing = briefed(&folder, "Go.", Some(BILLING), false);
     assert_eq!(
         billing,
         format!("Go.\n\n{REPORTING}\n\n{GENERAL}\n\n## Rules for sessions: billing\n\n- Deploy only after the gate.\n\n- Ask before a migration.")
@@ -257,19 +257,22 @@ fn a_session_gets_its_own_projects_rules_and_no_one_elses() {
         id: "prj_shop",
         name: "Shop",
     };
-    let other = briefed(&folder, "Go.", Some(shop));
+    let other = briefed(&folder, "Go.", Some(shop), false);
     assert!(!other.contains("Deploy only after the gate."));
     assert!(other.ends_with("## Rules for sessions: Shop\n\n- Ask before a migration.\n\n- The shop's DNS is the person's."));
     // Rules of a project and none general: the project's alone.
     let (_only, folder) =
         preferences_in("## Rules for sessions: billing\n- Deploy only after the gate.\n");
     assert_eq!(
-        briefed(&folder, "Go.", Some(BILLING)),
+        briefed(&folder, "Go.", Some(BILLING), false),
         format!(
             "Go.\n\n{REPORTING}\n\n## Rules for sessions: billing\n\n- Deploy only after the gate."
         )
     );
-    assert_eq!(briefed(&folder, "Go.", None), format!("Go.\n\n{REPORTING}"));
+    assert_eq!(
+        briefed(&folder, "Go.", None, false),
+        format!("Go.\n\n{REPORTING}")
+    );
 }
 
 /// A session on a CLI without SendMessage is told devpit's own tool instead.

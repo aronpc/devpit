@@ -754,10 +754,12 @@ fn respond_in(
         // No card: a session of its own, in the project's folder.
         "start" if card_id.is_empty() => {
             let app = app.ok_or("devpit's window is not running")?;
+            let profile = orchestrating(here)?;
+            let runs_as = crate::opening::runs_as(profile, text("profile").as_deref())?;
             let started = crate::opening::open(
                 app,
                 project,
-                orchestrating(here)?,
+                profile,
                 &crate::orchestrator_notes::briefed(
                     Path::new(&here.root_path),
                     &crate::project_agent::nudged(
@@ -768,22 +770,20 @@ fn respond_in(
                         id: &project.id,
                         name: &project.name,
                     }),
+                    crate::opening::by_bus(profile, &runs_as),
                 ),
                 crate::opening::Wanted {
                     name: text("name").as_deref(),
                     model: text("model").as_deref(),
+                    profile: Some(&runs_as),
                 },
             )
             .map_err(said)?;
-            let profile = orchestrating(here)?;
-            crate::starting::once_up(
-                started,
-                &crate::starting::listed_in(profile, &project.id),
-                crate::starting::UP_WITHIN,
-            )
+            crate::pane_sessions::once_up(started, profile, &project.id)
         }
         "start" => {
             let profile = orchestrating(here)?;
+            let runs_as = crate::opening::runs_as(profile, text("profile").as_deref())?;
             let started = crate::handing::hand(
                 app.ok_or("devpit's window is not running")?,
                 &board,
@@ -799,21 +799,19 @@ fn respond_in(
                         id: &project.id,
                         name: &project.name,
                     }),
+                    crate::opening::by_bus(profile, &runs_as),
                 ),
                 crate::opening::Wanted {
                     name: text("name").as_deref(),
                     model: text("model").as_deref(),
+                    profile: Some(&runs_as),
                 },
                 // Its own checkout unless told otherwise: the project's folder is
                 // shared with whatever else runs there.
                 (asked.params.get("checkout").and_then(Value::as_bool) == Some(false))
                     .then(|| Path::new(&project.root_path)),
             )?;
-            crate::starting::once_up(
-                started,
-                &crate::starting::listed_in(profile, &project.id),
-                crate::starting::UP_WITHIN,
-            )
+            crate::pane_sessions::once_up(started, profile, &project.id)
         }
         _ => unreachable!("checked against METHODS above"),
     };

@@ -414,6 +414,17 @@ fn a_session_is_started_in_a_model_only_when_one_is_asked_for() {
     assert_eq!(schema["required"], json!(["project", "prompt"]));
 }
 
+/// An orchestrator on any CLI starts a session on another, by its profile.
+#[test]
+fn a_session_may_be_started_on_another_cli() {
+    let tool = TOOLS
+        .iter()
+        .find(|tool| tool.name == "devpit_start_session")
+        .expect("the tool");
+    assert_eq!((tool.input)()["properties"]["profile"]["type"], "string");
+    assert!(!tool.description.contains("start a Claude Code session"));
+}
+
 /// A consult's answer comes back whole: cut, the rest would be asked for
 /// again and spend another of the session's questions.
 #[test]

@@ -13,14 +13,14 @@ import { useShell } from './useShell'
  * already there, its account changed.
  *
  * The accounts are the profiles configured in Providers: each one a command
- * the person types, read once for what it sets. Claude Code only — reaching
- * other sessions is what an orchestrator is for.
+ * the person types, read once for what it sets. Any CLI devpit holds a chat
+ * with — an orchestrator is a chat; a terminal-only one has no driver.
  */
 
-/** Claude Code accounts. A command devpit has not read yet is listed too, as
- *  something to set up rather than something missing. */
-export const claudeAccounts = (profiles: readonly Profile[]): readonly Profile[] =>
-  profiles.filter((one) => one.driver === 'claude' && one.reach !== 'missing')
+/** The accounts that hold a chat. A command devpit has not read yet is listed
+ *  too, as something to set up rather than something missing. */
+export const chatAccounts = (profiles: readonly Profile[]): readonly Profile[] =>
+  profiles.filter((one) => one.driver !== '' && one.reach !== 'missing')
 
 export const needsReading = (profile: Profile): boolean => profile.path === null
 
@@ -46,7 +46,7 @@ export function OrchestratorDialog({
   useEffect(() => {
     const read = (): void =>
       void ask(() => commands.agentProfiles()).then((found) => {
-        const listed = claudeAccounts(found.data ?? [])
+        const listed = chatAccounts(found.data ?? [])
         setAccounts(listed)
         setPicked((was) => was ?? listed.find((one) => !needsReading(one))?.id ?? null)
       })
@@ -74,8 +74,8 @@ export function OrchestratorDialog({
           <h2 className="addpj__t" id="orchT">{editing ? `${editing.name} runs as` : 'New orchestrator'}</h2>
           <p className="addpj__d">
             {editing
-              ? 'Its next turn starts under this account. Conversations so far stay with the one they began with.'
-              : 'A chat that sees every project and the sessions of its account.'}
+              ? 'Its next conversation starts under this account, on its CLI, handed over from its notes. Its folder and linked projects stay; conversations so far stay with the one they began with.'
+              : 'A chat that sees every project and the sessions of its account, on any CLI that holds a chat.'}
           </p>
         </div>
         {!editing && (
@@ -87,7 +87,7 @@ export function OrchestratorDialog({
         <div className="pdlg__f">
           <span>Runs as</span>
           {accounts.length === 0 ? (
-            <p className="addpj__d">No Claude Code account is configured. Add one in Settings → Providers.</p>
+            <p className="addpj__d">No account that holds a chat is configured. Add one in Settings → Providers.</p>
           ) : (
             <FieldSelect
               label="Runs as"
