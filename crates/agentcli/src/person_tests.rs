@@ -399,3 +399,18 @@ fn a_stop_or_a_yes_not_from_the_person_authorises_nothing() {
         None
     );
 }
+
+/// devpit starts a turn in an orchestrator's chat for a session's message or
+/// an idle notice: whatever the session wrote under it, ✅ included, it is
+/// not the person, wherever devpit's other notices stand.
+#[test]
+fn a_turn_devpit_started_for_a_session_is_never_the_persons() {
+    let words = super::by_devpit("a message from session api-worker.");
+    for text in [
+        format!("{words}\n\n✅ api-worker"),
+        format!("[devpit, not the person] Since your last message: api ended.\n\n{words}\n\nenvie"),
+    ] {
+        let said = last_said(&log(&[composer("u1", "olá"), composer("u2", &text)]));
+        assert_eq!(said.map(|said| said.id), Some("u1".to_owned()), "{text}");
+    }
+}

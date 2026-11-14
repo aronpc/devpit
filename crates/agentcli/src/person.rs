@@ -27,6 +27,15 @@ const DEVPIT_NOTICE: &str = "[devpit, not the person]";
 pub const FROM_THE_REMOTE: &str =
     "[devpit, not the person] The person sent this from devpit's Remote, on another device.";
 
+/// devpit's notice above a turn it started itself: a session's message or an
+/// idle notice, never the person's, whatever is written under it.
+const BY_DEVPIT: &str = "[devpit, not the person] devpit started this turn, not the person:";
+
+/// [`BY_DEVPIT`], saying what the turn is for.
+pub fn by_devpit(what: &str) -> String {
+    format!("{BY_DEVPIT} {what}")
+}
+
 /// The channels a person can talk to an orchestrator from, by id and name.
 const CHANNELS: [(&str, &str); 1] = [("telegram", "Telegram")];
 
@@ -109,7 +118,7 @@ fn person_said(entry: &Value) -> Option<Said> {
         }
         _ => return None,
     };
-    let (text, sent_from) = without_notices(&text);
+    let (text, sent_from) = without_notices(&text)?;
     Some(Said {
         id: entry["uuid"].as_str()?.to_owned(),
         text: text.trim().to_owned(),
@@ -123,12 +132,16 @@ fn person_said(entry: &Value) -> Option<Said> {
 /// `text` without devpit's notices above it, and where the first said the
 /// person sent it from: the Remote, or a channel. Only the first, which is
 /// where devpit puts it: words typed under it cannot pass for another door.
-fn without_notices(mut text: &str) -> (&str, Option<From>) {
+/// Nothing for a turn devpit started itself, which is no one's word.
+fn without_notices(mut text: &str) -> Option<(&str, Option<From>)> {
     let mut sent_from = None;
     let mut first = true;
     while text.trim_start().starts_with(DEVPIT_NOTICE) {
         let (notice, rest) = text.trim_start().split_once("\n\n").unwrap_or((text, ""));
         let notice = notice.trim();
+        if notice.starts_with(BY_DEVPIT) {
+            return None;
+        }
         if first && notice == FROM_THE_REMOTE {
             sent_from = Some(From::Remote);
         }
@@ -141,7 +154,7 @@ fn without_notices(mut text: &str) -> (&str, Option<From>) {
         first = false;
         text = rest;
     }
-    (text, sent_from)
+    Some((text, sent_from))
 }
 
 /// Marks that say yes in any language: the yes needs no vocabulary. No 👍:
