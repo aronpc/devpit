@@ -126,13 +126,16 @@ starts with nobody asking, and a repository's allow rules would widen what
 plan mode lets it run. What the repository still owes it, devpit hands over
 itself, read from the project's root through its links, each file capped:
 
-- **Its deny rules.** `permissions.deny` from `.claude/settings.json` and
-  `.claude/settings.local.json` join the deny rules above, so a file the
-  repository fenced off, such as `.env`, stays unreadable. A settings file
-  longer than 256 KiB or not JSON adds none. Its allow rules never apply.
-- **Its instructions.** The agent's first message carries `CLAUDE.md` and
-  `AGENTS.md`, each once (a link to the other goes once) and up to 32 KiB,
-  marked as the project's instructions, beside the memory summary.
+- **Its deny and ask rules.** `permissions.deny` and `permissions.ask` from
+  `.claude/settings.json` and `.claude/settings.local.json` join the deny
+  rules above: nobody answers an ask in the agent's process, so it refuses
+  as a deny, and a file the repository fenced off, such as `.env`, stays
+  unreadable. A settings file longer than 256 KiB or not JSON adds none, nor
+  does a rule with a control character. Its allow rules never apply.
+- **Its instructions.** The agent's first message carries `CLAUDE.md`,
+  `.claude/CLAUDE.md` and `AGENTS.md`, each once (a link to another goes
+  once) and up to 32 KiB, marked as the project's instructions, beside the
+  memory summary. An `@path` import inside them is not followed.
 
 - **Wakes when called.** The first question starts the process. Further
   questions go to the same process, one at a time. Work an answer leaves

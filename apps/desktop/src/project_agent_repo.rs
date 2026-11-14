@@ -1,22 +1,25 @@
 //! What a project agent takes from its repository, which it no longer loads
 //! itself: it starts with the person's own settings alone. The repository's
-//! deny rules still bind it, and its own instructions still reach it; its allow
-//! rules never do.
+//! deny and ask rules still bind it, and its own instructions still reach it;
+//! its allow rules never do.
 
 use std::io::Read;
 use std::path::Path;
 
-/// The repository's Claude settings whose deny rules bind its agent.
+/// The repository's Claude settings whose deny and ask rules bind its agent.
 const SETTINGS: [&str; 2] = [".claude/settings.json", ".claude/settings.local.json"];
 /// The project's own instructions, handed over in the agent's first message.
-const INSTRUCTIONS: [&str; 2] = ["CLAUDE.md", "AGENTS.md"];
+/// An `@path` import inside them is not followed.
+const INSTRUCTIONS: [&str; 3] = ["CLAUDE.md", ".claude/CLAUDE.md", "AGENTS.md"];
+/// Nobody answers an ask in the agent's process, so an ask refuses as a deny.
+const REFUSING: [&str; 2] = ["/permissions/deny", "/permissions/ask"];
 /// More than a settings file needs: a longer one is not read.
 const SETTINGS_BYTES: u64 = 256 * 1024;
 /// How much of each instructions file is handed over.
 const INSTRUCTIONS_BYTES: usize = 32 * 1024;
-/// The most deny rules taken, and the longest one.
+/// The most rules taken, and the longest one.
 const RULES: usize = 200;
-const RULE_CHARS: usize = 500;
+const RULE_BYTES: usize = 500;
 
 /// A regular file of the project, resolved inside its root through its links,
 /// with at most `limit` bytes read; `None` when there is none or it leads out.
@@ -37,8 +40,9 @@ fn read(root: &Path, relative: &str, limit: u64) -> Option<(String, bool)> {
     Some((String::from_utf8_lossy(&bytes).into_owned(), more))
 }
 
-/// The repository's deny rules, from its settings at its root, each once.
-/// A file that is too long or not JSON adds none.
+/// The repository's deny and ask rules, from its settings at its root, each
+/// once. A file that is too long or not JSON adds none, and a rule with a
+/// control character is left out: it could not be passed to the CLI.
 pub(crate) fn denied(root: &Path) -> Vec<String> {
     let mut rules: Vec<String> = Vec::new();
     for file in SETTINGS {
@@ -48,15 +52,17 @@ pub(crate) fn denied(root: &Path) -> Vec<String> {
         let Ok(settings) = serde_json::from_str::<serde_json::Value>(&text) else {
             continue;
         };
-        let deny = settings
-            .pointer("/permissions/deny")
-            .and_then(serde_json::Value::as_array)
-            .into_iter()
+        let refused = REFUSING
+            .iter()
+            .filter_map(|key| settings.pointer(key))
+            .filter_map(serde_json::Value::as_array)
             .flatten()
             .filter_map(serde_json::Value::as_str)
             .map(str::trim)
-            .filter(|rule| !rule.is_empty() && rule.len() <= RULE_CHARS && !rule.contains('\n'));
-        for rule in deny {
+            .filter(|rule| {
+                !rule.is_empty() && rule.len() <= RULE_BYTES && !rule.chars().any(char::is_control)
+            });
+        for rule in refused {
             if rules.len() < RULES && !rules.iter().any(|one| one == rule) {
                 rules.push(rule.to_owned());
             }

@@ -77,3 +77,40 @@ fn instructions_go_once_each_marked_and_cut_when_long() {
     );
     assert!(said.len() < 2 * INSTRUCTIONS_BYTES + 1024);
 }
+
+#[test]
+fn a_rule_the_repository_asks_about_is_refused_like_one_it_denies() {
+    let dir = project();
+    let root = dir.path();
+    std::fs::write(
+        root.join(".claude/settings.json"),
+        r#"{"permissions":{"deny":["Read(./.env)"],"ask":["Read(./secrets/**)","Read(./.env)"]}}"#,
+    )
+    .expect("settings");
+    assert_eq!(denied(root), ["Read(./.env)", "Read(./secrets/**)"]);
+}
+
+#[test]
+fn a_rule_with_a_control_character_is_left_out_so_the_agent_still_starts() {
+    let dir = project();
+    let root = dir.path();
+    std::fs::write(
+        root.join(".claude/settings.json"),
+        r#"{"permissions":{"deny":["Read(\u0000)","Read(./a\tb)","Read(./.env)"]}}"#,
+    )
+    .expect("settings");
+    assert_eq!(denied(root), ["Read(./.env)"]);
+}
+
+#[test]
+fn instructions_kept_in_the_claude_folder_are_handed_over_too() {
+    let dir = project();
+    let root = dir.path();
+    std::fs::write(root.join(".claude/CLAUDE.md"), "# Here\n\nUse spaces.\n").expect("claude");
+    let said = instructions(root);
+    assert!(
+        said.contains("<project-instructions file=\".claude/CLAUDE.md\">"),
+        "{said}"
+    );
+    assert!(said.contains("Use spaces."), "{said}");
+}
