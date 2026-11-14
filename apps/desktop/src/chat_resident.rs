@@ -31,7 +31,7 @@ use serde_json::{json, Value};
 use tauri::ipc::Channel;
 use tauri::{AppHandle, Emitter, Manager};
 
-use crate::chat_listening::{Ear, Woken};
+use crate::chat_listening::{Claim, Displaced, Ear, Woken};
 
 /// The event a woken turn is announced on, with its conversation id.
 pub(crate) const WOKE: &str = "chat:woke";
@@ -244,6 +244,9 @@ pub(crate) fn or_say(
             .get(&staying.conversation_id)
             .map(|live| live.ear.clone())
             .ok_or(AgentError::NotInstalled)?;
+        // Busy from here, under the lock that publishes it: another
+        // conversation looking now finds a turn on it, not an idle process.
+        ear.expect();
         drop(all);
         // A new process is a new connection: one asked to be reachable is
         // reached again.
@@ -255,8 +258,8 @@ pub(crate) fn or_say(
     // A woken turn still running finishes first: the person's words go in
     // after it, not into the middle of it. A wait that ended in this
     // conversation being displaced falls through: the say below starts a
-    // process of its own.
-    if !ear.claim(&tell) && !ear.closed() {
+    // process of its own. Stop wins over a closing that came with it.
+    if ear.claim(&tell) == Claim::Stopped {
         return Ok(stopped());
     }
     on_began();
@@ -388,68 +391,61 @@ fn idle_out(staying: &Staying, stamp: u64) {
         });
 }
 
-/// What a new listener in `project` does to the residents already there. One
-/// conversation of an orchestrator listens at a time — two would both answer
-/// the same message — but a chat asked to be reachable keeps its process: it
-/// is its claude.ai link, and only turning Remote Control off lets it go. One
-/// with a turn on it is not closed under the turn: it is marked, and closes
-/// when the turn ends.
-#[derive(Default)]
-pub(crate) struct Evicted {
-    /// Idle: closed now.
-    pub(crate) now: Vec<String>,
-    /// With a turn on: closed when that turn ends.
-    pub(crate) later: Vec<String>,
-}
-
+/// The residents a new listener in `project` displaces. One conversation of an
+/// orchestrator listens at a time — two would both answer the same message —
+/// but a chat asked to be reachable keeps its process: it is its claude.ai
+/// link, and only turning Remote Control off lets it go.
 pub(crate) fn evicted<'a>(
     listening: impl Iterator<Item = (&'a str, &'a str)>,
     project: &str,
     reachable: impl Fn(&str) -> bool,
-    busy: impl Fn(&str) -> bool,
-) -> Evicted {
-    let mut gone = Evicted::default();
-    for (key, of) in listening {
-        if of != project || reachable(key) {
-            continue;
-        }
-        if busy(key) {
-            gone.later.push(key.to_owned());
-        } else {
-            gone.now.push(key.to_owned());
-        }
+) -> Vec<String> {
+    listening
+        .filter(|(key, of)| *of == project && !reachable(key))
+        .map(|(key, _)| key.to_owned())
+        .collect()
+}
+
+/// Displaces one resident. Idle, it comes out of the map committed as closed,
+/// for the caller to close; with a turn on it, it stays — Stop, steer and
+/// control still reach it — and `close` runs when the turn ends. Called under
+/// the residents' lock, which is before the ear's: the ear decides busy or
+/// idle and arms the closer in one step.
+pub(crate) fn give_way<T>(
+    all: &mut HashMap<String, T>,
+    key: &str,
+    ear_of: impl Fn(&T) -> &Arc<Ear>,
+    close: impl FnOnce() + Send + 'static,
+) -> Option<T> {
+    match ear_of(all.get(key)?).displace(close) {
+        Displaced::Now => all.remove(key),
+        Displaced::Later => None,
     }
-    gone
 }
 
 /// This conversation becomes the project's listener: the others close, the
-/// busy ones when the turn on them ends — kept until then, so Stop, steer
-/// and control still reach them.
+/// busy ones when the turn on them ends.
 fn others_give_way(all: &mut HashMap<String, Live>, staying: &Staying) {
-    let listening = all
-        .iter()
-        .filter(|(key, _)| key.as_str() != staying.conversation_id)
-        .map(|(key, live)| (key.as_str(), live.project_id.as_str()));
-    let gone = evicted(
-        listening,
+    let others: Vec<String> = evicted(
+        all.iter()
+            .filter(|(key, _)| key.as_str() != staying.conversation_id)
+            .map(|(key, live)| (key.as_str(), live.project_id.as_str())),
         &staying.project_id,
         |key| crate::chat_remote::wanted(&staying.app, key),
-        |key| all.get(key).is_some_and(|live| live.ear.busy()),
     );
-    for key in gone.now {
-        if let Some(old) = all.remove(&key) {
-            old.resident.close();
-        }
-    }
-    for key in gone.later {
+    for key in others {
         // The closer takes the residents' lock of its own: the ear calls it
         // outside its lock, and never from here.
-        if let Some(live) = all.get(&key) {
-            let app = staying.app.clone();
-            let closing = key.clone();
-            let marked = live.ear.clone();
-            live.ear
-                .mark(move || close_generation(&app, &closing, &marked));
+        let Some(marked) = all.get(&key).map(|live| live.ear.clone()) else {
+            continue;
+        };
+        let (app, closing) = (staying.app.clone(), key.clone());
+        let closer = {
+            let marked = marked.clone();
+            move || close_generation(&app, &closing, &marked)
+        };
+        if let Some(old) = give_way(all, &key, |live| &live.ear, closer) {
+            old.resident.close();
         }
     }
 }

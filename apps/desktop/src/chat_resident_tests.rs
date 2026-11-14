@@ -4,8 +4,8 @@ use std::time::Duration;
 
 use devpit_agentcli::resident::Heard;
 
-use super::{evicted, speaks_to, take_generation};
-use crate::chat_listening::Ear;
+use super::{evicted, give_way, speaks_to, take_generation};
+use crate::chat_listening::{Claim, Ear};
 
 #[test]
 fn a_reachable_chat_is_not_closed_by_another_conversation() {
@@ -14,41 +14,74 @@ fn a_reachable_chat_is_not_closed_by_another_conversation() {
         ("remote_b", "orch"),
         ("elsewhere", "api"),
     ];
-    let gone = evicted(
-        listening.into_iter(),
-        "orch",
-        |key| key == "remote_b",
-        |_| false,
-    );
-    assert_eq!(gone.now, ["orch_a"]);
-    assert!(gone.later.is_empty());
+    let gone = evicted(listening.into_iter(), "orch", |key| key == "remote_b");
+    assert_eq!(gone, ["orch_a"]);
 }
 
 #[test]
 fn two_remote_control_chats_in_one_project_both_stay() {
     let listening = [("remote_a", "api")];
-    let gone = evicted(listening.into_iter(), "api", |_| true, |_| false);
-    assert!(gone.now.is_empty() && gone.later.is_empty());
+    assert!(evicted(listening.into_iter(), "api", |_| true).is_empty());
 }
 
 /// Closing the other conversation under its turn is what cut turns short:
-/// a busy one is closed after, an idle one now, a reachable one never.
+/// a busy one is closed after, an idle one now.
 #[test]
 fn a_busy_conversation_is_closed_after_its_turn_not_under_it() {
-    let listening = [
-        ("busy_a", "orch"),
-        ("idle_b", "orch"),
-        ("remote_c", "orch"),
-        ("elsewhere", "api"),
-    ];
-    let gone = evicted(
-        listening.into_iter(),
-        "orch",
-        |key| key == "remote_c",
-        |key| key == "busy_a" || key == "remote_c",
+    let busy = Arc::new(Ear::default());
+    busy.expect();
+    let idle = Arc::new(Ear::default());
+    let mut all: HashMap<String, Arc<Ear>> =
+        HashMap::from([("busy".into(), busy.clone()), ("idle".into(), idle.clone())]);
+    assert!(give_way(&mut all, "busy", |ear| ear, || {}).is_none());
+    assert!(all.contains_key("busy"), "kept for its turn");
+    assert!(!busy.closed());
+    let out = give_way(&mut all, "idle", |ear| ear, || {});
+    assert!(out.is_some_and(|ear| Arc::ptr_eq(&ear, &idle)));
+    assert!(idle.closed(), "committed before the resident is closed");
+}
+
+/// The new generation is published under the lock and a second conversation
+/// looks right then, before the turn has claimed it: with the wait marked
+/// under that lock it finds a turn on it, arms the closer, and the turn is
+/// neither closed under nor sent `Gone`.
+#[test]
+fn a_new_generation_is_not_seen_idle_before_its_turn_claims_it() {
+    let all = Arc::new(std::sync::Mutex::new(HashMap::<String, Arc<Ear>>::new()));
+    let (published, resume) = (Arc::new(Barrier::new(2)), Arc::new(Barrier::new(2)));
+    let ear = Arc::new(Ear::default());
+    let turn = {
+        let (all, ear, published, resume) =
+            (all.clone(), ear.clone(), published.clone(), resume.clone());
+        std::thread::spawn(move || {
+            {
+                let mut held = all.lock().unwrap();
+                held.insert("a".into(), ear.clone());
+                ear.expect(); // as or_say does, before it lets go
+            }
+            published.wait();
+            resume.wait(); // paused between the unlock and the claim
+            let (tell, heard) = mpsc::channel();
+            let claimed = ear.claim(&tell);
+            (claimed, heard)
+        })
+    };
+    published.wait();
+    // The other conversation, in the gap.
+    let out = {
+        let mut held = all.lock().unwrap();
+        give_way(&mut held, "a", |ear| ear, || {})
+    };
+    resume.wait();
+    assert!(out.is_none(), "the generation was closed under its turn");
+    assert!(all.lock().unwrap().contains_key("a"));
+    let (claimed, heard) = turn.join().unwrap();
+    assert_eq!(claimed, Claim::Claimed, "the turn kept its generation");
+    assert!(
+        heard.recv_timeout(Duration::from_millis(50)).is_err(),
+        "no Gone from a closed generation"
     );
-    assert_eq!(gone.now, ["idle_b"]);
-    assert_eq!(gone.later, ["busy_a"]);
+    assert!(!ear.closed());
 }
 
 /// The agent's process ending or missing is the agent's, so a turn it cut
@@ -547,7 +580,7 @@ fn a_prompt_never_goes_to_a_closed_process() {
         "another generation"
     );
 
-    ear.mark(|| {});
+    ear.displace(|| {});
     hear_quiet(&ear);
     assert!(ear.closed());
     assert!(!speaks_to(&ear, &ear), "a closed generation is refused");
@@ -561,15 +594,15 @@ fn a_prompt_never_goes_to_a_closed_process() {
 #[test]
 fn a_turn_after_the_closing_is_heard_on_a_new_process() {
     let old = Arc::new(Ear::default());
-    old.mark(|| {});
+    old.displace(|| {});
     hear_quiet(&old);
     let (tell, _lost) = mpsc::channel();
-    assert!(!old.claim(&tell));
+    assert_eq!(old.claim(&tell), Claim::Closed);
     assert!(!speaks_to(&old, &old));
 
     let fresh = Arc::new(Ear::default());
     let (tell, heard) = mpsc::channel();
-    assert!(fresh.claim(&tell));
+    assert_eq!(fresh.claim(&tell), Claim::Claimed);
     assert!(speaks_to(&fresh, &fresh));
     let dir = tempfile::tempdir().unwrap();
     let speaker = fresh.clone();
