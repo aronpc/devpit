@@ -1,3 +1,4 @@
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{mpsc, Arc, Mutex};
 
 use devpit_agentcli::resident::Heard;
@@ -178,4 +179,204 @@ fn a_woken_turn_that_dies_keeps_what_it_said_and_names_itself() {
         ear.now.lock().unwrap().listening,
         Listening::Nobody
     ));
+}
+
+/// A busy conversation is closed after its turn, not under it — so whatever
+/// is on the process has to read as busy.
+#[test]
+fn busy_names_every_way_a_turn_can_be_on() {
+    assert!(!Ear::default().busy(), "a quiet ear is not busy");
+
+    // The wait alone, with nobody listening yet, is a turn on too.
+    let waiting_only = Ear::default();
+    waiting_only.now.lock().unwrap().waiting = true;
+    assert!(waiting_only.busy(), "a waiting person alone reads as busy");
+
+    let (tell, _) = mpsc::channel();
+    let person = Ear::default();
+    person.now.lock().unwrap().listening = Listening::Person(tell);
+    assert!(person.busy(), "the person's turn is on");
+
+    let relay = Relay::default();
+    let (turn, _) = woken(&relay);
+    assert!(ear_on(turn).busy(), "a woken turn is on");
+
+    // The person waiting for the process is on a turn of their own.
+    let relay = Relay::default();
+    let (turn, _) = woken(&relay);
+    let waiting = ear_on(turn);
+    let (tell, _) = mpsc::channel();
+    let claiming = {
+        let ear = waiting.clone();
+        std::thread::spawn(move || ear.claim(&tell))
+    };
+    until_waiting(&waiting);
+    assert!(waiting.busy(), "a waiting person is on a turn too");
+    let dir = tempfile::tempdir().unwrap();
+    let (transcript, head) = (dir.path().join("c.jsonl"), dir.path().join("c.json"));
+    waiting.hear(
+        Heard::Ended(Box::new(ended())),
+        || unreachable!(),
+        &transcript,
+        &head,
+    );
+    assert!(claiming.join().unwrap());
+}
+
+#[test]
+fn a_displaced_conversation_closes_when_its_turn_ends() {
+    let dir = tempfile::tempdir().unwrap();
+    let (transcript, head) = (dir.path().join("c.jsonl"), dir.path().join("c.json"));
+    let relay = Relay::default();
+    let (turn, _) = woken(&relay);
+    let ear = ear_on(turn);
+    let ran = Arc::new(AtomicUsize::new(0));
+    let outside = Arc::new(AtomicBool::new(false));
+    let counting = ran.clone();
+    let unlocked = outside.clone();
+    let of = ear.clone();
+    ear.mark(move || {
+        counting.fetch_add(1, Ordering::SeqCst);
+        // The closer takes locks of its own: it cannot run under the ear's.
+        unlocked.store(of.now.try_lock().is_ok(), Ordering::SeqCst);
+    });
+
+    // The turn on it goes on to its end.
+    ear.hear(
+        Heard::Part(text("still on it")),
+        || panic!("the turn on a displaced conversation was cut short"),
+        &transcript,
+        &head,
+    );
+    assert!(is_woken(&ear));
+    assert_eq!(
+        ran.load(Ordering::SeqCst),
+        0,
+        "the closer waits for the turn"
+    );
+
+    ear.hear(
+        Heard::Ended(Box::new(ended())),
+        || unreachable!(),
+        &transcript,
+        &head,
+    );
+    assert_eq!(
+        ran.load(Ordering::SeqCst),
+        1,
+        "the closer ran once, when the ear went quiet"
+    );
+    assert!(
+        outside.load(Ordering::SeqCst),
+        "the closer runs outside the ear's lock"
+    );
+
+    // Quiet again: once is once.
+    ear.hear(
+        Heard::Ended(Box::new(ended())),
+        || unreachable!(),
+        &transcript,
+        &head,
+    );
+    assert_eq!(ran.load(Ordering::SeqCst), 1);
+}
+
+#[test]
+fn a_displaced_conversation_takes_no_new_woken_turn() {
+    let dir = tempfile::tempdir().unwrap();
+    let (transcript, head) = (dir.path().join("c.jsonl"), dir.path().join("c.json"));
+    let relay = Relay::default();
+    let (turn, _) = woken(&relay);
+    let ear = ear_on(turn);
+    let ran = Arc::new(AtomicUsize::new(0));
+    let counting = ran.clone();
+    ear.mark(move || {
+        counting.fetch_add(1, Ordering::SeqCst);
+    });
+
+    ear.hear(
+        Heard::Ended(Box::new(ended())),
+        || unreachable!(),
+        &transcript,
+        &head,
+    );
+    assert_eq!(
+        ran.load(Ordering::SeqCst),
+        1,
+        "the closer ran at the turn's end"
+    );
+
+    // A message that reaches the process after does not wake another turn,
+    // and the person's next one does not wait for this process either.
+    let (tell, _) = mpsc::channel();
+    assert!(!ear.claim(&tell), "a closed process is not taken again");
+    ear.hear(
+        Heard::Part(text("too late")),
+        || panic!("a displaced conversation took a new woken turn"),
+        &transcript,
+        &head,
+    );
+    assert!(matches!(
+        ear.now.lock().unwrap().listening,
+        Listening::Nobody
+    ));
+    assert_eq!(ran.load(Ordering::SeqCst), 1);
+}
+
+/// A person speaking in the conversation again undoes the displacement: it
+/// listens on, and nothing closes when the turn ends.
+#[test]
+fn a_person_turn_after_the_displacement_takes_the_listening_back() {
+    let dir = tempfile::tempdir().unwrap();
+    let (transcript, head) = (dir.path().join("c.jsonl"), dir.path().join("c.json"));
+    let relay = Relay::default();
+    let (turn, _) = woken(&relay);
+    let ear = ear_on(turn);
+    let ran = Arc::new(AtomicUsize::new(0));
+    let counting = ran.clone();
+    ear.mark(move || {
+        counting.fetch_add(1, Ordering::SeqCst);
+    });
+
+    assert!(ear.unmark(), "the displacement was undone");
+    assert!(!ear.unmark(), "once undone, there is nothing to undo");
+    ear.hear(
+        Heard::Ended(Box::new(ended())),
+        || unreachable!(),
+        &transcript,
+        &head,
+    );
+
+    // The person's turn runs and ends, and the conversation still listens.
+    let (tell, from_person) = mpsc::channel();
+    assert!(ear.claim(&tell));
+    ear.hear(
+        Heard::Part(text("the person's")),
+        || unreachable!(),
+        &transcript,
+        &head,
+    );
+    ear.hear(
+        Heard::Ended(Box::new(ended())),
+        || unreachable!(),
+        &transcript,
+        &head,
+    );
+    assert!(matches!(from_person.try_recv(), Ok(Heard::Part(_))));
+    assert_eq!(
+        ran.load(Ordering::SeqCst),
+        0,
+        "nothing closed: the conversation listens again"
+    );
+
+    // And a session can still wake it: it is the listener.
+    let relay = Relay::default();
+    let (waking, _) = woken(&relay);
+    ear.hear(
+        Heard::Part(text("from a session")),
+        || waking,
+        &transcript,
+        &head,
+    );
+    assert!(is_woken(&ear));
 }
