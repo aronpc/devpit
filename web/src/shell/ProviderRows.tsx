@@ -4,6 +4,7 @@ import type { AgentChoice, Profile } from '../gen/bindings'
 import { AgentRow } from './AgentRow'
 import { EnvironmentCopy } from './EnvironmentCopy'
 import { ProviderChecks } from './ProviderChecks'
+import { ProviderScan } from './ProviderScan'
 import { ScopedSetting } from './ScopedSetting'
 import { FieldSelect } from './FieldSelect'
 import { catalogue, choosable, defaultLost, elsewhere, here, type Entry } from './catalogue'
@@ -151,6 +152,7 @@ export function ProviderRows(): React.JSX.Element {
   return (
     <>
       <ProfilesWaiting />
+      <ProviderScan />
       <div className="card2">
         <div className="card2__top">
           <div style={{ flex: '1', minWidth: '0' }}>

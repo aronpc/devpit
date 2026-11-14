@@ -6,7 +6,7 @@ import { ProfileModels } from './ProfileModels'
 import type { Draft } from './profiles'
 
 let kept: Kept = { modelsOff: [], advisorModel: null }
-const write = vi.fn(async (_id: string, next: Kept) => (kept = { modelsOff: next.modelsOff ?? [], advisorModel: next.advisorModel ?? null }))
+const write = vi.fn(async (_id: string, next: Kept) => (kept = { ...next, modelsOff: next.modelsOff ?? [], advisorModel: next.advisorModel ?? null }))
 vi.mock('./live', () => ({
   ask: async (call: () => Promise<unknown>) => ({ data: await call(), error: null, loading: false }),
   commands: {
@@ -59,5 +59,18 @@ describe("a profile's models in Settings → Providers", () => {
     render(<ProfileModels profileId="glm" />)
     await screen.findByLabelText('Advisor model')
     expect(screen.queryByLabelText('Subagent model')).toBeNull()
+  })
+
+  it("keeps a default model and effort for any CLI, without Claude Code's advisor", async () => {
+    render(<ProfileModels profileId="codex-work" claude={false} />)
+    const model = await screen.findByLabelText('Default model')
+    await waitFor(() => expect((model as HTMLInputElement).disabled).toBe(false))
+    fireEvent.blur(model, { target: { value: 'gpt-5.5' } })
+    await waitFor(() => expect(write).toHaveBeenLastCalledWith('codex-work', expect.objectContaining({ model: 'gpt-5.5' })))
+    fireEvent.blur(screen.getByLabelText('Default effort'), { target: { value: 'high' } })
+    await waitFor(() =>
+      expect(write).toHaveBeenLastCalledWith('codex-work', expect.objectContaining({ model: 'gpt-5.5', effort: 'high' })),
+    )
+    expect(screen.queryByLabelText('Advisor model')).toBeNull()
   })
 })

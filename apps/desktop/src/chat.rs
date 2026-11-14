@@ -95,6 +95,9 @@ pub async fn chat_send(
     let cwd = crate::chat_turn::turn_cwd(head.as_ref().and_then(|head| head.cwd.as_deref()), &cwd)?;
 
     let (profile, path) = crate::chat_turn::spawnable(&profile_id)?;
+    let model = model.or_else(|| {
+        crate::profile_models::default_model(&crate::projects::store().ok()?, &profile_id)
+    });
     let Some(driver) = driver(&profile.driver) else {
         return Err(RpcError::new(
             ErrorCode::NotFound,

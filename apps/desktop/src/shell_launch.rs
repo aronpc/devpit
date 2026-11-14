@@ -1,5 +1,8 @@
 //! The shell a terminal window starts, and the startup file behind it.
 
+use std::collections::HashSet;
+use std::sync::{Arc, OnceLock, RwLock};
+
 use devpit_core::Store;
 use devpit_rpc::{AgentLaunch, KnownAgent, MissingSignIn, PaneRunning, RpcError};
 
@@ -314,11 +317,27 @@ fn names_to_probe() -> Vec<String> {
 ///
 /// One invocation for the whole list, because an interactive shell is not
 /// cheap: measured at 1.6 seconds here, which is fine once and absurd once per
-/// name. Warmed at startup by [`warm_installed`], so no menu waits for it.
-pub(crate) fn shell_knows() -> &'static std::collections::HashSet<String> {
-    static FOUND: std::sync::OnceLock<std::collections::HashSet<String>> =
-        std::sync::OnceLock::new();
-    FOUND.get_or_init(|| ask_the_shell(&names_to_probe()))
+/// name. Warmed at startup by [`warm_installed`], so no menu waits for it;
+/// asked again only by Settings' "Scan again" ([`ask_shell_again`]).
+pub(crate) fn shell_knows() -> Arc<HashSet<String>> {
+    if let Some(found) = known_names().read().ok().and_then(|kept| kept.clone()) {
+        return found;
+    }
+    ask_shell_again()
+}
+
+/// Asks the shell now, for a CLI installed since devpit started.
+pub(crate) fn ask_shell_again() -> Arc<HashSet<String>> {
+    let found = Arc::new(ask_the_shell(&names_to_probe()));
+    if let Ok(mut kept) = known_names().write() {
+        *kept = Some(found.clone());
+    }
+    found
+}
+
+fn known_names() -> &'static RwLock<Option<Arc<HashSet<String>>>> {
+    static FOUND: OnceLock<RwLock<Option<Arc<HashSet<String>>>>> = OnceLock::new();
+    FOUND.get_or_init(Default::default)
 }
 
 /// Starts the probe now, so the first menu finds the answer already there.

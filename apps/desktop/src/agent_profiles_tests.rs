@@ -410,3 +410,32 @@ fn a_home_written_before_it_was_made_absolute_is_made_absolute_on_the_way_out() 
         )
     );
 }
+
+/// Profiles stored by an earlier version, one from before profiles named
+/// their own models, open as written and save back without losing a field.
+#[test]
+fn profiles_stored_by_an_earlier_version_open_unchanged() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let store = open(dir.path());
+    let earlier = r#"[{"id":"01J0GLM","label":"GLM","base":"claude","command":"","args":["--permission-mode","bypassPermissions"],"env":[{"name":"CLAUDE_CONFIG_DIR","value":"/home/someone/.claude-glm"}],"models":["glm-4.6"]},{"id":"01J0OLD","label":"Old","base":"codex"}]"#;
+    store
+        .set_preference(preference::AGENT_PROFILES, earlier)
+        .expect("write");
+
+    let read = stored(&store).expect("read");
+    assert_eq!(read.len(), 2);
+    assert_eq!(read[0].args, ["--permission-mode", "bypassPermissions"]);
+    assert_eq!(read[0].env[0].value, "/home/someone/.claude-glm");
+    assert_eq!(read[0].models, ["glm-4.6"]);
+    assert_eq!(
+        (read[1].base.as_str(), read[1].command.as_str()),
+        ("codex", "")
+    );
+
+    save(&store, &read).expect("save back");
+    assert_eq!(stored(&store).expect("read again"), read);
+    let listed = all(&store).expect("profiles");
+    assert!(listed
+        .iter()
+        .any(|one| one.id == "01J0OLD" && one.command == "codex"));
+}

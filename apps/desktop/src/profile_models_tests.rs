@@ -53,6 +53,7 @@ fn a_model_switched_off_leaves_the_profiles_offered_models() {
         ProfileModels {
             models_off: vec!["glm-4.5-air".to_owned()],
             advisor_model: None,
+            ..Default::default()
         },
     );
     let now = offered(&store);
@@ -65,21 +66,25 @@ fn only_model_names_are_kept_and_an_empty_advisor_is_none() {
     assert!(checked(ProfileModels {
         models_off: vec!["opus; rm -rf".to_owned()],
         advisor_model: None,
+        ..Default::default()
     })
     .is_err());
     assert!(checked(ProfileModels {
         models_off: Vec::new(),
         advisor_model: Some("not a model".to_owned()),
+        ..Default::default()
     })
     .is_err());
     assert_eq!(
         checked(ProfileModels {
             models_off: vec!["haiku".to_owned()],
             advisor_model: Some("  ".to_owned()),
+            ..Default::default()
         }),
         Ok(ProfileModels {
             models_off: vec!["haiku".to_owned()],
             advisor_model: None,
+            ..Default::default()
         })
     );
 }
@@ -89,6 +94,7 @@ fn the_default_model_is_never_switched_off() {
     assert!(checked(ProfileModels {
         models_off: vec![DEFAULT_MODEL.to_owned()],
         advisor_model: None,
+        ..Default::default()
     })
     .is_err());
 }
@@ -114,6 +120,7 @@ fn the_advisor_is_written_in_devpits_settings_for_the_profiles_sessions_only() {
         ProfileModels {
             models_off: Vec::new(),
             advisor_model: Some("opus".to_owned()),
+            ..Default::default()
         },
     );
     let own = crate::steps::hook_settings_for(Some(&profile)).expect("own settings");
@@ -143,4 +150,83 @@ fn checks_run_every_five_minutes_until_another_offered_time_is_chosen() {
         .set_preference(preference::PROVIDERS_CHECK_MINUTES, "2")
         .expect("write");
     assert_eq!(check_minutes(&store), 5);
+}
+
+/// Profiles' settings from before a default model and effort existed read
+/// unchanged, with neither set.
+#[test]
+fn settings_kept_before_the_default_model_and_effort_read_unchanged() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let store = open(dir.path());
+    store
+        .set_preference(
+            preference::AGENTS_PROFILE_MODELS,
+            r#"{"glm":{"modelsOff":["glm-4.5-air"],"advisorModel":"opus"}}"#,
+        )
+        .expect("write");
+    let glm = of(&store, "glm");
+    assert_eq!(glm.models_off, ["glm-4.5-air"]);
+    assert_eq!(glm.advisor_model.as_deref(), Some("opus"));
+    assert_eq!(glm.model, None);
+    assert_eq!(glm.effort, None);
+}
+
+#[test]
+fn a_profiles_default_model_and_effort_are_checked_and_trimmed() {
+    let set = checked(ProfileModels {
+        model: Some(" gpt-5.5 ".to_owned()),
+        effort: Some("high".to_owned()),
+        ..Default::default()
+    })
+    .expect("allowed");
+    assert_eq!(set.model.as_deref(), Some("gpt-5.5"));
+    assert_eq!(set.effort.as_deref(), Some("high"));
+    assert!(checked(ProfileModels {
+        effort: Some("high; rm".to_owned()),
+        ..Default::default()
+    })
+    .is_err());
+    let empty = checked(ProfileModels {
+        model: Some(" ".to_owned()),
+        effort: Some(String::new()),
+        ..Default::default()
+    })
+    .expect("allowed");
+    assert_eq!((empty.model, empty.effort), (None, None));
+}
+
+#[test]
+fn a_profiles_own_effort_is_the_one_its_chats_start_with() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let store = open(dir.path());
+    crate::agent_profiles::save(
+        &store,
+        &[Declared {
+            id: "work".to_owned(),
+            label: "Work".to_owned(),
+            base: "claude".to_owned(),
+            command: String::new(),
+            args: Vec::new(),
+            env: Vec::new(),
+            models: Vec::new(),
+        }],
+    )
+    .expect("save");
+    kept_as(
+        &store,
+        "work",
+        ProfileModels {
+            model: Some("opus".to_owned()),
+            effort: Some("low".to_owned()),
+            ..Default::default()
+        },
+    );
+    let work = crate::agent_profiles::all(&store)
+        .expect("profiles")
+        .into_iter()
+        .find(|one| one.id == "work")
+        .expect("work");
+    assert_eq!(work.effort_default.as_deref(), Some("low"));
+    assert_eq!(default_model(&store, "work").as_deref(), Some("opus"));
+    assert_eq!(default_model(&store, "elsewhere"), None);
 }

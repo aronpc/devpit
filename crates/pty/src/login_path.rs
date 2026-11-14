@@ -81,6 +81,17 @@ pub fn search_path() -> &'static OsString {
     })
 }
 
+/// [`search_path`] read again, for a CLI installed into a folder that did not
+/// exist when devpit started. The login shell's `PATH` is still the one asked once.
+pub fn search_path_now() -> OsString {
+    let base = login_path()
+        .cloned()
+        .or_else(|| std::env::var_os("PATH"))
+        .unwrap_or_default();
+    let home = std::env::var_os("HOME").map(PathBuf::from);
+    searched(&base, home.as_deref(), &crate::host_env::mount_prefix())
+}
+
 /// `base`, then the known folders under `home` that exist, without an AppImage
 /// mount's entries: the shell was asked from inside one, and a mount moves.
 pub(crate) fn searched(base: &OsStr, home: Option<&Path>, mounts: &str) -> OsString {
@@ -118,6 +129,7 @@ pub fn known_dirs(home: &Path) -> Vec<PathBuf> {
         // Go's tarball unpacked at home, and what `go install` puts in GOPATH.
         ".local/go/bin",
         "go/bin",
+        ".opencode/bin",
     ]
     .iter()
     .map(|dir| home.join(dir))

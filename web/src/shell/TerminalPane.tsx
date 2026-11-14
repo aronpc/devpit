@@ -130,6 +130,14 @@ export function TerminalPane({ tab, projectId }: { tab: Tab; projectId: string }
     launched(tab.id)
     start(focused, tab.launch, false)
   }, [projectId, focused, tab.launch, tab.id, launched, start])
+  /* A terminal opened to sign a CLI in types its login, for the person to finish. */
+  useEffect(() => {
+    const login = tab.login
+    if (!projectId || !focused || !login || sent.current) return
+    sent.current = true
+    launched(tab.id)
+    void ask(() => commands.agentLogin(projectId, focused, login)).then((answer) => answer.error && setNotice(answer.error))
+  }, [projectId, focused, tab.login, tab.id, launched])
 
   const layoutTo = useCallback((next: LayoutNode, focusedId: string) => {
     setTree(next)

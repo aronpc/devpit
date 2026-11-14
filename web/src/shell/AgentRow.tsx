@@ -135,7 +135,7 @@ export function AgentRow({
           onRemove={entry.mine ? onRemove : undefined}
         />
       )}
-      {open && entry.base === 'claude' && <ProfileModels profileId={entry.id} draft={entry.mine ? draft : null} onDraft={onDraft} />}
+      {open && <ProfileModels profileId={entry.id} claude={entry.base === 'claude'} draft={entry.mine ? draft : null} onDraft={onDraft} />}
       {open && entry.base === 'claude' && <IdleCompact profileId={entry.id} />}
     </>
   )

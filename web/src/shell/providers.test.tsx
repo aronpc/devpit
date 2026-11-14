@@ -47,10 +47,13 @@ vi.mock('./live', () => ({
     idleCompactRead: () => ({ when: 'never', tokens: 200000 }),
     profileModelsRead: () => ({ modelsOff: [], advisorModel: null }),
     providersCheckRead: () => ({ minutes: 5 }),
+    providersDetect: () => ({ providers: [], profiles: [] }),
     projectList: () => ({ projects: [] }),
     projectSettingsRead: () => ({ own: {}, repo: {}, machine: {}, applied: {}, repoProblem: null }),
   },
 }))
+
+vi.mock('./useShell', () => ({ useShell: () => ({ project: null, show: vi.fn(), closePrefs: vi.fn() }) }))
 
 const agent = (id: string, over: Partial<KnownAgent> = {}): KnownAgent => ({
   id,

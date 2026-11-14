@@ -24,12 +24,12 @@ use crate::{
     orchestrator_links, outside_sessions, pane_asking, pane_screen, pane_tmux, panels, panes,
     pasting, paths, pausing, plan_limits, plugin_data, plugins, profile_models, profile_waiting,
     project_agent, project_lessons, project_naming, project_proposals, project_settings, projects,
-    reading_path, rebound, receipts, recipes, regrouping, reminders, remote, reply_drafts, reveal,
-    rewinding, runs_list, saves, schedules, search, session_cost, session_search, session_window,
-    sessions, settings, shell_launch, sign_ins, skills, slash, sources, spend_history, staging,
-    stall_watch, steering, steps, stop_asked, stopping, tab_opening, threads, transcribe, tray,
-    update, watching, workspace, worktree_base, worktree_branch, worktree_cleanup, worktree_setup,
-    worktrees, wsfiles,
+    provider_scan, reading_path, rebound, receipts, recipes, regrouping, reminders, remote,
+    reply_drafts, reveal, rewinding, runs_list, saves, schedules, search, session_cost,
+    session_search, session_window, sessions, settings, shell_launch, sign_ins, skills, slash,
+    sources, spend_history, staging, stall_watch, steering, steps, stop_asked, stopping,
+    tab_opening, threads, transcribe, tray, update, watching, workspace, worktree_base,
+    worktree_branch, worktree_cleanup, worktree_setup, worktrees, wsfiles,
 };
 
 /// Loads every command whose types are generated into TypeScript.
@@ -327,6 +327,8 @@ pub(super) fn loaded(builder: Builder<tauri::Wry>) -> Builder<tauri::Wry> {
         profile_models::profile_models_write,
         profile_models::providers_check_read,
         profile_models::providers_check_write,
+        provider_scan::providers_detect,
+        provider_scan::agent_login,
         project_settings::project_settings_read,
         project_settings::project_settings_write,
         sources::worktree_sources,

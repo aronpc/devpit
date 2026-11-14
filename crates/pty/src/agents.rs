@@ -152,6 +152,16 @@ pub const KNOWN: &[Known] = &[
         homepage: "https://x.ai/cli",
     },
     Known {
+        id: "agy",
+        label: "Antigravity",
+        launch: "agy",
+        wears: &["agy"],
+        settings_flag: None,
+        resume_flag: None,
+        driver: "",
+        homepage: "https://antigravity.google",
+    },
+    Known {
         id: "aider",
         label: "Aider",
         launch: "aider",

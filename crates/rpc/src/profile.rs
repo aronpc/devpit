@@ -205,3 +205,45 @@ pub enum Credentials {
 pub struct SignedIn {
     pub state: Credentials,
 }
+
+/// One of the CLIs devpit holds a chat with, or will: found on this machine
+/// or not, and what it takes to get it there.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct ProviderFound {
+    /// The agent's id in the catalogue.
+    pub id: String,
+    pub label: String,
+    /// Where it was found, from `~` under the home folder; none when it is
+    /// not on this machine.
+    pub path: Option<String>,
+    /// What `--version` said, when it said a version.
+    pub version: Option<String>,
+    pub signed_in: Credentials,
+    /// Whether a driver reads it, so it can hold a chat and not only a terminal.
+    pub chat: bool,
+    /// The line that installs it, for a person to run.
+    pub install: String,
+    /// The line that signs it in, typed into a terminal by "Sign in".
+    pub login: String,
+    pub homepage: String,
+}
+
+/// A declared profile's own sign-in, read with its own variables.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct ProfileSignIn {
+    pub id: String,
+    pub label: String,
+    /// The provider it runs, by id.
+    pub base: String,
+    pub signed_in: Credentials,
+}
+
+/// `providers.detect`'s answer.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct ProvidersFound {
+    pub providers: Vec<ProviderFound>,
+    pub profiles: Vec<ProfileSignIn>,
+}

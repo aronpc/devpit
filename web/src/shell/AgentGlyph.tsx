@@ -30,6 +30,8 @@ const MARKS: Readonly<Record<string, React.JSX.Element>> = {
   droid: <path d="M13 3 5 14h6l-2 7 9-12h-6l1-6Z" />,
   // A crossing.
   grok: <path d="m5 5 14 14M19 5 5 19" />,
+  // An arc lifting off.
+  agy: <path d="M4 19c5-2 9-7 11-14M15 5l-4 2M15 5l1 4" />,
   // A pair of arrows, the shape of a pair programmer.
   aider: <path d="M4 9h13l-3-3M20 15H7l3 3" />,
   // A bird's head in three strokes.

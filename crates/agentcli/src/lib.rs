@@ -324,6 +324,7 @@ pub mod person;
 pub mod profile;
 #[cfg(test)]
 mod profile_tests;
+pub mod providers;
 pub mod resident;
 pub mod reviewing;
 pub mod running;

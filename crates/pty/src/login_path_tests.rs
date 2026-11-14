@@ -30,6 +30,7 @@ fn the_usual_install_folders_are_known() {
         "/Users/me/.bun/bin",
         "/Users/me/.local/go/bin",
         "/Users/me/go/bin",
+        "/Users/me/.opencode/bin",
         "/opt/homebrew/bin",
         "/usr/local/bin",
         "/usr/local/go/bin",

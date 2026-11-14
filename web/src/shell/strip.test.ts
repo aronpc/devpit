@@ -4,6 +4,7 @@ import {
   DOUBLE_MS,
   closed,
   focused,
+  launched,
   many,
   moved,
   replaced,
@@ -277,5 +278,16 @@ describe('a tab swapped in its own place', () => {
     const next = replaced(strip, 'here', { id: 'b', kind: 'term' })
     expect(next.open.map((tab) => tab.id)).toEqual(['a', 'b'])
     expect(next.active).toBe('b')
+  })
+})
+
+describe('a terminal opened to run something', () => {
+  it('stops carrying its sign-in once it was sent, like an agent to launch', () => {
+    const strip: Strip = { open: [{ id: 't1', kind: 'term', login: 'codex' }, { id: 't2', kind: 'term', launch: 'claude' }], active: 't1' }
+    const sent = launched(launched(strip, 't1'), 't2')
+    expect(sent.open.map((tab) => [tab.login, tab.launch])).toEqual([
+      [undefined, undefined],
+      [undefined, undefined],
+    ])
   })
 })

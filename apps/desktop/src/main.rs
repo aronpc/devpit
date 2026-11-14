@@ -210,6 +210,7 @@ mod project_naming;
 mod project_proposals;
 mod project_settings;
 mod projects;
+mod provider_scan;
 #[cfg(unix)]
 mod ptyd_attach;
 mod ptyd_link;

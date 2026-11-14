@@ -19,6 +19,10 @@ pub struct ProfileModels {
     pub models_off: Vec<String>,
     /// Written as `advisorModel` into the settings devpit starts it with.
     pub advisor_model: Option<String>,
+    /// What a chat on this profile runs when none is picked.
+    pub model: Option<String>,
+    /// The effort its chats start with, over the driver's own.
+    pub effort: Option<String>,
 }
 
 fn kept(store: &Store) -> BTreeMap<String, ProfileModels> {
@@ -35,19 +39,34 @@ pub(crate) fn of(store: &Store, profile_id: &str) -> ProfileModels {
     kept(store).remove(profile_id).unwrap_or_default()
 }
 
+/// The profile's own default model, when it set one.
+pub(crate) fn default_model(store: &Store, profile_id: &str) -> Option<String> {
+    of(store, profile_id).model
+}
+
 /// The model a session runs without one chosen, which stays on.
 pub(crate) const DEFAULT_MODEL: &str = "default";
 
 /// What `write` accepts: model names only, as a profile's own models are;
 /// an empty advisor model is none.
 pub(crate) fn checked(models: ProfileModels) -> Result<ProfileModels, String> {
+    let set = |one: Option<String>| {
+        one.map(|one| one.trim().to_owned())
+            .filter(|one| !one.is_empty())
+    };
     let models = ProfileModels {
-        advisor_model: models
-            .advisor_model
-            .map(|one| one.trim().to_owned())
-            .filter(|one| !one.is_empty()),
+        advisor_model: set(models.advisor_model),
+        model: set(models.model),
+        effort: set(models.effort),
         models_off: models.models_off,
     };
+    if let Some(effort) = models
+        .effort
+        .as_deref()
+        .filter(|one| !devpit_agentcli::declaring::is_one_word(one))
+    {
+        return Err(format!("{effort:?} is not an effort"));
+    }
     if models.models_off.iter().any(|one| one == DEFAULT_MODEL) {
         return Err("the default model stays on: it is what a session runs without one".to_owned());
     }
@@ -55,6 +74,7 @@ pub(crate) fn checked(models: ProfileModels) -> Result<ProfileModels, String> {
         .models_off
         .iter()
         .chain(models.advisor_model.iter())
+        .chain(models.model.iter())
         .find(|one| !devpit_agentcli::declaring::is_a_model(one))
     {
         Some(bad) => Err(format!("{bad:?} is not a model name")),

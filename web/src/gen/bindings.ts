@@ -1399,6 +1399,17 @@ export const commands = {
 	providersCheckRead: () => typedError<ProviderChecks, RpcError>(__TAURI_INVOKE("providers_check_read")),
 	/**  `providers.check_write` */
 	providersCheckWrite: (minutes: number) => typedError<ProviderChecks, RpcError>(__TAURI_INVOKE("providers_check_write", { minutes })),
+	/**
+	 *  `providers.detect` — looks on the `PATH` and the usual install folders.
+	 *  `again` also asks the person's shell again, so the rest of the pane sees
+	 *  a CLI installed since devpit started.
+	 */
+	providersDetect: (again: boolean) => typedError<ProvidersFound, RpcError>(__TAURI_INVOKE("providers_detect", { again })),
+	/**
+	 *  `agent.login` — types the CLI's own login into a pane of the project,
+	 *  with the profile's variables, for the person to finish there.
+	 */
+	agentLogin: (projectId: string, paneId: string, id: string) => typedError<AgentLaunch, RpcError>(__TAURI_INVOKE("agent_login", { projectId, paneId, id })),
 	/**  `project.settings_read` — `projectId` empty for the machine's. */
 	projectSettingsRead: (projectId: string | null) => typedError<ProjectSettings, RpcError>(__TAURI_INVOKE("project_settings_read", { projectId })),
 	/**
@@ -4984,6 +4995,19 @@ export type ProfileModels = {
 	modelsOff?: string[],
 	/**  Written as `advisorModel` into the settings devpit starts it with. */
 	advisorModel?: string | null,
+	/**  What a chat on this profile runs when none is picked. */
+	model?: string | null,
+	/**  The effort its chats start with, over the driver's own. */
+	effort?: string | null,
+};
+
+/**  A declared profile's own sign-in, read with its own variables. */
+export type ProfileSignIn = {
+	id: string,
+	label: string,
+	/**  The provider it runs, by id. */
+	base: string,
+	signedIn: Credentials,
 };
 
 /**
@@ -5177,6 +5201,37 @@ export type ProposedReminder = {
 /**  How often sign-ins and MCP servers are checked. */
 export type ProviderChecks = {
 	minutes: number,
+};
+
+/**
+ *  One of the CLIs devpit holds a chat with, or will: found on this machine
+ *  or not, and what it takes to get it there.
+ */
+export type ProviderFound = {
+	/**  The agent's id in the catalogue. */
+	id: string,
+	label: string,
+	/**
+	 *  Where it was found, from `~` under the home folder; none when it is
+	 *  not on this machine.
+	 */
+	path: string | null,
+	/**  What `--version` said, when it said a version. */
+	version: string | null,
+	signedIn: Credentials,
+	/**  Whether a driver reads it, so it can hold a chat and not only a terminal. */
+	chat: boolean,
+	/**  The line that installs it, for a person to run. */
+	install: string,
+	/**  The line that signs it in, typed into a terminal by "Sign in". */
+	login: string,
+	homepage: string,
+};
+
+/**  `providers.detect`'s answer. */
+export type ProvidersFound = {
+	providers: ProviderFound[],
+	profiles: ProfileSignIn[],
 };
 
 /**  What the agent wants to do, as the screen puts it. */
