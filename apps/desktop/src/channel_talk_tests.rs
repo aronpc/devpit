@@ -510,3 +510,33 @@ fn a_channel_talks_to_the_orchestrator_chosen_or_the_only_one() {
     assert_eq!(which(&two[..1], None), Ok("orch-a".to_owned()));
     assert!(which(&[], None).is_err());
 }
+
+/// After a switch, what devpit says to an orchestrator goes to its newest
+/// conversation on the account it speaks as now, never one begun on the old.
+#[test]
+fn devpits_turns_go_to_the_conversation_on_the_account_spoken_as_now() {
+    let thread = |id: &str, profile: &str| devpit_rpc::Thread {
+        id: id.to_owned(),
+        title: String::new(),
+        profile: profile.to_owned(),
+        model: None,
+        cost_usd: 0.0,
+        last_at: 0.0,
+        cwd: None,
+        marks: Default::default(),
+    };
+    let newest_first = vec![
+        thread("c3", "claude"),
+        thread("c2", "codex"),
+        thread("c1", "claude"),
+    ];
+    assert_eq!(
+        super::latest_on(newest_first.clone(), Some("codex")).as_deref(),
+        Some("c2")
+    );
+    assert_eq!(
+        super::latest_on(newest_first.clone(), Some("claude")).as_deref(),
+        Some("c3")
+    );
+    assert_eq!(super::latest_on(newest_first, Some("opencode")), None);
+}

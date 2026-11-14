@@ -88,8 +88,13 @@ pub(crate) fn with_notice(noticed: &Noticed, prompt: &str, now_ms: f64) -> Strin
         .ok()
         .and_then(|store| crate::projects::locate(&store, project_id).ok())
         .map(|(_, root)| root);
+    let handoff = root
+        .as_deref()
+        .and_then(|root| crate::orchestrator_handoff::take(root, profile_id));
     let since = since(project_id, profile_id, now_ms);
-    let said = notices(from.as_ref(), since.as_deref(), prompt);
+    let devpits: Vec<String> = handoff.into_iter().chain(since).collect();
+    let devpits = (!devpits.is_empty()).then(|| devpits.join("\n\n"));
+    let said = notices(from.as_ref(), devpits.as_deref(), prompt);
     if let Some(root) = &root {
         crate::draft_sending::hear(profile_id, root, &said);
     }

@@ -55,6 +55,7 @@ mod microphone_gtk;
 mod opening;
 mod orchestrator;
 mod orchestrator_brief;
+mod orchestrator_handoff;
 mod orchestrator_links;
 mod orchestrator_notes;
 mod orchestrator_view;

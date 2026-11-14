@@ -22,6 +22,11 @@ import { useShell } from './useShell'
 export const lastSpoken = (threads: readonly Thread[]): Thread | undefined =>
   [...threads].sort((a, b) => (b.lastAt ?? 0) - (a.lastAt ?? 0))[0]
 
+/** The conversations on the account an orchestrator speaks as now: one begun
+ *  on another stays with it, and a switch starts a new one. */
+export const onAccount = (threads: readonly Thread[], profile: string | null): readonly Thread[] =>
+  threads.filter((one) => !profile || !one.profile || one.profile === profile)
+
 /** Hues an orchestrator without a colour of its own is told apart by, one
  *  picked from its id so it keeps it. */
 const TINTS = ['#8b7cf6', '#3fa7d6', '#2bb07f', '#e0a33a', '#e0675c', '#d263b4'] as const
@@ -72,7 +77,7 @@ export function RailOrchestrators({
     if (!project || project.id !== arriving.current || open.length > 0) return
     arriving.current = null
     void ask(() => commands.chatList(project.id)).then((found) => {
-      const last = lastSpoken(found.data?.conversations ?? [])
+      const last = lastSpoken(onAccount(found.data?.conversations ?? [], project.orchestrator))
       show('chat', last ? { id: last.id } : undefined)
     })
   }, [project, open.length, show])

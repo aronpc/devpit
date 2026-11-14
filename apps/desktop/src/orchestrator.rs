@@ -174,9 +174,10 @@ pub(crate) fn speaks_as(store: &Store, folder: &Path, profile_id: &str) -> Resul
     crate::orchestrator_links::set_in(store, folder, "profile", serde_json::json!(profile_id))
 }
 
-/// `orchestrator.account` — the account an orchestrator speaks as, changed.
-/// Its next turn starts under that account; its conversations so far stay
-/// with the one they began with.
+/// `orchestrator.account` — the account an orchestrator speaks as, changed,
+/// on the same CLI or another. Its next conversation starts under that
+/// account, handed over from its notes; those so far stay with the one they
+/// began with.
 #[tauri::command]
 #[specta::specta]
 pub async fn orchestrator_account(project_id: String, profile_id: String) -> Result<(), RpcError> {
@@ -188,12 +189,13 @@ pub async fn orchestrator_account(project_id: String, profile_id: String) -> Res
             .ok()
             .and_then(|home| home.canonicalize().ok())
             .unwrap_or_default();
-        if devpit_core::home::orchestrator_of(&store, &home, &root).is_none() {
+        let Some(was) = devpit_core::home::orchestrator_of(&store, &home, &root) else {
             return Err(RpcError::new(
                 ErrorCode::Invalid,
                 "that project is not an orchestrator",
             ));
-        }
+        };
+        crate::orchestrator_handoff::switched(&store, &root, &was, &profile.id);
         speaks_as(&store, &root, &profile.id)
     })
     .await

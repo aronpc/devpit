@@ -430,15 +430,25 @@ pub(crate) fn orchestrators() -> Vec<ChannelOrchestrator> {
         .collect()
 }
 
-/// The orchestrator's latest conversation, as the Remote opens it, or a new one.
+/// The orchestrator's latest conversation on the account it speaks as now,
+/// as the Remote opens it, or a new one: one begun on another stays there.
 pub(crate) fn latest_conversation(project: &str) -> String {
+    let speaks_as = crate::projects::project_list_unread_now()
+        .ok()
+        .and_then(|listed| listed.projects.into_iter().find(|one| one.id == project))
+        .and_then(|one| one.orchestrator);
     crate::threads::chat_list_now(project.to_owned())
         .ok()
-        .and_then(|listed| listed.conversations.into_iter().next())
-        .map_or_else(
-            || ulid::Ulid::generate().to_string().to_lowercase(),
-            |thread| thread.id,
-        )
+        .and_then(|listed| latest_on(listed.conversations, speaks_as.as_deref()))
+        .unwrap_or_else(|| ulid::Ulid::generate().to_string().to_lowercase())
+}
+
+/// The first of `threads`, newest first, begun on `profile` or on none yet.
+pub(crate) fn latest_on(threads: Vec<devpit_rpc::Thread>, profile: Option<&str>) -> Option<String> {
+    threads
+        .into_iter()
+        .find(|one| profile.is_none_or(|profile| one.profile.is_empty() || one.profile == profile))
+        .map(|one| one.id)
 }
 
 /// `ask` run as a turn the window was not asked for: it hears of it as of a

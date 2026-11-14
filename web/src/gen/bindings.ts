@@ -333,9 +333,10 @@ export const commands = {
 	 */
 	orchestratorRefresh: (projectId: string) => typedError<null, RpcError>(__TAURI_INVOKE("orchestrator_refresh", { projectId })),
 	/**
-	 *  `orchestrator.account` — the account an orchestrator speaks as, changed.
-	 *  Its next turn starts under that account; its conversations so far stay
-	 *  with the one they began with.
+	 *  `orchestrator.account` — the account an orchestrator speaks as, changed,
+	 *  on the same CLI or another. Its next conversation starts under that
+	 *  account, handed over from its notes; those so far stay with the one they
+	 *  began with.
 	 */
 	orchestratorAccount: (projectId: string, profileId: string) => typedError<null, RpcError>(__TAURI_INVOKE("orchestrator_account", { projectId, profileId })),
 	/**  `artifacts.list` — what the project keeps outside its repository. */
