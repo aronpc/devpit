@@ -103,9 +103,14 @@ const BEFORE_DEVFLOW: [&str; 36] = [
     "devpit_rubric_run",
 ];
 
+/// The message bus's tools, after every tool devpit had before them.
+const BUS: [&str; 2] = ["devpit_session_message", "devpit_session_notify_idle"];
+
 #[test]
 fn with_devflow_off_the_list_and_the_instructions_are_what_they_were() {
-    assert_eq!(listed(&Offer::Off), BEFORE_DEVFLOW);
+    let off = listed(&Offer::Off);
+    assert_eq!(off[..36], BEFORE_DEVFLOW);
+    assert_eq!(off[36..], BUS);
     let said = offering(
         r#"{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}"#,
         &Offer::Off,
@@ -118,8 +123,9 @@ fn with_devflow_off_the_list_and_the_instructions_are_what_they_were() {
 fn the_setup_and_on_demand_tools_come_after_devpits_own_until_devflow_is_switched_off() {
     let setup = listed(&Offer::Setup);
     assert_eq!(setup[..36], BEFORE_DEVFLOW);
+    assert_eq!(setup[36..38], BUS);
     assert_eq!(
-        setup[36..],
+        setup[38..],
         [
             "devpit_devflow_status",
             "devpit_devflow_setup",
@@ -484,4 +490,51 @@ fn the_project_agents_orchestrator_tools_keep_their_shapes() {
             json!(["project", "cardId"])
         )
     );
+}
+
+/// A session's message says which pane it comes from by the environment the
+/// CLI started this server with, never by the call: one session cannot sign
+/// for another.
+#[test]
+fn a_sessions_message_names_its_pane_from_the_environment_never_the_call() {
+    const MESSAGE: &str = "devpit_session_message";
+    let env = |name: &str| (name == crate::hook::PANE_ENV).then(|| "leaf_1".to_owned());
+    let none = |_: &str| None;
+    let forged = json!({ "text": "done", "fromPane": "leaf_9" });
+    assert_eq!(
+        from_pane(MESSAGE, forged.clone(), &env),
+        json!({ "text": "done", "fromPane": "leaf_1" })
+    );
+    assert_eq!(from_pane(MESSAGE, forged, &none), json!({ "text": "done" }));
+    let other = json!({ "cardId": "card_1", "fromPane": "leaf_9" });
+    assert_eq!(from_pane("devpit_card", other.clone(), &env), other);
+}
+
+/// The bus's two tools: a message to a session or an orchestrator by name,
+/// and a notice of a session's next idle or exit.
+#[test]
+fn the_message_bus_tools_take_a_name_and_words() {
+    let schema = |name: &str| {
+        (TOOLS
+            .iter()
+            .find(|tool| tool.name == name)
+            .expect(name)
+            .input)()
+    };
+    let message = schema("devpit_session_message");
+    assert_eq!(message["required"], json!(["text"]));
+    assert_eq!(message["properties"]["to"]["type"], "string");
+    assert!(message["properties"].get("fromPane").is_none());
+    let notify = schema("devpit_session_notify_idle");
+    assert_eq!(notify["required"], json!(["name"]));
+    let ask = |method: &str, params: Value| -> Result<Value, String> {
+        assert_eq!(method, "session_notify_idle");
+        assert_eq!(params, json!({ "name": "api-worker" }));
+        Ok(json!({ "watching": "api-worker" }))
+    };
+    let said = reply(
+        r#"{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"devpit_session_notify_idle","arguments":{"name":"api-worker"}}}"#,
+        &ask,
+    );
+    assert_eq!(said["result"]["isError"], false);
 }

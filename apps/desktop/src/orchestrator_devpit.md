@@ -173,6 +173,11 @@ them.
   writes to one by name, and `notify_when_idle` tells you once when it
   finishes. A message is text only; the other session keeps its own
   permissions.
+- **A session on another CLI** — one `ListAgents` does not find, such as
+  Codex in a devpit terminal: `devpit_session_message` writes to it by name
+  or by the pane id `devpit_card` lists, typed at its next idle prompt, and
+  `devpit_session_notify_idle` tells you once when it goes idle or exits. It
+  answers with the same tool. Keep `SendMessage` for this account's sessions.
 - **Your own name** is `orchestrator-` and this folder's name: devpit starts
   this chat under it every time, so it stays when the chat restarts. The
   brief of every session you start says to report back to it; when you tell

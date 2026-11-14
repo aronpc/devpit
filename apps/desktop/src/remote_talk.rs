@@ -246,13 +246,13 @@ fn frame_for_phone(mut frame: Frame) -> Frame {
 /// The turn the person's words from the Remote or a channel make: as the
 /// account the conversation belongs to — the orchestrator's, for one that has
 /// had no turn yet — with the model and mode it last ran with, and marked
-/// with where they came from.
+/// with where they came from: nowhere, for a turn devpit starts itself.
 pub(crate) fn ask_of(
     conversation: &Conversation,
     orchestrator: Option<&str>,
     root: &str,
     text: &str,
-    from: TurnFrom,
+    from: Option<TurnFrom>,
 ) -> Result<Ask, String> {
     let profile = Some(conversation.profile.as_str())
         .filter(|profile| !profile.is_empty())
@@ -274,7 +274,7 @@ pub(crate) fn ask_of(
         budget_usd: None,
         permission: conversation.permission.clone(),
         effort: conversation.effort.clone(),
-        from: Some(from),
+        from,
     })
 }
 
@@ -284,6 +284,21 @@ pub(crate) fn turn_of(
     conversation: &str,
     text: &str,
     from: TurnFrom,
+) -> Result<Ask, String> {
+    turn_from(project, conversation, text, Some(from))
+}
+
+/// The turn devpit starts itself in `conversation` of `project`: a session's
+/// message or an idle notice, which is no one's word.
+pub(crate) fn devpits_turn(project: &str, conversation: &str, text: &str) -> Result<Ask, String> {
+    turn_from(project, conversation, text, None)
+}
+
+fn turn_from(
+    project: &str,
+    conversation: &str,
+    text: &str,
+    from: Option<TurnFrom>,
 ) -> Result<Ask, String> {
     if !plain(conversation) {
         return Err("that is not a conversation".to_owned());

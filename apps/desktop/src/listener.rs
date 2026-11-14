@@ -331,6 +331,7 @@ fn heard(
     let doing = state_of_event(&happening.event);
     if let Some(doing) = doing {
         crate::pane_said::heard(pane, doing);
+        crate::session_bus::heard(pane, doing);
     }
     let state = pane_word(doing);
     // One Store for the event. Resolved before `remember`, which forgets the

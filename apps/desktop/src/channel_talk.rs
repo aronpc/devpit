@@ -430,6 +430,46 @@ pub(crate) fn orchestrators() -> Vec<ChannelOrchestrator> {
         .collect()
 }
 
+/// The orchestrator's latest conversation, as the Remote opens it, or a new one.
+pub(crate) fn latest_conversation(project: &str) -> String {
+    crate::threads::chat_list_now(project.to_owned())
+        .ok()
+        .and_then(|listed| listed.conversations.into_iter().next())
+        .map_or_else(
+            || ulid::Ulid::generate().to_string().to_lowercase(),
+            |thread| thread.id,
+        )
+}
+
+/// `ask` run as a turn the window was not asked for: it hears of it as of a
+/// woken one, so a chat open on that conversation joins.
+pub(crate) async fn turn_in(
+    app: &tauri::AppHandle,
+    conversation: &str,
+    ask: devpit_rpc::Ask,
+) -> Result<devpit_rpc::TurnEnd, devpit_rpc::RpcError> {
+    let first = AtomicBool::new(true);
+    let (woke, said) = (app.clone(), conversation.to_owned());
+    let trigger = Channel::new(move |_: InvokeResponseBody| {
+        if first.swap(false, Ordering::SeqCst) {
+            let (app, conversation) = (woke.clone(), said.clone());
+            tauri::async_runtime::spawn(async move {
+                let _ = app.emit(crate::chat_resident::WOKE, &conversation);
+            });
+        }
+        Ok(())
+    });
+    crate::chat::chat_send(
+        app.clone(),
+        app.state(),
+        app.state(),
+        app.state(),
+        ask,
+        trigger,
+    )
+    .await
+}
+
 /// This machine, as a channel's messages reach it.
 pub(crate) struct Here(pub tauri::AppHandle);
 
@@ -452,38 +492,11 @@ impl Desk for Here {
 
     async fn turn(&self, project: &str, words: &str, from: TurnFrom) -> Result<String, String> {
         let app = &self.0;
-        // The orchestrator's latest conversation, as the Remote opens it.
-        let conversation = crate::threads::chat_list_now(project.to_owned())
-            .ok()
-            .and_then(|listed| listed.conversations.into_iter().next())
-            .map_or_else(
-                || ulid::Ulid::generate().to_string().to_lowercase(),
-                |thread| thread.id,
-            );
+        let conversation = latest_conversation(project);
         let ask = crate::remote_talk::turn_of(project, &conversation, words, from)?;
-        // Only a trigger: the window hears of the turn as of a woken one, so
-        // a chat open on it joins.
-        let first = AtomicBool::new(true);
-        let (woke, said) = (app.clone(), conversation.clone());
-        let trigger = Channel::new(move |_: InvokeResponseBody| {
-            if first.swap(false, Ordering::SeqCst) {
-                let (app, conversation) = (woke.clone(), said.clone());
-                tauri::async_runtime::spawn(async move {
-                    let _ = app.emit(crate::chat_resident::WOKE, &conversation);
-                });
-            }
-            Ok(())
-        });
-        let end = crate::chat::chat_send(
-            app.clone(),
-            app.state(),
-            app.state(),
-            app.state(),
-            ask,
-            trigger,
-        )
-        .await
-        .map_err(|err| err.message)?;
+        let end = turn_in(app, &conversation, ask)
+            .await
+            .map_err(|err| err.message)?;
         let read = crate::chat::chat_history_now(project.to_owned(), conversation)
             .map_err(|err| err.message)?;
         let words = final_words(&read, &end.turn_id);

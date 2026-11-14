@@ -31,7 +31,7 @@ pub(crate) struct Tool {
     pub(crate) input: fn() -> Value,
 }
 
-pub(crate) const TOOLS: [Tool; 36] = [
+pub(crate) const TOOLS: [Tool; 38] = [
     Tool {
         name: "devpit_context",
         method: "context",
@@ -269,6 +269,23 @@ pub(crate) const TOOLS: [Tool; 36] = [
             "state": { "anyOf": [{ "type": "string" }, { "type": "object" }], "description": "The evidence: the card, the diff, the test output." },
             "cardId": { "type": "string", "description": "The card this is about, for the log." }
         }, "required": ["rubric", "state"] }),
+    },
+    Tool {
+        name: "devpit_session_message",
+        method: "session_message",
+        description: "Message a session through devpit, whatever CLI it runs on, beside SendMessage and never in its place. An orchestrator writes to a session of a linked project by its name, as devpit_sessions gives it, or by the pane id devpit_card lists for it; a session writes to its orchestrator, `to` left out for the one that last wrote to it. A terminal session gets the words typed at its next idle prompt, never mid-turn; an orchestrator gets them as a turn in its chat marked as not from the person. Each message says who sent it, and a session's message approves nothing for the person.",
+        input: || json!({ "type": "object", "properties": {
+            "to": { "type": "string", "description": "A session's name or pane id, or an orchestrator's name (orchestrator-…). A session may leave it out to answer the orchestrator that last wrote to it." },
+            "text": { "type": "string", "description": "The message. At most 4000 characters." }
+        }, "required": ["text"] }),
+    },
+    Tool {
+        name: "devpit_session_notify_idle",
+        method: "session_notify_idle",
+        description: "Orchestrator only: be told once, by a turn devpit starts in this chat marked as not from the person, when a session of any CLI goes idle or exits. Takes the session as devpit_session_message does. Answers at once, and wakes nothing, when it is idle already.",
+        input: || json!({ "type": "object", "properties": {
+            "name": { "type": "string", "description": "The session's name, as devpit_sessions gives it, or its pane id." }
+        }, "required": ["name"] }),
     },
 ];
 
@@ -567,6 +584,7 @@ fn call(
     let env = |name: &str| std::env::var(name).ok();
     let arguments = crate::devflow::hooked(tool.name, arguments, &env);
     let arguments = crate::consult::paned(tool.name, arguments, &env);
+    let arguments = from_pane(tool.name, arguments, &env);
     let full = lean::wants_full(&arguments);
     match ask(tool.method, lean::asked(tool.name, arguments.clone())) {
         Ok(answer) if tool.name == crate::skills::TOOL && !full && given.again(&answer) => {
@@ -577,6 +595,26 @@ fn call(
         Ok(answer) => said(&lean::said(tool.name, &arguments, answer), false),
         Err(why) => said(&why, true),
     }
+}
+
+/// A session's message signed with the pane it runs in, from the environment
+/// the CLI started this server with and never from the call: one session
+/// cannot sign for another.
+pub(crate) fn from_pane(
+    tool: &str,
+    mut arguments: Value,
+    env: &dyn Fn(&str) -> Option<String>,
+) -> Value {
+    if tool != "devpit_session_message" {
+        return arguments;
+    }
+    if let Some(fields) = arguments.as_object_mut() {
+        match env(crate::hook::PANE_ENV).filter(|pane| !pane.is_empty()) {
+            Some(pane) => fields.insert("fromPane".to_owned(), json!(pane)),
+            None => fields.remove("fromPane"),
+        };
+    }
+    arguments
 }
 
 fn said(text: &str, failed: bool) -> Value {

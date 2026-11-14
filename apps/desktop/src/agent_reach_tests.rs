@@ -40,6 +40,23 @@ fn codex_is_given_the_server_as_overrides_on_its_own_line() {
     );
 }
 
+/// Codex hands its servers only the variables it is told to: without the
+/// pane, a Codex session's message could not say whose it is.
+#[test]
+fn codex_hands_devpits_server_the_pane_it_runs_in() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let flags = mcp_flags(
+        "codex",
+        Path::new("/opt/devpit"),
+        &dir.path().join("mcp.json"),
+    )
+    .expect("flags");
+    assert!(
+        flags.contains(r#"-c 'mcp_servers.devpit.env_vars=["DEVPIT_PANE"]'"#),
+        "{flags}"
+    );
+}
+
 /// Codex's own sixty seconds cut off a card's checks and review while they
 /// ran on, and the agent ran them again.
 #[test]

@@ -11,7 +11,7 @@ use serde_json::{json, Value};
 use crate::mcp::Tool;
 
 /// The tools only devpit's orchestrator may call.
-pub(crate) const ORCHESTRATOR_ONLY: [&str; 14] = [
+pub(crate) const ORCHESTRATOR_ONLY: [&str; 15] = [
     "devpit_projects",
     "devpit_sessions",
     "devpit_session_screen",
@@ -23,6 +23,7 @@ pub(crate) const ORCHESTRATOR_ONLY: [&str; 14] = [
     "devpit_send_draft",
     "devpit_log",
     "devpit_start_session",
+    "devpit_session_notify_idle",
     "devpit_project_agent_ask",
     "devpit_project_agent_brief",
     // Unreachable when the door is down, and only a latency when it is up.

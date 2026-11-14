@@ -45,7 +45,7 @@ pub(crate) struct Asked {
 }
 
 /// The methods this build answers, for an agent asking what it can do.
-pub(crate) const METHODS: [&str; 58] = [
+pub(crate) const METHODS: [&str; 60] = [
     "context",
     "board",
     "card",
@@ -104,6 +104,8 @@ pub(crate) const METHODS: [&str; 58] = [
     "heartbeat_status",
     "briefing",
     "telegram_send",
+    "session_message",
+    "session_notify_idle",
 ];
 
 /// The methods that change the board, and so tell the window.
@@ -434,6 +436,19 @@ fn respond_in(
                 into,
             )?;
             return Ok(json!({ "wrote": wrote }));
+        }
+        "session_message" => {
+            return crate::session_bus::message(
+                projects,
+                here,
+                &asked.params,
+                &asked.author,
+                &asked.cwd,
+            );
+        }
+        "session_notify_idle" => {
+            let profile = orchestrating(here)?;
+            return crate::session_bus::notify(here, profile, &asked.params);
         }
         "screen" => {
             let profile = orchestrating(here)?;

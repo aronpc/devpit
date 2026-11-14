@@ -257,6 +257,7 @@ mod saves;
 mod schedules;
 mod search;
 mod secret_scan;
+mod session_bus;
 mod session_cost;
 mod session_notice;
 mod session_search;
@@ -560,6 +561,8 @@ fn main() {
             // A card's date goes off at its time, whatever project it is in.
             reminders::watch(app.handle().clone());
             assistant_watch::watch(app.handle().clone());
+            // Messages between orchestrators and sessions of any CLI.
+            session_bus::start(app.handle().clone());
             // devpit's half of each orchestrator's brief, as this build has it.
             orchestrator::seed_all_on_start();
             // Hooks are how the board hears about work as it happens rather

@@ -287,3 +287,22 @@ fn a_projects_session_is_offered_its_own_project_agent_and_no_one_else_is() {
         }
     }
 }
+
+/// A session of any project answers its orchestrator with the bus; only an
+/// orchestrator is woken by a session going idle.
+#[test]
+fn a_session_may_message_and_only_an_orchestrator_hears_of_idle() {
+    let listed = tools(&Offer::Off, &PROJECT);
+    let session = names(&listed);
+    assert!(session.contains(&"devpit_session_message"));
+    assert!(!session.contains(&"devpit_session_notify_idle"));
+    let orchestrator = Seat {
+        orchestrator: Some(true),
+        decisions: Some(false),
+        assistant: None,
+    };
+    let listed = tools(&Offer::Off, &orchestrator);
+    let orchestrating = names(&listed);
+    assert!(orchestrating.contains(&"devpit_session_message"));
+    assert!(orchestrating.contains(&"devpit_session_notify_idle"));
+}

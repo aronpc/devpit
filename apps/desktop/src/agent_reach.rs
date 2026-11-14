@@ -57,9 +57,12 @@ pub(crate) fn mcp_flags(agent: &str, exe: &Path, config: &Path) -> Option<String
         }
         // Codex gives up on a tool at sixty seconds; a card's checks and
         // review run up to twenty minutes, and were run again on a retry.
+        // It hands a server only the variables it is told to: the pane is
+        // what signs a session's message.
         "codex" => Some(format!(
             "-c 'mcp_servers.devpit.command=\"{exe}\"' -c 'mcp_servers.devpit.args=[\"mcp\"]' \
              -c 'mcp_servers.devpit.env={{DEVPIT_AGENT_ID=\"codex\"}}' \
+             -c 'mcp_servers.devpit.env_vars=[\"DEVPIT_PANE\"]' \
              -c 'mcp_servers.devpit.tool_timeout_sec={}'",
             codex_tool_timeout().as_secs()
         )),

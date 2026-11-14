@@ -144,7 +144,7 @@ async fn whats_waiting_arrives_as_the_persons_turn_and_the_answer_goes_back() {
     assert_eq!(words, "what's waiting on me?");
     // As the agent is sent it and its log keeps it: the person, on Telegram.
     let conversation = conversation(Vec::new());
-    let ask = crate::remote_talk::ask_of(&conversation, None, "/orch", words, from.clone())
+    let ask = crate::remote_talk::ask_of(&conversation, None, "/orch", words, Some(from.clone()))
         .expect("a turn");
     let sent = crate::session_notice::notices(ask.from.as_ref(), None, &ask.prompt);
     let log = json!({ "type": "user", "uuid": "u1", "promptSource": "sdk", "message": { "role": "user", "content": sent } });

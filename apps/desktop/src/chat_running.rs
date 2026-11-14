@@ -37,6 +37,8 @@ impl Drop for TurnGuard {
             }
         }
         self.steering.release(&self.conversation_id);
+        // Between turns: what waits for this chat can go now.
+        crate::session_bus::chat_free();
     }
 }
 

@@ -107,7 +107,14 @@ fn the_phone_reads_the_latest_of_a_conversation_with_long_output_cut() {
 #[test]
 fn a_message_from_the_phone_is_the_persons_turn_marked_from_the_remote() {
     let talk = conversation("claude-work", Vec::new());
-    let ask = ask_of(&talk, None, "/elsewhere", "  envie  ", TurnFrom::Remote).expect("a turn");
+    let ask = ask_of(
+        &talk,
+        None,
+        "/elsewhere",
+        "  envie  ",
+        Some(TurnFrom::Remote),
+    )
+    .expect("a turn");
     assert_eq!(ask.from, Some(TurnFrom::Remote));
     assert_eq!(ask.prompt, "envie");
     assert_eq!(ask.profile_id, "claude-work");
@@ -134,13 +141,13 @@ fn a_message_from_the_phone_is_the_persons_turn_marked_from_the_remote() {
         Some("claude-work"),
         "/orchestrator",
         "oi",
-        TurnFrom::Remote,
+        Some(TurnFrom::Remote),
     )
     .expect("a turn");
     assert_eq!(first.profile_id, "claude-work");
     assert_eq!(first.cwd, "/orchestrator");
-    assert!(ask_of(&fresh, None, "/orchestrator", "oi", TurnFrom::Remote).is_err());
-    assert!(ask_of(&talk, None, "/elsewhere", "   ", TurnFrom::Remote).is_err());
+    assert!(ask_of(&fresh, None, "/orchestrator", "oi", Some(TurnFrom::Remote)).is_err());
+    assert!(ask_of(&talk, None, "/elsewhere", "   ", Some(TurnFrom::Remote)).is_err());
 }
 
 struct Machine {

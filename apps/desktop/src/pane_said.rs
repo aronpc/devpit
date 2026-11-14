@@ -26,6 +26,11 @@ impl PaneStates {
         }
     }
 
+    /// What the pane's agent last said through a hook, if it ever spoke.
+    pub(crate) fn heard_of(&self, leaf: &str) -> Option<Doing> {
+        self.heard.get(leaf).copied()
+    }
+
     /// Whether the screen is worth reading: the agent said it waits, or it has
     /// said nothing and was never read or was last seen on a prompt.
     pub(crate) fn should_look(&self, leaf: &str) -> bool {
@@ -52,6 +57,10 @@ pub(crate) fn read(leaf: &str, prompt: bool) {
     if let Ok(mut states) = states().lock() {
         states.read(leaf, prompt);
     }
+}
+
+pub(crate) fn heard_of(leaf: &str) -> Option<Doing> {
+    states().lock().ok()?.heard_of(leaf)
 }
 
 pub(crate) fn should_look(leaf: &str) -> bool {
