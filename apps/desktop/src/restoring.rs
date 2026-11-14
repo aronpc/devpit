@@ -104,10 +104,14 @@ pub(crate) fn base_or<'a>(base: Option<&'a str>, launch: &'a str) -> &'a str {
 /// The launch line, continuing `session` when the agent can.
 ///
 /// The id is typed into a shell, so anything but a session id's own
-/// characters is refused rather than quoted.
+/// characters is refused rather than quoted: a UUID, or OpenCode's `ses_…`.
 pub(crate) fn with_resume(start: &str, flag: Option<&str>, session: Option<&str>) -> String {
     let plain = |id: &&str| {
-        !id.is_empty() && id.len() <= 64 && id.chars().all(|c| c.is_ascii_hexdigit() || c == '-')
+        !id.is_empty()
+            && id.len() <= 64
+            && id
+                .chars()
+                .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
     };
     match (flag, session.filter(plain)) {
         (Some(flag), Some(id)) => format!("{start} {}", flag.replace("{}", id)),
@@ -145,6 +149,27 @@ mod tests {
     fn without_a_session_or_a_resume_flag_the_agent_starts_fresh() {
         assert_eq!(with_resume(START, Some("--resume {}"), None), START);
         assert_eq!(with_resume(START, None, Some("94e3457c")), START);
+    }
+
+    /// Each CLI continues its own session by id, the way its own help says.
+    #[test]
+    fn each_cli_continues_its_session_by_its_own_flag() {
+        const UUID: &str = "94e3457c-dcfa-4580-951a-dc9110a9580e";
+        let resumed = |agent: &str, id: &str| {
+            let known = devpit_pty::agents::known(agent).expect("known");
+            with_resume(known.launch, known.resume_flag, Some(id))
+        };
+        assert_eq!(resumed("claude", UUID), format!("claude --resume {UUID}"));
+        assert_eq!(resumed("codex", UUID), format!("codex resume {UUID}"));
+        assert_eq!(resumed("gemini", UUID), format!("gemini --resume {UUID}"));
+        assert_eq!(
+            resumed("opencode", "ses_e253a9d75ffejkRP4tKUxLPGEa"),
+            "opencode --session ses_e253a9d75ffejkRP4tKUxLPGEa"
+        );
+        assert_eq!(
+            resumed("cursor", UUID),
+            format!("cursor-agent --resume {UUID}")
+        );
     }
 
     /// The line is typed into a shell: an id that is not an id never reaches it.

@@ -86,7 +86,8 @@ pub const KNOWN: &[Known] = &[
         launch: "codex",
         wears: &["codex"],
         settings_flag: None,
-        resume_flag: None,
+        // `codex resume <id>`, a subcommand after the options; measured on 0.160.
+        resume_flag: Some("resume {}"),
         driver: "codex",
         chat_args: &[],
         chat_since: None,
@@ -98,7 +99,8 @@ pub const KNOWN: &[Known] = &[
         launch: "gemini",
         wears: &["gemini"],
         settings_flag: None,
-        resume_flag: None,
+        // `--resume <uuid>` as well as an index, per 0.55's own error text.
+        resume_flag: Some("--resume {}"),
         driver: "",
         chat_args: &[],
         chat_since: None,
@@ -110,7 +112,8 @@ pub const KNOWN: &[Known] = &[
         launch: "opencode",
         wears: &["opencode"],
         settings_flag: None,
-        resume_flag: None,
+        // `--session <id>`, per `opencode --help` on 1.17.
+        resume_flag: Some("--session {}"),
         driver: "acp",
         // `opencode acp`, per its docs: an ACP server over stdio.
         chat_args: &["acp"],
@@ -123,7 +126,8 @@ pub const KNOWN: &[Known] = &[
         launch: "cursor-agent",
         wears: &["cursor-agent", "cursor"],
         settings_flag: None,
-        resume_flag: None,
+        // `--resume [chatId]`, per `cursor-agent --help`.
+        resume_flag: Some("--resume {}"),
         driver: "",
         chat_args: &[],
         chat_since: None,
