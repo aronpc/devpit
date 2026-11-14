@@ -572,3 +572,23 @@ fn a_plan_is_approved_and_refused_on_the_stdio_permission_prompt() {
     assert_eq!(refused["response"]["response"]["behavior"], "deny");
     assert_eq!(refused["response"]["response"]["message"], "Keep planning");
 }
+
+/// devpit's four modes are Claude Code's own words, each on its line as is.
+#[test]
+fn each_mode_is_claudes_own_permission_mode_on_the_line() {
+    for mode in ["manual", "acceptEdits", "bypassPermissions", "plan"] {
+        let with = Say {
+            permission: Some(mode),
+            ..turn(None)
+        };
+        let line = argv(&with);
+        let at = line
+            .iter()
+            .position(|one| one == "--permission-mode")
+            .expect("the mode is on the line");
+        assert_eq!(line[at + 1], mode);
+    }
+    assert!(!argv(&turn(None))
+        .iter()
+        .any(|one| one == "--permission-mode"));
+}

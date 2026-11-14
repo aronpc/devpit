@@ -948,3 +948,32 @@ fn the_app_server_is_handed_devpits_tools_on_its_command_line() {
     say.mcp_config = None;
     assert_eq!(Codex::default().wire().argv(&say), ["app-server"]);
 }
+
+/// Each of devpit's modes opens the thread with Codex's approval policy and
+/// sandbox for it.
+#[test]
+fn each_mode_opens_the_thread_with_its_approval_policy_and_sandbox() {
+    for (mode, approval, sandbox) in [
+        ("manual", "untrusted", "workspace-write"),
+        ("acceptEdits", "untrusted", "workspace-write"),
+        ("bypassPermissions", "never", "danger-full-access"),
+        ("plan", "untrusted", "read-only"),
+    ] {
+        let wire = Codex::default().wire();
+        let control = Control::new();
+        wire.hello(&turn(
+            "codex",
+            &[],
+            Path::new("/w"),
+            "",
+            mode,
+            None,
+            &control,
+        ));
+        let said = wire.replies(r#"{"id":0,"result":{}}"#);
+        let open: Value = serde_json::from_str(&said[1]).expect("json");
+        assert_eq!(open["method"], "thread/start", "{mode}");
+        assert_eq!(open["params"]["approvalPolicy"], approval, "{mode}");
+        assert_eq!(open["params"]["sandbox"], sandbox, "{mode}");
+    }
+}
