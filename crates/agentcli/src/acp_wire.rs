@@ -231,7 +231,8 @@ impl Wire for AcpWire {
     fn interrupt(&self) -> Option<Vec<String>> {
         let mut session = held(&self.session);
         let Some(id) = session.id.clone().filter(|_| session.ready) else {
-            if session.held.is_empty() {
+            // A second stop while the first waits for the session is taken too.
+            if session.held.is_empty() && !session.cancelled {
                 return None;
             }
             session.held.clear();

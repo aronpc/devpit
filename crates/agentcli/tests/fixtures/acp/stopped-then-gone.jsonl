@@ -1,0 +1,2 @@
+{"dir": ">", "msg": {"jsonrpc": "2.0", "id": 0, "method": "initialize", "params": {"protocolVersion": 1, "clientCapabilities": {"fs": {"readTextFile": false, "writeTextFile": false}, "terminal": false}, "clientInfo": {"name": "devpit", "version": "{version}"}}}}
+{"dir": "exit", "wait": 0.5}

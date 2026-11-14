@@ -154,6 +154,7 @@ impl Resident {
                         init: heard.init,
                         anchor: heard.anchor,
                     })));
+                    reading.stopped_alone();
                 }
                 if !whole {
                     break;
@@ -161,6 +162,20 @@ impl Resident {
             }
             // Gone, it takes no message: one written into its stdin would wait forever.
             reading.close();
+            // A turn stopped before the CLI could hear of it ended stopped, not
+            // lost: one lost is sent again by a process of its own.
+            if reading.stopped_alone() {
+                tell(Heard::Ended(Box::new(Said {
+                    end: TurnEnd {
+                        turn_id: String::new(),
+                        stop_reason: Some("cancelled".to_owned()),
+                        ..Default::default()
+                    },
+                    session_id: None,
+                    init: None,
+                    anchor: None,
+                })));
+            }
             let _ = child.wait();
             tell(Heard::Gone);
         });

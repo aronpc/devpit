@@ -13,6 +13,7 @@
 use std::collections::BTreeSet;
 use std::io::Write;
 use std::process::ChildStdin;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
 use devpit_rpc::Part;
@@ -41,6 +42,8 @@ pub struct Control {
     asker: Arc<Mutex<Option<Asker>>>,
     /// How this CLI is written to; Claude Code's stream-json until a turn says.
     wire: Arc<Mutex<Option<Arc<dyn Wire>>>>,
+    /// A stop the wire took without a word to the CLI, until its turn ends.
+    stopped_alone: Arc<AtomicBool>,
 }
 
 impl Control {
@@ -147,9 +150,20 @@ impl Control {
     /// Asks the CLI to stop the turn it is on, and keep running: what stopping
     /// is for a process that stays to hear the next message.
     pub fn interrupt(&self) -> bool {
-        self.wire()
-            .interrupt()
-            .is_some_and(|lines| self.write_all(lines))
+        let Some(lines) = self.wire().interrupt() else {
+            return false;
+        };
+        let alone = lines.is_empty();
+        let taken = self.write_all(lines);
+        if taken && alone {
+            self.stopped_alone.store(true, Ordering::SeqCst);
+        }
+        taken
+    }
+
+    /// Whether a stop the wire took alone still waits for its turn to end; taken once.
+    pub(crate) fn stopped_alone(&self) -> bool {
+        self.stopped_alone.swap(false, Ordering::SeqCst)
     }
 
     /// A switch under `id`, in the CLI's shape: written now when it is a

@@ -504,6 +504,7 @@ fn stop_while_the_session_opens_sends_nothing_and_the_process_goes_on() {
         resident.interrupt(),
         "a stop is taken before the session opens"
     );
+    assert!(resident.interrupt(), "and so is a second one");
     assert_eq!(
         until_ended(&said),
         vec![Spoke::Ended(Some("cancelled".to_owned()), false)]
@@ -556,4 +557,19 @@ fn a_process_gone_before_its_session_opened_takes_no_message() {
     let (resident, said, _dir) = resident("gone-in-handshake.jsonl");
     assert_eq!(until_ended(&said), vec![Spoke::Gone]);
     assert!(!resident.say("Hi"));
+}
+
+/// An agent that exits after its turn was stopped, before its session opened,
+/// ends that turn stopped: a turn ended any other way is sent again.
+#[cfg(unix)]
+#[test]
+fn a_turn_stopped_before_its_agent_exits_ends_stopped() {
+    let (resident, said, _dir) = resident("stopped-then-gone.jsonl");
+    assert!(resident.say("First"));
+    assert!(resident.interrupt());
+    assert_eq!(
+        until_ended(&said),
+        vec![Spoke::Ended(Some("cancelled".to_owned()), false)]
+    );
+    assert_eq!(until_ended(&said), vec![Spoke::Gone]);
 }
