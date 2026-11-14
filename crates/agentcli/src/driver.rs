@@ -4,9 +4,12 @@
 //! turns those lines into the typed parts the contract carries, so a new CLI
 //! is a new file here and nothing else.
 
+use std::sync::Arc;
+
 use devpit_rpc::{Context, Part, SessionInit};
 
-use crate::claude_lines::{assistant_parts, system, tool_results, Streamed};
+use crate::claude_lines::{assistant_parts, context_of, system, tool_results, Streamed};
+use crate::wire::Wire;
 
 /// What one line of a CLI's output turned into.
 #[derive(Debug, Clone, PartialEq)]
@@ -26,9 +29,14 @@ pub enum Read {
     Nothing,
 }
 
+/// One CLI, both ways: its lines read here, and what is written back to it
+/// through its [`Wire`].
 pub trait Driver: Send + Sync {
     /// The name this driver answers to, and what a conversation records.
     fn name(&self) -> &'static str;
+
+    /// How this CLI is written to, shared by every writer of one process.
+    fn wire(&self) -> Arc<dyn Wire>;
 
     /// The models it offers. The composer picks from these; it never picks a
     /// driver, because that is fixed for the conversation's life.
@@ -76,6 +84,10 @@ pub struct Claude {
 impl Driver for Claude {
     fn name(&self) -> &'static str {
         "claude"
+    }
+
+    fn wire(&self) -> Arc<dyn Wire> {
+        Arc::new(crate::wire::Claude)
     }
 
     /// The CLI's own aliases rather than dated ids: an alias follows the
@@ -165,29 +177,6 @@ impl Driver for Claude {
         }
         value.get("uuid")?.as_str().map(str::to_owned)
     }
-}
-
-/// Measured on 2.1.270: `usage.iterations` holds one entry per request the
-/// turn made, and the last one is what the context held when it ended — the
-/// top-level `usage` sums them, which overcounts any turn that used a tool.
-/// The window is the main model's, from `modelUsage`.
-fn context_of(result: &serde_json::Value) -> Option<Context> {
-    let last = result.get("usage")?.get("iterations")?.as_array()?.last()?;
-    let tokens = |key: &str| last.get(key).and_then(|n| n.as_u64()).unwrap_or(0);
-    let used = tokens("input_tokens")
-        + tokens("cache_read_input_tokens")
-        + tokens("cache_creation_input_tokens")
-        + tokens("output_tokens");
-    let window = result
-        .get("modelUsage")?
-        .as_object()?
-        .values()
-        .filter_map(|model| model.get("contextWindow")?.as_u64())
-        .max()?;
-    Some(Context {
-        used: u32::try_from(used).ok()?,
-        window: u32::try_from(window).ok()?,
-    })
 }
 
 /// The driver a conversation named, or nothing when it is not installed.

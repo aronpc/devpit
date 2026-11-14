@@ -17,6 +17,8 @@ use std::sync::{Arc, Mutex};
 
 use devpit_rpc::Part;
 
+use crate::wire::Wire;
+
 /// A permission prompt the CLI put to its host on stdout.
 pub struct Prompt {
     pub request_id: String,
@@ -37,6 +39,8 @@ pub struct Control {
     /// Steers written and not echoed back yet: the uuid sent, and devpit's id for it.
     awaiting: Arc<Mutex<Vec<(String, String)>>>,
     asker: Arc<Mutex<Option<Asker>>>,
+    /// How this CLI is written to; Claude Code's stream-json until a turn says.
+    wire: Arc<Mutex<Option<Arc<dyn Wire>>>>,
 }
 
 impl Control {
@@ -48,6 +52,38 @@ impl Control {
         if let Ok(mut held) = self.stdin.lock() {
             *held = Some(stdin);
         }
+    }
+
+    /// Takes the process's stdin, spoken to through `wire`, and writes the
+    /// wire's handshake. False when the handshake could not be written.
+    pub(crate) fn open(
+        &self,
+        stdin: ChildStdin,
+        wire: Arc<dyn Wire>,
+        turn: &crate::talk::Say<'_>,
+    ) -> bool {
+        let hello = wire.hello(turn);
+        if let Ok(mut held) = self.wire.lock() {
+            *held = Some(wire);
+        }
+        self.attach(stdin);
+        self.write_all(hello)
+    }
+
+    fn wire(&self) -> Arc<dyn Wire> {
+        self.wire
+            .lock()
+            .ok()
+            .and_then(|held| held.clone())
+            .unwrap_or_else(|| Arc::new(crate::wire::Claude))
+    }
+
+    /// Writes each line in turn; with none, whether stdin is still held.
+    fn write_all(&self, lines: Vec<String>) -> bool {
+        if lines.is_empty() {
+            return self.stdin.lock().is_ok_and(|held| held.is_some());
+        }
+        lines.iter().all(|line| self.write(line))
     }
 
     /// Writes one line; false when the turn has already let go of stdin.
@@ -65,7 +101,7 @@ impl Control {
 
     /// Hands the running turn one more message from the person.
     pub fn say(&self, prompt: &str) -> bool {
-        self.write(&user_line(prompt))
+        self.write_all(self.wire().prompt(prompt))
     }
 
     /// Hands the running turn a message under `uuid`, kept as `id` until the
@@ -73,7 +109,10 @@ impl Control {
     pub fn steer(&self, prompt: &str, uuid: &str, id: &str) -> bool {
         // Kept before it is written: the echo may come back before this returns.
         self.awaiting(|held| held.push((uuid.to_owned(), id.to_owned())));
-        let sent = self.write(&steer_line(prompt, uuid));
+        let sent = self
+            .wire()
+            .steer(prompt, uuid)
+            .is_some_and(|line| self.write(&line));
         if !sent {
             self.heard(uuid);
         }
@@ -100,13 +139,43 @@ impl Control {
 
     /// Asks the CLI to stop one background task, by the id it gave it.
     pub fn stop_task(&self, task_id: &str) -> bool {
-        self.write(&stop_task_request(task_id))
+        self.wire()
+            .stop_task(task_id)
+            .is_some_and(|line| self.write(&line))
     }
 
     /// Asks the CLI to stop the turn it is on, and keep running: what stopping
     /// is for a process that stays to hear the next message.
     pub fn interrupt(&self) -> bool {
-        self.write(&interrupt_request())
+        let lines = self.wire().interrupt();
+        !lines.is_empty() && self.write_all(lines)
+    }
+
+    /// A switch under `id`, in the CLI's shape: written now when it is a
+    /// line. `None` when it takes none, or no longer listens.
+    pub(crate) fn request(
+        &self,
+        id: &str,
+        request: serde_json::Value,
+    ) -> Option<crate::wire::Switch> {
+        match self.wire().control(id, request)? {
+            crate::wire::Switch::Write(line) => self
+                .write(&line)
+                .then_some(crate::wire::Switch::Write(line)),
+            kept => Some(kept),
+        }
+    }
+
+    /// Writes what `line` calls for in reply, if anything.
+    pub(crate) fn reply(&self, line: &str) {
+        for reply in self.wire().replies(line) {
+            self.write(&reply);
+        }
+    }
+
+    /// The CLI's answer to a switch, when `line` is one.
+    pub(crate) fn control_answer(&self, line: &str) -> Option<serde_json::Value> {
+        self.wire().control_answer(line)
     }
 
     /// Who answers the permission prompts this turn would otherwise refuse.
@@ -116,30 +185,26 @@ impl Control {
         }
     }
 
-    /// Answers the prompt sent under `request_id`, in the CLI's own shape:
-    /// `{behavior: "allow", updatedInput}` or `{behavior: "deny", message}`.
+    /// Answers the prompt sent under `request_id` — `{behavior: "allow",
+    /// updatedInput}` or `{behavior: "deny", message}` — in the CLI's own shape.
     pub fn answer(&self, request_id: &str, response: serde_json::Value) -> bool {
-        self.write(
-            &serde_json::json!({
-                "type": "control_response",
-                "response": { "subtype": "success", "request_id": request_id, "response": response },
-            })
-            .to_string(),
-        )
+        self.wire()
+            .answer(request_id, response)
+            .is_some_and(|line| self.write(&line))
     }
 
     /// A permission prompt on `line`, handed to the asker or refused. False
     /// when the line is not one.
     pub(crate) fn prompted(&self, line: &str, session_id: Option<&str>) -> bool {
-        let Some(refused) = refusal(line) else {
+        let Some(asked) = self.wire().asked(line, session_id) else {
             return false;
         };
         let asker = self.asker.lock().ok().and_then(|held| held.clone());
         let taken = asker
-            .zip(prompt_of(line, session_id))
+            .zip(asked.prompt)
             .is_some_and(|(ask, prompt)| ask(prompt, self));
         if !taken {
-            self.write(&refused);
+            self.write(&asked.refusal);
         }
         true
     }
@@ -194,7 +259,7 @@ pub fn stop_task_request(task_id: &str) -> String {
 }
 
 /// A permission prompt's request, read off the line [`refusal`] answers.
-fn prompt_of(line: &str, session_id: Option<&str>) -> Option<Prompt> {
+pub(crate) fn prompt_of(line: &str, session_id: Option<&str>) -> Option<Prompt> {
     let asked: serde_json::Value = serde_json::from_str(line).ok()?;
     let request = asked.get("request")?;
     Some(Prompt {

@@ -9,7 +9,7 @@ use std::collections::HashMap;
 use std::sync::Mutex;
 use std::time::Instant;
 
-use devpit_rpc::{CallState, Part, SessionInit};
+use devpit_rpc::{CallState, Context, Part, SessionInit};
 
 use crate::driver::Read;
 
@@ -291,4 +291,27 @@ pub(crate) fn limit(line: &str, was: Option<devpit_rpc::Limit>) -> Option<devpit
         },
         _ => was,
     }
+}
+
+/// Measured on 2.1.270: `usage.iterations` holds one entry per request the
+/// turn made, and the last one is what the context held when it ended — the
+/// top-level `usage` sums them, which overcounts any turn that used a tool.
+/// The window is the main model's, from `modelUsage`.
+pub(crate) fn context_of(result: &serde_json::Value) -> Option<Context> {
+    let last = result.get("usage")?.get("iterations")?.as_array()?.last()?;
+    let tokens = |key: &str| last.get(key).and_then(|n| n.as_u64()).unwrap_or(0);
+    let used = tokens("input_tokens")
+        + tokens("cache_read_input_tokens")
+        + tokens("cache_creation_input_tokens")
+        + tokens("output_tokens");
+    let window = result
+        .get("modelUsage")?
+        .as_object()?
+        .values()
+        .filter_map(|model| model.get("contextWindow")?.as_u64())
+        .max()?;
+    Some(Context {
+        used: u32::try_from(used).ok()?,
+        window: u32::try_from(window).ok()?,
+    })
 }

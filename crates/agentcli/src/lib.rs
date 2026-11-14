@@ -346,3 +346,4 @@ mod talk_failure;
 mod talk_stream;
 pub mod transcript_text;
 pub mod trust;
+pub mod wire;

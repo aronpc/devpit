@@ -72,6 +72,7 @@ fn one_turn(
     let mut result_seen = false;
 
     for line in lines {
+        control.reply(&line);
         if control.prompted(&line, heard.session_id.as_deref()) {
             continue;
         }

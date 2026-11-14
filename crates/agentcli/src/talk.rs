@@ -10,7 +10,6 @@ use std::process::Stdio;
 use devpit_rpc::{Part, SessionInit, TurnEnd};
 
 use crate::driver::Driver;
-use crate::talk_args::argv;
 use crate::AgentError;
 
 /// What a turn needs to start.
@@ -87,8 +86,8 @@ pub fn say(
     mut on_part: impl FnMut(Part),
     mut on_start: impl FnMut(u32),
 ) -> Result<Said, AgentError> {
-    let argv = argv(turn);
-
+    let wire = driver.wire();
+    let argv = wire.argv(turn);
     let mut child = own_group(&mut devpit_pty::host_env::command(turn.command))
         .args(&argv)
         .current_dir(turn.cwd)
@@ -108,8 +107,7 @@ pub fn say(
 
     let stdin = child.stdin.take().ok_or(AgentError::NotInstalled)?;
     let control = turn.control.cloned().unwrap_or_default();
-    control.attach(stdin);
-    if !control.say(turn.prompt) {
+    if !control.open(stdin, wire, turn) || !control.say(turn.prompt) {
         return Err(AgentError::Unreadable(
             "could not send the prompt".to_owned(),
         ));

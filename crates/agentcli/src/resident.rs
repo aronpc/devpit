@@ -21,8 +21,8 @@ use devpit_rpc::{Part, TurnEnd};
 use crate::control::Control;
 use crate::driver::Driver;
 use crate::talk::{Said, Say};
-use crate::talk_args::argv;
 use crate::talk_stream::next_turn;
+use crate::wire::Switch;
 use crate::AgentError;
 
 /// How long a closed process gets to finish on its own before it is ended.
@@ -60,6 +60,8 @@ pub enum Heard {
 pub struct Resident {
     control: Control,
     pid: u32,
+    /// Where what it says goes, for a switch devpit answers itself.
+    told: Arc<dyn Fn(Heard) + Send + Sync>,
 }
 
 impl Resident {
@@ -74,13 +76,14 @@ impl Resident {
         // Shared by the turn reader and the line watcher below, which both
         // hand things on while one turn is being read.
         let on = std::sync::Arc::new(std::sync::Mutex::new(on));
-        let tell = move |heard: Heard| {
+        let tell: Arc<dyn Fn(Heard) + Send + Sync> = Arc::new(move |heard: Heard| {
             if let Ok(mut on) = on.lock() {
                 on(heard);
             }
-        };
+        });
+        let wire = driver.wire();
         let mut child = crate::talk::own_group(&mut devpit_pty::host_env::command(turn.command))
-            .args(argv(turn))
+            .args(wire.argv(turn))
             .current_dir(turn.cwd)
             .envs(turn.env.iter().map(|(key, value)| (key, value)))
             // Pages that come with MCP tools: the answers match what those pages read.
@@ -95,22 +98,24 @@ impl Resident {
             .map_err(|_| AgentError::NotInstalled)?;
         let pid = child.id();
         let control = turn.control.cloned().unwrap_or_default();
-        control.attach(child.stdin.take().ok_or(AgentError::NotInstalled)?);
+        let stdin = child.stdin.take().ok_or(AgentError::NotInstalled)?;
+        if !control.open(stdin, wire, turn) {
+            let _ = child.kill();
+            return Err(AgentError::NotInstalled);
+        }
         let stdout = child.stdout.take().ok_or(AgentError::NotInstalled)?;
 
-        let reading = control.clone();
+        let (reading, told) = (control.clone(), tell.clone());
         std::thread::spawn(move || {
             // Control answers are not turn frames; they are handed on as
             // they pass, and the turn reader never sees a difference.
-            let watching = tell.clone();
+            let (watching, answers) = (tell.clone(), reading.clone());
             let mut lines = BufReader::new(stdout)
                 .lines()
                 .map_while(Result::ok)
                 .inspect(move |line| {
-                    if line.contains("\"control_response\"") {
-                        if let Ok(said) = serde_json::from_str::<serde_json::Value>(line) {
-                            watching(Heard::Control(said["response"].clone()));
-                        }
+                    if let Some(said) = answers.control_answer(line) {
+                        watching(Heard::Control(said));
                     }
                 });
             // The CLI counts what the process has spent so far: a turn's cost
@@ -155,7 +160,7 @@ impl Resident {
             tell(Heard::Gone);
         });
 
-        Ok(Self { control, pid })
+        Ok(Self { control, pid, told })
     }
 
     /// Hands it the person's next message. False when it no longer listens.
@@ -176,10 +181,16 @@ impl Resident {
     /// Sends a control request under `id`; its answer comes back as
     /// [`Heard::Control`]. False when it no longer listens.
     pub fn control(&self, id: &str, request: serde_json::Value) -> bool {
-        self.control.write(
-            &serde_json::json!({ "type": "control_request", "request_id": id, "request": request })
-                .to_string(),
-        )
+        match self.control.request(id, request) {
+            Some(Switch::Write(_)) => true,
+            Some(Switch::Kept) => {
+                (self.told)(Heard::Control(
+                    serde_json::json!({ "subtype": "success", "request_id": id }),
+                ));
+                true
+            }
+            None => false,
+        }
     }
 
     /// See [`Control::stop_task`].
