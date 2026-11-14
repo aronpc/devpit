@@ -24,8 +24,19 @@ pub struct Maintenance {
     /// Days logs and run artifacts are kept; 0 keeps them until deleted.
     pub keep_days: u32,
     pub project_agent: bool,
+    /// The projects linked to an orchestrator, each with its own switch.
+    pub project_agent_projects: Vec<LabsProject>,
     pub canvas: bool,
     pub last: Option<CleanRun>,
+}
+
+/// A project the project agent can learn, and whether Labs leaves it out.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct LabsProject {
+    pub id: String,
+    pub name: String,
+    pub on: bool,
 }
 
 /// What one cleaning deleted.
@@ -88,6 +99,7 @@ fn read(store: &Store) -> Result<Maintenance, RpcError> {
         on_battery: on_battery_in(Path::new(POWER_SUPPLY)),
         keep_days: keep_days(store),
         project_agent: project_agent_on(store),
+        project_agent_projects: Vec::new(),
         canvas: canvas_on(store),
         last: store
             .preference(preference::MAINTENANCE_CLEAN_LAST)?
@@ -95,17 +107,26 @@ fn read(store: &Store) -> Result<Maintenance, RpcError> {
     })
 }
 
+/// [`read`], with the projects linked to an orchestrator.
+fn shown(store: &Store) -> Result<Maintenance, RpcError> {
+    let mut shown = read(store)?;
+    let projects = crate::projects::project_list_now()?.projects;
+    shown.project_agent_projects = crate::project_onboarding::labs_projects(&projects, store);
+    Ok(shown)
+}
+
 /// `maintenance.read`
 #[tauri::command]
 #[specta::specta]
 pub async fn maintenance_read() -> Result<Maintenance, RpcError> {
-    crate::off_main::blocking(|| read(&store()?)).await
+    crate::off_main::blocking(|| shown(&store()?)).await
 }
 
 /// `maintenance.write` — what is given changes; what is not stays.
 #[tauri::command]
 #[specta::specta]
 pub async fn maintenance_write(
+    app: tauri::AppHandle,
     power_saver: Option<bool>,
     keep_days: Option<u32>,
     project_agent: Option<bool>,
@@ -128,11 +149,14 @@ pub async fn maintenance_write(
         }
         if let Some(on) = project_agent {
             store.set_preference_flag(preference::LABS_PROJECT_AGENT, on)?;
+            if on {
+                crate::project_onboarding::sweep(&app);
+            }
         }
         if let Some(on) = canvas {
             store.set_preference_flag(preference::LABS_CANVAS, on)?;
         }
-        read(&store)
+        shown(&store)
     })
     .await
 }
@@ -144,7 +168,28 @@ pub async fn maintenance_clean_now() -> Result<Maintenance, RpcError> {
     crate::off_main::blocking(|| {
         let store = store()?;
         clean_now(&store)?;
-        read(&store)
+        shown(&store)
+    })
+    .await
+}
+
+/// `maintenance.project_agent` — leaves one project out of the project agent,
+/// or takes it back in, where it learns its project if it never did.
+#[tauri::command]
+#[specta::specta]
+pub async fn maintenance_project_agent(
+    app: tauri::AppHandle,
+    project_id: String,
+    on: bool,
+) -> Result<Maintenance, RpcError> {
+    crate::off_main::blocking(move || {
+        let store = store()?;
+        crate::project_onboarding::leave_out(&store, &project_id, !on)
+            .map_err(RpcError::internal)?;
+        if on {
+            crate::project_onboarding::sweep(&app);
+        }
+        shown(&store)
     })
     .await
 }

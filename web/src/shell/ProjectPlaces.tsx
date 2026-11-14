@@ -9,7 +9,8 @@ import { useShell } from './useShell'
  * it — set up, switched on or not, every project has one to look at. An
  * orchestrator has neither: its folder is notes, and the projects' boards
  * are in its right panel. It has its Schedules instead. A project also has
- * its agent to ask, unless Labs has the project agent off.
+ * its agent to ask and its agent's memory, unless Labs has the project agent
+ * off.
  */
 export function ProjectPlaces({ open, showing }: { open: (kind: PaneName) => void; showing: (kind: PaneName) => boolean }): React.JSX.Element | null {
   const shell = useShell()
@@ -41,6 +42,12 @@ export function ProjectPlaces({ open, showing }: { open: (kind: PaneName) => voi
       <button className="act" onClick={() => open('ask')} aria-pressed={showing('ask')}>
         <span className="act__ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><path d="M9.5 9.2a2.6 2.6 0 0 1 5 .8c0 1.7-2.5 2.3-2.5 3.8M12 17h.01" /></svg></span>
         <span className="act__label">Ask the project</span>
+      </button>
+      )}
+      {agent && (
+      <button className="act" onClick={() => open('memory')} aria-pressed={showing('memory')}>
+        <span className="act__ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M12 4a3 3 0 0 0-3 3 3 3 0 0 0-3 3c0 1 .4 1.8 1 2.4A3 3 0 0 0 9 18a3 3 0 0 0 3 2 3 3 0 0 0 3-2 3 3 0 0 0 2-5.6c.6-.6 1-1.4 1-2.4a3 3 0 0 0-3-3 3 3 0 0 0-3-3Z" /><path d="M12 4v16" /></svg></span>
+        <span className="act__label">Project agent</span>
       </button>
       )}
     </>

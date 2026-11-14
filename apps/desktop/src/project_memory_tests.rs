@@ -360,3 +360,113 @@ fn a_decision_a_card_made_names_the_card_once_approved() {
     assert_eq!(made[0].cards(), ["#332"]);
     assert_eq!(made[0].text, settled);
 }
+
+#[test]
+fn an_onboarding_proposal_rests_on_its_files_and_not_on_its_mark() {
+    let found = one(&format!("{ONBOARDING}, AGENTS.md, Makefile"));
+    assert_eq!(found.files(), ["AGENTS.md", "Makefile"]);
+    assert!(found.onboarding());
+    assert!(!one("AGENTS.md, #12").onboarding());
+}
+
+#[test]
+fn approve_all_from_onboarding_writes_each_to_its_file_and_leaves_the_rest_waiting() {
+    let dir = project();
+    let root = dir.path();
+    seed(root, "2026-11-13").expect("seed");
+    let marked = format!("{ONBOARDING}, AGENTS.md");
+    propose(
+        root,
+        "2026-11-14",
+        &marked,
+        &[
+            aimed("facts.md", "Tests run with make test.", None),
+            aimed("decisions.md", "Sync the workspace, not the machine.", None),
+        ],
+    )
+    .expect("onboarding");
+    propose(
+        root,
+        "2026-11-14",
+        "#12",
+        &["Wait for the queue.".to_owned()],
+    )
+    .expect("lesson");
+
+    assert_eq!(approve_onboarding(root, "2026-11-15").expect("approved"), 2);
+    assert!(
+        read(root, "facts.md").contains("- 2026-11-15 · AGENTS.md · Tests run with make test.\n"),
+        "{}",
+        read(root, "facts.md")
+    );
+    assert!(read(root, "decisions.md")
+        .contains("- 2026-11-15 · AGENTS.md · Sync the workspace, not the machine.\n"));
+    let waiting = proposals(root);
+    assert_eq!(waiting.len(), 1);
+    assert_eq!(waiting[0].source, "#12");
+}
+
+#[test]
+fn learning_again_replaces_the_onboarding_proposals_still_waiting() {
+    let dir = project();
+    let root = dir.path();
+    seed(root, "2026-11-13").expect("seed");
+    let marked = format!("{ONBOARDING}, AGENTS.md");
+    propose(
+        root,
+        "2026-11-14",
+        &marked,
+        &[aimed("facts.md", "Old.", None)],
+    )
+    .expect("old");
+    propose(
+        root,
+        "2026-11-14",
+        "#12",
+        &["Wait for the queue.".to_owned()],
+    )
+    .expect("lesson");
+    assert_eq!(drop_onboarding(root).expect("dropped"), 1);
+    let waiting = proposals(root);
+    assert_eq!(waiting.len(), 1);
+    assert_eq!(waiting[0].source, "#12");
+}
+
+/// The memory as v0.1.50 wrote it on a first wake, byte for byte.
+const KEPT: [(&str, &str); 4] = [
+    ("facts.md", "# Facts\n\nEach entry: `- YYYY-MM-DD · source · what it says`. The source is a file, a card (#12) or a PR (PR #3).\n\n- 2026-11-14 · AGENTS.md · A guide to read first: \"Working in this repository\".\n- 2026-11-14 · README.md · A guide to read first: \"README.md\".\n"),
+    ("lessons.md", "# Lessons\n\nEach entry: `- YYYY-MM-DD · source · what it says`. The source is a file, a card (#12) or a PR (PR #3).\n\n"),
+    ("decisions.md", "# Decisions\n\nEach entry: `- YYYY-MM-DD · source · what it says`. The source is a file, a card (#12) or a PR (PR #3).\n\n- 2026-11-14 · docs/adr/0001-sync.md · ADR 0001 — Sync the person's workspace, not their machine\n"),
+    ("checked", "d85c74b14145f97da79c099d3e86c8d7946b0457\n"),
+];
+
+#[test]
+fn a_memory_kept_before_onboarding_opens_unchanged() {
+    let dir = project();
+    let root = dir.path();
+    std::fs::create_dir_all(root.join(DIR)).expect("dir");
+    for (file, text) in KEPT {
+        std::fs::write(root.join(DIR).join(file), text).expect("kept");
+    }
+    assert!(!seed(root, "2026-11-15").expect("seed"));
+    let facts = kept(root, "facts.md");
+    assert_eq!(facts.len(), 2);
+    assert_eq!(facts[0].files(), ["AGENTS.md"]);
+    assert_eq!(kept(root, "lessons.md").len(), 0);
+    assert_eq!(
+        kept(root, "decisions.md")[0].files(),
+        ["docs/adr/0001-sync.md"]
+    );
+    // Onboarding only proposes: what was kept stays byte for byte.
+    propose(
+        root,
+        "2026-11-15",
+        &format!("{ONBOARDING}, AGENTS.md"),
+        &[aimed("facts.md", "Tests run with make test.", None)],
+    )
+    .expect("proposed");
+    onboarded(root, "2026-11-15").expect("onboarded");
+    for (file, text) in KEPT {
+        assert_eq!(read(root, file), text, "{file} changed");
+    }
+}

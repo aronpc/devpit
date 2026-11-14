@@ -3,6 +3,7 @@ import { NotePane } from '../plugins/notes/NotePane'
 import { NotesList } from '../plugins/notes/NotesList'
 import { DrawingList } from '../plugins/excalidraw/DrawingList'
 import { AskPane } from './AskPane'
+import { MemoryPane } from './MemoryPane'
 import { BoardPane } from './BoardPane'
 import { BrowserPane } from './BrowserPane'
 import { ChatPane } from './ChatPane'
@@ -129,6 +130,24 @@ export const PANE_MOUNTS: readonly PaneMount[] = [
           <button className="sq26" onClick={() => close('ask')} aria-label="Close Ask the project" title="Close Ask the project">{closeIcon}</button>
         </div>
         <AskPane />
+      </>
+    ),
+  },
+  {
+    name: 'memory',
+    many: false,
+    className: 'pane',
+    render: (close) => (
+      <>
+        <div className="pane__bar">
+          <span className="pane__ico">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M12 4a3 3 0 0 0-3 3 3 3 0 0 0-3 3c0 1 .4 1.8 1 2.4A3 3 0 0 0 9 18a3 3 0 0 0 3 2 3 3 0 0 0 3-2 3 3 0 0 0 2-5.6c.6-.6 1-1.4 1-2.4a3 3 0 0 0-3-3 3 3 0 0 0-3-3Z" /><path d="M12 4v16" /></svg>
+          </span>
+          <span className="pane__t"><b>Project agent</b></span>
+          <span className="drag"></span>
+          <button className="sq26" onClick={() => close('memory')} aria-label="Close Project agent" title="Close Project agent">{closeIcon}</button>
+        </div>
+        <MemoryPane />
       </>
     ),
   },

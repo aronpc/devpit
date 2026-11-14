@@ -96,6 +96,7 @@ describe('Capabilities in the sidebar', () => {
       'Board',
       'Devflow',
       'Ask the project',
+      'Project agent',
       'Files',
       'Capabilities',
       'Excalidraw',

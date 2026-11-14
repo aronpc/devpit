@@ -54,3 +54,48 @@ pub struct ProjectAgentAnswer {
     /// The project's files the answer names, from the project's root.
     pub cited: Vec<String>,
 }
+
+/// One entry of a project agent's memory, or one waiting for the person.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct MemoryEntry {
+    /// The day it was written or proposed, as YYYY-MM-DD.
+    pub day: String,
+    /// Its whole source, as the file keeps it.
+    pub source: String,
+    pub text: String,
+    /// The project's files it rests on, from the project's root.
+    pub files: Vec<String>,
+    /// The cards it came from, as `#12`.
+    pub cards: Vec<String>,
+}
+
+/// A project agent's memory as its page shows it.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct ProjectMemory {
+    pub project_id: String,
+    /// Whether the project has its memory folder yet.
+    pub kept: bool,
+    pub facts: Vec<MemoryEntry>,
+    pub lessons: Vec<MemoryEntry>,
+    pub decisions: Vec<MemoryEntry>,
+    /// What waits for the person, each with the files it rests on.
+    pub proposals: Vec<MemoryProposal>,
+    /// Whether the agent is reading the project to learn it now.
+    pub learning: bool,
+    /// The day it last learned the project on its own, as YYYY-MM-DD.
+    pub learned: Option<String>,
+}
+
+/// A proposal, with what its page shows beside it.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct MemoryProposal {
+    pub proposal: LessonProposal,
+    pub files: Vec<String>,
+    pub cards: Vec<String>,
+    /// Proposed by the agent's own read of the project, which "Approve all"
+    /// takes.
+    pub onboarding: bool,
+}

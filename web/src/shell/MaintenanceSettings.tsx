@@ -54,6 +54,13 @@ export function MaintenanceSettings(): React.JSX.Element {
     })
   }
 
+  const leaveOut = (projectId: string, on: boolean): void => {
+    void ask(() => commands.maintenanceProjectAgent(projectId, on)).then((answer) => {
+      setError(answer.error)
+      if (answer.data) take(answer.data)
+    })
+  }
+
   const cleanNow = (): void => {
     setBusy(true)
     void ask(() => commands.maintenanceCleanNow()).then((answer) => {
@@ -99,8 +106,18 @@ export function MaintenanceSettings(): React.JSX.Element {
         on={shown?.projectAgent ?? true}
         onFlip={() => shown && write({ projectAgent: !shown.projectAgent })}
         title="Project agent"
-        said="Beta. An agent that knows one project: the orchestrator and the project's sessions ask it, and it draws lessons when a card is done."
+        said="Beta. An agent that knows one project: each project linked to an orchestrator gets one, which learns the project on its own and proposes what it finds. The orchestrator and the project's sessions ask it, and it draws lessons when a card is done."
       />
+      {shown?.projectAgent &&
+        shown.projectAgentProjects.map((one) => (
+          <PrefSwitch
+            key={one.id}
+            on={one.on}
+            onFlip={() => leaveOut(one.id, !one.on)}
+            title={`Project agent in ${one.name}`}
+            said={one.on ? 'Learns and answers for this project.' : 'Left out: no agent learns or answers for this project.'}
+          />
+        ))}
       <PrefSwitch
         on={shown?.canvas ?? true}
         onFlip={() => shown && write({ canvas: !shown.canvas })}

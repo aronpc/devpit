@@ -370,7 +370,8 @@ export const commands = {
 	orchestratorLinks: (projectId: string) => typedError<string[], RpcError>(__TAURI_INVOKE("orchestrator_links", { projectId })),
 	/**
 	 *  `orchestrator.link` — the projects it is linked to, as the person chose
-	 *  them. Only projects, never another orchestrator.
+	 *  them. Only projects, never another orchestrator. A project newly linked
+	 *  gets its agent, which learns the project on its own.
 	 */
 	orchestratorLink: (projectId: string, linked: string[]) => typedError<null, RpcError>(__TAURI_INVOKE("orchestrator_link", { projectId, linked })),
 	/**
@@ -510,6 +511,18 @@ export const commands = {
 	projectAgentChat: (projectId: string, question: string) => typedError<ProjectAgentAnswer, RpcError>(__TAURI_INVOKE("project_agent_chat", { projectId, question })),
 	/**  `project_agent.fact` — an answer proposed as a fact, waiting for the person. */
 	projectAgentFact: (projectId: string, text: string, cited: string[]) => typedError<LessonProposals, RpcError>(__TAURI_INVOKE("project_agent_fact", { projectId, text, cited })),
+	/**  `project_agent.memory` — the project agent's page. */
+	projectAgentMemory: (projectId: string) => typedError<ProjectMemory, RpcError>(__TAURI_INVOKE("project_agent_memory", { projectId })),
+	/**
+	 *  `project_agent.approve_learned` — approves every proposal of the agent's
+	 *  own read of the project: they rest only on the repository's files.
+	 */
+	projectAgentApproveLearned: (projectId: string) => typedError<ProjectMemory, RpcError>(__TAURI_INVOKE("project_agent_approve_learned", { projectId })),
+	/**
+	 *  `project_agent.relearn` — has the agent read its project again, in the
+	 *  background; what it finds replaces its earlier read's proposals.
+	 */
+	projectAgentRelearn: (projectId: string) => typedError<ProjectMemory, RpcError>(__TAURI_INVOKE("project_agent_relearn", { projectId })),
 	/**  `devflow.screen` — a project's Devflow, read now. */
 	devflowScreen: (projectId: string) => typedError<DevflowScreen, RpcError>(__TAURI_INVOKE("devflow_screen", { projectId })),
 	/**  `devflow.preview` — what a setup would write; nothing is written. */
@@ -1389,6 +1402,11 @@ export const commands = {
 	maintenanceRead: () => typedError<Maintenance, RpcError>(__TAURI_INVOKE("maintenance_read")),
 	/**  `maintenance.write` — what is given changes; what is not stays. */
 	maintenanceWrite: (powerSaver: boolean | null, keepDays: number | null, projectAgent: boolean | null, canvas: boolean | null) => typedError<Maintenance, RpcError>(__TAURI_INVOKE("maintenance_write", { powerSaver, keepDays, projectAgent, canvas })),
+	/**
+	 *  `maintenance.project_agent` — leaves one project out of the project agent,
+	 *  or takes it back in, where it learns its project if it never did.
+	 */
+	maintenanceProjectAgent: (projectId: string, on: boolean) => typedError<Maintenance, RpcError>(__TAURI_INVOKE("maintenance_project_agent", { projectId, on })),
 	/**  `maintenance.clean_now` — the Delete now button, at the days chosen. */
 	maintenanceCleanNow: () => typedError<Maintenance, RpcError>(__TAURI_INVOKE("maintenance_clean_now")),
 	/**  `profile.models_read` */
@@ -4239,6 +4257,13 @@ export type KnownApp = {
 	command: string,
 };
 
+/**  A project the project agent can learn, and whether Labs leaves it out. */
+export type LabsProject = {
+	id: string,
+	name: string,
+	on: boolean,
+};
+
 export type LayoutNode = { type: "leaf"; id: string; 
 /**  `session:window` on our private tmux server. */
 tmuxTarget: string; kind: PaneKind; agent: AgentPresence; 
@@ -4364,6 +4389,8 @@ export type Maintenance = {
 	/**  Days logs and run artifacts are kept; 0 keeps them until deleted. */
 	keepDays: number,
 	projectAgent: boolean,
+	/**  The projects linked to an orchestrator, each with its own switch. */
+	projectAgentProjects: LabsProject[],
 	canvas: boolean,
 	last: CleanRun | null,
 };
@@ -4432,6 +4459,31 @@ export type MemoryDecision = {
 	/**  Its whole source: the cards and the files it rests on. */
 	source: string,
 	text: string,
+};
+
+/**  One entry of a project agent's memory, or one waiting for the person. */
+export type MemoryEntry = {
+	/**  The day it was written or proposed, as YYYY-MM-DD. */
+	day: string,
+	/**  Its whole source, as the file keeps it. */
+	source: string,
+	text: string,
+	/**  The project's files it rests on, from the project's root. */
+	files: string[],
+	/**  The cards it came from, as `#12`. */
+	cards: string[],
+};
+
+/**  A proposal, with what its page shows beside it. */
+export type MemoryProposal = {
+	proposal: LessonProposal,
+	files: string[],
+	cards: string[],
+	/**
+	 *  Proposed by the agent's own read of the project, which "Approve all"
+	 *  takes.
+	 */
+	onboarding: boolean,
 };
 
 /**
@@ -5125,6 +5177,22 @@ export type ProjectHistory = {
 
 export type ProjectList = {
 	projects: Project[],
+};
+
+/**  A project agent's memory as its page shows it. */
+export type ProjectMemory = {
+	projectId: string,
+	/**  Whether the project has its memory folder yet. */
+	kept: boolean,
+	facts: MemoryEntry[],
+	lessons: MemoryEntry[],
+	decisions: MemoryEntry[],
+	/**  What waits for the person, each with the files it rests on. */
+	proposals: MemoryProposal[],
+	/**  Whether the agent is reading the project to learn it now. */
+	learning: boolean,
+	/**  The day it last learned the project on its own, as YYYY-MM-DD. */
+	learned: string | null,
 };
 
 /**

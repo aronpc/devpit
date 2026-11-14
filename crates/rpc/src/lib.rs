@@ -110,7 +110,10 @@ pub use island::{
     IslandAsked, IslandChange, IslandChecks, IslandDrawn, IslandHow, IslandNow, IslandPull,
     IslandQuestion, IslandRect, IslandSession, IslandStep, IslandVerdict, Touch,
 };
-pub use lessons::{LessonProposal, LessonProposals, MemoryDecision, ProjectAgentAnswer};
+pub use lessons::{
+    LessonProposal, LessonProposals, MemoryDecision, MemoryEntry, MemoryProposal,
+    ProjectAgentAnswer, ProjectMemory,
+};
 pub use live::{
     EndedSession, EndedSessions, Guardrail, GuardrailMode, GuardrailRow, Guardrails, LivePane,
     LiveSession, LiveSessions, PendingPrompt, ProjectProposal, PromptOption, RemoteState,

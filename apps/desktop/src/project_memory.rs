@@ -46,8 +46,13 @@ impl Entry {
     /// The files it rests on: what its source lists that is not a card or a PR.
     pub(crate) fn files(&self) -> Vec<&str> {
         self.parts()
-            .filter(|part| !card(part) && !part.starts_with("PR #"))
+            .filter(|part| !card(part) && !part.starts_with("PR #") && *part != ONBOARDING)
             .collect()
+    }
+
+    /// Whether the agent's own read of the project proposed it.
+    pub(crate) fn onboarding(&self) -> bool {
+        self.parts().any(|part| part == ONBOARDING)
     }
 
     /// The cards it came from, as `#12`.
@@ -317,13 +322,19 @@ pub(crate) fn decide(
         .map_err(|_| "the memory is busy".to_owned())?;
     let was = read_inside(root, &format!("{DIR}/{PROPOSED}"), MEMORY_BYTES).unwrap_or_default();
     let mut lines: Vec<&str> = was.lines().collect();
-    let (at, file) = lines
+    let (at, file, kept_as) = lines
         .iter()
         .enumerate()
         .find_map(|(at, one)| match entry(one) {
             Some(Ok(found)) if found.source == source => {
                 let (file, said, stale) = aim(&found.text);
-                (said == text && stale == replaces).then_some((at, file))
+                // The memory keeps the files a read rested on, not the read.
+                let kept_as = if found.onboarding() {
+                    found.files().join(", ")
+                } else {
+                    source.to_owned()
+                };
+                (said == text && stale == replaces).then_some((at, file, kept_as))
             }
             _ => None,
         })
@@ -339,7 +350,7 @@ pub(crate) fn decide(
                 now.as_deref(),
             )?;
         }
-        (Some(kept), None) if !kept.is_empty() => append(root, file, &line(day, source, kept))?,
+        (Some(kept), None) if !kept.is_empty() => append(root, file, &line(day, &kept_as, kept))?,
         _ => {}
     }
     let rest: String = lines.iter().map(|one| format!("{one}\n")).collect();
@@ -434,6 +445,72 @@ pub(crate) fn measure(
         .lock()
         .map_err(|_| "the memory is busy".to_owned())?;
     append(root, METRICS, &format!("{said}\n"))
+}
+
+/// Marks, in a proposal's source, what the agent's own read of the project proposed.
+pub(crate) const ONBOARDING: &str = "onboarding";
+
+/// When the agent last learned the project on its own: the day, kept here.
+const LEARNED: &str = "learned";
+
+/// Approves every proposal the agent's own read of the project made, each
+/// to its memory file dated `day`, its source the files alone; the rest wait.
+pub(crate) fn approve_onboarding(root: &Path, day: &str) -> Result<usize, String> {
+    let _held = WRITING
+        .lock()
+        .map_err(|_| "the memory is busy".to_owned())?;
+    let (learned, rest) = onboarding_split(root);
+    for one in &learned {
+        let (file, said, _) = aim(&one.text);
+        let source = one.files().join(", ");
+        append(root, file, &line(day, &source, said))?;
+    }
+    write(root, PROPOSED, &rest)?;
+    Ok(learned.len())
+}
+
+/// Discards the proposals of the agent's own read still waiting, before it
+/// reads the project again.
+pub(crate) fn drop_onboarding(root: &Path) -> Result<usize, String> {
+    let _held = WRITING
+        .lock()
+        .map_err(|_| "the memory is busy".to_owned())?;
+    let (learned, rest) = onboarding_split(root);
+    if !learned.is_empty() {
+        write(root, PROPOSED, &rest)?;
+    }
+    Ok(learned.len())
+}
+
+/// The waiting proposals of the agent's own read, and the text of every
+/// other line of `proposed.md`, kept as it was.
+fn onboarding_split(root: &Path) -> (Vec<Entry>, String) {
+    let was = read_inside(root, &format!("{DIR}/{PROPOSED}"), MEMORY_BYTES).unwrap_or_default();
+    let (mut learned, mut rest) = (Vec::new(), String::new());
+    for one in was.lines() {
+        match entry(one) {
+            Some(Ok(found)) if found.onboarding() => learned.push(found),
+            _ => rest.push_str(&format!("{one}\n")),
+        }
+    }
+    (learned, rest)
+}
+
+/// The agent learned the project on its own on `day`.
+pub(crate) fn onboarded(root: &Path, day: &str) -> Result<(), String> {
+    write(root, LEARNED, &format!("{day}\n"))
+}
+
+/// The day the agent last learned the project on its own.
+pub(crate) fn learned_on(root: &Path) -> Option<String> {
+    read_inside(root, &format!("{DIR}/{LEARNED}"), 64)
+        .map(|said| said.trim().to_owned())
+        .filter(|day| dated(day))
+}
+
+/// The entries of one memory file, as they are written.
+pub(crate) fn kept(root: &Path, file: &str) -> Vec<Entry> {
+    entries(root, file)
 }
 
 fn entries(root: &Path, file: &str) -> Vec<Entry> {

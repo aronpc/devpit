@@ -179,6 +179,12 @@ impl Agents {
         answer.map(|answer| (answer, QUESTIONS.saturating_sub(*asked)))
     }
 
+    /// Whether `key`'s agent is answering someone now.
+    pub(crate) fn busy(&self, key: &str) -> bool {
+        let agent = self.all.lock().ok().and_then(|all| all.get(key).cloned());
+        agent.is_some_and(|agent| agent.try_lock().is_err())
+    }
+
     /// Whether `key`'s agent has its process.
     #[cfg(test)]
     pub(crate) fn awake(&self, key: &str) -> bool {
@@ -473,7 +479,7 @@ pub(crate) fn from_session(
     let root = Path::new(&here.root_path);
     if !root.join(crate::project_memory::DIR).is_dir() {
         return Err(
-            "this project has no project agent yet: the orchestrator's first question to it makes one"
+            "this project has no project agent yet: it gets one once linked to an orchestrator, with Labs on"
                 .to_owned(),
         );
     }
@@ -727,7 +733,7 @@ pub(crate) fn chat_fact(
 }
 
 /// The project asked from its sidebar: never an orchestrator's.
-fn sidebar_project(projects: &[Project], project_id: &str) -> Result<Project, RpcError> {
+pub(crate) fn sidebar_project(projects: &[Project], project_id: &str) -> Result<Project, RpcError> {
     projects
         .iter()
         .find(|one| one.id == project_id && one.orchestrator.is_none())
@@ -735,10 +741,10 @@ fn sidebar_project(projects: &[Project], project_id: &str) -> Result<Project, Rp
         .ok_or_else(|| RpcError::new(ErrorCode::NotFound, "that project is gone"))
 }
 
-/// The chat's commands are refused while Labs has the project agent off, as
-/// its MCP tools are.
-pub(crate) fn labs_on(store: &devpit_core::Store) -> Result<(), RpcError> {
-    if crate::maintenance::project_agent_on(store) {
+/// The chat's commands are refused while Labs has the project agent off, or
+/// leaves the project out, as its MCP tools are.
+pub(crate) fn labs_on(store: &devpit_core::Store, project_id: &str) -> Result<(), RpcError> {
+    if crate::project_onboarding::on_for(store, project_id) {
         Ok(())
     } else {
         Err(RpcError::new(
@@ -762,7 +768,7 @@ pub async fn project_agent_chat(
         if question.is_empty() {
             return Err(RpcError::new(ErrorCode::Invalid, "what to ask?"));
         }
-        labs_on(&crate::projects::store()?)?;
+        labs_on(&crate::projects::store()?, &project_id)?;
         let listed = crate::projects::project_list_now()?;
         let project = sidebar_project(&listed.projects, &project_id)?;
         let profile = linked_profile(&listed.projects, &project.id).map_err(refused)?;
@@ -794,7 +800,7 @@ pub async fn project_agent_fact(
     cited: Vec<String>,
 ) -> Result<LessonProposals, RpcError> {
     crate::off_main::blocking(move || {
-        labs_on(&crate::projects::store()?)?;
+        labs_on(&crate::projects::store()?, &project_id)?;
         let listed = crate::projects::project_list_now()?;
         let project = sidebar_project(&listed.projects, &project_id)?;
         chat_fact(Path::new(&project.root_path), &today(), &text, &cited)

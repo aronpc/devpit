@@ -19,7 +19,9 @@ Two MCP tools, offered to devpit's orchestrator only:
 | `devpit_project_agent_ask` | `project`, `question` | `{ project, answer, woke }` |
 | `devpit_project_agent_brief` | `project`, `cardId` | `{ project, cardId, brief, woke }` |
 
-`woke` says whether this call started the agent's process.
+`woke` says whether this call started the agent's process. Both answer
+whole, never cut to fit: a brief is passed whole as a session's prompt, and a
+cut answer would be asked for again, running the agent's whole turn again.
 
 Neither call starts a card session, opens a terminal or touches a checkout.
 The brief is text for the orchestrator to pass as `devpit_start_session`'s
@@ -75,6 +77,37 @@ project agent off, the entry is hidden and the chat is refused, as its tools are
   edited first into one line, resting on those files. It waits in
   `proposed.md` for Approve, Edit or Discard like any other proposal, and
   `facts.md` changes only once the person approves it.
+- **Each question gets its own answer.** The pane, the orchestrator and the
+  sessions ask the same process, and questions wait their turn. A question
+  that fails, or that the agent does not answer within fifteen minutes, says
+  so in the pane instead of reading forever; the process is then let go and
+  the next question starts a new one.
+
+Beside it, **Project agent** is the agent's page: Facts, Lessons, Decisions
+and Proposed, each entry with its day and its sources, a file opening in a
+tab. A proposal is approved, edited or discarded there as under the top bar.
+**Approve all from onboarding** approves at once what the agent's own read
+proposed, since that rests only on the repository's files, and **Re-learn**
+has the agent read the project again after big changes.
+
+## It learns the project on its own
+
+With Labs on, a project linked to an orchestrator gets its agent without
+anyone asking: on the app's next start, or as soon as it is linked. Projects
+are read one at a time in the background, and never while their agent is
+answering someone. Settings → Maintenance → Labs lists the linked projects,
+each with its own switch: a project left out gets no agent, and its tools,
+pane and page are refused as with Labs off.
+
+On that first read the agent reads the repository the way it reads it to
+answer: its guides, ADRs, build and test commands, layout and conventions.
+It answers 15 to 30 facts and decisions, each one line resting on the files
+that show it. A line whose files are not files of the project is left out, as
+is one the memory already says. Each waits in `proposed.md` with the source
+`onboarding, <files>`; once approved, the entry keeps its files and the day,
+not the mark. `learned` keeps the day it last read the project, so a project
+is read on its own once. Re-learn reads it again, and its proposals take the
+place of the earlier read's still waiting.
 
 ## The process
 
@@ -88,7 +121,9 @@ process is also started with deny rules, which win over any allow rule:
 `devpit_project_agent_consult` and `devpit_project_agent_propose`.
 
 - **Wakes when called.** The first question starts the process. Further
-  questions go to the same process, one at a time.
+  questions go to the same process, one at a time. Work an answer leaves
+  running in the background ends in a turn of its own, and that turn is still
+  the same answer: the next question waits for it rather than receive it.
 - **Idles out.** Ten minutes after the last question with nothing new, the
   process is closed.
 - **Resumes with its memory.** The next question starts a new process that
@@ -172,7 +207,9 @@ is held to.
 
 ## Projects without an agent
 
-A project gets `.devpit/project-agent/` only when its agent is first asked.
-A closed card is measured and its lessons asked for only in a project that has
-that folder, so a project whose agent was never asked works exactly as it did,
-and every other tool keeps its shape.
+A project gets `.devpit/project-agent/` when it is first read or asked: on its
+own once linked to an orchestrator with Labs on. A closed card is measured and
+its lessons asked for only in a project that has that folder, so a project
+left out, or linked to no orchestrator, works exactly as it did, and every
+other tool keeps its shape. A memory kept before onboarding existed is read as
+it is: its files are not rewritten, and the read only adds proposals.

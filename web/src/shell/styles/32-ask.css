@@ -13,3 +13,20 @@
 .pask__fact textarea, .pask__compose textarea { flex: 1 1 100%; min-height: 56px; padding: 8px 10px; border-radius: 9px; font: inherit; font-size: 13px; color: var(--text); background: var(--inset); border: 1px solid var(--border); resize: vertical; }
 .pask__compose { display: flex; align-items: flex-end; gap: 8px; padding: 10px 20px 16px; border-top: 1px solid var(--border); }
 .pask__compose textarea { flex: 1; min-height: 40px; }
+
+/* ── The project agent's page ────────────────────────────────────────
+   Its memory, each entry with its day and sources, and what waits for the
+   person, approved, edited or discarded in place. */
+.pmem { flex: 1; min-height: 0; padding: 16px 20px; }
+.pmem__bar { display: flex; align-items: center; gap: 12px; max-width: 860px; margin: 0 auto 12px; }
+.pmem__bar .acc__note { flex: 1; margin: 0; }
+.pmem__part { max-width: 860px; margin: 0 auto 20px; }
+.pmem__h { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; font-size: 13px; font-weight: 600; color: var(--text); }
+.pmem__n { font-weight: 400; color: var(--text-3); }
+.pmem__all { margin-left: auto; }
+.pmem__one { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 6px; }
+.pmem__text { flex: 1 1 100%; margin: 0; font-size: 13px; color: var(--text); overflow-wrap: anywhere; }
+.pmem__one .remind__edit { flex: 1 1 100%; }
+.pmem__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; flex: 1; font-size: 11.5px; color: var(--text-3); }
+.pmem__src { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+.pmem__file, .pmem__cards { font-family: var(--mono); }

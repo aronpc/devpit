@@ -5,7 +5,18 @@ import type { Maintenance } from '../gen/bindings'
 import { MaintenanceSettings } from './MaintenanceSettings'
 
 const GB = 1024 * 1024 * 1024
-const before: Maintenance = { powerSaver: false, onBattery: false, keepDays: 0, projectAgent: true, canvas: true, last: null }
+const before: Maintenance = {
+  powerSaver: false,
+  onBattery: false,
+  keepDays: 0,
+  projectAgent: true,
+  projectAgentProjects: [
+    { id: 'prj_api', name: 'api', on: true },
+    { id: 'prj_web', name: 'web', on: true },
+  ],
+  canvas: true,
+  last: null,
+}
 let stored: Maintenance = { ...before }
 const write = vi.fn(async (powerSaver: boolean | null, keepDays: number | null, projectAgent: boolean | null, canvas: boolean | null) => {
   stored = {
@@ -17,6 +28,10 @@ const write = vi.fn(async (powerSaver: boolean | null, keepDays: number | null, 
   }
   return stored
 })
+const leave = vi.fn(async (projectId: string, on: boolean) => {
+  stored = { ...stored, projectAgentProjects: stored.projectAgentProjects.map((one) => (one.id === projectId ? { ...one, on } : one)) }
+  return stored
+})
 const cleanNow = vi.fn(async () => (stored = { ...stored, last: { at: Date.now() / 1000, removed: 3, freedBytes: 1.5 * GB } }))
 vi.mock('./live', () => ({
   ask: async (call: () => Promise<unknown>) => ({ data: await call(), error: null, loading: false }),
@@ -25,6 +40,7 @@ vi.mock('./live', () => ({
     maintenanceWrite: (powerSaver: boolean | null, keepDays: number | null, projectAgent: boolean | null, canvas: boolean | null) =>
       write(powerSaver, keepDays, projectAgent, canvas),
     maintenanceCleanNow: () => cleanNow(),
+    maintenanceProjectAgent: (projectId: string, on: boolean) => leave(projectId, on),
   },
 }))
 
@@ -68,5 +84,15 @@ describe('Settings → Maintenance', () => {
     await waitFor(() => expect(write).toHaveBeenLastCalledWith(null, null, false, null))
     fireEvent.click(canvas)
     await waitFor(() => expect(write).toHaveBeenLastCalledWith(null, null, null, false))
+  })
+
+  it('leaves one linked project out of the project agent, and only that one', async () => {
+    render(<MaintenanceSettings />)
+    const api = await screen.findByRole('switch', { name: 'Project agent in api' })
+    expect(api.getAttribute('aria-checked')).toBe('true')
+    fireEvent.click(api)
+    await waitFor(() => expect(leave).toHaveBeenLastCalledWith('prj_api', false))
+    await waitFor(() => expect(screen.getByRole('switch', { name: 'Project agent in api' }).getAttribute('aria-checked')).toBe('false'))
+    expect(screen.getByRole('switch', { name: 'Project agent in web' }).getAttribute('aria-checked')).toBe('true')
   })
 })

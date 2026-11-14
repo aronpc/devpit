@@ -601,11 +601,15 @@ fn a_fact_from_the_chat_waits_for_approval_and_writes_nothing_on_its_own() {
 fn the_sidebar_chat_is_refused_while_labs_has_the_project_agent_off() {
     let dir = tempfile::tempdir().expect("tempdir");
     let store = devpit_core::Store::open(&dir.path().join("state.db")).expect("open");
-    assert!(labs_on(&store).is_ok(), "on unless turned off");
+    assert!(labs_on(&store, "p1").is_ok(), "on unless turned off");
+    crate::project_onboarding::leave_out(&store, "p1", true).expect("left out");
+    let refused = labs_on(&store, "p1").expect_err("refused");
+    assert_eq!(refused.message, crate::agent_api::LABS_OFF);
+    assert!(labs_on(&store, "p2").is_ok(), "only the project left out");
     store
         .set_preference_flag(devpit_core::preference::LABS_PROJECT_AGENT, false)
         .expect("flag");
-    let refused = labs_on(&store).expect_err("refused");
+    let refused = labs_on(&store, "p2").expect_err("refused");
     assert_eq!(refused.message, crate::agent_api::LABS_OFF);
 }
 

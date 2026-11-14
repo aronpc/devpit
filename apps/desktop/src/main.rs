@@ -206,7 +206,9 @@ mod profile_waiting;
 mod project_agent;
 mod project_lessons;
 mod project_memory;
+mod project_memory_view;
 mod project_naming;
+mod project_onboarding;
 mod project_proposals;
 mod project_settings;
 mod projects;
@@ -552,6 +554,7 @@ fn main() {
                 pausing::restore(app.handle(), &store);
                 tray::restore(&store);
                 maintenance::restore(app.handle(), &store);
+                project_onboarding::on_start(app.handle());
             }
             island::note_drawn();
             // In the tray, and the shortcut that brings it forward, if one was chosen.

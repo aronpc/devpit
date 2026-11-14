@@ -42,6 +42,8 @@ pub const MAINTENANCE_KEEP_DAYS: &str = "maintenance.keep_days";
 pub const MAINTENANCE_CLEAN_LAST: &str = "maintenance.clean_last";
 /// Labs: whether the project agent answers. On unless turned off.
 pub const LABS_PROJECT_AGENT: &str = "labs.project_agent";
+/// Labs: the projects left out of the project agent, as a JSON array of ids.
+pub const LABS_PROJECT_AGENT_OFF: &str = "labs.project_agent_off";
 /// Labs: whether the Canvas plugin is offered. On unless turned off.
 pub const LABS_CANVAS: &str = "labs.canvas";
 /// When each profile's idle conversations are compacted, by profile id, as
