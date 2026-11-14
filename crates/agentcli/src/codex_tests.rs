@@ -117,6 +117,7 @@ fn turn<'a>(
         permission: Some(permission),
         disallowed: &[],
         settings: None,
+        setting_sources: None,
         mcp_config: None,
         effort: Some("low"),
         control: Some(control),
