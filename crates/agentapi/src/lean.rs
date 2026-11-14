@@ -59,6 +59,13 @@ pub(crate) fn asked(tool: &str, mut arguments: Value) -> Value {
     arguments
 }
 
+/// What the project agent answers, never cut.
+const WHOLE: [&str; 3] = [
+    "devpit_project_agent_consult",
+    "devpit_project_agent_ask",
+    "devpit_project_agent_brief",
+];
+
 /// Whether the call asked for the whole answer.
 pub(crate) fn wants_full(arguments: &Value) -> bool {
     arguments.get(FULL).and_then(Value::as_bool) == Some(true)
@@ -67,8 +74,9 @@ pub(crate) fn wants_full(arguments: &Value) -> bool {
 /// The text a tool answers with: the whole answer when asked, else its
 /// summary, compact and within [`BUDGET`].
 pub(crate) fn said(tool: &str, arguments: &Value, answer: Value) -> String {
-    // Cut, a consult would be asked again, and spend another question.
-    if tool == "devpit_project_agent_consult" {
+    // Cut, it would be asked again and run the agent's whole turn again; and
+    // a brief is passed whole as a session's prompt.
+    if WHOLE.contains(&tool) {
         return answer.to_string();
     }
     if wants_full(arguments) {

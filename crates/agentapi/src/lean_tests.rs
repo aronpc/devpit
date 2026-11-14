@@ -37,6 +37,22 @@ fn full_gives_the_answer_whole_as_it_was() {
 }
 
 #[test]
+fn the_project_agents_brief_and_answer_come_back_whole() {
+    let long = format!("# Brief\n\n{}", "Read the card. ".repeat(600));
+    for (tool, field) in [
+        ("devpit_project_agent_brief", "brief"),
+        ("devpit_project_agent_ask", "answer"),
+    ] {
+        let answer = json!({ "project": "devpit", "cardId": "card_1", field: long, "woke": false });
+        assert_eq!(
+            lean(tool, json!({}), answer.clone()),
+            answer,
+            "{tool} was cut"
+        );
+    }
+}
+
+#[test]
 fn a_comment_answers_its_card_and_newest_comment_not_the_card() {
     let text = said("devpit_comment", &json!({}), detail(10, 4000));
     let answer: Value = serde_json::from_str(&text).expect("json");
