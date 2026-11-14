@@ -107,3 +107,43 @@ A terminal is resumed with the CLI's own flag: `claude --resume`,
 `cursor-agent --resume`. A chat whose process went idle resumes its session
 through the driver: `--resume`, Codex's `thread/resume`, or ACP's
 `session/resume` or `session/load`.
+
+## Orchestrators on any CLI
+
+An orchestrator is a chat, so it runs on any CLI devpit holds a chat with.
+A CLI that is terminal only here, such as Gemini CLI, cannot orchestrate, though
+an orchestrator can start a session on it.
+
+| CLI | Orchestrates | What it lacks as an orchestrator |
+|---|---|---|
+| Claude Code | yes | nothing: `SendMessage`, `ListAgents` and `notify_when_idle` reach its account's sessions too |
+| Codex | yes | `SendMessage`; a cost only for a model devpit has a price for |
+| OpenCode | yes | `SendMessage`; cost and context read n/a |
+| Grok, Antigravity | yes | `SendMessage`; cost and context read n/a; Plan, where the agent offers no read-only mode |
+| Gemini CLI, Cursor and the rest | no | a chat: they are started as sessions only |
+
+Every orchestrator reaches its sessions through devpit: `devpit_session_message`
+types at a session's idle prompt, and `devpit_session_notify_idle` starts one
+turn in the orchestrator's chat when the session goes idle or ends. A message
+that waits two minutes for a prompt devpit cannot read tells its sender so.
+`devpit_start_session` takes `profile` to start a session on another CLI:
+Claude Code, Codex, Gemini CLI, OpenCode and Cursor are started with their
+brief; a CLI whose start nobody checked is refused.
+
+A Claude Code orchestrator lists its account's Claude Code sessions from
+Claude Code's own registry. Every other session it starts, and every session
+an orchestrator on another CLI starts, is listed by devpit from the pane it
+typed it into: by the name devpit gave it, busy or idle as the pane shows,
+until its agent leaves the pane. That list lives in devpit's memory, so after
+devpit restarts such a session is reached by the pane id `devpit_card` lists.
+
+Stops and drafts sent on the person's word read that word where the CLI keeps
+it: Claude Code's own log, or, on any other CLI, the message devpit sent the
+chat. Follow chat permission, Always ask and Never ask decide alike on every
+CLI, since the chat's mode is kept in devpit's head of the conversation.
+
+**Runs as…** in an orchestrator's menu switches it to another profile, on the
+same CLI or another. Its folder, notes, links and settings stay. Conversations
+so far stay with the profile they began on, and its next conversation starts
+on the new one, its first turn led by a handoff from `context/now.md` and the
+latest of `context/sessions.md`. Switching back works the same way.
