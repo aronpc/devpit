@@ -167,6 +167,10 @@ export function money(usd: number): string | null {
   return usd < 0.01 ? `$${usd.toFixed(4)}` : `$${usd.toFixed(2)}`
 }
 
+/* What a conversation spent, for an agent that may not say: one that reports
+   no cost reads as unavailable, never as nothing spent. */
+export const spent = (usd: number, metered: boolean): string | null => money(usd) ?? (metered ? null : 'n/a')
+
 /* What the agent may do without asking.
 
    `manual` stops and asks, and the question arrives in the thread with accept

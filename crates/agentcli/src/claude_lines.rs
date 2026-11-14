@@ -315,3 +315,29 @@ pub(crate) fn context_of(result: &serde_json::Value) -> Option<Context> {
         window: u32::try_from(window).ok()?,
     })
 }
+
+/// Measured on 2.1.323: `{"type":"user","isReplay":true,"uuid":…}`, once
+/// the message is part of the turn, not when it is written.
+pub(crate) fn echoed(line: &str) -> Option<String> {
+    if !line.contains("\"isReplay\"") {
+        return None;
+    }
+    let value = serde_json::from_str::<serde_json::Value>(line).ok()?;
+    if value.get("isReplay")?.as_bool()? {
+        return value.get("uuid")?.as_str().map(str::to_owned);
+    }
+    None
+}
+
+/// Measured: a stream-json assistant line's `uuid` is the transcript's.
+pub(crate) fn anchor(line: &str) -> Option<String> {
+    let value = serde_json::from_str::<serde_json::Value>(line).ok()?;
+    // A subagent's messages live in its own transcript, not this one.
+    let own = value
+        .get("parent_tool_use_id")
+        .is_none_or(|parent| parent.is_null());
+    if value.get("type")?.as_str()? != "assistant" || !own {
+        return None;
+    }
+    value.get("uuid")?.as_str().map(str::to_owned)
+}

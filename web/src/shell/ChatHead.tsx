@@ -4,7 +4,7 @@ import { memo, useEffect, useState } from 'react'
 import type { Context } from '../gen/bindings'
 import type { Activity } from './activity'
 import { ActivityPick } from './ActivityPick'
-import { money } from './chat'
+import { spent } from './chat'
 import { ChatCardChip } from './ChatCardChip'
 import { useDetails, useDetailsMenu } from './chatDetails'
 import type { Exported } from './chatMarkdown'
@@ -35,6 +35,7 @@ export const ChatHead = memo(function ChatHead({
   context,
   session,
   cost,
+  metered,
   orchestrator,
   projectId,
   sending,
@@ -51,6 +52,8 @@ export const ChatHead = memo(function ChatHead({
   context: Context | null
   session: string | null
   cost: number
+  /** Whether its agent reports cost and context; when not, they read n/a. */
+  metered: boolean
   orchestrator: string | null
   projectId: string | null
   sending: boolean
@@ -82,8 +85,8 @@ export const ChatHead = memo(function ChatHead({
         )}
         <ActivityPick value={activity} onPick={onActivity} />
         {shows('card') && <ChatCardChip card={card} />}
-        {shows('context') && <ContextMeter context={context} />}
-        {shows('cost') && (session ? <SessionCost sessionId={session} className="pcorner__cost scost" /> : money(cost) && <span className="pcorner__cost">{money(cost)}</span>)}
+        {shows('context') && <ContextMeter context={context} metered={metered} />}
+        {shows('cost') && (metered && session ? <SessionCost sessionId={session} className="pcorner__cost scost" /> : spent(cost, metered) && <span className="pcorner__cost">{spent(cost, metered)}</span>)}
         <ChatExport onExport={onExport} />
         {session && <CopySession id={session} />}
         {orchestrator && <SessionsChip profileId={orchestrator} />}

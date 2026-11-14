@@ -18,6 +18,7 @@ fn one(id: &str, driver: &str, enabled: bool) -> Profile {
         own_models: Vec::new(),
         efforts: Vec::new(),
         effort_default: None,
+        metered: true,
         enabled,
     }
 }

@@ -357,7 +357,7 @@ fn resumed(
     tokens: u32,
 ) -> Option<Compacted> {
     let (profile, path) = crate::chat_turn::spawnable(&head.profile).ok()?;
-    let driver = devpit_agentcli::driver::driver(&profile.driver)?;
+    let driver = devpit_agentcli::driver::driver_for(&profile.driver, &profile.base)?;
     let env = devpit_agentcli::running::runner(&profile).env;
     let mcp = crate::agent_reach::chat_mcp(&profile.driver);
     let reach = crate::orchestrator::reaches(project_id);
@@ -374,7 +374,7 @@ fn resumed(
                 project_id,
                 conversation_id,
                 sessions,
-                &profile.driver,
+                &profile,
                 mode,
             )
         })

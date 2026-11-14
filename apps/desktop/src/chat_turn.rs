@@ -97,6 +97,9 @@ pub(crate) fn spawnable(profile_id: &str) -> Result<(devpit_rpc::Profile, String
             },
         ));
     };
+    if let Some(why) = devpit_agentcli::acp::outdated(&profile.base, &path) {
+        return Err(RpcError::new(ErrorCode::Conflict, why));
+    }
     Ok((profile, path))
 }
 

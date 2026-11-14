@@ -101,7 +101,10 @@ impl Resident {
         let stdin = child.stdin.take().ok_or(AgentError::NotInstalled)?;
         if !control.open(stdin, wire, turn) {
             let _ = child.kill();
-            return Err(AgentError::NotInstalled);
+            let _ = child.wait();
+            return Err(AgentError::Unreadable(
+                "the agent would not take its handshake".to_owned(),
+            ));
         }
         let stdout = child.stdout.take().ok_or(AgentError::NotInstalled)?;
 

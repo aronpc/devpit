@@ -107,6 +107,8 @@ pub(crate) struct Staying {
     pub transcript: PathBuf,
     pub head: PathBuf,
     pub driver: String,
+    /// The agent its profile is based on, which says how the CLI starts.
+    pub base: String,
     /// An orchestrator's conversation.
     pub listens: bool,
 }
@@ -118,7 +120,7 @@ pub(crate) fn staying(
     project_id: &str,
     conversation_id: &str,
     sessions: &std::path::Path,
-    driver: &str,
+    profile: &devpit_rpc::Profile,
     mode: Option<&str>,
 ) -> Option<Staying> {
     if !stays(mode) {
@@ -137,7 +139,8 @@ pub(crate) fn staying(
         conversation_id: conversation_id.to_owned(),
         transcript: devpit_agentcli::store::conversation_path(sessions, conversation_id),
         head: devpit_agentcli::head::head_path(sessions, conversation_id),
-        driver: driver.to_owned(),
+        driver: profile.driver.clone(),
+        base: profile.base.clone(),
         listens: listens(project_id),
     })
 }
@@ -617,8 +620,8 @@ fn stopped() -> Said {
 }
 
 fn start(staying: &Staying, turn: &Say<'_>, started_as: String) -> Result<Live, AgentError> {
-    let driver =
-        devpit_agentcli::driver::driver(&staying.driver).ok_or(AgentError::NotInstalled)?;
+    let driver = devpit_agentcli::driver::driver_for(&staying.driver, &staying.base)
+        .ok_or(AgentError::NotInstalled)?;
     let ear = Arc::new(Ear::default());
     let heard_by = ear.clone();
     let app = staying.app.clone();

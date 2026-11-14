@@ -1,8 +1,6 @@
-//! One driver per CLI, behind one trait.
-//!
-//! Each vendor prints its own shape and changes it without asking. A driver
-//! turns those lines into the typed parts the contract carries, so a new CLI
-//! is a new file here and nothing else.
+//! One driver per CLI, behind one trait. Each vendor prints its own shape and
+//! changes it without asking; a driver turns those lines into the contract's
+//! typed parts, so a new CLI is a new file here and nothing else.
 
 use std::sync::Arc;
 
@@ -60,6 +58,11 @@ pub trait Driver: Send + Sync {
     /// Claude Code asks the person through its hook, and only a plan comes here.
     fn asks(&self) -> bool {
         false
+    }
+
+    /// Whether every turn says what it cost and how full the context is.
+    fn metered(&self) -> bool {
+        true
     }
 
     /// Reads one line of output.
@@ -160,38 +163,27 @@ impl Driver for Claude {
             .map(str::to_owned)
     }
 
-    /// Measured on 2.1.323: `{"type":"user","isReplay":true,"uuid":…}`, once
-    /// the message is part of the turn, not when it is written.
     fn echoed(&self, line: &str) -> Option<String> {
-        if !line.contains("\"isReplay\"") {
-            return None;
-        }
-        let value = serde_json::from_str::<serde_json::Value>(line).ok()?;
-        if value.get("isReplay")?.as_bool()? {
-            return value.get("uuid")?.as_str().map(str::to_owned);
-        }
-        None
+        crate::claude_lines::echoed(line)
     }
 
-    /// Measured: a stream-json assistant line's `uuid` is the transcript's.
     fn anchor(&self, line: &str) -> Option<String> {
-        let value = serde_json::from_str::<serde_json::Value>(line).ok()?;
-        // A subagent's messages live in its own transcript, not this one.
-        let own = value
-            .get("parent_tool_use_id")
-            .is_none_or(|parent| parent.is_null());
-        if value.get("type")?.as_str()? != "assistant" || !own {
-            return None;
-        }
-        value.get("uuid")?.as_str().map(str::to_owned)
+        crate::claude_lines::anchor(line)
     }
 }
 
 /// The driver a conversation named, or nothing when it is not installed.
 pub fn driver(name: &str) -> Option<Box<dyn Driver>> {
+    driver_for(name, "")
+}
+
+/// [`driver`], started the way the profile's base agent serves a chat.
+pub fn driver_for(name: &str, base: &str) -> Option<Box<dyn Driver>> {
+    let args = devpit_pty::agents::known(base).map_or(&[][..], |agent| agent.chat_args);
     match name {
         "claude" => Some(Box::<Claude>::default()),
         "codex" => Some(Box::<crate::codex::Codex>::default()),
+        "acp" => Some(Box::new(crate::acp::Acp::new(args))),
         _ => None,
     }
 }

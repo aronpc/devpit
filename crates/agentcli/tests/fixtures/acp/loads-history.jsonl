@@ -1,0 +1,11 @@
+{"dir": ">", "msg": {"jsonrpc": "2.0", "id": 0, "method": "initialize", "params": {"protocolVersion": 1, "clientCapabilities": {"fs": {"readTextFile": false, "writeTextFile": false}, "terminal": false}, "clientInfo": {"name": "devpit", "version": "{version}"}}}}
+{"dir": "<", "msg": {"jsonrpc": "2.0", "id": 0, "result": {"protocolVersion": 1, "agentCapabilities": {"loadSession": true}}}}
+{"dir": ">", "msg": {"jsonrpc": "2.0", "id": 1, "method": "session/load", "params": {"cwd": "{cwd}", "mcpServers": [], "sessionId": "loaded-2"}}}
+{"dir": "<", "msg": {"jsonrpc": "2.0", "method": "session/update", "params": {"sessionId": "loaded-2", "update": {"sessionUpdate": "user_message_chunk", "content": {"type": "text", "text": "Earlier question"}}}}}
+{"dir": "<", "msg": {"jsonrpc": "2.0", "method": "session/update", "params": {"sessionId": "loaded-2", "update": {"sessionUpdate": "agent_message_chunk", "content": {"type": "text", "text": "Earlier answer"}}}}}
+{"dir": "<", "msg": {"jsonrpc": "2.0", "method": "session/update", "params": {"sessionId": "loaded-2", "update": {"sessionUpdate": "usage_update", "used": 900, "size": 128000, "cost": {"amount": 0.5, "currency": "USD"}}}}}
+{"dir": "<", "msg": {"jsonrpc": "2.0", "id": 1, "result": {}}}
+{"dir": ">", "msg": {"jsonrpc": "2.0", "id": 2, "method": "session/prompt", "params": {"sessionId": "loaded-2", "prompt": [{"type": "text", "text": "And now?"}]}}}
+{"dir": "<", "msg": {"jsonrpc": "2.0", "method": "session/update", "params": {"sessionId": "loaded-2", "update": {"sessionUpdate": "agent_message_chunk", "content": {"type": "text", "text": "New answer."}}}}}
+{"dir": "<", "msg": {"jsonrpc": "2.0", "method": "session/update", "params": {"sessionId": "loaded-2", "update": {"sessionUpdate": "usage_update", "used": 1200, "size": 128000, "cost": {"amount": 0.52, "currency": "USD"}}}}}
+{"dir": "<", "msg": {"jsonrpc": "2.0", "id": 2, "result": {"stopReason": "end_turn"}}}

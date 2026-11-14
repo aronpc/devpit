@@ -71,7 +71,8 @@ pub trait Wire: Send + Sync {
     fn control_answer(&self, line: &str) -> Option<Value>;
 
     /// What `line` calls for in reply: the next step of a handshake, or an
-    /// answer to a request the CLI made of devpit.
+    /// answer to a request the CLI made of devpit. A permission request
+    /// answered here is not one [`Wire::asked`] reads.
     fn replies(&self, _line: &str) -> Vec<String> {
         Vec::new()
     }

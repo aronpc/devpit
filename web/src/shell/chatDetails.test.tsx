@@ -41,7 +41,7 @@ describe("a conversation's details", () => {
 describe("a conversation's header", () => {
   it('hides its cost once Cost is unticked from a right-click', () => {
     const { container } = render(
-      <ChatHead tabId="c1" title="Fix the parser" onRename={vi.fn()} onExport={async () => null} card={null} context={null} session={null} cost={1.5} orchestrator={null} projectId={null} sending={false} supervised={false} activity="all" onActivity={vi.fn()} />,
+      <ChatHead tabId="c1" title="Fix the parser" onRename={vi.fn()} onExport={async () => null} card={null} context={null} session={null} cost={1.5} metered orchestrator={null} projectId={null} sending={false} supervised={false} activity="all" onActivity={vi.fn()} />,
     )
     expect(container.querySelector('.pcorner__cost')).not.toBeNull()
     fireEvent.contextMenu(container.querySelector('.chead')!)

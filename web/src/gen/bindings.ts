@@ -5034,6 +5034,11 @@ export type Profile = {
 	efforts?: string[],
 	effortDefault?: string | null,
 	/**
+	 *  Whether its turns say what they cost and how full the context is.
+	 *  When not, the chat shows those as unavailable rather than as 0.
+	 */
+	metered?: boolean,
+	/**
 	 *  Whether it is offered. Carried here because the composer and the step
 	 *  editor read this list, and a switch only `agents.known` saw switched
 	 *  nothing off for them.

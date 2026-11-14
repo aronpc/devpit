@@ -142,7 +142,7 @@ export function ChatPane({ tab }: { tab: Tab }): React.JSX.Element {
 
   return (
     <>
-      <ChatHead tabId={tab.id} title={title} onRename={renamed} onExport={exported} card={chat.card} context={chat.context} session={chat.session} cost={chat.cost} orchestrator={project?.orchestrator ?? null} projectId={project?.id ?? null} sending={chat.sending} supervised={ASKS(chat.permission)} activity={activity} onActivity={pickActivity} />
+      <ChatHead tabId={tab.id} title={title} onRename={renamed} onExport={exported} card={chat.card} context={chat.context} session={chat.session} cost={chat.cost} metered={chat.profiles.find((one) => one.id === chat.profileId)?.metered ?? true} orchestrator={project?.orchestrator ?? null} projectId={project?.id ?? null} sending={chat.sending} supervised={ASKS(chat.permission)} activity={activity} onActivity={pickActivity} />
 
       <DropTarget mine={mine} onDrop={dropped} />
       <div className="scroll" ref={follow.box}>

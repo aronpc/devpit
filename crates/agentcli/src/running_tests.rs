@@ -24,6 +24,7 @@ fn profile(args: &[&str], env: &[(&str, &str)]) -> Profile {
         own_models: Vec::new(),
         efforts: Vec::new(),
         effort_default: None,
+        metered: true,
         enabled: true,
     }
 }

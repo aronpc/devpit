@@ -291,13 +291,13 @@ pub fn headless_argv(
 }
 
 #[cfg(test)]
+#[path = "lib_live_tests.rs"]
+mod live_tests;
+#[cfg(test)]
 #[path = "lib_tests.rs"]
 mod tests;
 
-#[cfg(test)]
-#[path = "lib_live_tests.rs"]
-mod live_tests;
-
+pub mod acp;
 pub mod apps_host;
 pub mod aside;
 pub mod claude_lines;

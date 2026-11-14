@@ -12,9 +12,15 @@ const thousands = (tokens: number): string =>
 
 /* How full the model's context was when the last turn ended, as a small ring
    beside the cost. Nothing before the first turn: an empty meter is a number
-   nobody has measured. */
-export function ContextMeter({ context }: { context: Context | null }): React.JSX.Element | null {
-  if (!context) return null
+   nobody has measured. An agent that never reports it reads as unavailable. */
+export function ContextMeter({ context, metered = true }: { context: Context | null; metered?: boolean }): React.JSX.Element | null {
+  if (!context) {
+    return metered ? null : (
+      <span className="pcorner__ctx" title="This agent does not report how full its context is">
+        n/a
+      </span>
+    )
+  }
   const full = Math.min(1, share(context))
   const level = full >= FULL ? 'full' : full >= FILLING ? 'filling' : undefined
   const round = 2 * Math.PI * 5

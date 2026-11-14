@@ -14,6 +14,7 @@ import {
   modeName,
   money,
   ready,
+  spent,
   withFiles,
   unanswered,
   settled,
@@ -177,6 +178,12 @@ describe('what a conversation cost', () => {
 
   it('rounds to cents once there are cents to round', () => {
     expect(money(1.239)).toBe('$1.24')
+  })
+
+  it('is unavailable, not nothing, for an agent that reports no cost', () => {
+    expect(spent(0, false)).toBe('n/a')
+    expect(spent(0, true)).toBeNull()
+    expect(spent(0.5, false)).toBe('$0.50')
   })
 })
 

@@ -1,0 +1,10 @@
+{"dir": ">", "msg": {"jsonrpc": "2.0", "id": 0, "method": "initialize", "params": {"protocolVersion": 1, "clientCapabilities": {"fs": {"readTextFile": false, "writeTextFile": false}, "terminal": false}, "clientInfo": {"name": "devpit", "version": "{version}"}}}}
+{"dir": "<", "msg": {"jsonrpc": "2.0", "id": 0, "result": {"protocolVersion": 1, "agentCapabilities": {"promptCapabilities": {"image": true}}, "authMethods": [{"id": "xai-login", "name": "Log in with xAI", "description": "Run `grok login`"}]}}}
+{"dir": ">", "msg": {"jsonrpc": "2.0", "id": 1, "method": "session/new", "params": {"cwd": "{cwd}", "mcpServers": []}}}
+{"dir": "<", "msg": {"jsonrpc": "2.0", "id": 1, "result": {"sessionId": "grok-7f3a", "models": {"currentModelId": "grok-code-fast-1", "availableModels": [{"modelId": "grok-code-fast-1", "name": "Grok Code Fast"}, {"modelId": "grok-4", "name": "Grok 4"}]}}}}
+{"dir": ">", "msg": {"jsonrpc": "2.0", "id": 2, "method": "session/prompt", "params": {"sessionId": "grok-7f3a", "prompt": [{"type": "text", "text": "Wait for the build."}]}}}
+{"dir": "<", "msg": {"jsonrpc": "2.0", "method": "session/update", "params": {"sessionId": "grok-7f3a", "update": {"sessionUpdate": "agent_message_chunk", "content": {"type": "text", "text": "Waiting on it."}}}}}
+{"dir": "<", "msg": {"jsonrpc": "2.0", "method": "session/update", "params": {"sessionId": "grok-7f3a", "update": {"sessionUpdate": "tool_call", "toolCallId": "call_9", "title": "make build", "kind": "execute", "status": "in_progress", "rawInput": {"command": "make build"}}}}}
+{"dir": ">", "msg": {"jsonrpc": "2.0", "method": "session/cancel", "params": {"sessionId": "grok-7f3a"}}}
+{"dir": "<", "msg": {"jsonrpc": "2.0", "method": "session/update", "params": {"sessionId": "grok-7f3a", "update": {"sessionUpdate": "tool_call_update", "toolCallId": "call_9", "status": "failed", "rawOutput": "cancelled"}}}}
+{"dir": "<", "msg": {"jsonrpc": "2.0", "id": 2, "result": {"stopReason": "cancelled"}}}

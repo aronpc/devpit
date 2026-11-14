@@ -7,7 +7,7 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
-use devpit_agentcli::driver::driver;
+use devpit_agentcli::driver::driver_for;
 use devpit_agentcli::head::{head_path, read_head, remaining, settled, write_head};
 use devpit_agentcli::store::{append, conversation_path};
 use devpit_agentcli::talk::{Said, Say};
@@ -98,7 +98,7 @@ pub async fn chat_send(
     let model = model.or_else(|| {
         crate::profile_models::default_model(&crate::projects::store().ok()?, &profile_id)
     });
-    let Some(driver) = driver(&profile.driver) else {
+    let Some(driver) = driver_for(&profile.driver, &profile.base) else {
         return Err(RpcError::new(
             ErrorCode::NotFound,
             format!("no driver called {}", profile.driver),
@@ -148,7 +148,7 @@ pub async fn chat_send(
         &project_id,
         &conversation_id,
         &sessions,
-        &profile.driver,
+        &profile,
         mode.as_deref(),
     );
     // Every frame goes through the relay, so a chat reopened mid-turn can join.

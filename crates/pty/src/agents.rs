@@ -41,10 +41,17 @@ pub struct Known {
     /// goes — or nothing, for one whose resume nobody here has checked.
     pub resume_flag: Option<&'static str>,
     /// Which driver reads its output when it is run headless, empty when none
-    /// can: Claude Code's own stream, or Codex's app-server. The rest are
-    /// terminal-only until a driver exists for them — and saying so here beats
-    /// a profile that offers a chat it cannot hold.
+    /// can: Claude Code's own stream, Codex's app-server, or `acp` for a CLI
+    /// that serves the Agent Client Protocol. The rest are terminal-only until a
+    /// driver exists for them — and saying so here beats a profile that offers a
+    /// chat it cannot hold.
     pub driver: &'static str,
+    /// What it is started with to hold a chat, for a driver that speaks a
+    /// protocol on its stdin; empty when the driver builds its command line.
+    pub chat_args: &'static [&'static str],
+    /// The first version that serves `chat_args`: an older one is refused a
+    /// chat with a word to update it, rather than failing on its first line.
+    pub chat_since: Option<&'static str>,
     /// Where its own documentation lives. The row links to it rather than
     /// explaining how to install something devpit does not ship.
     pub homepage: &'static str,
@@ -69,6 +76,8 @@ pub const KNOWN: &[Known] = &[
         // `--resume <id>`, measured with `claude -p --resume` on 2.1.270.
         resume_flag: Some("--resume {}"),
         driver: "claude",
+        chat_args: &[],
+        chat_since: None,
         homepage: "https://code.claude.com/docs",
     },
     Known {
@@ -79,6 +88,8 @@ pub const KNOWN: &[Known] = &[
         settings_flag: None,
         resume_flag: None,
         driver: "codex",
+        chat_args: &[],
+        chat_since: None,
         homepage: "https://github.com/openai/codex",
     },
     Known {
@@ -89,6 +100,8 @@ pub const KNOWN: &[Known] = &[
         settings_flag: None,
         resume_flag: None,
         driver: "",
+        chat_args: &[],
+        chat_since: None,
         homepage: "https://github.com/google-gemini/gemini-cli",
     },
     Known {
@@ -98,7 +111,10 @@ pub const KNOWN: &[Known] = &[
         wears: &["opencode"],
         settings_flag: None,
         resume_flag: None,
-        driver: "",
+        driver: "acp",
+        // `opencode acp`, per its docs: an ACP server over stdio.
+        chat_args: &["acp"],
+        chat_since: None,
         homepage: "https://opencode.ai/docs/cli/",
     },
     Known {
@@ -109,6 +125,8 @@ pub const KNOWN: &[Known] = &[
         settings_flag: None,
         resume_flag: None,
         driver: "",
+        chat_args: &[],
+        chat_since: None,
         homepage: "https://cursor.com/cli",
     },
     Known {
@@ -119,6 +137,8 @@ pub const KNOWN: &[Known] = &[
         settings_flag: None,
         resume_flag: None,
         driver: "",
+        chat_args: &[],
+        chat_since: None,
         homepage: "https://docs.github.com/en/copilot/how-tos/set-up/install-copilot-cli",
     },
     Known {
@@ -129,6 +149,8 @@ pub const KNOWN: &[Known] = &[
         settings_flag: None,
         resume_flag: None,
         driver: "",
+        chat_args: &[],
+        chat_since: None,
         homepage: "https://ampcode.com/manual#install",
     },
     Known {
@@ -139,6 +161,8 @@ pub const KNOWN: &[Known] = &[
         settings_flag: None,
         resume_flag: None,
         driver: "",
+        chat_args: &[],
+        chat_since: None,
         homepage: "https://docs.factory.ai/cli/getting-started/quickstart",
     },
     Known {
@@ -148,7 +172,11 @@ pub const KNOWN: &[Known] = &[
         wears: &["grok"],
         settings_flag: None,
         resume_flag: None,
-        driver: "",
+        driver: "acp",
+        // `grok agent stdio`, per its docs, without the update check its docs
+        // say to skip when a program drives it.
+        chat_args: &["--no-auto-update", "agent", "stdio"],
+        chat_since: None,
         homepage: "https://x.ai/cli",
     },
     Known {
@@ -158,7 +186,10 @@ pub const KNOWN: &[Known] = &[
         wears: &["agy"],
         settings_flag: None,
         resume_flag: None,
-        driver: "",
+        driver: "acp",
+        // `agy acp`: the CLI serves ACP itself from 1.5.0.
+        chat_args: &["acp"],
+        chat_since: Some("1.5.0"),
         homepage: "https://antigravity.google",
     },
     Known {
@@ -169,6 +200,8 @@ pub const KNOWN: &[Known] = &[
         settings_flag: None,
         resume_flag: None,
         driver: "",
+        chat_args: &[],
+        chat_since: None,
         homepage: "https://aider.chat/docs/install.html",
     },
     Known {
@@ -179,6 +212,8 @@ pub const KNOWN: &[Known] = &[
         settings_flag: None,
         resume_flag: None,
         driver: "",
+        chat_args: &[],
+        chat_since: None,
         homepage: "https://block.github.io/goose/docs/quickstart/",
     },
     Known {
@@ -189,6 +224,8 @@ pub const KNOWN: &[Known] = &[
         settings_flag: None,
         resume_flag: None,
         driver: "",
+        chat_args: &[],
+        chat_since: None,
         homepage: "https://github.com/charmbracelet/crush",
     },
 ];

@@ -1,0 +1,4 @@
+{"dir": ">", "msg": {"jsonrpc": "2.0", "id": 0, "method": "initialize", "params": {"protocolVersion": 1, "clientCapabilities": {"fs": {"readTextFile": false, "writeTextFile": false}, "terminal": false}, "clientInfo": {"name": "devpit", "version": "{version}"}}}}
+{"dir": "<", "msg": {"jsonrpc": "2.0", "id": 0, "result": {"protocolVersion": 1, "agentCapabilities": {}, "authMethods": [{"id": "login", "name": "Log in"}]}}}
+{"dir": ">", "msg": {"jsonrpc": "2.0", "id": 1, "method": "session/new", "params": {"cwd": "{cwd}", "mcpServers": []}}}
+{"dir": "<", "msg": {"jsonrpc": "2.0", "id": 1, "error": {"code": -32000, "message": "Authentication required"}}}

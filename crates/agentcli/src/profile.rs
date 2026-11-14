@@ -96,6 +96,11 @@ pub fn offered(own: &[String], driver: &str) -> Vec<String> {
 /// What the CLI is passed when nobody picked a model.
 const DEFAULT_MODEL: &str = "default";
 
+/// Whether the driver reports cost and context; a profile with none reports nothing either way.
+fn metered(name: &str) -> bool {
+    driver(name).is_none_or(|found| found.metered())
+}
+
 fn efforts_of(name: &str) -> (Vec<String>, Option<String>) {
     driver(name)
         .map(|found| {
@@ -159,6 +164,7 @@ pub fn profiles(
                 own_models: one.models.clone(),
                 efforts,
                 effort_default,
+                metered: metered(&lent.driver),
                 enabled: true,
             }
         })
@@ -202,6 +208,7 @@ pub fn profiles(
             own_models: Vec::new(),
             efforts,
             effort_default,
+            metered: metered(driver),
             enabled: true,
         });
     }
