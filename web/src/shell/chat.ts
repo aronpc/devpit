@@ -272,6 +272,7 @@ export function metaOf(message: Pick<Message, 'createdAt' | 'ended'>): readonly 
     ended?.effort,
     ms ? took(ms) : null,
     ended?.tokens ? `${Math.round(ended.tokens / 1000)}k tokens` : null,
-    ended?.costUsd ? money(ended.costUsd) : null,
+    // Tokens counted and no cost: the model is one the price table does not know.
+    ended?.costUsd ? money(ended.costUsd) : ended?.tokens && ended.costUsd == null ? 'cost n/a' : null,
   ].filter((one): one is string => Boolean(one))
 }

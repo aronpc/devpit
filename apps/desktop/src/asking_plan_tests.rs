@@ -65,3 +65,21 @@ fn a_plan_refused_without_a_word_keeps_the_agent_planning() {
     assert_eq!(said["behavior"], "deny");
     assert_eq!(said["message"], NOT_YET);
 }
+
+/// A CLI that asks on its own prompt, with no hook: the person's answer goes
+/// back as allowed, or refused with why.
+#[test]
+fn an_approval_on_the_prompt_is_answered_as_the_person_said() {
+    let asking = Asking::default();
+    let picks = Picks::default();
+    assert_eq!(
+        approval_reply(&picks, "q1", Answer::Allow),
+        json!({ "behavior": "allow" })
+    );
+    let hear = asking.opened("q2");
+    assert!(refuse(&asking, &picks, "q2", "not on main"));
+    let answer = asking.wait("q2", hear);
+    let said = approval_reply(&picks, "q2", answer);
+    assert_eq!(said["behavior"], "deny");
+    assert_eq!(said["message"], "Refused in devpit: not on main");
+}

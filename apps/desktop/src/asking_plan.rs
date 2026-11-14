@@ -2,6 +2,7 @@
 //!
 //! Not on the hook, like the other questions: only the prompt's answer can
 //! take the session out of plan mode, so an approved plan went on planning.
+//! A CLI with no hook asks every question on its prompt, and they come here too.
 
 use std::sync::Arc;
 
@@ -16,11 +17,12 @@ const PLAN: &str = "ExitPlanMode";
 /// What the agent reads when the person refused without a word.
 const NOT_YET: &str = "The person did not approve the plan. Keep planning.";
 
-/// Takes a turn's plan prompts to the window; any other prompt is refused as before.
-pub(crate) fn plans(app: &tauri::AppHandle) -> Asker {
+/// Takes a turn's plan prompts to the window, and every prompt when its CLI
+/// `asks` there; any other prompt is refused as before.
+pub(crate) fn plans(app: &tauri::AppHandle, asks: bool) -> Asker {
     let app = app.clone();
     Arc::new(move |prompt: Prompt, control: &Control| {
-        if prompt.tool != PLAN {
+        if prompt.tool != PLAN && !asks {
             return false;
         }
         let (app, control) = (app.clone(), control.clone());
@@ -40,18 +42,42 @@ fn put(app: &tauri::AppHandle, control: &Control, prompt: Prompt) {
         cwd: String::new(),
         touch: devpit_agentcli::touch_of(&prompt.tool, &prompt.input),
     };
+    let plan = prompt.tool == PLAN;
+    // Already allowed for the rest of this conversation, as the hook does.
+    let kept = app.state::<crate::asking_kept::Kept>().covers(
+        &question.session_id,
+        &question.tool,
+        &question.input,
+    );
+    if !plan && kept {
+        control.answer(&prompt.request_id, json!({ "behavior": "allow" }));
+        return;
+    }
     let asking = app.state::<Asking>();
     let hear = asking.opened(&question.id);
     let _ = app.emit("permission:asked", &question);
     crate::island_notify::asked(app, &question.tool, &question.input);
     let answer = asking.wait(&question.id, hear);
-    if answer == Answer::Allow {
+    if plan && answer == Answer::Allow {
         // Out of plan mode, the session asks before what it changes.
         asking.ask_from_now(&question.session_id, true);
     }
-    let said = plan_reply(&app.state::<Picks>(), &question.id, prompt.input, answer);
+    let picks = app.state::<Picks>();
+    let said = match plan {
+        true => plan_reply(&picks, &question.id, prompt.input, answer),
+        false => approval_reply(&picks, &question.id, answer),
+    };
     control.answer(&prompt.request_id, said);
     let _ = app.emit("permission:settled", &question.id);
+}
+
+/// Any other prompt's answer: allowed, or refused with why.
+pub(crate) fn approval_reply(picks: &Picks, id: &str, answer: Answer) -> Value {
+    if answer == Answer::Allow {
+        return json!({ "behavior": "allow" });
+    }
+    let why = picks.reason(id).filter(|why| !why.is_empty());
+    json!({ "behavior": "deny", "message": why.map_or_else(|| "Refused in devpit".to_owned(), |why| format!("Refused in devpit: {why}")) })
 }
 
 /// The prompt's answer: the plan approved as written or as the person edited

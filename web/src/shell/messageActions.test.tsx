@@ -88,6 +88,12 @@ describe('an answer', () => {
     expect(line).toMatch(/· opus-4-5 · high · 1m 21s · 45k tokens · \$0\.12$/)
   })
 
+  it('says its cost is unavailable when the agent counted tokens on a model nobody priced', () => {
+    const ended = { at: 1_700_000_009, stopReason: 'completed', isError: false, model: 'gpt-6.1-sol', effort: 'low', costUsd: null, durationMs: 8_664, tokens: 15_353 }
+    render(<Turn message={answer({ ended })} />)
+    expect(document.querySelector('.tmeta')?.textContent).toMatch(/· gpt-6\.1-sol · low · 9s · 15k tokens · cost n\/a$/)
+  })
+
   it('says the same the moment it ends as it does reopened', () => {
     const live = { ...answer(), streaming: true, ended: undefined } as Message
     const end = { turnId: 't2', costUsd: 0.12, durationMs: 81_000.4, stopReason: 'end_turn', isError: false, context: { used: 45_000, window: 200_000 }, unheard: [], model: 'claude-opus-4-5', effort: 'high' }
