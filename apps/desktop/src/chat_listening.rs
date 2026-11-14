@@ -54,6 +54,14 @@ struct Now {
     closed: bool,
 }
 
+impl Now {
+    /// A turn is on: the person's, one a session woke, or the person's
+    /// waiting for the process. Displacing decides on this.
+    fn is_busy(&self) -> bool {
+        self.waiting || !matches!(self.listening, Listening::Nobody)
+    }
+}
+
 type Closing = Box<dyn FnOnce() + Send>;
 
 /// One conversation's process, as the turns on it see it.
@@ -115,6 +123,21 @@ impl Ear {
             // Stop first: it wins over a closing committed beside it.
             if std::mem::take(&mut now.stopped) {
                 now.waiting = false;
+                // Quiet with a closer armed in the gap: no turn is left to
+                // end and run it, so it goes now. A woken turn still on
+                // keeps it for its own end.
+                let close = if matches!(now.listening, Listening::Nobody) {
+                    let close = now.closing.take();
+                    now.closed |= close.is_some();
+                    close
+                } else {
+                    None
+                };
+                drop(now);
+                // Outside the lock: the closer takes locks of its own.
+                if let Some(close) = close {
+                    close();
+                }
                 return Claim::Stopped;
             }
             // Displaced and closed: this process is going. The person's turn
@@ -139,10 +162,7 @@ impl Ear {
     /// busy: the side that does not close is the safe one.
     #[cfg(test)]
     pub(crate) fn busy(&self) -> bool {
-        self.now
-            .lock()
-            .map(|now| now.waiting || !matches!(now.listening, Listening::Nobody))
-            .unwrap_or(true)
+        self.now.lock().map(|now| now.is_busy()).unwrap_or(true)
     }
 
     /// Displaces this conversation: another of the same project listens now.
@@ -155,7 +175,7 @@ impl Ear {
             // An ear that will not say reads as busy, and nothing closes it.
             return Displaced::Later;
         };
-        if now.waiting || !matches!(now.listening, Listening::Nobody) {
+        if now.is_busy() {
             now.closing = Some(Box::new(close));
             return Displaced::Later;
         }
