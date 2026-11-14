@@ -208,6 +208,8 @@ export function useChat(conversationId: string): Chat {
   useEffect(() => {
     const now = opening()
     opened.current = now
+    /* Questions belong to the conversation they were asked in. */
+    setAsked([])
     if (!project) return now.close
     void (async () => {
       const [past, found] = await Promise.all([
@@ -308,6 +310,8 @@ export function useChat(conversationId: string): Chat {
     let unheard = 2
     /* Settled while the read is in flight: the read may still carry them. */
     const gone = new Set<string>()
+    /* Heard before both listeners were up: their settling may have been missed. */
+    const early = new Set<string>()
     /* One asked while no window had this conversation open never arrived as an
        event. Read only once both events are heard, so a question asked in
        between is in the read or in an event, never in neither. */
@@ -318,13 +322,18 @@ export function useChat(conversationId: string): Chat {
         /* Answered for a conversation or a session no longer on screen. */
         if (!alive || opened.current !== now || !now.open() || !found.data) return
         const questions = found.data.questions.filter((one) => one.sessionId === session && !gone.has(one.id))
-        setAsked((was) => [...was, ...questions.filter((one) => !was.some((had) => had.id === one.id))])
+        const waiting = new Set(questions.map((one) => one.id))
+        setAsked((was) => [
+          ...was.filter((one) => !early.has(one.id) || waiting.has(one.id)),
+          ...questions.filter((one) => !was.some((had) => had.id === one.id)),
+        ])
       })
     }
     const dropAsked = onPermissionAsked((question) => {
       /* The read may have drawn it already: one question is one row. */
-      if (alive && question.sessionId === session)
-        setAsked((was) => (was.some((had) => had.id === question.id) ? was : [...was, question]))
+      if (!alive || opened.current !== now || question.sessionId !== session) return
+      if (unheard > 0) early.add(question.id)
+      setAsked((was) => (was.some((had) => had.id === question.id) ? was : [...was, question]))
     }, read)
     /* Answered from the island, or timed out: the card goes either way. */
     const dropSettled = onPermissionSettled((id) => {
