@@ -1,4 +1,11 @@
-use super::evicted;
+use std::collections::HashMap;
+use std::sync::{mpsc, Arc, Barrier};
+use std::time::Duration;
+
+use devpit_agentcli::resident::Heard;
+
+use super::{evicted, speaks_to, take_generation};
+use crate::chat_listening::Ear;
 
 #[test]
 fn a_reachable_chat_is_not_closed_by_another_conversation() {
@@ -7,14 +14,41 @@ fn a_reachable_chat_is_not_closed_by_another_conversation() {
         ("remote_b", "orch"),
         ("elsewhere", "api"),
     ];
-    let closed = evicted(listening.into_iter(), "orch", |key| key == "remote_b");
-    assert_eq!(closed, ["orch_a"]);
+    let gone = evicted(
+        listening.into_iter(),
+        "orch",
+        |key| key == "remote_b",
+        |_| false,
+    );
+    assert_eq!(gone.now, ["orch_a"]);
+    assert!(gone.later.is_empty());
 }
 
 #[test]
 fn two_remote_control_chats_in_one_project_both_stay() {
     let listening = [("remote_a", "api")];
-    assert!(evicted(listening.into_iter(), "api", |_| true).is_empty());
+    let gone = evicted(listening.into_iter(), "api", |_| true, |_| false);
+    assert!(gone.now.is_empty() && gone.later.is_empty());
+}
+
+/// Closing the other conversation under its turn is what cut turns short:
+/// a busy one is closed after, an idle one now, a reachable one never.
+#[test]
+fn a_busy_conversation_is_closed_after_its_turn_not_under_it() {
+    let listening = [
+        ("busy_a", "orch"),
+        ("idle_b", "orch"),
+        ("remote_c", "orch"),
+        ("elsewhere", "api"),
+    ];
+    let gone = evicted(
+        listening.into_iter(),
+        "orch",
+        |key| key == "remote_c",
+        |key| key == "busy_a" || key == "remote_c",
+    );
+    assert_eq!(gone.now, ["idle_b"]);
+    assert_eq!(gone.later, ["busy_a"]);
 }
 
 /// The agent's process ending or missing is the agent's, so a turn it cut
@@ -446,4 +480,100 @@ done
         assert!(ended.is_err());
         assert!(started.is_empty());
     }
+}
+
+const LIMIT: Duration = Duration::from_secs(5);
+
+fn hear_quiet(ear: &Ear) {
+    let dir = tempfile::tempdir().unwrap();
+    ear.hear(
+        Heard::Gone,
+        || unreachable!(),
+        &dir.path().join("t.jsonl"),
+        &dir.path().join("h.json"),
+    );
+}
+
+/// The closer left the ear, then a person's turn took the conversation: the
+/// late closer must find another generation and leave it be.
+#[test]
+fn a_late_closer_closes_only_the_generation_it_marked() {
+    let old = Arc::new(Ear::default());
+    let new = Arc::new(Ear::default());
+    let mut all: HashMap<String, Arc<Ear>> = HashMap::new();
+    all.insert("a".into(), old.clone());
+
+    // Armed for `old`; detached from it (the ear is lock-free from here) and
+    // paused before it takes the map.
+    let (detached, resume) = (Arc::new(Barrier::new(2)), Arc::new(Barrier::new(2)));
+    let closer = {
+        let (detached, resume, mine) = (detached.clone(), resume.clone(), old.clone());
+        move |all: Arc<std::sync::Mutex<HashMap<String, Arc<Ear>>>>| {
+            detached.wait();
+            resume.wait();
+            let mut all = all.lock().unwrap();
+            take_generation(&mut all, "a", &mine, |ear| ear).is_some()
+        }
+    };
+    let all = Arc::new(std::sync::Mutex::new(all));
+    let (tx, rx) = mpsc::channel();
+    let shared = all.clone();
+    std::thread::spawn(move || tx.send(closer(shared)).unwrap());
+
+    detached.wait();
+    // The person's turn, in the gap: a new generation under the same id.
+    all.lock().unwrap().insert("a".into(), new.clone());
+    resume.wait();
+
+    assert!(
+        !rx.recv_timeout(LIMIT).unwrap(),
+        "the late closer removed a generation it never marked"
+    );
+    assert!(Arc::ptr_eq(all.lock().unwrap().get("a").unwrap(), &new));
+
+    // The generation it did mark goes.
+    let mut same: HashMap<String, Arc<Ear>> = HashMap::from([("a".into(), old.clone())]);
+    assert!(take_generation(&mut same, "a", &old, |ear| ear).is_some());
+}
+
+/// A closed ear is never spoken to, though the map still holds it: the prompt
+/// would go where nothing listens, and the turn's recv would never end.
+#[test]
+fn a_prompt_never_goes_to_a_closed_process() {
+    let ear = Arc::new(Ear::default());
+    assert!(speaks_to(&ear, &ear));
+    assert!(
+        !speaks_to(&Arc::new(Ear::default()), &ear),
+        "another generation"
+    );
+
+    ear.mark(|| {});
+    hear_quiet(&ear);
+    assert!(ear.closed());
+    assert!(!speaks_to(&ear, &ear), "a closed generation is refused");
+    // The person's unmark does not reopen what the closer already took.
+    assert!(!ear.unmark());
+    assert!(ear.closed(), "unmark reopened a committed closing");
+}
+
+/// The person's turn waiting while the closer commits: its claim fails, the
+/// ear stays refused, and a fresh ear takes the turn and hears its end.
+#[test]
+fn a_turn_after_the_closing_is_heard_on_a_new_process() {
+    let old = Arc::new(Ear::default());
+    old.mark(|| {});
+    hear_quiet(&old);
+    let (tell, _lost) = mpsc::channel();
+    assert!(!old.claim(&tell));
+    assert!(!speaks_to(&old, &old));
+
+    let fresh = Arc::new(Ear::default());
+    let (tell, heard) = mpsc::channel();
+    assert!(fresh.claim(&tell));
+    assert!(speaks_to(&fresh, &fresh));
+    let dir = tempfile::tempdir().unwrap();
+    let speaker = fresh.clone();
+    let (transcript, head) = (dir.path().join("t.jsonl"), dir.path().join("h.json"));
+    std::thread::spawn(move || speaker.hear(Heard::Gone, || unreachable!(), &transcript, &head));
+    assert!(matches!(heard.recv_timeout(LIMIT), Ok(Heard::Gone)));
 }

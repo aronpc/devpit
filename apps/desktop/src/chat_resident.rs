@@ -210,7 +210,7 @@ pub(crate) fn or_say(
             .map_err(|_| AgentError::NotInstalled)?
             .get_mut(&staying.conversation_id)
             .map(|live| {
-                (live.started_as == wanted)
+                (live.started_as == wanted && !live.ear.closed())
                     .then(|| live.switch(turn))
                     .flatten()
             });
@@ -226,17 +226,15 @@ pub(crate) fn or_say(
             }
         }
         let fresh = !all.contains_key(&staying.conversation_id);
-        if fresh && staying.listens {
-            let listening = all
-                .iter()
-                .map(|(key, live)| (key.as_str(), live.project_id.as_str()));
-            for key in evicted(listening, &staying.project_id, |key| {
-                crate::chat_remote::wanted(&staying.app, key)
-            }) {
-                if let Some(old) = all.remove(&key) {
-                    old.resident.close();
-                }
-            }
+        // A person's turn in a conversation another displaced takes the
+        // listening back: the displacement is undone, and the others give way.
+        let back = !fresh
+            && staying.listens
+            && all
+                .get(&staying.conversation_id)
+                .is_some_and(|live| live.ear.unmark());
+        if (fresh || back) && staying.listens {
+            others_give_way(&mut all, &staying);
         }
         if fresh {
             let live = start(&staying, turn, wanted)?;
@@ -255,8 +253,10 @@ pub(crate) fn or_say(
         ear
     };
     // A woken turn still running finishes first: the person's words go in
-    // after it, not into the middle of it.
-    if !ear.claim(&tell) {
+    // after it, not into the middle of it. A wait that ended in this
+    // conversation being displaced falls through: the say below starts a
+    // process of its own.
+    if !ear.claim(&tell) && !ear.closed() {
         return Ok(stopped());
     }
     on_began();
@@ -268,7 +268,7 @@ pub(crate) fn or_say(
         let mut stopped_first = false;
         let spoken = all
             .get_mut(&staying.conversation_id)
-            .filter(|live| Arc::ptr_eq(&live.ear, &ear))
+            .filter(|live| speaks_to(&live.ear, &ear))
             .is_some_and(|live| {
                 live.turn = stamp;
                 let goes_on = on_start(live.resident.pid());
@@ -284,6 +284,9 @@ pub(crate) fn or_say(
             // waited: a new one, told to listen.
             if let Some(old) = all.remove(&staying.conversation_id) {
                 old.resident.close();
+            }
+            if staying.listens {
+                others_give_way(&mut all, &staying);
             }
             let mut live = start(&staying, turn, started_as(turn))?;
             live.ear.claim(&tell);
@@ -385,19 +388,107 @@ fn idle_out(staying: &Staying, stamp: u64) {
         });
 }
 
-/// The residents a new one in `project` closes. One conversation of an
-/// orchestrator listens at a time — two would both answer the same message —
-/// but a chat asked to be reachable keeps its process: it is its claude.ai
-/// link, and only turning Remote Control off lets it go.
+/// What a new listener in `project` does to the residents already there. One
+/// conversation of an orchestrator listens at a time — two would both answer
+/// the same message — but a chat asked to be reachable keeps its process: it
+/// is its claude.ai link, and only turning Remote Control off lets it go. One
+/// with a turn on it is not closed under the turn: it is marked, and closes
+/// when the turn ends.
+#[derive(Default)]
+pub(crate) struct Evicted {
+    /// Idle: closed now.
+    pub(crate) now: Vec<String>,
+    /// With a turn on: closed when that turn ends.
+    pub(crate) later: Vec<String>,
+}
+
 pub(crate) fn evicted<'a>(
     listening: impl Iterator<Item = (&'a str, &'a str)>,
     project: &str,
     reachable: impl Fn(&str) -> bool,
-) -> Vec<String> {
-    listening
-        .filter(|(key, of)| *of == project && !reachable(key))
-        .map(|(key, _)| key.to_owned())
-        .collect()
+    busy: impl Fn(&str) -> bool,
+) -> Evicted {
+    let mut gone = Evicted::default();
+    for (key, of) in listening {
+        if of != project || reachable(key) {
+            continue;
+        }
+        if busy(key) {
+            gone.later.push(key.to_owned());
+        } else {
+            gone.now.push(key.to_owned());
+        }
+    }
+    gone
+}
+
+/// This conversation becomes the project's listener: the others close, the
+/// busy ones when the turn on them ends — kept until then, so Stop, steer
+/// and control still reach them.
+fn others_give_way(all: &mut HashMap<String, Live>, staying: &Staying) {
+    let listening = all
+        .iter()
+        .filter(|(key, _)| key.as_str() != staying.conversation_id)
+        .map(|(key, live)| (key.as_str(), live.project_id.as_str()));
+    let gone = evicted(
+        listening,
+        &staying.project_id,
+        |key| crate::chat_remote::wanted(&staying.app, key),
+        |key| all.get(key).is_some_and(|live| live.ear.busy()),
+    );
+    for key in gone.now {
+        if let Some(old) = all.remove(&key) {
+            old.resident.close();
+        }
+    }
+    for key in gone.later {
+        // The closer takes the residents' lock of its own: the ear calls it
+        // outside its lock, and never from here.
+        if let Some(live) = all.get(&key) {
+            let app = staying.app.clone();
+            let closing = key.clone();
+            let marked = live.ear.clone();
+            live.ear
+                .mark(move || close_generation(&app, &closing, &marked));
+        }
+    }
+}
+
+/// Whether a turn that claimed `mine` may send its prompt to the process the
+/// map holds. A closed ear is never spoken to: nothing listens on it, and the
+/// turn would wait for ever.
+pub(crate) fn speaks_to(held: &Arc<Ear>, mine: &Arc<Ear>) -> bool {
+    Arc::ptr_eq(held, mine) && !held.closed()
+}
+
+/// Takes the entry out only while it is still the generation `ear` marked: a
+/// closer that ran late must not close the process a later turn went to.
+pub(crate) fn take_generation<T>(
+    all: &mut HashMap<String, T>,
+    key: &str,
+    ear: &Arc<Ear>,
+    ear_of: impl Fn(&T) -> &Arc<Ear>,
+) -> Option<T> {
+    if all
+        .get(key)
+        .is_some_and(|live| Arc::ptr_eq(ear_of(live), ear))
+    {
+        all.remove(key)
+    } else {
+        None
+    }
+}
+
+/// The deferred closer: ends this conversation's process if it is still the
+/// one that was displaced.
+fn close_generation(app: &AppHandle, conversation_id: &str, ear: &Arc<Ear>) {
+    let gone = app.try_state::<Residents>().and_then(|residents| {
+        let mut all = residents.0.lock().ok()?;
+        take_generation(&mut all, conversation_id, ear, |live| &live.ear)
+    });
+    if let Some(live) = gone {
+        live.resident.close();
+    }
 }
 
 /// Whether this conversation has a process running now.

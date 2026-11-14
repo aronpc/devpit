@@ -45,7 +45,16 @@ struct Now {
     waiting: bool,
     /// ...and was stopped before it had it.
     stopped: bool,
+    /// Another conversation of the same project listens now: this process
+    /// closes when the turn on it ends. A person's turn that begins here
+    /// after undoes it.
+    closing: Option<Closing>,
+    /// The closer has left the ear: the closing is committed, and nothing
+    /// more is taken from this process.
+    closed: bool,
 }
+
+type Closing = Box<dyn FnOnce() + Send>;
 
 /// One conversation's process, as the turns on it see it.
 #[derive(Default)]
@@ -79,6 +88,12 @@ impl Ear {
                 now.waiting = false;
                 return false;
             }
+            // Displaced and closed: this process is going. The person's turn
+            // goes to a new one instead.
+            if now.closed {
+                now.waiting = false;
+                return false;
+            }
             if taken(&mut now.listening, tell) {
                 now.waiting = false;
                 return true;
@@ -88,6 +103,41 @@ impl Ear {
                 Err(_) => return false,
             };
         }
+    }
+
+    /// Whether a turn is on: the person's, one a session woke, or the
+    /// person's waiting for the process. A busy conversation is closed after
+    /// its turn, not under it. An ear that will not say reads as busy: the
+    /// side that does not close is the safe one.
+    pub(crate) fn busy(&self) -> bool {
+        self.now
+            .lock()
+            .map(|now| now.waiting || !matches!(now.listening, Listening::Nobody))
+            .unwrap_or(true)
+    }
+
+    /// Displaces this conversation: another of the same project listens now,
+    /// and `close` runs once, when the turn on this one ends — never under it.
+    pub(crate) fn mark(&self, close: impl FnOnce() + Send + 'static) {
+        if let Ok(mut now) = self.now.lock() {
+            now.closing = Some(Box::new(close));
+        }
+    }
+
+    /// Undoes the displacement: a person's turn is beginning here, so this
+    /// conversation listens again. Whether there was one to undo. Once the
+    /// closer has left the ear the closing is committed: the process is
+    /// closed, and the turn goes to a new one.
+    pub(crate) fn unmark(&self) -> bool {
+        self.now
+            .lock()
+            .map(|mut now| now.closing.take().is_some())
+            .unwrap_or(false)
+    }
+
+    /// Whether the displacement has closed this process.
+    pub(crate) fn closed(&self) -> bool {
+        self.now.lock().map(|now| now.closed).unwrap_or(true)
     }
 
     /// Stops a person's turn still waiting for the process. The woken turn it
@@ -106,7 +156,8 @@ impl Ear {
     }
 
     /// Hands what the process said to whoever it is for. A part nobody asked
-    /// for starts a woken turn, made by `wake`.
+    /// for starts a woken turn, made by `wake` — unless the conversation is
+    /// displaced, when the process closes instead of taking one.
     pub(crate) fn hear(
         &self,
         heard: Heard,
@@ -114,42 +165,63 @@ impl Ear {
         transcript: &Path,
         head: &Path,
     ) {
-        let Ok(mut now) = self.now.lock() else { return };
-        match (&mut now.listening, heard) {
-            (Listening::Person(tell), Heard::Ended(said)) => {
-                let _ = tell.send(Heard::Ended(said));
-                now.listening = Listening::Nobody;
-            }
-            // Gone mid-turn: that turn fails, and the conversation is left
-            // quiet so the next one starts a new process instead of waiting
-            // for this one for ever.
-            (Listening::Person(tell), Heard::Gone) => {
-                let _ = tell.send(Heard::Gone);
-                now.listening = Listening::Nobody;
-            }
-            (Listening::Person(tell), heard) => {
-                let _ = tell.send(heard);
-            }
-            (Listening::Nobody, Heard::Part(part)) => {
-                let mut woken = wake();
-                woken.heard(part);
-                now.listening = Listening::Woken(woken);
-            }
-            (Listening::Woken(woken), Heard::Part(part)) => woken.heard(part),
-            (Listening::Woken(_), Heard::Ended(said)) => {
-                if let Listening::Woken(woken) = std::mem::take(&mut now.listening) {
-                    woken.finish(transcript, head, *said);
+        let close = {
+            let Ok(mut now) = self.now.lock() else { return };
+            // Quiet already with a displacement armed or done: the closer
+            // goes, not what arrived.
+            let close = if (now.closed || now.closing.is_some())
+                && matches!(now.listening, Listening::Nobody)
+            {
+                now.closed = true;
+                now.closing.take()
+            } else {
+                match (&mut now.listening, heard) {
+                    (Listening::Person(tell), Heard::Ended(said)) => {
+                        let _ = tell.send(Heard::Ended(said));
+                        now.listening = Listening::Nobody;
+                    }
+                    // Gone mid-turn: that turn fails, and the conversation is left
+                    // quiet so the next one starts a new process instead of waiting
+                    // for this one for ever.
+                    (Listening::Person(tell), Heard::Gone) => {
+                        let _ = tell.send(Heard::Gone);
+                        now.listening = Listening::Nobody;
+                    }
+                    (Listening::Person(tell), heard) => {
+                        let _ = tell.send(heard);
+                    }
+                    (Listening::Nobody, Heard::Part(part)) => {
+                        let mut woken = wake();
+                        woken.heard(part);
+                        now.listening = Listening::Woken(woken);
+                    }
+                    (Listening::Woken(woken), Heard::Part(part)) => woken.heard(part),
+                    (Listening::Woken(_), Heard::Ended(said)) => {
+                        if let Listening::Woken(woken) = std::mem::take(&mut now.listening) {
+                            woken.finish(transcript, head, *said);
+                        }
+                    }
+                    (Listening::Woken(_), Heard::Gone) => {
+                        if let Listening::Woken(woken) = std::mem::take(&mut now.listening) {
+                            woken.gone(transcript);
+                        }
+                    }
+                    (Listening::Nobody, _) | (_, Heard::Control(_)) => {}
                 }
-            }
-            (Listening::Woken(_), Heard::Gone) => {
-                if let Listening::Woken(woken) = std::mem::take(&mut now.listening) {
-                    woken.gone(transcript);
+                if !matches!(now.listening, Listening::Nobody) {
+                    return;
                 }
-            }
-            (Listening::Nobody, _) | (_, Heard::Control(_)) => {}
-        }
-        if matches!(now.listening, Listening::Nobody) {
+                // Quiet with a displacement armed: the process goes, and a
+                // part that arrives after wakes no turn on it.
+                now.closed = now.closing.is_some();
+                now.closing.take()
+            };
             self.quiet.notify_all();
+            close
+        };
+        // Outside the lock: the closer takes locks of its own.
+        if let Some(close) = close {
+            close();
         }
     }
 }
