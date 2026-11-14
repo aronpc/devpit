@@ -103,6 +103,7 @@ vi.mock('./live', () => ({
     agentProfiles: () => [{ id: 'claude', path: '/bin/claude' }],
     projectSettingsRead: () => ({ own: {}, repo: {}, machine: {}, applied: projectSettings.applied, repoProblem: null }),
     permissionAskFromNow: () => null,
+    permissionQuestions: () => ({ questions: [] }),
   },
 }))
 vi.mock('./window', () => ({

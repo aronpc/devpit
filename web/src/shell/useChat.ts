@@ -302,13 +302,41 @@ export function useChat(conversationId: string): Chat {
   /* Questions arrive for every conversation; this one keeps its own. */
   useEffect(() => {
     if (!session) return
-    return onPermissionAsked((question) => {
-      if (question.sessionId === session) setAsked((was) => [...was, question])
-    })
+    const now = opened.current
+    let alive = true
+    let reading = true
+    let unheard = 2
+    /* Settled while the read is in flight: the read may still carry them. */
+    const gone = new Set<string>()
+    /* One asked while no window had this conversation open never arrived as an
+       event. Read only once both events are heard, so a question asked in
+       between is in the read or in an event, never in neither. */
+    const read = (): void => {
+      if (--unheard > 0) return
+      void ask(() => commands.permissionQuestions(session)).then((found) => {
+        reading = false
+        /* Answered for a conversation or a session no longer on screen. */
+        if (!alive || opened.current !== now || !now.open() || !found.data) return
+        const questions = found.data.questions.filter((one) => one.sessionId === session && !gone.has(one.id))
+        setAsked((was) => [...was, ...questions.filter((one) => !was.some((had) => had.id === one.id))])
+      })
+    }
+    const dropAsked = onPermissionAsked((question) => {
+      /* The read may have drawn it already: one question is one row. */
+      if (alive && question.sessionId === session)
+        setAsked((was) => (was.some((had) => had.id === question.id) ? was : [...was, question]))
+    }, read)
+    /* Answered from the island, or timed out: the card goes either way. */
+    const dropSettled = onPermissionSettled((id) => {
+      if (reading) gone.add(id)
+      setAsked((was) => was.filter((one) => one.id !== id))
+    }, read)
+    return () => {
+      alive = false
+      dropAsked()
+      dropSettled()
+    }
   }, [session])
-
-  /* Answered from the island, or timed out: the card goes either way. */
-  useEffect(() => onPermissionSettled((id) => setAsked((was) => was.filter((one) => one.id !== id))), [])
 
   const choosePermission = useCallback(
     (mode: string) => {

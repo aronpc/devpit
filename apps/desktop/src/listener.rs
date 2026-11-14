@@ -251,6 +251,10 @@ fn serve(app: AppHandle, mut stream: TcpStream, seq: u64) {
         trace(&format!("post seq={seq} {settled}"));
         let asking = app.state::<Asking>();
         let hear = asking.opened(&question.id);
+        // Kept for a window that opens after the question was asked: the
+        // event only reaches the ones already listening.
+        app.state::<crate::asking_waiting::Waiting>()
+            .opened(&question);
         let _ = app.emit("permission:asked", &question);
         crate::island_notify::asked(&app, &question.tool, &question.input);
         let answer = asking.wait(&question.id, hear);
@@ -258,6 +262,8 @@ fn serve(app: AppHandle, mut stream: TcpStream, seq: u64) {
         reply(&mut stream, &said);
         // Answered here or anywhere else, or timed out: every window that
         // drew the question puts it away.
+        app.state::<crate::asking_waiting::Waiting>()
+            .settled(&question.id);
         let _ = app.emit("permission:settled", &question.id);
         return;
     }

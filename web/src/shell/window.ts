@@ -109,26 +109,40 @@ export function draggingAfter(type: string): boolean {
  * raised it is the caller's job, because only the caller knows which session
  * it is showing.
  */
-export function onPermissionAsked(then: (question: Question) => void): () => void {
-  if (!inTauri()) return () => {}
-  let dropped = false
-  let drop: (() => void) | undefined
-  void listen<Question>('permission:asked', (event) => then(event.payload)).then((unlisten) => {
-    if (dropped) unlisten()
-    else drop = unlisten
-  })
-  return () => {
-    dropped = true
-    drop?.()
-  }
+export function onPermissionAsked(then: (question: Question) => void, ready?: () => void): () => void {
+  return heard<Question>('permission:asked', then, ready)
 }
 
 /**
  * Calls back when a question stops waiting — answered in any window, or timed
  * out — with its id, so every window drawing it can put it away.
  */
-export function onPermissionSettled(then: (id: string) => void): () => void {
-  return shared<string>('permission:settled', then)
+export function onPermissionSettled(then: (id: string) => void, ready?: () => void): () => void {
+  return heard<string>('permission:settled', then, ready)
+}
+
+/* A listener of its own, with `ready` for when it is really listening.
+   Registering is asynchronous: a caller that reads a snapshot to go with the
+   events has to read after this, or what happens in between is in neither. */
+function heard<T>(name: string, then: (payload: T) => void, ready?: () => void): () => void {
+  if (!inTauri()) {
+    ready?.()
+    return () => {}
+  }
+  let dropped = false
+  let drop: (() => void) | undefined
+  void listen<T>(name, (event) => then(event.payload)).then(
+    (unlisten) => {
+      if (dropped) unlisten()
+      else drop = unlisten
+      ready?.()
+    },
+    () => ready?.(),
+  )
+  return () => {
+    dropped = true
+    drop?.()
+  }
 }
 
 /**
