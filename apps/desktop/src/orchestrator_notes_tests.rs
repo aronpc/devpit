@@ -271,3 +271,16 @@ fn a_session_gets_its_own_projects_rules_and_no_one_elses() {
     );
     assert_eq!(briefed(&folder, "Go.", None), format!("Go.\n\n{REPORTING}"));
 }
+
+/// A session on a CLI without SendMessage is told devpit's own tool instead.
+#[test]
+fn a_session_without_send_message_reports_through_devpit() {
+    let claude = super::report_line("orchestrator-work", true);
+    assert!(
+        claude.contains("SendMessage to that name to report back"),
+        "{claude}"
+    );
+    let other = super::report_line("orchestrator-work", false);
+    assert!(other.contains("`orchestrator-work`: message it with devpit_session_message, `to` left out, to report back"), "{other}");
+    assert!(!other.contains("SendMessage"), "{other}");
+}

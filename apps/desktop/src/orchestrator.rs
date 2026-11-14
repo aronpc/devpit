@@ -21,6 +21,8 @@ const DEVPIT_BRIEF: (&str, &str) = (
 /// the person edits these, and a second opening must not undo that.
 const SEEDED: &[(&str, &str)] = &[
     ("CLAUDE.md", include_str!("orchestrator_claude.md")),
+    // Gemini follows the same imports; `AGENTS.md` is written from both.
+    ("GEMINI.md", "@CLAUDE.md\n"),
     // Where it keeps what it learns: an orchestrator's notes, not a
     // repository — there is no remote to push them to, so no git either.
     ("context/projects/.keep", ""),
@@ -260,6 +262,7 @@ pub(crate) fn seed(folder: &Path) -> std::io::Result<()> {
         }
         std::fs::write(path, text)?;
     }
+    crate::orchestrator_brief::write_agents(folder)?;
     crate::orchestrator_view::set_up(folder)
 }
 

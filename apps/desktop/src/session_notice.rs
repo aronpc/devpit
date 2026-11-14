@@ -80,11 +80,13 @@ pub(crate) fn notice(before: Option<&Seen>, now: &[LiveSession]) -> Option<Strin
 pub(crate) type Noticed = (String, String, Option<TurnFrom>);
 
 /// `prompt`, with devpit's notices above it: where the person sent it from,
-/// and in an orchestrator's chat what changed since the last turn.
+/// and in an orchestrator's chat what changed since the last turn, under the
+/// person's preferences for a CLI no hook hands them to.
 pub(crate) fn with_notice(noticed: &Noticed, prompt: &str, now_ms: f64) -> String {
     let (project_id, profile_id, from) = noticed;
     let since = since(project_id, profile_id, now_ms);
-    notices(from.as_ref(), since.as_deref(), prompt)
+    let said = notices(from.as_ref(), since.as_deref(), prompt);
+    crate::orchestrator_brief::headed(project_id, profile_id, &said)
 }
 
 /// `prompt` under its notices, where it came from first: each its own

@@ -55,7 +55,7 @@ pub(crate) fn imported(text: &str, on: bool) -> String {
 
 /// Refuses to write `path` unless it is a file of `folder` itself: the
 /// orchestrator's chat can put a link there, and devpit writes only its own.
-fn inside(folder: &Path, path: &Path) -> std::io::Result<()> {
+pub(crate) fn inside(folder: &Path, path: &Path) -> std::io::Result<()> {
     let link = std::fs::symlink_metadata(path).is_ok_and(|meta| meta.file_type().is_symlink());
     let parent = path.parent().unwrap_or(folder).canonicalize()?;
     if link || !parent.starts_with(folder.canonicalize()?) {
@@ -95,7 +95,7 @@ pub(crate) fn brief_in(folder: &Path, on: bool) -> std::io::Result<()> {
     if after != before {
         std::fs::write(&claude, after)?;
     }
-    Ok(())
+    crate::orchestrator_brief::write_agents(folder)
 }
 
 /// The methods only an orchestrator in Assistant mode is answered, for the

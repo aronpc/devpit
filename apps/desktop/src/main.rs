@@ -54,6 +54,7 @@ mod mcp_apps;
 mod microphone_gtk;
 mod opening;
 mod orchestrator;
+mod orchestrator_brief;
 mod orchestrator_links;
 mod orchestrator_notes;
 mod orchestrator_view;

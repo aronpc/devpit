@@ -251,11 +251,36 @@ const LONGEST_BRIEF: usize = 8000;
 /// Whom a session reports to: the orchestrator's own name, which outlives a
 /// restart of its chat where the one the CLI makes up does not.
 pub(crate) fn report_to(folder: &Path) -> Option<String> {
-    crate::orchestrator::address(folder).map(|name| {
-        format!(
-            "The orchestrator that started you is `{name}`: SendMessage to that name to report back. It keeps the name when its chat restarts."
-        )
-    })
+    let name = crate::orchestrator::address(folder)?;
+    Some(report_line(&name, !without_send_message(folder)))
+}
+
+/// How a session reaches `name`: Claude Code's own SendMessage, or devpit's
+/// tool for a session on a CLI without it.
+pub(crate) fn report_line(name: &str, send_message: bool) -> String {
+    let how = match send_message {
+        true => "SendMessage to that name",
+        false => "message it with devpit_session_message, `to` left out,",
+    };
+    format!(
+        "The orchestrator that started you is `{name}`: {how} to report back. It keeps the name when its chat restarts."
+    )
+}
+
+/// Whether the orchestrator in `folder` speaks as a profile that is not
+/// Claude Code's, whose sessions it starts under the same profile.
+fn without_send_message(folder: &Path) -> bool {
+    let Ok(store) = crate::projects::store() else {
+        return false;
+    };
+    let profile = store
+        .orchestrator_settings(folder)
+        .ok()
+        .and_then(|all| all["profile"].as_str().map(str::to_owned));
+    let profiles = crate::agent_profiles::all(&store).unwrap_or_default();
+    profile
+        .and_then(|id| profiles.into_iter().find(|one| one.id == id))
+        .is_some_and(|one| one.driver != "claude")
 }
 
 /// A session's brief, with whom to report to, the person's standing rules
