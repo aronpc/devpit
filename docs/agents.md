@@ -119,8 +119,9 @@ an orchestrator can start a session on it.
 | Claude Code | yes | nothing: `SendMessage`, `ListAgents` and `notify_when_idle` reach its account's sessions too |
 | Codex | yes | `SendMessage`; a cost only for a model devpit has a price for |
 | OpenCode | yes | `SendMessage`; cost and context read n/a |
-| Grok, Antigravity | yes | `SendMessage`; cost and context read n/a; Plan, where the agent offers no read-only mode |
-| Gemini CLI, Cursor and the rest | no | a chat: they are started as sessions only |
+| Cursor | yes | `SendMessage`; cost and context read n/a; Plan, where it offers no read-only mode |
+| Grok, Antigravity | yes | `SendMessage`; cost and context read n/a; Plan, where the agent offers no read-only mode; a session on their own CLI, which devpit does not start with a brief: pass `profile` |
+| Gemini CLI and the rest | no | a chat: they are started as sessions only |
 
 Every orchestrator reaches its sessions through devpit: `devpit_session_message`
 types at a session's idle prompt, and `devpit_session_notify_idle` starts one
