@@ -16,11 +16,13 @@ const proposed = (source: string, text: string, replaces: string | null = null):
   file: replaces === null ? 'lessons.md' : 'facts.md',
   text,
   replaces,
+  onboarding: false,
 })
 
 let waiting: LessonProposal[] = []
 let decisions: MemoryDecision[] = []
 const decided = vi.fn()
+const approvedAll = vi.fn()
 vi.mock('./live', () => ({
   ask: async (call: () => Promise<unknown>) => {
     try {
@@ -36,6 +38,11 @@ vi.mock('./live', () => ({
       waiting = waiting.filter((one) => one.text !== text)
       return { proposals: waiting, decisions }
     },
+    projectAgentApproveLearned: async (projectId: string) => {
+      approvedAll(projectId)
+      waiting = waiting.filter((one) => !one.onboarding)
+      return {}
+    },
   },
 }))
 
@@ -44,6 +51,7 @@ afterEach(() => {
   waiting = []
   decisions = []
   decided.mockReset()
+  approvedAll.mockReset()
 })
 
 describe('LessonProposals', () => {
@@ -121,5 +129,21 @@ describe('LessonProposals', () => {
     render(<LessonProposals />)
     expect(await screen.findByText('Wait 3 s for the queue test.')).toBeTruthy()
     expect(screen.queryByText('Proposals share one queue.')).toBeNull()
+  })
+
+  it("folds the proposals of the agent's own read into one line per project, approved at once", async () => {
+    waiting = [
+      { ...proposed('onboarding, AGENTS.md', 'Everything versioned is in English.'), file: 'facts.md', onboarding: true },
+      { ...proposed('onboarding, Makefile', 'make test runs every test.'), file: 'facts.md', onboarding: true },
+      proposed('#331', 'Wait for the queue.'),
+    ]
+    render(<LessonProposals />)
+    await screen.findByText('Wait for the queue.')
+    expect(screen.queryByText('Everything versioned is in English.')).toBeNull()
+    expect(screen.getByText(/2 facts and decisions from its own read/)).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Approve all' }))
+    await waitFor(() => expect(approvedAll).toHaveBeenCalledWith('prj_api'))
+    await waitFor(() => expect(screen.queryByText(/from its own read/)).toBeNull())
+    expect(screen.getByText('Wait for the queue.')).toBeTruthy()
   })
 })

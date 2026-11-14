@@ -78,7 +78,7 @@ export function MemoryPane(): React.JSX.Element {
       reload()
     })
   }
-  const learned = shown?.proposals.filter((one) => one.onboarding).length ?? 0
+  const learned = shown?.proposals.filter((one) => one.proposal.onboarding).length ?? 0
 
   return (
     <div className="pmem scroll">
@@ -124,7 +124,7 @@ export function MemoryPane(): React.JSX.Element {
                   <span className="pmem__meta">
                     <span className="pmem__day">{day}</span>
                     <span className="pmem__file">{file}</span>
-                    {one.onboarding && <span className="pmem__file">onboarding</span>}
+                    {one.proposal.onboarding && <span className="pmem__file">onboarding</span>}
                     <Sources files={one.files} cards={one.cards} />
                     {replaces !== null && text && <span className="pmem__file">was: {replaces}</span>}
                   </span>

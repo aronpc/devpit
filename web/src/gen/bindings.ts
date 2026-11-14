@@ -4303,6 +4303,11 @@ export type LessonProposal = {
 	text: string,
 	/**  The stale entry it updates or removes. */
 	replaces: string | null,
+	/**
+	 *  Proposed by the agent's own read of the project, which "Approve all"
+	 *  takes at once.
+	 */
+	onboarding: boolean,
 };
 
 /**  A list, so tomorrow's field has somewhere to go. */
@@ -4479,11 +4484,6 @@ export type MemoryProposal = {
 	proposal: LessonProposal,
 	files: string[],
 	cards: string[],
-	/**
-	 *  Proposed by the agent's own read of the project, which "Approve all"
-	 *  takes.
-	 */
-	onboarding: boolean,
 };
 
 /**

@@ -30,9 +30,17 @@ export function LessonProposals({ projectId, source }: { projectId?: string; sou
     return onCarried<string>('lessons:proposed', reload)
   }, [reload])
 
-  const shown = all.filter((one) => (!projectId || one.projectId === projectId) && (!source || one.source === source))
+  const here = all.filter((one) => (!projectId || one.projectId === projectId) && (!source || one.source === source))
+  /* The agent's own read proposes 15 to 30 at once: one line per project here,
+   * one by one on the project's Project agent page. */
+  const shown = here.filter((one) => !one.onboarding)
+  const read = [...new Map(here.filter((one) => one.onboarding).map((one) => [one.projectId, one.project])).entries()].map(([id, name]) => ({
+    id,
+    name,
+    count: here.filter((one) => one.onboarding && one.projectId === id).length,
+  }))
   const made = source ? decisions.filter((one) => one.projectId === projectId && one.cards.includes(source)) : []
-  if (shown.length === 0 && made.length === 0) return null
+  if (shown.length === 0 && read.length === 0 && made.length === 0) return null
   const decide = (one: LessonProposal, kept: string | null): void => {
     setEditing(null)
     void ask(() => commands.lessonDecide(one.projectId, one.source, one.text, one.replaces, kept)).then(told)
@@ -40,9 +48,24 @@ export function LessonProposals({ projectId, source }: { projectId?: string; sou
 
   return (
     <>
-      {shown.length > 0 && (
+      {(shown.length > 0 || read.length > 0) && (
         <section className="remind" aria-label="Lessons to approve">
           <div className="remind__list">
+            {read.map((one) => (
+              <div key={`read ${one.id}`} className="remind__one">
+                <span className="remind__what">
+                  <b>
+                    {one.name}: {one.count} facts and decisions from its own read of the project
+                  </b>
+                  <span className="remind__when">one by one on its Project agent page</span>
+                </span>
+                <span className="remind__acts">
+                  <button className="remind__btn remind__btn--done" onClick={() => void ask(() => commands.projectAgentApproveLearned(one.id)).then((said) => (said.error ? setProblem(said.error) : reload()))}>
+                    Approve all
+                  </button>
+                </span>
+              </div>
+            ))}
             {shown.map((one) => {
               const edited = editing?.of === one ? editing : null
               return (

@@ -54,12 +54,12 @@ fn the_page_lists_the_memory_and_what_waits_each_with_its_sources() {
     assert_eq!(page.facts[0].files, ["AGENTS.md"]);
     assert_eq!(page.facts[0].day, "2026-11-13");
     let learned = &page.proposals[0];
-    assert!(learned.onboarding);
+    assert!(learned.proposal.onboarding);
     assert_eq!(learned.files, ["AGENTS.md"]);
     assert_eq!(learned.proposal.file, "facts.md");
     assert_eq!(learned.proposal.text, "Everything versioned is in English.");
     let lesson = &page.proposals[1];
-    assert!(!lesson.onboarding);
+    assert!(!lesson.proposal.onboarding);
     assert_eq!(lesson.cards, ["#12"]);
     assert_eq!(lesson.proposal.file, "lessons.md");
     assert_eq!(page.learned, None);

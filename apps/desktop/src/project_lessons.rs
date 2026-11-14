@@ -309,6 +309,7 @@ pub(crate) fn waiting() -> Result<LessonProposals, RpcError> {
                         file: file.to_owned(),
                         text: text.to_owned(),
                         replaces: replaces.map(str::to_owned),
+                        onboarding: one.onboarding(),
                     }
                 })
         })

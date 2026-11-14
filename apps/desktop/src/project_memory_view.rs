@@ -38,10 +38,10 @@ pub(crate) fn memory_of(project: &Project) -> ProjectMemory {
                     file: file.to_owned(),
                     text: text.to_owned(),
                     replaces: replaces.map(str::to_owned),
+                    onboarding: one.onboarding(),
                 },
                 files: one.files().into_iter().map(str::to_owned).collect(),
                 cards: one.cards().into_iter().map(str::to_owned).collect(),
-                onboarding: one.onboarding(),
             }
         })
         .collect();

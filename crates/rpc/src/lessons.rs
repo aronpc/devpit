@@ -21,6 +21,9 @@ pub struct LessonProposal {
     pub text: String,
     /// The stale entry it updates or removes.
     pub replaces: Option<String>,
+    /// Proposed by the agent's own read of the project, which "Approve all"
+    /// takes at once.
+    pub onboarding: bool,
 }
 
 /// A decision of a project's memory, with the cards that made it.
@@ -95,7 +98,4 @@ pub struct MemoryProposal {
     pub proposal: LessonProposal,
     pub files: Vec<String>,
     pub cards: Vec<String>,
-    /// Proposed by the agent's own read of the project, which "Approve all"
-    /// takes.
-    pub onboarding: bool,
 }

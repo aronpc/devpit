@@ -16,16 +16,14 @@ const memory = (): ProjectMemory => ({
   decisions: [{ day: '2026-11-12', source: 'docs/adr/0001-sync.md', text: 'Sync the workspace, not the machine.', files: ['docs/adr/0001-sync.md'], cards: [] }],
   proposals: [
     {
-      proposal: { projectId: 'prj_api', project: 'api', day: '2026-11-14', source: 'onboarding, Makefile', file: 'facts.md', text: 'make test runs every test.', replaces: null },
+      proposal: { projectId: 'prj_api', project: 'api', day: '2026-11-14', source: 'onboarding, Makefile', file: 'facts.md', text: 'make test runs every test.', replaces: null, onboarding: true },
       files: ['Makefile'],
       cards: [],
-      onboarding: true,
     },
     {
-      proposal: { projectId: 'prj_api', project: 'api', day: '2026-11-14', source: '#13', file: 'lessons.md', text: 'Retry a busy script.', replaces: null },
+      proposal: { projectId: 'prj_api', project: 'api', day: '2026-11-14', source: '#13', file: 'lessons.md', text: 'Retry a busy script.', replaces: null, onboarding: false },
       files: [],
       cards: ['#13'],
-      onboarding: false,
     },
   ],
   learning: false,
