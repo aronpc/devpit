@@ -469,3 +469,43 @@ fn an_expected_turn_is_busy_before_it_claims() {
     let (tell, _) = mpsc::channel();
     assert_eq!(ear.claim(&tell), Claim::Stopped);
 }
+
+/// A Stop before the claim leaves no turn to end and run the closer the
+/// displacement armed: the claim runs it, once, and the process is closed.
+#[test]
+fn a_stop_before_the_claim_closes_the_displaced_process() {
+    let ear = Ear::default();
+    ear.expect();
+    let ran = Arc::new(AtomicUsize::new(0));
+    let counter = ran.clone();
+    let displaced = ear.displace(move || {
+        counter.fetch_add(1, Ordering::SeqCst);
+    });
+    assert_eq!(displaced, Displaced::Later);
+    assert!(ear.stop_waiting());
+    let (tell, _) = mpsc::channel();
+    assert_eq!(ear.claim(&tell), Claim::Stopped);
+    assert!(ear.closed(), "the displaced process is closed");
+    assert_eq!(ran.load(Ordering::SeqCst), 1, "the closer ran once");
+    assert!(ear.now.lock().unwrap().closing.is_none());
+}
+
+/// With a woken turn still on, the closer stays for that turn's end.
+#[test]
+fn a_stop_before_the_claim_leaves_a_woken_turns_closer_armed() {
+    let relay = Relay::default();
+    let (turn, _) = woken(&relay);
+    let ear = ear_on(turn);
+    ear.expect();
+    let ran = Arc::new(AtomicUsize::new(0));
+    let counter = ran.clone();
+    ear.displace(move || {
+        counter.fetch_add(1, Ordering::SeqCst);
+    });
+    assert!(ear.stop_waiting());
+    let (tell, _) = mpsc::channel();
+    assert_eq!(ear.claim(&tell), Claim::Stopped);
+    assert!(!ear.closed());
+    assert_eq!(ran.load(Ordering::SeqCst), 0);
+    assert!(ear.now.lock().unwrap().closing.is_some());
+}
