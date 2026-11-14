@@ -104,11 +104,12 @@ pub(crate) fn base_or<'a>(base: Option<&'a str>, launch: &'a str) -> &'a str {
 /// The launch line, continuing `session` when the agent can.
 ///
 /// The id is typed into a shell, so anything but a session id's own
-/// characters is refused rather than quoted: a UUID, or OpenCode's `ses_…`.
+/// characters is refused rather than quoted: a UUID, or OpenCode's `ses_…`,
+/// and never one that starts like an option of the CLI.
 pub(crate) fn with_resume(start: &str, flag: Option<&str>, session: Option<&str>) -> String {
     let plain = |id: &&str| {
-        !id.is_empty()
-            && id.len() <= 64
+        id.len() <= 64
+            && id.starts_with(|c: char| c.is_ascii_alphanumeric())
             && id
                 .chars()
                 .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
@@ -175,7 +176,7 @@ mod tests {
     /// The line is typed into a shell: an id that is not an id never reaches it.
     #[test]
     fn an_id_that_could_say_something_to_the_shell_is_refused() {
-        for id in ["abc; rm -rf ~", "$(id)", "../x", ""] {
+        for id in ["abc; rm -rf ~", "$(id)", "../x", "", "--force", "-x"] {
             assert_eq!(
                 with_resume(START, Some("--resume {}"), Some(id)),
                 START,
