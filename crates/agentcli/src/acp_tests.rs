@@ -325,8 +325,8 @@ fn a_chat_on_opencode_streams_its_answer_and_tools_and_asks_the_person() {
         .iter()
         .any(|part| matches!(part, Part::Thinking { text, .. } if text == "Listing the folder.")));
     assert_eq!(played.asked.len(), 1, "the person was asked once");
-    assert_eq!(played.asked[0].tool, "ls");
-    assert_eq!(played.asked[0].input["kind"], "execute");
+    assert_eq!(played.asked[0].tool, "Bash", "a shell call, by its command");
+    assert_eq!(played.asked[0].input["command"], "ls");
     assert_eq!(
         played.said.session_id.as_deref(),
         Some("ses_e253a9d75ffejkRP4tKUxLPGEa")
@@ -361,6 +361,71 @@ fn full_access_answers_a_permission_prompt_without_the_person() {
     );
     assert_eq!(played.heard, played.expected);
     assert!(played.asked.is_empty(), "nobody was asked");
+}
+
+/// What the person is asked is keyed by what runs, not by the agent's title:
+/// two shell calls titled alike are two commands, so an "Always" on one never
+/// allows the other, and a request whose command is unknown asks every time.
+#[test]
+fn a_permission_prompt_is_keyed_by_the_command_not_the_agents_title() {
+    use crate::driver::Driver;
+
+    let acp = Acp::new(&[]);
+    let wire = acp.wire();
+    let call = |id: &str, kind: &str, raw: Value| {
+        let update = serde_json::json!({ "jsonrpc": "2.0", "method": "session/update", "params": {
+            "sessionId": "s", "update": { "sessionUpdate": "tool_call", "toolCallId": id,
+            "title": "bash", "kind": kind, "status": "pending", "rawInput": raw } } });
+        acp.read(&update.to_string());
+    };
+    let ask = |n: u64, id: &str, extra: Value| {
+        let mut tool_call = serde_json::json!({ "toolCallId": id, "title": "bash" });
+        if let (Some(into), Some(more)) = (tool_call.as_object_mut(), extra.as_object()) {
+            into.extend(more.clone());
+        }
+        let line =
+            serde_json::json!({ "jsonrpc": "2.0", "id": n, "method": "session/request_permission",
+            "params": { "sessionId": "s", "toolCall": tool_call,
+            "options": [{ "optionId": "once", "name": "Allow once", "kind": "allow_once" }] } })
+            .to_string();
+        assert!(wire.replies(&line).is_empty(), "it waits for the person");
+        wire.asked(&line, Some("s"))
+            .and_then(|asked| asked.prompt)
+            .expect("asked")
+    };
+    call(
+        "c1",
+        "execute",
+        serde_json::json!({ "command": "rm -rf build" }),
+    );
+    call(
+        "c2",
+        "execute",
+        serde_json::json!({ "command": "rm -rf ~" }),
+    );
+    call("c3", "execute", Value::Null);
+    let (one, other) = (ask(1, "c1", Value::Null), ask(2, "c2", Value::Null));
+    assert_eq!((one.tool.as_str(), other.tool.as_str()), ("Bash", "Bash"));
+    assert_eq!(one.input["command"], "rm -rf build");
+    assert_eq!(other.input["command"], "rm -rf ~");
+    assert_ne!(one.input["always"], false);
+    let unknown = ask(3, "c3", Value::Null);
+    assert_eq!(
+        unknown.input["always"], false,
+        "no command known: asks every time"
+    );
+    let deleting = ask(4, "c4", serde_json::json!({ "kind": "delete" }));
+    assert_eq!(
+        deleting.input["always"], false,
+        "a kind with no rule asks every time"
+    );
+    let editing = ask(
+        5,
+        "c5",
+        serde_json::json!({ "kind": "edit", "locations": [{ "path": "/w/a.rs" }] }),
+    );
+    assert_eq!(editing.tool, "Edit");
+    assert_eq!(editing.input["file_path"], "/w/a.rs");
 }
 
 #[test]

@@ -26,6 +26,16 @@ export function subjectOf(question: Pick<Question, 'input' | 'touch'>): string {
   return receiptSubject(question.input)
 }
 
+/* Whether "Always in this chat" can be offered: not for a request its CLI
+   says asks every time, whose name says nothing of what runs. */
+export function alwaysOffered(input: string): boolean {
+  try {
+    return (JSON.parse(input) as { always?: unknown }).always !== false
+  } catch {
+    return true
+  }
+}
+
 /* What a request asks beyond the call itself — write access under another
    root, the network, more permissions — said on the card, never folded away. */
 export function grantsOf(input: string): readonly string[] {

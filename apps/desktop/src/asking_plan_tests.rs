@@ -106,3 +106,29 @@ fn always_in_this_chat_never_covers_a_request_for_more_reach() {
     assert!(!already_allowed(&kept, &asked(wider), false));
     assert!(!already_allowed(&kept, &asked(plain), true));
 }
+
+/// An ACP agent's shell call is asked as the command it runs, so one
+/// "Always" never allows another command the agent titled the same; and a
+/// request it marks as asking every time is never covered at all.
+#[test]
+fn always_on_an_acp_shell_call_covers_that_command_and_no_other() {
+    use crate::asking::Question;
+    use crate::asking_kept::{rule_for, Kept};
+    let kept = Kept::default();
+    let asked = |tool: &str, input: &str| Question {
+        id: "q".to_owned(),
+        session_id: "ses_1".to_owned(),
+        tool: tool.to_owned(),
+        input: input.to_owned(),
+        cwd: String::new(),
+        touch: None,
+    };
+    let build = r#"{"command":"rm -rf build","description":"bash"}"#;
+    kept.keep("ses_1", rule_for("Bash", build));
+    assert!(already_allowed(&kept, &asked("Bash", build), false));
+    let home = r#"{"command":"rm -rf ~","description":"bash"}"#;
+    assert!(!already_allowed(&kept, &asked("Bash", home), false));
+    let each_time = r#"{"title":"bash","kind":"delete","always":false}"#;
+    kept.keep("ses_1", rule_for("bash", each_time));
+    assert!(!already_allowed(&kept, &asked("bash", each_time), false));
+}

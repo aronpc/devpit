@@ -44,6 +44,13 @@ describe('a question in the chat', () => {
     expect(screen.queryByText('Always in this chat')).toBeNull()
   })
 
+  it('offers no "always" for a request its agent says asks every time', () => {
+    const titled: Question = { ...question, tool: 'bash', input: '{"title":"bash","kind":"delete","always":false}', touch: null }
+    render(<Asked questions={[titled]} onAnswer={vi.fn()} />)
+    expect(screen.queryByText('Always in this chat')).toBeNull()
+    expect(screen.getByText('Allow')).toBeTruthy()
+  })
+
   it('is answered once either way, or always for the rest of the chat', () => {
     const answered = vi.fn()
     render(<Asked questions={[question]} onAnswer={answered} />)

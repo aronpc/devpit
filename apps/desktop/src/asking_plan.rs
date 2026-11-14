@@ -66,15 +66,16 @@ fn put(app: &tauri::AppHandle, control: &Control, prompt: Prompt) {
 }
 
 /// Allowed for the rest of this conversation, as the hook does: never a plan,
-/// and never a request for more reach than the call, which waits every time.
+/// never a request for more reach than the call, and never one whose CLI
+/// says it asks every time (`"always": false`).
 pub(crate) fn already_allowed(
     kept: &crate::asking_kept::Kept,
     question: &Question,
     plan: bool,
 ) -> bool {
-    let grants = serde_json::from_str::<Value>(&question.input)
-        .is_ok_and(|input| input.get("grants").is_some());
-    !plan && !grants && kept.covers(&question.session_id, &question.tool, &question.input)
+    let each_time = serde_json::from_str::<Value>(&question.input)
+        .is_ok_and(|input| input.get("grants").is_some() || input["always"] == false);
+    !plan && !each_time && kept.covers(&question.session_id, &question.tool, &question.input)
 }
 
 /// Any other prompt's answer: allowed, or refused with why.

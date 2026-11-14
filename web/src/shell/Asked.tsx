@@ -1,7 +1,7 @@
 import { useState } from 'react'
 
 import type { Question } from '../gen/bindings'
-import { allowKey, grantsOf, questionsOf, subjectOf, useFocused, type Chosen } from './choices'
+import { allowKey, alwaysOffered, grantsOf, questionsOf, subjectOf, useFocused, type Chosen } from './choices'
 import { Choosing } from './Choosing'
 import { Markdown } from './MarkdownView'
 import { committed, composing } from './typing'
@@ -131,7 +131,7 @@ function Allowing({ question, onAnswer }: { question: Question; onAnswer: (said:
             Edit
           </button>
         )}
-        {!plan && grants.length === 0 && (
+        {!plan && grants.length === 0 && alwaysOffered(question.input) && (
           <button className="btn" onClick={() => onAnswer('always')} title={alwaysMeans(question.tool)}>
             Always in this chat
           </button>

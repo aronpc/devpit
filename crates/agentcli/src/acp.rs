@@ -111,6 +111,9 @@ pub(crate) struct Session {
     pub failed: Option<String>,
     pub waiting: HashMap<String, Waiting>,
     pub kinds: HashMap<String, String>,
+    /// Each call's input as the agent sent it, which a permission request
+    /// may leave out.
+    pub inputs: HashMap<String, Value>,
     shown: HashSet<String>,
     /// How the agent takes a model, once it offered one.
     pub picks: Option<Picks>,
@@ -283,6 +286,9 @@ impl Session {
         if let Some(kind) = update["kind"].as_str() {
             self.kinds.insert(id.to_owned(), kind.to_owned());
         }
+        if let Some(input) = update.get("rawInput").filter(|input| !input.is_null()) {
+            self.inputs.insert(id.to_owned(), input.clone());
+        }
         let status = update["status"].as_str().unwrap_or("pending");
         let mut parts = Vec::new();
         let ready =
@@ -351,16 +357,17 @@ fn output_of(update: &Value) -> String {
 }
 
 /// Why this agent's CLI cannot hold a chat: it is older than the first
-/// version that serves ACP, and would fail on its first line.
+/// version that serves ACP, and would fail on its first line. A `--version`
+/// that says nothing in time is left to try.
 pub fn outdated(base: &str, program: &str) -> Option<String> {
     let agent = devpit_pty::agents::known(base)?;
     let since = agent.chat_since?;
-    let said = devpit_pty::host_env::command(program)
-        .arg("--version")
-        .stdin(std::process::Stdio::null())
-        .output()
-        .ok()?;
-    too_old(agent.label, since, &String::from_utf8_lossy(&said.stdout))
+    let said = crate::providers::version_of(
+        std::path::Path::new(program),
+        devpit_pty::login_path::search_path(),
+        crate::providers::VERSION_WAIT,
+    )?;
+    too_old(agent.label, since, &said)
 }
 
 /// The refusal for a CLI whose `--version` said `said`, when it is older than

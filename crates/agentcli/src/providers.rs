@@ -94,7 +94,7 @@ pub const SUPPORTED: &[Supported] = &[
 ];
 
 /// How long `--version` may take before the CLI is listed without one.
-const VERSION_WAIT: Duration = Duration::from_secs(5);
+pub(crate) const VERSION_WAIT: Duration = Duration::from_secs(5);
 
 /// The most of a sign-in file read to tell whether it holds one.
 const READ_CEILING: u64 = 256 * 1024;

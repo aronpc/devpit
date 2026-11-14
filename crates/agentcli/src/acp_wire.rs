@@ -59,6 +59,64 @@ fn chosen(id: &Value, options: &[Value], kinds: &[&str]) -> String {
 const ALLOW: &[&str] = &["allow_once", "allow_always"];
 const REFUSE: &[&str] = &["reject_once", "reject_always"];
 
+/// What the person is asked, keyed the way "Always in this chat" keeps it:
+/// a shell call by the exact command it runs, a file change as an edit. Any
+/// other request, or a call whose command is not known, asks every time:
+/// the title is the agent's own words and says nothing of what runs.
+pub(crate) fn asked_as(call: &Value, kind: &str, raw: Option<&Value>) -> (String, Value) {
+    let title = call["title"].as_str().unwrap_or("tool");
+    let raw = raw.unwrap_or(&Value::Null);
+    match (kind, command_in(raw)) {
+        ("execute", Some(command)) => (
+            "Bash".to_owned(),
+            json!({ "command": command, "description": title }),
+        ),
+        ("edit", _) => {
+            let paths = paths_in(call, raw);
+            let input = json!({ "file_path": paths.first(), "paths": paths, "description": title });
+            ("Edit".to_owned(), input)
+        }
+        _ => {
+            let mut input = call.clone();
+            input["kind"] = json!(kind);
+            input["always"] = json!(false);
+            (title.to_owned(), input)
+        }
+    }
+}
+
+/// The command a shell call runs, as one line.
+fn command_in(raw: &Value) -> Option<String> {
+    let command = match &raw["command"] {
+        Value::String(line) => line.trim().to_owned(),
+        Value::Array(words) => words
+            .iter()
+            .map(|word| word.as_str().map(str::to_owned))
+            .collect::<Option<Vec<_>>>()?
+            .join(" "),
+        _ => return None,
+    };
+    (!command.is_empty()).then_some(command)
+}
+
+/// The files a change touches: where the call says it is, else its input's path.
+fn paths_in(call: &Value, raw: &Value) -> Vec<String> {
+    let located: Vec<String> = call["locations"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter_map(|at| at["path"].as_str().map(str::to_owned))
+        .collect();
+    if !located.is_empty() {
+        return located;
+    }
+    ["filePath", "file_path", "path"]
+        .iter()
+        .find_map(|key| raw[*key].as_str().map(str::to_owned))
+        .into_iter()
+        .collect()
+}
+
 fn key(session: &Session, id: &Value) -> String {
     format!("{}#{id}", session.id.as_deref().unwrap_or_default())
 }
@@ -262,12 +320,15 @@ impl Wire for AcpWire {
         let key = key(&session, &said["id"]);
         let waiting = session.waiting.get(&key)?;
         let call = &said["params"]["toolCall"];
-        let mut input = call.clone();
-        input["kind"] = json!(session.kind_of(call));
+        let raw = call
+            .get("rawInput")
+            .filter(|raw| !raw.is_null())
+            .or_else(|| session.inputs.get(call["toolCallId"].as_str()?));
+        let (tool, input) = asked_as(call, &session.kind_of(call), raw);
         Some(Asked {
             prompt: Some(Prompt {
                 request_id: key,
-                tool: call["title"].as_str().unwrap_or("tool").to_owned(),
+                tool,
                 input,
                 session_id: session_id.map(str::to_owned).or_else(|| session.id.clone()),
             }),
