@@ -15,6 +15,7 @@ fn turn(budget: Option<f64>) -> Say<'static> {
         permission: None,
         disallowed: &[],
         settings: None,
+        setting_sources: None,
         mcp_config: None,
         effort: None,
         control: None,
@@ -90,6 +91,7 @@ fn the_next_turn_resumes_the_session_this_one_ended_in() {
         permission: None,
         disallowed: &[],
         settings: None,
+        setting_sources: None,
         mcp_config: None,
         effort: None,
         control: None,
@@ -215,6 +217,7 @@ fn a_chat_turn_runs_under_its_profile_env() {
         permission: None,
         disallowed: &[],
         settings: None,
+        setting_sources: None,
         mcp_config: None,
         effort: None,
         control: None,
@@ -290,6 +293,20 @@ fn a_chat_turn_is_handed_devpits_tools() {
     assert!(!argv(&turn(None))
         .iter()
         .any(|a| a.starts_with("--mcp-config")));
+}
+
+/// A turn can load the person's own settings alone, leaving out those a
+/// repository carries; left unsaid, the CLI loads them all.
+#[test]
+fn a_turn_can_leave_out_the_settings_a_repository_carries() {
+    let with = Say {
+        setting_sources: Some("user"),
+        ..turn(None)
+    };
+    assert!(argv(&with).contains(&"--setting-sources=user".to_owned()));
+    assert!(!argv(&turn(None))
+        .iter()
+        .any(|a| a.starts_with("--setting-sources")));
 }
 
 #[test]

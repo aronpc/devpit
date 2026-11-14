@@ -391,6 +391,7 @@ fn resumed(
         permission: mode,
         disallowed: &[],
         settings: hooks.as_deref(),
+        setting_sources: None,
         mcp_config: mcp.as_deref(),
         effort: head.effort.as_deref(),
         control: None,

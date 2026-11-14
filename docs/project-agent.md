@@ -117,8 +117,13 @@ runs in the CLI's plan mode whatever the profile's own settings choose, so it
 reads and never writes. Plan mode keeps the profile's Bash allow rules, so the
 process is also started with deny rules, which win over any allow rule:
 `Edit`, `Write`, `NotebookEdit`, Bash's `rm`, `mv`, `git commit`,
-`git push` and any `>` redirect, and the sessions' own
-`devpit_project_agent_consult` and `devpit_project_agent_propose`.
+`git push` and any `>` redirect, the sessions' own
+`devpit_project_agent_consult` and `devpit_project_agent_propose`, and
+`devpit_session_message` and `devpit_session_notify_idle`: it answers, and
+never starts a turn in another session. It loads only the person's own
+settings (`--setting-sources user`), never a repository's: the agent also
+starts with nobody asking, and a repository's allow rules would widen what
+plan mode lets it run.
 
 - **Wakes when called.** The first question starts the process. Further
   questions go to the same process, one at a time. Work an answer leaves

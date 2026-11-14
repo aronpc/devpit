@@ -51,6 +51,9 @@ pub(crate) fn argv(turn: &Say<'_>) -> Vec<String> {
         argv.push("--permission-prompt-tool".to_owned());
         argv.push("stdio".to_owned());
     }
+    if let Some(sources) = turn.setting_sources {
+        argv.push(format!("--setting-sources={sources}"));
+    }
     if let Some(config) = turn.mcp_config {
         argv.push(format!("--mcp-config={config}"));
     }

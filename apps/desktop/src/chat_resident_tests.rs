@@ -106,6 +106,7 @@ done
             permission: None,
             disallowed: &[],
             settings: None,
+            setting_sources: None,
             mcp_config: None,
             effort: None,
             control: None,

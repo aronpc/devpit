@@ -38,6 +38,8 @@ pub struct Say<'a> {
     /// `PreToolUse` hook, and a turn without it has nobody to ask: the CLI,
     /// printing rather than talking, refuses every write instead.
     pub settings: Option<&'a str>,
+    /// The CLI's own settings it loads (`user`, `project`, `local`); `None`, all.
+    pub setting_sources: Option<&'a str>,
     /// devpit's MCP file, so a chat has the board's tools the way a terminal
     /// does, without depending on a plugin being installed.
     pub mcp_config: Option<&'a str>,

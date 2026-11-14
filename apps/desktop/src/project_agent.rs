@@ -43,7 +43,7 @@ pub(crate) const NOT_STARTED: &str = "the project agent could not start";
 /// Read-only whatever mode the profile's own settings choose.
 const READ_ONLY: &str = "plan";
 /// Plan mode keeps the profile's Bash allow rules; a deny rule wins over them.
-const DENIED: [&str; 10] = [
+const DENIED: [&str; 12] = [
     "Edit",
     "Write",
     "NotebookEdit",
@@ -55,6 +55,9 @@ const DENIED: [&str; 10] = [
     // A session's tools: consulting itself would wait on its own turn.
     "mcp__devpit__devpit_project_agent_consult",
     "mcp__devpit__devpit_project_agent_propose",
+    // It answers; it never starts a turn in another session.
+    "mcp__devpit__devpit_session_message",
+    "mcp__devpit__devpit_session_notify_idle",
 ];
 
 /// What an agent is started with.
@@ -321,6 +324,9 @@ fn start(wake: &Wake, session: Option<&str>) -> Result<Live, String> {
         permission: Some(READ_ONLY),
         disallowed: &DENIED,
         settings: None,
+        // The person's own settings: a repository's allow rules would widen
+        // what plan mode lets an agent nobody asked to start run.
+        setting_sources: Some("user"),
         mcp_config: wake.mcp_config,
         effort: None,
         control: None,

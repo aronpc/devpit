@@ -209,6 +209,7 @@ pub async fn chat_send(
             permission: mode.as_deref(),
             disallowed: &[],
             settings: hooks.as_deref(),
+            setting_sources: None,
             mcp_config: mcp.as_deref(),
             effort: thinking.as_deref(),
             control: Some(&control),

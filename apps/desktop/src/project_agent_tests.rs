@@ -166,6 +166,42 @@ fn the_agent_is_refused_every_write_whatever_the_profile_allows() {
     }
 }
 
+/// How the stand-in was first started, with a space after the last flag.
+fn started(bench: &Bench) -> String {
+    log(&bench.log)
+        .lines()
+        .find(|line| line.starts_with("argv "))
+        .map(|line| format!("{line} "))
+        .expect("a start")
+}
+
+#[test]
+fn the_agent_loads_the_persons_own_settings_and_never_the_repositorys() {
+    let bench = bench();
+    let agents = Agents::idling_after(Duration::from_secs(60));
+    asked(&agents, &bench, "first");
+    // A repository's own allow rules would widen what plan mode lets it run.
+    let start = started(&bench);
+    assert!(start.contains("--setting-sources=user "), "{start}");
+}
+
+#[test]
+fn the_agent_cannot_message_or_watch_other_sessions() {
+    let bench = bench();
+    let agents = Agents::idling_after(Duration::from_secs(60));
+    asked(&agents, &bench, "first");
+    let start = started(&bench);
+    for tool in [
+        "mcp__devpit__devpit_session_message",
+        "mcp__devpit__devpit_session_notify_idle",
+    ] {
+        assert!(
+            start.contains(&format!("--disallowedTools={tool} ")),
+            "{tool} is not refused: {start}"
+        );
+    }
+}
+
 #[test]
 fn a_brief_holds_the_card_as_data() {
     let prompt = brief_prompt(
