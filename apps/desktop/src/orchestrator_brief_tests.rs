@@ -44,13 +44,38 @@ fn an_import_out_of_the_folder_is_left_as_written() {
     std::fs::write(folder.join("docs/b.md"), "B").expect("b");
     std::fs::write(folder.join("loop.md"), "@loop.md\n").expect("loop");
     let text = "head\n@docs/a.md\n@../secret.md\n@/etc/hostname\n@loop.md\ntail";
-    let flat = flattened(&folder, &folder, text, 0);
+    let flat = flattened(&folder, text);
     assert!(
         flat.starts_with("head\nA\nB\n@../secret.md\n@/etc/hostname\n"),
         "{flat}"
     );
     assert!(flat.ends_with("@loop.md\ntail"), "{flat}");
     assert!(!flat.contains("outside"));
+}
+
+/// A file put in once whatever imports it again, and imports no longer
+/// followed past the size of a brief: what the chat writes in its folder
+/// cannot make the brief, and devpit with it, grow without end.
+#[test]
+fn an_import_is_put_in_once_and_a_brief_stops_growing_at_its_size() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let folder = dir.path().join("work");
+    std::fs::create_dir_all(&folder).expect("folder");
+    std::fs::write(folder.join("loop.md"), "@loop.md\n".repeat(8)).expect("loop");
+    assert_eq!(
+        flattened(&folder, "@loop.md\n@loop.md\n"),
+        "@loop.md\n".repeat(9)
+    );
+
+    let big = "x".repeat(100_000) + "\n";
+    let mut text = String::new();
+    for n in 0..10 {
+        std::fs::write(folder.join(format!("a{n}.md")), &big).expect("big");
+        text.push_str(&format!("@a{n}.md\n"));
+    }
+    let flat = flattened(&folder, &text);
+    assert!(flat.len() < 400_000, "{}", flat.len());
+    assert!(flat.ends_with("@a9.md\n"), "the rest are left as written");
 }
 
 /// A link in `AGENTS.md`'s place is not written through.
