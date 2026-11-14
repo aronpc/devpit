@@ -49,6 +49,22 @@ impl Server {
         pane_format(self, session, window, "#{pane_current_path}").map(Into::into)
     }
 
+    /// Where a pane's cursor stands, as (column, row) of its screen.
+    pub fn cursor(&self, target: &str) -> Option<(u16, u16)> {
+        let out = self
+            .require(&[
+                "display-message",
+                "-p",
+                "-t",
+                target,
+                "#{cursor_x} #{cursor_y}",
+            ])
+            .ok()?;
+        let said = String::from_utf8_lossy(&out.stdout);
+        let (column, row) = said.trim().split_once(' ')?;
+        Some((column.parse().ok()?, row.parse().ok()?))
+    }
+
     /// The pid of the shell a window was started with: the leader of the
     /// session everything typed into it runs in.
     pub fn pane_pid(&self, session: &str, window: &str) -> Option<u32> {

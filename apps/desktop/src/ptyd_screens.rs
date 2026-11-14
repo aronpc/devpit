@@ -112,6 +112,12 @@ impl Screens {
         Some(rows.join("\n"))
     }
 
+    /// Where the cursor stands, as (column, row) of the screen.
+    pub(crate) fn cursor(&self, pane: u32) -> Option<(u16, u16)> {
+        let (row, column) = self.screens.get(&pane)?.parser.screen().cursor_position();
+        Some((column, row))
+    }
+
     pub(crate) fn modes(&self, pane: u32) -> Option<Modes> {
         let screen = self.screens.get(&pane)?.parser.screen();
         Some(Modes {

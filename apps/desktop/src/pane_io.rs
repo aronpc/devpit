@@ -268,6 +268,24 @@ pub(crate) fn screen(target: &str) -> Option<String> {
     }
 }
 
+/// Where a pane's cursor stands, as (column, row) of its screen.
+pub(crate) fn cursor(target: &str) -> Option<(u16, u16)> {
+    match holder(target) {
+        Holder::Tmux { .. } => tmux().ok()?.cursor(target),
+        Holder::Ptyd(pane) => cursor_drawn(pane),
+    }
+}
+
+#[cfg(unix)]
+fn cursor_drawn(pane: u32) -> Option<(u16, u16)> {
+    crate::ptyd_tap::tap().cursor(pane)
+}
+
+#[cfg(not(unix))]
+fn cursor_drawn(_pane: u32) -> Option<(u16, u16)> {
+    None
+}
+
 /// What a program asked of its terminal, which says how to type into it.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub(crate) struct Modes {

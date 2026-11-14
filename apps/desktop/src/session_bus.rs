@@ -192,6 +192,14 @@ impl Bus {
         (dropped, self.idle(pane))
     }
 
+    /// The message to type into `to` now: one, when its agent waits at an
+    /// empty prompt.
+    pub(crate) fn next_to_type(&mut self, to: &Inbox, now: Pane, empty: bool) -> Option<Letter> {
+        (now == Pane::Free && empty)
+            .then(|| self.take(to))
+            .flatten()
+    }
+
     pub(crate) fn wrote(&mut self, leaf: &str, orchestrator: &str) {
         self.answers
             .insert(leaf.to_owned(), orchestrator.to_owned());
@@ -293,10 +301,73 @@ pub(crate) fn pane_now(seen: &Seen, typed: Option<&Typed>, now: f64) -> Pane {
     Pane::Free
 }
 
-/// What a session reads of an orchestrator's message, typed at its prompt.
+/// `text` as words only: no control character but the newline, no escape
+/// sequence. Typed into a pane, any of them would be a key.
+pub(crate) fn words(text: &str) -> String {
+    let mut kept = String::with_capacity(text.len());
+    let mut chars = text.chars().peekable();
+    while let Some(ch) = chars.next() {
+        match ch {
+            '\u{1b}' => skip_escape(&mut chars),
+            '\r' => {
+                chars.next_if_eq(&'\n');
+                kept.push('\n');
+            }
+            '\n' => kept.push('\n'),
+            '\t' => kept.push(' '),
+            ch if ch.is_control() => {}
+            ch => kept.push(ch),
+        }
+    }
+    kept
+}
+
+/// Past the escape sequence an ESC opened: a CSI to its final byte, an OSC
+/// to its terminator, any other to its one character.
+fn skip_escape(chars: &mut std::iter::Peekable<std::str::Chars>) {
+    match chars.next() {
+        Some('[') => {
+            while chars
+                .next_if(|ch| ('\u{20}'..='\u{3f}').contains(ch))
+                .is_some()
+            {}
+            chars.next_if(|ch| ('\u{40}'..='\u{7e}').contains(ch));
+        }
+        Some(']') => {
+            while let Some(ch) = chars.next_if(|ch| *ch != '\u{1b}') {
+                if ch == '\u{7}' {
+                    return;
+                }
+            }
+            if chars.next_if_eq(&'\u{1b}').is_some() {
+                chars.next_if_eq(&'\\');
+            }
+        }
+        _ => {}
+    }
+}
+
+/// Whether the cursor stands at an empty prompt: only the prompt's mark
+/// before it on its line. A placeholder is drawn after the cursor and typed
+/// words before it, so the person's half-typed words never read as empty.
+pub(crate) fn prompt_empty(screen: &str, cursor: Option<(u16, u16)>) -> bool {
+    let Some((column, row)) = cursor else {
+        return false;
+    };
+    let Some(line) = screen.lines().nth(usize::from(row)) else {
+        return false;
+    };
+    let before: String = line.chars().take(usize::from(column)).collect();
+    let before = before.trim().trim_start_matches(['│', '┃', '|']).trim();
+    matches!(before, "›" | "❯" | ">")
+}
+
+/// What a session reads of an orchestrator's message, typed at its prompt:
+/// one line, since the one Enter is the one devpit presses after it.
 pub(crate) fn to_session(from: &str, text: &str) -> String {
+    let text = words(text).split_whitespace().collect::<Vec<_>>().join(" ");
     format!(
-        "[devpit, not the person] A message from {from}, through devpit. Answer it with devpit_session_message (to: \"{from}\").\n\n{text}"
+        "[devpit, not the person] A message from {from}, through devpit. Answer it with devpit_session_message (to: \"{from}\"): {text}"
     )
 }
 
@@ -405,11 +476,15 @@ fn now_ms() -> f64 {
         .unwrap_or_default()
 }
 
-/// A pane's terminal and how it stands, or nothing once it is gone. `kept`
-/// looks count towards a steady reading; the others only glance.
-fn looked(project: &str, leaf: &str, kept: bool) -> Option<(String, Pane)> {
+/// A pane's terminal, how it stands and whether its prompt is empty, or
+/// nothing once it is gone. `kept` looks count towards a steady reading; the
+/// others only glance.
+fn looked(project: &str, leaf: &str, kept: bool) -> Option<(String, Pane, bool)> {
     let target = crate::pane_io::target_of(project, leaf).ok()?;
     let screen = crate::pane_io::screen(&target);
+    let empty = screen
+        .as_deref()
+        .is_some_and(|shown| prompt_empty(shown, crate::pane_io::cursor(&target)));
     let seen = Seen {
         hook: crate::pane_said::heard_of(leaf),
         agent: !crate::pane_io::shell_in_front(&target).unwrap_or(false),
@@ -421,7 +496,7 @@ fn looked(project: &str, leaf: &str, kept: bool) -> Option<(String, Pane)> {
     } else {
         pane_now(&seen, bus.typed.get(leaf), now_ms())
     };
-    Some((target, now))
+    Some((target, now, empty))
 }
 
 /// A pane's watches told and its next message typed, once it is free.
@@ -430,7 +505,7 @@ fn at_pane(project: &str, leaf: &str) {
         project: project.to_owned(),
         leaf: leaf.to_owned(),
     };
-    let Some((target, now)) = looked(project, leaf, true) else {
+    let Some((target, now, empty)) = looked(project, leaf, true) else {
         return ended(&inbox);
     };
     match now {
@@ -441,7 +516,8 @@ fn at_pane(project: &str, leaf: &str) {
             for one in told {
                 wake(&one.orchestrator, idle_notice(&one.name, false));
             }
-            let Some(letter) = bus().take(&inbox) else {
+            // Words the person left on the prompt are theirs: it waits.
+            let Some(letter) = bus().next_to_type(&inbox, now, empty) else {
                 return;
             };
             match crate::pane_io::paste(&target, &letter.text, true) {
@@ -527,7 +603,8 @@ pub(crate) fn message(
     cwd: &str,
 ) -> Result<Value, String> {
     let said = |name: &str| params.get(name).and_then(Value::as_str).map(str::trim);
-    let text = said("text").unwrap_or_default();
+    let text = words(said("text").unwrap_or_default());
+    let text = text.trim();
     if text.is_empty() || text.chars().count() > LONGEST {
         return Err(format!("a message is between 1 and {LONGEST} characters"));
     }
@@ -577,7 +654,7 @@ pub(crate) fn notify(here: &Project, profile: &str, params: &Value) -> Result<Va
     let Inbox::Pane { project, leaf } = &inbox else {
         return Err(WHICH_SESSION.to_owned());
     };
-    match looked(project, leaf, false).map_or(Pane::Ended, |(_, now)| now) {
+    match looked(project, leaf, false).map_or(Pane::Ended, |(_, now, _)| now) {
         Pane::Free => Ok(json!({
             "idle": true,
             "name": name,

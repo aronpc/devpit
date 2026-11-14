@@ -316,6 +316,11 @@ impl Tap {
         self.screens.lock().ok()?.contents(pane)
     }
 
+    /// Where pane `pane`'s cursor stands, as (column, row).
+    pub(crate) fn cursor(&self, pane: u32) -> Option<(u16, u16)> {
+        self.screens.lock().ok()?.cursor(pane)
+    }
+
     /// How the program in pane `pane` wants its keys and pastes.
     pub(crate) fn modes(&self, pane: u32) -> Option<Modes> {
         self.screens.lock().ok()?.modes(pane)

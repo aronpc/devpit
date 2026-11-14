@@ -211,7 +211,7 @@ fn a_message_typed_into_a_session_says_who_sent_it_and_where_to_answer() {
         typed.contains(r#"devpit_session_message (to: "orchestrator-jhol")"#),
         "{typed}"
     );
-    assert!(typed.ends_with("\n\nRun the tests."), "{typed}");
+    assert!(typed.ends_with(": Run the tests."), "{typed}");
 }
 
 /// What a session writes reaches the orchestrator under devpit's mark, so its
@@ -250,4 +250,49 @@ fn a_pane_stopped_on_a_choice_is_never_typed_into() {
     assert_eq!(pane_now(&seen(None, codex), None, 0.0), Pane::Busy);
     let claude = "Do you want to proceed?\n❯ 1. Yes\n  2. No";
     assert_eq!(pane_now(&seen(None, claude), None, 0.0), Pane::Busy);
+}
+
+/// What is typed into a pane is words only: a Ctrl-C, an ESC and its
+/// sequence, a paste's end marker or an Enter of the sender's would be keys
+/// in someone else's pane. The one Enter is devpit's, after the message.
+#[test]
+fn a_message_typed_into_a_pane_brings_words_and_no_keys() {
+    let typed = to_session(
+        "orchestrator-jhol",
+        "stop\u{3} now\r\nthen\u{1b}[20\u{1b}[201~1~/approvals\r\u{1b}]0;title\u{7}\u{9b}2J\u{7f}\ttests",
+    );
+    assert!(!typed.chars().any(char::is_control), "{typed:?}");
+    assert!(
+        typed.ends_with(": stop now then1~/approvals 2J tests"),
+        "{typed:?}"
+    );
+    assert!(to_session("o", "✅ feito, ação").ends_with(": ✅ feito, ação"));
+    // An orchestrator's chat reads lines, not keys: they are kept there.
+    assert_eq!(words("one\u{3}\r\ntwo\u{1b}[1m"), "one\ntwo");
+}
+
+/// Words the person left on a prompt are theirs: a message waits for an
+/// empty prompt rather than being typed after them and sent with them. The
+/// cursor tells the two apart, as Claude Code 2.1 and Codex 0.160 draw their
+/// prompts: a placeholder sits after it, typed words before it.
+#[test]
+fn a_half_typed_prompt_is_never_typed_over() {
+    let claude = "────\n❯ Try \"edit bindings.ts to...\"\n────";
+    assert!(prompt_empty(claude, Some((2, 1))));
+    assert!(!prompt_empty("────\n❯ deploy to sta\n────", Some((15, 1))));
+    let codex = "  /review - review any changes\n› Ask Codex to do anything\n  medium";
+    assert!(prompt_empty(codex, Some((2, 1))));
+    assert!(!prompt_empty("› deploy to sta", Some((15, 0))));
+    // A cursor devpit cannot read is not an empty prompt.
+    assert!(!prompt_empty(codex, None));
+    let mut bus = Bus::default();
+    bus.post(letter(pane("leaf_a"), "status?"));
+    assert_eq!(bus.next_to_type(&pane("leaf_a"), Pane::Free, false), None);
+    assert_eq!(bus.next_to_type(&pane("leaf_a"), Pane::Busy, true), None);
+    assert_eq!(bus.waiting(), vec![pane("leaf_a")]);
+    assert_eq!(
+        bus.next_to_type(&pane("leaf_a"), Pane::Free, true)
+            .map(|one| one.text),
+        Some("status?".to_owned())
+    );
 }
