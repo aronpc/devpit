@@ -179,6 +179,8 @@ select.chip { appearance: none; border: 0; background: none; font-family: inheri
 .mpick__b { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 8px; }
 .mpick__n { flex: none; font-size: var(--fs-md); font-weight: 550; color: var(--text); white-space: nowrap; }
 .mpick__r[aria-selected='true'] { background: color-mix(in srgb, var(--accent) 9%, transparent); }
+.mpick__r[data-unavailable] { cursor: default; }
+.mpick__r[data-unavailable] .mpick__n { color: var(--text-3); text-decoration: line-through; }
 .mpick__p { min-width: 0; display: flex; align-items: baseline; gap: 6px; font-size: var(--fs-xs); color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mpick__who { flex: none; color: var(--text-2); }
 /* What the CLI is actually passed, for anyone checking. Quiet on purpose. */

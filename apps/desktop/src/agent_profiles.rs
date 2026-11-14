@@ -93,6 +93,18 @@ pub(crate) fn declared(store: &Store) -> Vec<Declared> {
     stored(store).unwrap_or_default()
 }
 
+/// What the agent said of its models in its last session: the list a
+/// profile with none of its own offers, its own default first, and every
+/// name and refusal beside it.
+pub(crate) fn reported(profile: &mut Profile, models: Vec<devpit_rpc::OfferedModel>) {
+    if profile.own_models.is_empty() && !models.is_empty() {
+        profile.models = std::iter::once(crate::profile_models::DEFAULT_MODEL.to_owned())
+            .chain(models.iter().map(|one| one.id.clone()))
+            .collect();
+    }
+    profile.offered = models;
+}
+
 /// The command each declared profile runs, for the shell probe.
 pub(crate) fn commands(store: &Store) -> Vec<String> {
     stored(store)
@@ -111,8 +123,11 @@ pub(crate) fn all(store: &Store) -> Result<Vec<Profile>, RpcError> {
         base_of,
         &crate::shell_launch::shell_knows(),
     );
+    let home = crate::chat::home();
     for one in &mut all {
         one.enabled = !off.contains(&one.id);
+        let said = crate::slash::recall(&home, &one.id);
+        reported(one, said.map(|init| init.models).unwrap_or_default());
         let models = crate::profile_models::of(store, &one.id);
         one.models
             .retain(|model| !models.models_off.contains(model));

@@ -52,6 +52,9 @@ pub struct Known {
     /// The first version that serves `chat_args`: an older one is refused a
     /// chat with a word to update it, rather than failing on its first line.
     pub chat_since: Option<&'static str>,
+    /// The sign-in a chat asks the agent for once it is greeted, reusing the
+    /// CLI's own login: for an agent that opens no session before it.
+    pub chat_sign_in: Option<&'static str>,
     /// Where its own documentation lives. The row links to it rather than
     /// explaining how to install something devpit does not ship.
     pub homepage: &'static str,
@@ -78,6 +81,7 @@ pub const KNOWN: &[Known] = &[
         driver: "claude",
         chat_args: &[],
         chat_since: None,
+        chat_sign_in: None,
         homepage: "https://code.claude.com/docs",
     },
     Known {
@@ -91,6 +95,7 @@ pub const KNOWN: &[Known] = &[
         driver: "codex",
         chat_args: &[],
         chat_since: None,
+        chat_sign_in: None,
         homepage: "https://github.com/openai/codex",
     },
     Known {
@@ -104,6 +109,7 @@ pub const KNOWN: &[Known] = &[
         driver: "",
         chat_args: &[],
         chat_since: None,
+        chat_sign_in: None,
         homepage: "https://github.com/google-gemini/gemini-cli",
     },
     Known {
@@ -118,6 +124,7 @@ pub const KNOWN: &[Known] = &[
         // `opencode acp`, per its docs: an ACP server over stdio.
         chat_args: &["acp"],
         chat_since: None,
+        chat_sign_in: None,
         homepage: "https://opencode.ai/docs/cli/",
     },
     Known {
@@ -128,9 +135,10 @@ pub const KNOWN: &[Known] = &[
         settings_flag: None,
         // `--resume [chatId]`, per `cursor-agent --help`.
         resume_flag: Some("--resume {}"),
-        driver: "",
-        chat_args: &[],
-        chat_since: None,
+        driver: "acp",
+        chat_args: &["acp"],
+        chat_since: Some("2026.08.11"),
+        chat_sign_in: Some("cursor_login"),
         homepage: "https://cursor.com/cli",
     },
     Known {
@@ -143,6 +151,7 @@ pub const KNOWN: &[Known] = &[
         driver: "",
         chat_args: &[],
         chat_since: None,
+        chat_sign_in: None,
         homepage: "https://docs.github.com/en/copilot/how-tos/set-up/install-copilot-cli",
     },
     Known {
@@ -155,6 +164,7 @@ pub const KNOWN: &[Known] = &[
         driver: "",
         chat_args: &[],
         chat_since: None,
+        chat_sign_in: None,
         homepage: "https://ampcode.com/manual#install",
     },
     Known {
@@ -167,6 +177,7 @@ pub const KNOWN: &[Known] = &[
         driver: "",
         chat_args: &[],
         chat_since: None,
+        chat_sign_in: None,
         homepage: "https://docs.factory.ai/cli/getting-started/quickstart",
     },
     Known {
@@ -181,6 +192,7 @@ pub const KNOWN: &[Known] = &[
         // say to skip when a program drives it.
         chat_args: &["--no-auto-update", "agent", "stdio"],
         chat_since: None,
+        chat_sign_in: None,
         homepage: "https://x.ai/cli",
     },
     Known {
@@ -194,6 +206,7 @@ pub const KNOWN: &[Known] = &[
         // `agy acp`: the CLI serves ACP itself from 1.5.0.
         chat_args: &["acp"],
         chat_since: Some("1.5.0"),
+        chat_sign_in: None,
         homepage: "https://antigravity.google",
     },
     Known {
@@ -206,6 +219,7 @@ pub const KNOWN: &[Known] = &[
         driver: "",
         chat_args: &[],
         chat_since: None,
+        chat_sign_in: None,
         homepage: "https://aider.chat/docs/install.html",
     },
     Known {
@@ -218,6 +232,7 @@ pub const KNOWN: &[Known] = &[
         driver: "",
         chat_args: &[],
         chat_since: None,
+        chat_sign_in: None,
         homepage: "https://block.github.io/goose/docs/quickstart/",
     },
     Known {
@@ -230,6 +245,7 @@ pub const KNOWN: &[Known] = &[
         driver: "",
         chat_args: &[],
         chat_since: None,
+        chat_sign_in: None,
         homepage: "https://github.com/charmbracelet/crush",
     },
 ];

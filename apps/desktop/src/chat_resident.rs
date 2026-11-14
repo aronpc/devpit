@@ -484,6 +484,21 @@ pub(crate) fn force(app: &AppHandle, conversation_id: &str) -> Option<u32> {
     Some(live.resident.pid())
 }
 
+/// Lets every chat's process go as devpit quits: one that does not exit on
+/// its own is ended now, since nothing is left to end it later.
+pub(crate) fn quit_all(app: &AppHandle) {
+    let all = app.try_state::<Residents>().and_then(|residents| {
+        residents
+            .0
+            .lock()
+            .ok()
+            .map(|mut all| std::mem::take(&mut *all))
+    });
+    for live in all.into_iter().flat_map(HashMap::into_values) {
+        live.resident.quit();
+    }
+}
+
 /// Stops a turn waiting for a woken one to finish; false when none waits.
 pub(crate) fn stop_waiting(app: &AppHandle, conversation_id: &str) -> bool {
     app.try_state::<Residents>()

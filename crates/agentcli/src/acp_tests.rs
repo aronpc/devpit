@@ -1,6 +1,7 @@
 //! Each transcript is an ACP conversation: `>` what devpit writes, `<` what
-//! the agent says. OpenCode's handshake was recorded from its CLI; the other
-//! agents' halves follow each CLI's documented ACP behaviour. A stand-in plays
+//! the agent says. OpenCode's handshake and Cursor's conversations were
+//! recorded from their CLIs; the other agents' halves follow each CLI's
+//! documented ACP behaviour. A stand-in plays
 //! the agent's half line for line, and the test holds devpit to the other.
 
 use std::path::Path;
@@ -50,9 +51,10 @@ fn filled(msg: &Value, cwd: &Path) -> Value {
 }
 
 /// A shell script that plays the agent's half: it reads each line devpit is
-/// to write before saying what follows it.
+/// to write before saying what follows it. One that `outlives` its stdin
+/// stays after it closes, as Cursor's does.
 #[cfg(unix)]
-fn stand_in(dir: &Path, played: &[Line]) -> String {
+fn stand_in(dir: &Path, played: &[Line], outlives: bool) -> String {
     use std::os::unix::fs::PermissionsExt;
 
     let heard = dir.join("heard");
@@ -73,7 +75,11 @@ fn stand_in(dir: &Path, played: &[Line]) -> String {
             }
         }
     }
-    script.push_str("while read -r _rest; do :; done\n");
+    script.push_str(if outlives {
+        "exec sleep 600\n"
+    } else {
+        "while read -r _rest; do :; done\n"
+    });
     let cli = dir.join("agent");
     std::fs::write(&cli, script).expect("script");
     std::fs::set_permissions(&cli, std::fs::Permissions::from_mode(0o755)).expect("chmod");
@@ -89,6 +95,10 @@ struct Turn {
     prompt: &'static str,
     /// Stops the turn when the agent starts this tool call.
     stop_at: Option<&'static str>,
+    /// The catalogue's agent the driver is started for, its sign-in included.
+    base: Option<&'static str>,
+    /// The agent stays after its stdin closes.
+    outlives_stdin: bool,
 }
 
 struct Played {
@@ -103,7 +113,7 @@ struct Played {
 fn play(name: &str, setup: Turn) -> Played {
     let dir = tempfile::tempdir().expect("tempdir");
     let played = transcript(name);
-    let command = stand_in(dir.path(), &played);
+    let command = stand_in(dir.path(), &played, setup.outlives_stdin);
     let asked = Arc::new(Mutex::new(Vec::new()));
     let control = Control::new();
     let noted = asked.clone();
@@ -137,11 +147,15 @@ fn play(name: &str, setup: Turn) -> Played {
         add_dirs: &[],
         name: None,
     };
+    let driver: Box<dyn crate::driver::Driver> = match setup.base {
+        Some(base) => crate::driver::driver_for("acp", base).expect("an ACP agent"),
+        None => Box::new(Acp::new(&[])),
+    };
     let mut parts = Vec::new();
     let said = (0..5)
         .find_map(|_| {
             let result = crate::talk::say(
-                &Acp::new(&[]),
+                driver.as_ref(),
                 &turn,
                 |part| {
                     if let Part::ToolCall { id, .. } = &part {
@@ -166,6 +180,8 @@ fn play(name: &str, setup: Turn) -> Played {
     let heard = std::fs::read_to_string(dir.path().join("heard"))
         .unwrap_or_default()
         .lines()
+        // A line the stand-in waited for and never got reads as empty.
+        .filter(|line| !line.is_empty())
         .map(|line| serde_json::from_str(line).expect("devpit writes json"))
         .collect();
     let expected = expected(&played, dir.path());
@@ -191,6 +207,8 @@ fn heard_in(dir: &Path) -> Vec<Value> {
     std::fs::read_to_string(dir.join("heard"))
         .unwrap_or_default()
         .lines()
+        // A line the stand-in waited for and never got reads as empty.
+        .filter(|line| !line.is_empty())
         .map(|line| serde_json::from_str(line).expect("devpit writes json"))
         .collect()
 }
@@ -213,10 +231,23 @@ fn resident(
     std::sync::mpsc::Receiver<Spoke>,
     tempfile::TempDir,
 ) {
+    resident_with(name, false)
+}
+
+/// [`resident`], over a stand-in that stays after its stdin closes when it `outlives`.
+#[cfg(unix)]
+fn resident_with(
+    name: &str,
+    outlives: bool,
+) -> (
+    crate::resident::Resident,
+    std::sync::mpsc::Receiver<Spoke>,
+    tempfile::TempDir,
+) {
     use crate::resident::{Heard, Resident};
 
     let dir = tempfile::tempdir().expect("tempdir");
-    let command = stand_in(dir.path(), &transcript(name));
+    let command = stand_in(dir.path(), &transcript(name), outlives);
     let (tell, said) = std::sync::mpsc::channel();
     let turn = Say {
         command: &command,
@@ -770,4 +801,216 @@ fn plan_on_an_agent_without_a_read_only_mode_is_refused_saying_why() {
         .is_none(),
         "switched to Plan, it takes a new process, whose session says why"
     );
+}
+
+/// Cursor: signed in with its own login, the answer streamed, its tool call
+/// shown with its result, and its permission prompt put to the person by the
+/// command it runs.
+#[cfg(unix)]
+#[test]
+fn a_chat_on_cursor_streams_its_answer_shows_its_tool_and_asks_the_person() {
+    let played = play(
+        "cursor-approved.jsonl",
+        Turn {
+            prompt: "Run exactly this shell command: `touch made.txt`. Then reply with the single word: done.",
+            permission: Some("acceptEdits"),
+            base: Some("cursor"),
+            ..Turn::default()
+        },
+    );
+    assert_eq!(
+        played.heard, played.expected,
+        "devpit's half, sign-in included"
+    );
+    assert_eq!(text_of(&played.parts), "done.");
+    let call = "call-df0e7045-94aa-437b-9fd3-ccd7c4a75892-composer_call_aQUtEHBb\nfc_36df6fa9-3c6d-95a7-9fb4-c06633504ced_0";
+    assert!(played.parts.iter().any(|part| matches!(
+        part,
+        Part::ToolCall { id, input, .. } if id == call && input == r#"{"command":"touch made.txt"}"#
+    )));
+    assert!(played.parts.iter().any(|part| matches!(
+        part,
+        Part::ToolResult { call_id, is_error: false, .. } if call_id == call
+    )));
+    assert_eq!(played.asked.len(), 1, "the person was asked once");
+    assert_eq!(played.asked[0].tool, "Bash");
+    assert_eq!(played.asked[0].input["command"], "touch made.txt");
+    assert_eq!(played.said.end.stop_reason.as_deref(), Some("end_turn"));
+    assert_eq!(
+        played.said.session_id.as_deref(),
+        Some("aea49d70-8146-496f-bb07-a5cf17e4a1d6")
+    );
+}
+
+/// The models a chat on Cursor lists are the ones its session offers.
+#[cfg(unix)]
+#[test]
+fn the_models_a_cursor_chat_offers_come_from_the_agent() {
+    let played = play(
+        "cursor-approved.jsonl",
+        Turn {
+            prompt: "Run exactly this shell command: `touch made.txt`. Then reply with the single word: done.",
+            permission: Some("acceptEdits"),
+            base: Some("cursor"),
+            ..Turn::default()
+        },
+    );
+    let init = played.said.init.expect("the session described itself");
+    assert_eq!(init.model.as_deref(), Some("default[]"));
+    let offered: Vec<(&str, &str)> = init
+        .models
+        .iter()
+        .map(|one| (one.id.as_str(), one.name.as_str()))
+        .collect();
+    assert_eq!(offered.len(), 18, "every model the session offered");
+    assert_eq!(offered[0], ("default[]", "Auto"));
+    assert!(offered.contains(&("composer-2.5[fast=false]", "Composer 2.5")));
+    assert!(init.models.iter().all(|one| one.unavailable.is_none()));
+}
+
+/// A model Cursor refuses is listed as unavailable with the agent's reason,
+/// said in the chat, and the turn goes on on the model the agent runs.
+#[cfg(unix)]
+#[test]
+fn a_model_cursor_refuses_is_unavailable_with_its_reason() {
+    let played = play(
+        "cursor-refused-model.jsonl",
+        Turn {
+            model: Some("gpt-5"),
+            prompt: "Say hi in one word.",
+            base: Some("cursor"),
+            ..Turn::default()
+        },
+    );
+    assert_eq!(played.heard, played.expected);
+    let refused = played
+        .said
+        .init
+        .as_ref()
+        .and_then(|init| init.models.iter().find(|one| one.id == "gpt-5"))
+        .cloned()
+        .expect("the refused model is listed");
+    assert_eq!(
+        refused.unavailable.as_deref(),
+        Some("Invalid model value: gpt-5")
+    );
+    let said = text_of(&played.parts);
+    assert!(said.contains("Invalid model value: gpt-5"), "{said}");
+    assert!(said.ends_with("Oi."), "{said}");
+    assert!(!played.said.end.is_error);
+}
+
+/// Stop cancels a Cursor turn in the protocol's way.
+#[cfg(unix)]
+#[test]
+fn a_chat_on_cursor_stops_on_stop() {
+    let played = play(
+        "cursor-stopped.jsonl",
+        Turn {
+            prompt: "Run the shell command `sleep 30`, then say done.",
+            permission: Some("acceptEdits"),
+            base: Some("cursor"),
+            stop_at: Some("call-4f3ce070-b101-434f-8531-e332858bb3d4-composer_call_Edsxhyzu\nfc_517dbe81-1207-98da-9939-f9afd66d3c65_0"),
+            ..Turn::default()
+        },
+    );
+    assert_eq!(played.heard, played.expected);
+    assert_eq!(played.said.end.stop_reason.as_deref(), Some("cancelled"));
+    assert!(!played.said.end.is_error);
+}
+
+/// After an idle-out Cursor loads the session: its history is replayed, and
+/// only the new answer is this turn's.
+#[cfg(unix)]
+#[test]
+fn a_chat_on_cursor_resumes_after_an_idle_out() {
+    let played = play(
+        "cursor-resumed.jsonl",
+        Turn {
+            session: Some("aea49d70-8146-496f-bb07-a5cf17e4a1d6"),
+            prompt: "Which file did you create earlier in this conversation? Answer with the file name only.",
+            base: Some("cursor"),
+            ..Turn::default()
+        },
+    );
+    assert_eq!(played.heard, played.expected);
+    assert_eq!(text_of(&played.parts), "made.txt");
+    assert_eq!(
+        played.said.session_id.as_deref(),
+        Some("aea49d70-8146-496f-bb07-a5cf17e4a1d6")
+    );
+}
+
+/// An agent that stays after its stdin closes, as Cursor's does, is ended
+/// once its turn is over rather than waited on forever.
+#[cfg(unix)]
+#[test]
+fn a_turn_on_an_agent_that_outlives_its_stdin_still_ends() {
+    let (done, finished) = std::sync::mpsc::channel();
+    std::thread::spawn(move || {
+        let played = play(
+            "cursor-refused-model.jsonl",
+            Turn {
+                model: Some("gpt-5"),
+                prompt: "Say hi in one word.",
+                base: Some("cursor"),
+                outlives_stdin: true,
+                ..Turn::default()
+            },
+        );
+        let _ = done.send(played.said.end.stop_reason);
+    });
+    let ended = finished.recv_timeout(std::time::Duration::from_secs(20));
+    assert_eq!(ended.ok().flatten().as_deref(), Some("end_turn"));
+}
+
+/// Cursor's CLI is started as its ACP server and handed no credential: the
+/// chat signs in with the login the CLI already keeps.
+#[test]
+fn a_chat_on_cursor_starts_its_acp_server_with_no_credential() {
+    let driver = crate::driver::driver_for("acp", "cursor").expect("Cursor holds a chat");
+    let dir = tempfile::tempdir().expect("tempdir");
+    let turn = Say {
+        command: "cursor-agent",
+        env: &[],
+        prompt: "",
+        cwd: dir.path(),
+        model: None,
+        budget_usd: None,
+        session_id: None,
+        fork_at: None,
+        permission: None,
+        disallowed: &[],
+        settings: None,
+        setting_sources: None,
+        mcp_config: None,
+        effort: None,
+        control: None,
+        on_session: None,
+        add_dirs: &[],
+        name: None,
+    };
+    assert_eq!(driver.wire().argv(&turn), vec!["acp".to_owned()]);
+    let agent = devpit_pty::agents::known("cursor").expect("Cursor is known");
+    assert_eq!(agent.chat_sign_in, Some("cursor_login"));
+}
+
+/// A Cursor chat's process does not outlive its chat, nor devpit.
+#[cfg(unix)]
+#[test]
+fn a_cursor_chat_leaves_no_process_when_it_ends_or_devpit_quits() {
+    // Polled in tenths of a second.
+    let gone_within = |pid: u32, tenths: u32| {
+        (0..tenths).any(|_| {
+            std::thread::sleep(std::time::Duration::from_millis(100));
+            !crate::resident::still_running(pid)
+        })
+    };
+    let (ended, _said, _dir) = resident_with("cursor-approved.jsonl", true);
+    ended.close();
+    assert!(gone_within(ended.pid(), 40), "its chat ended");
+    // Quitting ends it at once, well inside the grace a closed chat gets.
+    let (quit, _said, _dir) = resident_with("cursor-approved.jsonl", true);
+    quit.quit();
+    assert!(gone_within(quit.pid(), 10), "devpit quit");
 }

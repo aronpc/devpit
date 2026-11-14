@@ -15,6 +15,7 @@ fn one(id: &str, driver: &str, enabled: bool) -> Profile {
         env: Vec::new(),
         mine: true,
         models: Vec::new(),
+        offered: Vec::new(),
         own_models: Vec::new(),
         efforts: Vec::new(),
         effort_default: None,

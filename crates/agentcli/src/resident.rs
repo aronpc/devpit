@@ -33,7 +33,7 @@ const GRACE: std::time::Duration = std::time::Duration::from_secs(15);
 ///
 /// `/proc` only exists on Linux; elsewhere it used to read as gone, and a
 /// resident chat that hung was never ended on macOS.
-fn still_running(pid: u32) -> bool {
+pub(crate) fn still_running(pid: u32) -> bool {
     match std::fs::read_to_string(format!("/proc/{pid}/stat")) {
         Ok(stat) => stat
             .rsplit(')')
@@ -99,7 +99,7 @@ impl Resident {
         let pid = child.id();
         let control = turn.control.cloned().unwrap_or_default();
         let stdin = child.stdin.take().ok_or(AgentError::NotInstalled)?;
-        if !control.open(stdin, wire, turn) {
+        if !control.open(stdin, wire, turn, pid) {
             let _ = child.kill();
             let _ = child.wait();
             return Err(AgentError::Unreadable(
@@ -239,9 +239,29 @@ impl Resident {
         });
     }
 
+    /// Lets it go as devpit quits: stdin closed, and a CLI that does not
+    /// exit on its own ended now, since nothing is left to end it later.
+    pub fn quit(&self) {
+        let ended = self.control.ended_by_devpit();
+        self.control.close();
+        if ended && still_running(self.pid) {
+            devpit_pty::process::terminate(self.pid as i32);
+        }
+    }
+
     pub fn pid(&self) -> u32 {
         self.pid
     }
+}
+
+/// Ends `pid` when it is still there `grace` from now.
+pub(crate) fn end_after(pid: u32, grace: std::time::Duration) {
+    std::thread::spawn(move || {
+        std::thread::sleep(grace);
+        if still_running(pid) {
+            devpit_pty::process::terminate(pid as i32);
+        }
+    });
 }
 
 #[cfg(all(test, unix))]

@@ -179,11 +179,13 @@ pub fn driver(name: &str) -> Option<Box<dyn Driver>> {
 
 /// [`driver`], started the way the profile's base agent serves a chat.
 pub fn driver_for(name: &str, base: &str) -> Option<Box<dyn Driver>> {
-    let args = devpit_pty::agents::known(base).map_or(&[][..], |agent| agent.chat_args);
+    let agent = devpit_pty::agents::known(base);
+    let args = agent.map_or(&[][..], |agent| agent.chat_args);
+    let sign_in = agent.and_then(|agent| agent.chat_sign_in);
     match name {
         "claude" => Some(Box::<Claude>::default()),
         "codex" => Some(Box::<crate::codex::Codex>::default()),
-        "acp" => Some(Box::new(crate::acp::Acp::new(args))),
+        "acp" => Some(Box::new(crate::acp::Acp::new(args).signing_in(sign_in))),
         _ => None,
     }
 }

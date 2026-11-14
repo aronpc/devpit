@@ -44,6 +44,9 @@ pub struct Control {
     wire: Arc<Mutex<Option<Arc<dyn Wire>>>>,
     /// A stop the wire took without a word to the CLI, until its turn ends.
     stopped_alone: Arc<AtomicBool>,
+    /// The process, and how long it gets once its stdin closes, for a CLI
+    /// that does not exit on its own.
+    ends: Arc<Mutex<Option<(u32, std::time::Duration)>>>,
 }
 
 impl Control {
@@ -57,15 +60,19 @@ impl Control {
         }
     }
 
-    /// Takes the process's stdin, spoken to through `wire`, and writes the
-    /// wire's handshake. False when the handshake could not be written.
+    /// Takes the stdin of process `pid`, spoken to through `wire`, and writes
+    /// the wire's handshake. False when the handshake could not be written.
     pub(crate) fn open(
         &self,
         stdin: ChildStdin,
         wire: Arc<dyn Wire>,
         turn: &crate::talk::Say<'_>,
+        pid: u32,
     ) -> bool {
         let hello = wire.hello(turn);
+        if let Ok(mut ends) = self.ends.lock() {
+            *ends = wire.grace().map(|grace| (pid, grace));
+        }
         if let Ok(mut held) = self.wire.lock() {
             *held = Some(wire);
         }
@@ -224,10 +231,20 @@ impl Control {
         true
     }
 
-    /// Lets go of stdin, which is what lets the CLI exit.
+    /// Whether devpit ends this process once its stdin closes, rather than
+    /// leaving it to exit.
+    pub(crate) fn ended_by_devpit(&self) -> bool {
+        self.ends.lock().is_ok_and(|ends| ends.is_some())
+    }
+
+    /// Lets go of stdin, which is what lets the CLI exit; one whose wire
+    /// gives it a grace is ended when it is still there after it.
     pub(crate) fn close(&self) {
         if let Ok(mut held) = self.stdin.lock() {
             held.take();
+        }
+        if let Some((pid, grace)) = self.ends.lock().ok().and_then(|mut ends| ends.take()) {
+            crate::resident::end_after(pid, grace);
         }
     }
 }

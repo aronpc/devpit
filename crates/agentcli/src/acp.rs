@@ -1,7 +1,8 @@
 //! The Agent Client Protocol: JSON-RPC over stdio, which OpenCode, Grok and
 //! Antigravity serve.
 //!
-//! One driver for all of them. devpit greets the process (`initialize`), opens
+//! One driver for all of them. devpit greets the process (`initialize`), signs
+//! in where the agent asks for it before any session (Cursor), opens
 //! a session (`session/new`, or `session/resume` / `session/load` to go on with
 //! one) and sends a `session/prompt` per turn. The answer streams as
 //! `session/update`s and the turn ends with the prompt's response. Written
@@ -12,7 +13,7 @@ use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex, MutexGuard};
 use std::time::Instant;
 
-use devpit_rpc::{CallState, Context, Part, SessionInit};
+use devpit_rpc::{CallState, Context, OfferedModel, Part, SessionInit};
 use serde_json::{json, Value};
 
 use crate::driver::{Driver, Read};
@@ -35,6 +36,13 @@ impl Acp {
         }
     }
 
+    /// Asks the agent for `method` after it is greeted: a sign-in that reuses
+    /// the CLI's own login, for an agent that opens no session before it.
+    pub fn signing_in(self, method: Option<&'static str>) -> Self {
+        self.held().sign_in = method;
+        self
+    }
+
     fn held(&self) -> MutexGuard<'_, Session> {
         held(&self.session)
     }
@@ -50,6 +58,7 @@ pub(crate) fn held(session: &Mutex<Session>) -> MutexGuard<'_, Session> {
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) enum Sent {
     Initialize,
+    SignIn,
     Open(Opening),
     /// A model set while the session opens; the person's message waits for it.
     Model,
@@ -125,10 +134,15 @@ pub(crate) struct Session {
     pub mode_before: Option<String>,
     /// A mode asked of the agent and not answered yet.
     pub mode_asked: Option<String>,
+    /// The sign-in asked for once the agent is greeted.
+    pub sign_in: Option<&'static str>,
     /// History a loaded session replays: not this turn's answer.
     pub replaying: bool,
     /// Said with the turn once the session opens.
     pub notice: Option<String>,
+    /// Said before the turn's answer: why the model asked for is not the one
+    /// it runs on.
+    pub said_first: Option<String>,
     /// Why the session could not open; ends the turn that waits on it.
     pub failed: Option<String>,
     pub waiting: HashMap<String, Waiting>,
@@ -140,6 +154,9 @@ pub(crate) struct Session {
     /// How the agent takes a model, once it offered one.
     pub picks: Option<Picks>,
     pub current_model: Option<String>,
+    /// The models the session offers, and those it refused with why.
+    offers: Vec<OfferedModel>,
+    refused: Vec<OfferedModel>,
     pub commands: Vec<String>,
     pub context: Option<Context>,
     /// The session's cost when this process began, and now. Unknown at the
@@ -170,8 +187,9 @@ impl Session {
         self.request("session/prompt", params, Sent::Prompt)
     }
 
-    /// Takes the model the agent runs on and how it switches one, from a
-    /// session's `configOptions`, or the `models` an agent reports instead.
+    /// Takes the model the agent runs on, the ones it offers and how it
+    /// switches one, from a session's `configOptions`, or the `models` an
+    /// agent reports instead.
     pub fn options(&mut self, result: &Value) {
         let options = result.get("configOptions").and_then(Value::as_array);
         if let Some(model) =
@@ -179,9 +197,11 @@ impl Session {
         {
             self.picks = model["id"].as_str().map(|id| Picks::Option(id.to_owned()));
             self.current_model = model["currentValue"].as_str().map(str::to_owned);
+            self.offers = offers_in(&model["options"], "value");
         } else if let Some(current) = result["models"]["currentModelId"].as_str() {
             self.picks = Some(Picks::ById);
             self.current_model = Some(current.to_owned());
+            self.offers = offers_in(&result["models"]["availableModels"], "modelId");
         }
         let values = |all: &Value, key: &str| -> Vec<String> {
             all.as_array()
@@ -268,6 +288,37 @@ impl Session {
         }
     }
 
+    /// The model asked for, refused by the agent: listed as unavailable with
+    /// its reason, and said before the turn's answer.
+    pub fn refuse(&mut self, why: String) {
+        let Some(model) = self.model.take() else {
+            return;
+        };
+        self.said_first = Some(format!("{model} is unavailable here: {why}\n\n"));
+        self.refused.retain(|one| one.id != model);
+        self.refused.push(OfferedModel {
+            name: model.clone(),
+            id: model,
+            unavailable: Some(why),
+        });
+    }
+
+    /// Every model the session offers, and each it refused with why.
+    fn models(&self) -> Vec<OfferedModel> {
+        let refused = |id: &str| self.refused.iter().find(|one| one.id == id);
+        let mut all: Vec<OfferedModel> = self
+            .offers
+            .iter()
+            .map(|one| refused(&one.id).cloned().unwrap_or_else(|| one.clone()))
+            .collect();
+        let unlisted = self
+            .refused
+            .iter()
+            .filter(|one| !self.offers.iter().any(|offer| offer.id == one.id));
+        all.extend(unlisted.cloned());
+        all
+    }
+
     /// The request that switches the session to `model`, when the agent takes one.
     pub fn pick(&mut self, model: &str, sent: Sent) -> Option<String> {
         let session = self.id.clone()?;
@@ -288,6 +339,7 @@ impl Session {
     fn init(&self) -> SessionInit {
         SessionInit {
             model: self.current_model.clone(),
+            models: self.models(),
             slash_commands: self.commands.clone(),
             ..SessionInit::default()
         }
@@ -353,9 +405,17 @@ impl Session {
         }
     }
 
-    /// `parts`, after a thought that ended where they begin.
+    /// `parts`, after what is said first and a thought that ended where they begin.
     fn parts(&mut self, parts: Vec<Part>) -> Read {
-        let all: Vec<Part> = self.thought().into_iter().chain(parts).collect();
+        let first = self
+            .said_first
+            .take()
+            .map(|text| Part::Text { text, parent: None });
+        let all: Vec<Part> = first
+            .into_iter()
+            .chain(self.thought())
+            .chain(parts)
+            .collect();
         if all.is_empty() {
             return Read::Nothing;
         }
@@ -417,6 +477,28 @@ impl Session {
         }
         parts
     }
+}
+
+/// The models a session lists under `id`: a select's options, flat or grouped,
+/// or the models an agent reports.
+fn offers_in(list: &Value, id: &str) -> Vec<OfferedModel> {
+    list.as_array()
+        .into_iter()
+        .flatten()
+        .flat_map(|one| match one["options"].as_array() {
+            Some(group) => group.clone(),
+            None => vec![one.clone()],
+        })
+        .filter_map(|one| {
+            let id = one[id].as_str()?.to_owned();
+            let name = one["name"].as_str().unwrap_or(&id).to_owned();
+            Some(OfferedModel {
+                id,
+                name,
+                unavailable: None,
+            })
+        })
+        .collect()
 }
 
 /// What the screen calls a tool: its programmatic name, else its kind, else
@@ -500,12 +582,14 @@ fn version_in(text: &str) -> Option<(u32, u32, u32)> {
         })
 }
 
-/// The message of a JSON-RPC error, as the agent wrote it.
+/// The message of a JSON-RPC error, as the agent wrote it: its details' own
+/// message where it gave one, which says more than the code's name.
 pub(crate) fn error_of(said: &Value) -> Option<String> {
     let error = said.get("error")?;
     Some(
-        error["message"]
+        error["data"]["message"]
             .as_str()
+            .or(error["message"].as_str())
             .unwrap_or("the agent refused")
             .to_owned(),
     )

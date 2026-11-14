@@ -140,6 +140,10 @@ pub struct Profile {
     /// the whole selector.
     #[serde(default)]
     pub models: Vec<String>,
+    /// What the agent itself said of its models: their names, and why one it
+    /// refused cannot be used.
+    #[serde(default)]
+    pub offered: Vec<OfferedModel>,
     /// The models the person listed, as written — what the editor opens with.
     /// Kept apart from `models`, which a save would otherwise make theirs.
     #[serde(default)]
@@ -176,6 +180,16 @@ impl Profile {
     pub fn spawnable(&self) -> bool {
         self.reach == Reach::Runnable
     }
+}
+
+/// A model an agent offered in its session, or one it refused, with why.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct OfferedModel {
+    pub id: String,
+    pub name: String,
+    #[serde(default)]
+    pub unavailable: Option<String>,
 }
 
 /// A command of the person's own — a shell function such as `claude2` —

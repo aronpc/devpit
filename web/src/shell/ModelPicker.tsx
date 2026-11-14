@@ -2,8 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { AgentGlyph } from './AgentGlyph'
 import { useAway } from './away'
-import { accountHint, current, keyOf, rowsFor, SHELF, stepTab, type Row } from './modelPick'
-import { modelBlurb, modelHint, modelName } from './models'
+import { accountHint, current, keyOf, offerOf, rowsFor, SHELF, shownName, stepTab, type Row } from './modelPick'
+import { modelBlurb, modelHint } from './models'
 import { installationOf } from './outside'
 import { committed } from './typing'
 import { counted, useAccountInfo } from './useAccountInfo'
@@ -94,7 +94,8 @@ export function ModelPicker({
     })
 
   const choose = (row: Row | undefined): void => {
-    if (!row) return
+    /* A model its agent refused stays listed, with why, but is not picked. */
+    if (!row || offerOf(row.profile, row.model)?.unavailable) return
     setOpen(false)
     onPick(row.profile.id, row.model)
   }
@@ -107,7 +108,7 @@ export function ModelPicker({
 
   const here = profiles.find((one) => one.id === profileId)
   const on = current(here, model)
-  const name = here ? modelName(on, here.env ?? []) : 'No agent CLI'
+  const name = here ? shownName(here, on) : 'No agent CLI'
   /* The account on the chip only when there is more than one to confuse it
      with: a lone account named on every chip is noise. */
   const label = here && profiles.length > 1 ? `${here.label} · ${name}` : name
@@ -207,12 +208,15 @@ export function ModelPicker({
                 const env = row.profile.env ?? []
                 const mine = row.profile.id === profileId && row.model === on
                 const starred = stars.includes(keyOf(row))
+                const refused = offerOf(row.profile, row.model)?.unavailable ?? null
                 return (
                   <div
                     className="mpick__r"
                     key={keyOf(row)}
                     role="option"
                     aria-selected={mine}
+                    aria-disabled={refused ? true : undefined}
+                    data-unavailable={refused ? '' : undefined}
                     data-at={index === at}
                     ref={index === at ? intoView : undefined}
                     tabIndex={0}
@@ -230,10 +234,10 @@ export function ModelPicker({
                         accounts — whose. The alias the CLI is passed is on
                         hover, for anyone checking what is actually sent. */}
                     <span className="mpick__b" title={modelHint(row.model, env)}>
-                      <span className="mpick__n">{modelName(row.model, env)}</span>
+                      <span className="mpick__n">{shownName(row.profile, row.model)}</span>
                       <span className="mpick__p">
                         {!browsing && <span className="mpick__who">{row.profile.label}</span>}
-                        {modelBlurb(row.model, env)}
+                        {refused ?? modelBlurb(row.model, env)}
                       </span>
                     </span>
                     <span

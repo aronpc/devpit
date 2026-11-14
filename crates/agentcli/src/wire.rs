@@ -32,6 +32,12 @@ pub trait Wire: Send + Sync {
     /// The command line a chat turn starts the CLI with.
     fn argv(&self, turn: &Say<'_>) -> Vec<String>;
 
+    /// How long the process gets to exit on its own once devpit closes its
+    /// stdin, before devpit ends it. `None` leaves it to exit.
+    fn grace(&self) -> Option<std::time::Duration> {
+        None
+    }
+
     /// Written once the process starts, before the first message: a
     /// protocol's handshake. Empty for a CLI that takes messages at once.
     fn hello(&self, _turn: &Say<'_>) -> Vec<String> {

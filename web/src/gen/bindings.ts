@@ -4565,6 +4565,13 @@ export type Notices = {
 	unread: number,
 };
 
+/**  A model an agent offered in its session, or one it refused, with why. */
+export type OfferedModel = {
+	id: string,
+	name: string,
+	unavailable?: string | null,
+};
+
 /**  One app in the list. */
 export type OpenApp = {
 	/**  Stable, and what the menu is keyed on. */
@@ -5022,6 +5029,11 @@ export type Profile = {
 	 *  the whole selector.
 	 */
 	models?: string[],
+	/**
+	 *  What the agent itself said of its models: their names, and why one it
+	 *  refused cannot be used.
+	 */
+	offered?: OfferedModel[],
 	/**
 	 *  The models the person listed, as written — what the editor opens with.
 	 *  Kept apart from `models`, which a save would otherwise make theirs.

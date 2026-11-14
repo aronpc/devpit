@@ -118,14 +118,14 @@ pub struct ChangedFile {
     pub removed: u32,
 }
 
-/// What the CLI says about itself when a session starts.
-///
-/// Read from its own report rather than a list kept here: the commands and
-/// skills differ per installation and change with every plugin.
+/// What the CLI says about itself when a session starts: read from its own
+/// report rather than a list kept here, since the commands, skills and models
+/// differ per installation and change with every plugin.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Type)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", default)]
 pub struct SessionInit {
     pub model: Option<String>,
+    pub models: Vec<crate::OfferedModel>,
     pub slash_commands: Vec<String>,
     /// Commands that only work in the terminal, which a chat must not offer.
     pub terminal_slash_commands: Vec<String>,

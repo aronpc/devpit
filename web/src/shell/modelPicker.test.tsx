@@ -61,6 +61,30 @@ describe('the model picker', () => {
     expect(within(opus).getByTitle('opus')).toBeTruthy()
   })
 
+  /* An agent that lists its own models names them; one it refused says why
+     and cannot be picked. */
+  it('names the models its agent offered, and shows one it refused as unavailable with why', () => {
+    const cursor = profile({
+      id: 'cursor',
+      label: 'Cursor',
+      command: 'cursor-agent',
+      driver: 'acp',
+      base: 'cursor',
+      models: ['default', 'composer-2.5[fast=false]', 'gpt-5'],
+      offered: [
+        { id: 'composer-2.5[fast=false]', name: 'Composer 2.5', unavailable: null },
+        { id: 'gpt-5', name: 'gpt-5', unavailable: 'Invalid model value: gpt-5' },
+      ],
+    })
+    const onPick = opened([cursor], 'cursor')
+    expect(screen.getByText('Composer 2.5')).toBeTruthy()
+    const refused = screen.getByText('gpt-5').closest('[role="option"]') as HTMLElement
+    expect(refused.getAttribute('aria-disabled')).toBe('true')
+    expect(within(refused).getByText('Invalid model value: gpt-5')).toBeTruthy()
+    fireEvent.click(refused)
+    expect(onPick).not.toHaveBeenCalled()
+  })
+
   it('picks the account and the model together', () => {
     const onPick = opened([claude, claude2], 'claude')
     fireEvent.click(within(screen.getByRole('navigation', { name: 'Accounts' })).getByText('claude2'))

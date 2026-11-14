@@ -75,6 +75,7 @@ pub(crate) fn system(value: &serde_json::Value) -> Read {
             terminal_slash_commands: strings_at(value, "terminal_slash_commands"),
             skills: strings_at(value, "skills"),
             agents: strings_at(value, "agents"),
+            ..SessionInit::default()
         }),
         // A slash command's own answer (`/compact`, `/clear`), which the CLI
         // prints as a system line rather than as the agent speaking.

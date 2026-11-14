@@ -109,7 +109,7 @@ pub fn say(
 
     let stdin = child.stdin.take().ok_or(AgentError::NotInstalled)?;
     let control = turn.control.cloned().unwrap_or_default();
-    if !control.open(stdin, wire, turn) || !control.say(turn.prompt) {
+    if !control.open(stdin, wire, turn, child.id()) || !control.say(turn.prompt) {
         return Err(AgentError::Unreadable(
             "could not send the prompt".to_owned(),
         ));

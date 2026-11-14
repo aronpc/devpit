@@ -21,6 +21,7 @@ fn profile(args: &[&str], env: &[(&str, &str)]) -> Profile {
             .collect(),
         mine: true,
         models: Vec::new(),
+        offered: Vec::new(),
         own_models: Vec::new(),
         efforts: Vec::new(),
         effort_default: None,

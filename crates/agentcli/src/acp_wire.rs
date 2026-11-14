@@ -3,6 +3,7 @@
 
 use std::path::Path;
 use std::sync::{Arc, Mutex};
+use std::time::Duration;
 
 use serde_json::{json, Value};
 
@@ -19,6 +20,10 @@ const NOT_SERVED: i64 = -32601;
 
 /// Why a chat cannot run in Plan on an agent with no read-only mode.
 pub(crate) const NO_PLAN: &str = "This agent offers no read-only mode, so this chat cannot run in Plan: choose Supervised to approve each change instead.";
+
+/// How long an agent gets to exit once its stdin closes. An ACP agent is a
+/// server its client ends, and Cursor's stays after its stdin closes.
+const GRACE: Duration = Duration::from_secs(2);
 
 pub(crate) struct AcpWire {
     args: &'static [&'static str],
@@ -121,6 +126,13 @@ fn paths_in(call: &Value, raw: &Value) -> Vec<String> {
         .collect()
 }
 
+/// Whether the agent offered the sign-in `method` when it was greeted.
+fn signs_in(greeted: &Value, method: &str) -> bool {
+    greeted["authMethods"]
+        .as_array()
+        .is_some_and(|all| all.iter().any(|one| one["id"] == method))
+}
+
 fn key(session: &Session, id: &Value) -> String {
     format!("{}#{id}", session.id.as_deref().unwrap_or_default())
 }
@@ -182,8 +194,29 @@ impl Session {
                 if let Some(why) = error_of(said) {
                     return self.fail(why);
                 }
-                self.offered = Some(said["result"]["agentCapabilities"].clone());
-                self.open(&said["result"]["agentCapabilities"])
+                let offered = said["result"]["agentCapabilities"].clone();
+                self.offered = Some(offered.clone());
+                match self
+                    .sign_in
+                    .filter(|method| signs_in(&said["result"], method))
+                {
+                    Some(method) => vec![self.request(
+                        "authenticate",
+                        json!({ "methodId": method }),
+                        Sent::SignIn,
+                    )],
+                    None => self.open(&offered),
+                }
+            }
+            Sent::SignIn => {
+                self.sent.remove(&id);
+                if let Some(why) = error_of(said) {
+                    // Greeted again on the next message, which signs in again.
+                    self.offered = None;
+                    return self.fail(why);
+                }
+                let offered = self.offered.clone().unwrap_or_default();
+                self.open(&offered)
             }
             Sent::Open(opening) => {
                 self.sent.remove(&id);
@@ -219,7 +252,12 @@ impl Session {
             }
             Sent::Model => {
                 self.sent.remove(&id);
-                self.options(&said["result"]);
+                // The session is described again once its model is settled.
+                self.opened_by = Some(id);
+                match error_of(said) {
+                    Some(why) => self.refuse(why),
+                    None => self.options(&said["result"]),
+                }
                 self.ready()
             }
             Sent::Switch(_) | Sent::Prompt => Vec::new(),
@@ -281,6 +319,10 @@ impl Session {
 impl Wire for AcpWire {
     fn argv(&self, _turn: &Say<'_>) -> Vec<String> {
         self.args.iter().map(|&arg| arg.to_owned()).collect()
+    }
+
+    fn grace(&self) -> Option<Duration> {
+        Some(GRACE)
     }
 
     fn hello(&self, turn: &Say<'_>) -> Vec<String> {

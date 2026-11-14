@@ -612,7 +612,12 @@ fn main() {
         .invoke_handler(handler::handler())
         .build(tauri::generate_context!())
         .expect("the window did not open")
-        .run(|app, event| desk::reopened(app, &event));
+        .run(|app, event| {
+            desk::reopened(app, &event);
+            if let tauri::RunEvent::Exit = event {
+                chat_resident::quit_all(app);
+            }
+        });
 }
 
 /// The exit code of an agent's command, when the arguments are one.

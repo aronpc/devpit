@@ -79,6 +79,11 @@ mod tests {
     fn init() -> SessionInit {
         SessionInit {
             model: Some("haiku".to_owned()),
+            models: vec![devpit_rpc::OfferedModel {
+                id: "gpt-5".to_owned(),
+                name: "gpt-5".to_owned(),
+                unavailable: Some("Invalid model value: gpt-5".to_owned()),
+            }],
             slash_commands: vec!["compact".into(), "clear".into(), "statusline".into()],
             terminal_slash_commands: vec!["statusline".into()],
             skills: Vec::new(),

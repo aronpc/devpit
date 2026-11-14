@@ -439,3 +439,55 @@ fn profiles_stored_by_an_earlier_version_open_unchanged() {
         .iter()
         .any(|one| one.id == "01J0OLD" && one.command == "codex"));
 }
+
+fn offer(id: &str, name: &str, unavailable: Option<&str>) -> devpit_rpc::OfferedModel {
+    devpit_rpc::OfferedModel {
+        id: id.to_owned(),
+        name: name.to_owned(),
+        unavailable: unavailable.map(str::to_owned),
+    }
+}
+
+fn cursor() -> Profile {
+    let declared = Declared {
+        id: "cursor".to_owned(),
+        label: "Cursor".to_owned(),
+        base: "cursor".to_owned(),
+        command: String::new(),
+        args: Vec::new(),
+        models: Vec::new(),
+        env: Vec::new(),
+    };
+    let all = profiles(&[declared], base_of, &std::collections::HashSet::new());
+    let profile = all.into_iter().next().expect("a profile");
+    assert_eq!(profile.driver, "acp", "Cursor holds a chat through ACP");
+    assert_eq!(profile.models, ["default"]);
+    profile
+}
+
+#[test]
+fn a_profile_offers_the_models_its_agent_reported_and_why_one_is_unavailable() {
+    let mut profile = cursor();
+    let models = vec![
+        offer("default[]", "Auto", None),
+        offer("composer-2.5[fast=false]", "Composer 2.5", None),
+        offer("gpt-5", "gpt-5", Some("Invalid model value: gpt-5")),
+    ];
+    reported(&mut profile, models.clone());
+    assert_eq!(
+        profile.models,
+        ["default", "default[]", "composer-2.5[fast=false]", "gpt-5"]
+    );
+    assert_eq!(profile.offered, models);
+}
+
+#[test]
+fn the_models_a_person_listed_stay_theirs_beside_what_the_agent_reported() {
+    let mut profile = cursor();
+    profile.own_models = vec!["gpt-5".to_owned()];
+    profile.models = vec!["default".to_owned(), "gpt-5".to_owned()];
+    let models = vec![offer("gpt-5", "gpt-5", Some("Invalid model value: gpt-5"))];
+    reported(&mut profile, models.clone());
+    assert_eq!(profile.models, ["default", "gpt-5"]);
+    assert_eq!(profile.offered, models);
+}

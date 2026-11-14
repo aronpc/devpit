@@ -1,4 +1,4 @@
-import type { Profile } from '../gen/bindings'
+import type { OfferedModel, Profile } from '../gen/bindings'
 import { modelHint, modelName } from './models'
 import { ACCOUNT, valueOf } from './profiles'
 
@@ -20,6 +20,14 @@ export const SHELF = ''
 
 export const keyOf = (row: Row): string => `${row.profile.id}:${row.model}`
 
+/* What the agent itself said of a model: its name, and why it cannot be used. */
+export const offerOf = (profile: Profile, model: string): OfferedModel | undefined =>
+  profile.offered?.find((one) => one.id === model)
+
+/* A model as a person reads it: the agent's own name for it where it gave one. */
+export const shownName = (profile: Profile, model: string): string =>
+  offerOf(profile, model)?.name ?? modelName(model, profile.env ?? [])
+
 export function rowsFor(
   usable: readonly Profile[],
   tab: string,
@@ -34,7 +42,7 @@ export function rowsFor(
       .filter((row) => {
         if (!needle) return tab !== SHELF || stars.includes(keyOf(row))
         const env = profile.env ?? []
-        return `${modelName(row.model, env)} ${modelHint(row.model, env)} ${profile.label}`
+        return `${shownName(profile, row.model)} ${modelHint(row.model, env)} ${profile.label}`
           .toLowerCase()
           .includes(needle)
       }),
