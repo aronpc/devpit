@@ -41,9 +41,9 @@ pub struct Known {
     /// goes — or nothing, for one whose resume nobody here has checked.
     pub resume_flag: Option<&'static str>,
     /// Which driver reads its output when it is run headless, empty when none
-    /// can. Only Claude Code streams a shape devpit knows how to read, so the
-    /// rest are terminal-only until a driver exists for them — and saying so
-    /// here beats a profile that offers a chat it cannot hold.
+    /// can: Claude Code's own stream, or Codex's app-server. The rest are
+    /// terminal-only until a driver exists for them — and saying so here beats
+    /// a profile that offers a chat it cannot hold.
     pub driver: &'static str,
     /// Where its own documentation lives. The row links to it rather than
     /// explaining how to install something devpit does not ship.
@@ -78,7 +78,7 @@ pub const KNOWN: &[Known] = &[
         wears: &["codex"],
         settings_flag: None,
         resume_flag: None,
-        driver: "",
+        driver: "codex",
         homepage: "https://github.com/openai/codex",
     },
     Known {

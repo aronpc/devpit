@@ -107,6 +107,19 @@ fn one_turn(
                 result_seen = true;
             }
             Read::Init(said) => heard.init = Some(said),
+            Read::Failed(why) => {
+                on_part(Part::Text {
+                    text: format!("\n\nThe agent stopped: {why}"),
+                    parent: None,
+                });
+                heard.ended = Some(Ending {
+                    stop_reason: Some("error".to_owned()),
+                    cost_usd: None,
+                    is_error: true,
+                    context: None,
+                });
+                result_seen = true;
+            }
             Read::Nothing => {}
         }
         if turn_over(stays, result_seen, &running) {

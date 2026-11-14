@@ -25,6 +25,8 @@ pub enum Read {
     },
     /// The CLI described itself: its commands, skills and model.
     Init(SessionInit),
+    /// The turn ended in an error the CLI described.
+    Failed(String),
     /// Nothing to show — a keepalive, a blank line.
     Nothing,
 }
@@ -52,6 +54,12 @@ pub trait Driver: Send + Sync {
 
     fn effort_default(&self) -> Option<&'static str> {
         None
+    }
+
+    /// Whether a permission prompt on its stream is the person's to answer.
+    /// Claude Code asks the person through its hook, and only a plan comes here.
+    fn asks(&self) -> bool {
+        false
     }
 
     /// Reads one line of output.
@@ -183,6 +191,7 @@ impl Driver for Claude {
 pub fn driver(name: &str) -> Option<Box<dyn Driver>> {
     match name {
         "claude" => Some(Box::<Claude>::default()),
+        "codex" => Some(Box::<crate::codex::Codex>::default()),
         _ => None,
     }
 }

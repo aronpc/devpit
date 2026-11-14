@@ -114,7 +114,7 @@ fn the_end_says_how_full_the_context_is() {
 fn a_driver_that_is_not_installed_is_absent_rather_than_swapped() {
     // Falling back to another provider would change what the conversation is.
     assert!(driver("claude").is_some());
-    assert!(driver("codex").is_none());
+    assert!(driver("gemini").is_none());
 }
 
 #[test]
