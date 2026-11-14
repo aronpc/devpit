@@ -146,3 +146,19 @@ fn starting_brings_every_orchestrator_brief_up_to_this_build() {
         "a project that is not an orchestrator was written into"
     );
 }
+
+/// The bus is offered beside Claude Code's own messaging, never in its place:
+/// this account's sessions are still reached with SendMessage.
+#[test]
+fn the_brief_keeps_send_message_for_this_accounts_sessions() {
+    let brief = brief();
+    for kept in [
+        "`ListAgents` finds them, `SendMessage`",
+        "`notify_when_idle` tells you once",
+        "Keep `SendMessage` for this account's sessions",
+    ] {
+        assert!(brief.contains(kept), "{kept}");
+    }
+    assert!(brief.contains("`devpit_session_message`"));
+    assert!(brief.contains("`devpit_session_notify_idle`"));
+}
