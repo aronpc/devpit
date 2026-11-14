@@ -123,9 +123,16 @@ process is also started with deny rules, which win over any allow rule:
 never starts a turn in another session. It loads only the person's own
 settings (`--setting-sources user`), never a repository's: the agent also
 starts with nobody asking, and a repository's allow rules would widen what
-plan mode lets it run. So the repository's `CLAUDE.md` and its deny rules
-are not loaded either; the agent reads the project's guides itself, as its
-memory points it at them.
+plan mode lets it run. What the repository still owes it, devpit hands over
+itself, read from the project's root through its links, each file capped:
+
+- **Its deny rules.** `permissions.deny` from `.claude/settings.json` and
+  `.claude/settings.local.json` join the deny rules above, so a file the
+  repository fenced off, such as `.env`, stays unreadable. A settings file
+  longer than 256 KiB or not JSON adds none. Its allow rules never apply.
+- **Its instructions.** The agent's first message carries `CLAUDE.md` and
+  `AGENTS.md`, each once (a link to the other goes once) and up to 32 KiB,
+  marked as the project's instructions, beside the memory summary.
 
 - **Wakes when called.** The first question starts the process. Further
   questions go to the same process, one at a time. Work an answer leaves

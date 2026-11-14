@@ -312,6 +312,13 @@ impl Live {
 fn start(wake: &Wake, session: Option<&str>) -> Result<Live, String> {
     let driver = devpit_agentcli::driver::driver("claude").ok_or(NOT_STARTED)?;
     let (tell, heard) = mpsc::channel();
+    // What the repository fences off still binds it; what it allows does not.
+    let repo = crate::project_agent_repo::denied(wake.root);
+    let denied: Vec<&str> = DENIED
+        .iter()
+        .copied()
+        .chain(repo.iter().map(String::as_str))
+        .collect();
     let turn = Say {
         command: wake.command,
         env: wake.env,
@@ -322,7 +329,7 @@ fn start(wake: &Wake, session: Option<&str>) -> Result<Live, String> {
         session_id: session,
         fork_at: None,
         permission: Some(READ_ONLY),
-        disallowed: &DENIED,
+        disallowed: &denied,
         settings: None,
         // The person's own settings: a repository's allow rules would widen
         // what plan mode lets an agent nobody asked to start run.
@@ -341,15 +348,17 @@ fn start(wake: &Wake, session: Option<&str>) -> Result<Live, String> {
     Ok(Live { resident, heard })
 }
 
-/// The first message of a process: who it is, its memory, then the question.
+/// The first message of a process: who it is, the project's own instructions,
+/// which it no longer loads itself, its memory, then the question.
 fn woken(wake: &Wake, question: &str) -> String {
+    let rules = crate::project_agent_repo::instructions(wake.root);
     let memory = crate::project_memory::summary(wake.root).unwrap_or_default();
     format!(
         "You are the project agent of {name}, in {root}. You hold this project's context — its \
          architecture, rules, decisions, pitfalls and history — and answer for it: questions, and \
          the briefs its sessions start with. You change nothing: no edits, no cards moved, no \
          sessions started, and you stay in this project. Answer from your memory and from the \
-         code, read as you need, and say where an answer comes from.\n\n{memory}\n---\n\n{question}",
+         code, read as you need, and say where an answer comes from.\n\n{rules}{memory}\n---\n\n{question}",
         name = wake.name,
         root = wake.root.display(),
     )

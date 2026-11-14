@@ -203,6 +203,56 @@ fn the_agent_cannot_message_or_watch_other_sessions() {
 }
 
 #[test]
+fn the_agent_is_refused_what_the_repository_denies_and_never_given_what_it_allows() {
+    let bench = bench();
+    let claude = bench.root.join(".claude");
+    std::fs::create_dir_all(&claude).expect("claude dir");
+    std::fs::write(
+        claude.join("settings.json"),
+        r#"{"permissions":{"deny":["Read(./.env)"],"allow":["Bash(sh:*)"]}}"#,
+    )
+    .expect("settings");
+    std::fs::write(
+        claude.join("settings.local.json"),
+        r#"{"permissions":{"deny":["Read(./secrets/**)", 7]}}"#,
+    )
+    .expect("local settings");
+    let agents = Agents::idling_after(Duration::from_secs(60));
+    asked(&agents, &bench, "first");
+    let start = started(&bench);
+    for rule in ["Read(./.env)", "Read(./secrets/**)"] {
+        assert!(
+            start.contains(&format!("--disallowedTools={rule} ")),
+            "{rule} is not refused: {start}"
+        );
+    }
+    assert!(!start.contains("Bash(sh:*)"), "{start}");
+}
+
+#[test]
+fn the_first_message_carries_the_projects_own_instructions() {
+    let bench = bench();
+    std::fs::write(
+        bench.root.join("CLAUDE.md"),
+        "# Rules\n\nIndent with tabs.\n",
+    )
+    .expect("claude");
+    let agents = Agents::idling_after(Duration::from_secs(60));
+    asked(&agents, &bench, "first");
+    asked(&agents, &bench, "second");
+    let lines = lines_read(&bench);
+    for said in [
+        "the project's instructions",
+        "Indent with tabs.",
+        "# Working in this repository",
+    ] {
+        assert!(lines[0].contains(said), "{said} is not in: {}", lines[0]);
+    }
+    // Once a process has them, a question goes as it is.
+    assert!(!lines[1].contains("Indent with tabs."), "{}", lines[1]);
+}
+
+#[test]
 fn a_brief_holds_the_card_as_data() {
     let prompt = brief_prompt(
         Some(330),

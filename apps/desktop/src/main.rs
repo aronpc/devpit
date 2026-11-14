@@ -204,6 +204,7 @@ mod prime_paths;
 mod profile_models;
 mod profile_waiting;
 mod project_agent;
+mod project_agent_repo;
 mod project_lessons;
 mod project_memory;
 mod project_memory_view;
