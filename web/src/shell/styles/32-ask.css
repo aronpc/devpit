@@ -30,3 +30,15 @@
 .pmem__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; flex: 1; font-size: 11.5px; color: var(--text-3); }
 .pmem__src { display: inline-flex; flex-wrap: wrap; gap: 6px; }
 .pmem__file, .pmem__cards { font-family: var(--mono); }
+/* A proposal as a card: its kind and who proposed it, one plain line, then the whole text behind "details". */
+.pmem__prop { align-items: flex-start; }
+.pmem__head { display: flex; flex: 1 1 100%; align-items: center; gap: 8px; font-size: 11.5px; color: var(--text-3); }
+.pmem__kind { padding: 1px 7px; border-radius: 9px; font-size: 11px; font-weight: 600; color: var(--text); background: color-mix(in srgb, var(--accent) 18%, transparent); }
+.pmem__head .pmem__day { margin-left: auto; }
+.pmem__sum { font-weight: 550; }
+.pmem__details { flex: 1 1 100%; font-size: 12px; color: var(--text-2); }
+.pmem__details > summary { color: var(--text-3); font-size: 11.5px; }
+.pmem__details .pmem__text { margin-top: 4px; font-size: 12.5px; color: var(--text-2); }
+.pmem__was { margin: 4px 0 0; font-size: 11.5px; color: var(--text-3); }
+.pmem__label { color: var(--text-3); }
+.pmem__auto { padding: 0 6px; border-radius: 8px; border: 1px solid var(--border); color: var(--text-2); }

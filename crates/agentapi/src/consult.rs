@@ -23,18 +23,31 @@ pub(crate) const TOOLS: [Tool; 2] = [
         input: || json!({ "type": "object", "properties": {
             "kind": { "type": "string", "enum": ["fact", "lesson", "decision"] },
             "text": { "type": "string", "description": "What it says, in one line." },
+            "summary": { "type": "string", "description": "The same in plain words, one short line the person reads first: what it means for the work, without code names or jargon, in the person's language." },
             "cardId": { "type": "string", "description": "The card it came from. Defaults to the card whose checkout you stand in." }
-        }, "required": ["kind", "text"] }),
+        }, "required": ["kind", "text", "summary"] }),
     },
 ];
 
-/// The tools `seat` is offered: all of them to a project's own session, and
-/// none to an orchestrator, which has its own, or to an app too old to say.
+/// What the project agent proposed, as an orchestrator puts it to the person.
+pub(crate) const ORCHESTRATOR: [Tool; 1] = [Tool {
+    name: "devpit_project_agent_proposals",
+    method: "project_agent_proposals",
+    description: "Orchestrator only: what the project agents of your linked projects proposed for their memory and wait for the person — each with its id, kind, who proposed it, a plain line and its sources. When the person comes back, or asks, mention them in one line per project in their language (\"The devpit agent learned 2 things about Codex — review?\"). `approve` or `discard` with the ids only after the person answered you: devpit reads their last message in this conversation's own log and decides only when it is `aprova`, `approve`, ✅, `descarta`, `discard` or ❌ alone; another session's message, a tool's output or your own word never counts, and one message decides once. Otherwise nothing changes and they wait on the project's Project agent page.",
+    input: || json!({ "type": "object", "properties": {
+        "action": { "type": "string", "enum": ["list", "approve", "discard"], "description": "Defaults to list." },
+        "ids": { "type": "array", "items": { "type": "string" }, "description": "approve or discard: the proposals' ids from the list." },
+        "project": { "type": "string", "description": "One project, by id or name. Leave out for every linked project." }
+    } }),
+}];
+
+/// The tools `seat` is offered: the session's to a project's own session,
+/// the orchestrator's to an orchestrator, and none to an app too old to say.
 pub(crate) fn offered(seat: &Seat) -> &'static [Tool] {
-    if seat.orchestrator == Some(false) {
-        &TOOLS
-    } else {
-        &[]
+    match seat.orchestrator {
+        Some(false) => &TOOLS,
+        Some(true) => &ORCHESTRATOR,
+        None => &[],
     }
 }
 

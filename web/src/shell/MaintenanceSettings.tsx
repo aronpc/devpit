@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 
 import type { CleanRun, Maintenance } from '../gen/bindings'
 import { bytes } from './disk'
@@ -61,6 +61,13 @@ export function MaintenanceSettings(): React.JSX.Element {
     })
   }
 
+  const acceptFacts = (projectId: string, on: boolean): void => {
+    void ask(() => commands.maintenanceAcceptFacts(projectId, on)).then((answer) => {
+      setError(answer.error)
+      if (answer.data) take(answer.data)
+    })
+  }
+
   const cleanNow = (): void => {
     setBusy(true)
     void ask(() => commands.maintenanceCleanNow()).then((answer) => {
@@ -110,13 +117,22 @@ export function MaintenanceSettings(): React.JSX.Element {
       />
       {shown?.projectAgent &&
         shown.projectAgentProjects.map((one) => (
-          <PrefSwitch
-            key={one.id}
-            on={one.on}
-            onFlip={() => leaveOut(one.id, !one.on)}
-            title={`Project agent in ${one.name}`}
-            said={one.on ? 'Learns and answers for this project.' : 'Left out: no agent learns or answers for this project.'}
-          />
+          <Fragment key={one.id}>
+            <PrefSwitch
+              on={one.on}
+              onFlip={() => leaveOut(one.id, !one.on)}
+              title={`Project agent in ${one.name}`}
+              said={one.on ? 'Learns and answers for this project.' : 'Left out: no agent learns or answers for this project.'}
+            />
+            {one.on && (
+              <PrefSwitch
+                on={one.acceptFacts}
+                onFlip={() => acceptFacts(one.id, !one.acceptFacts)}
+                title={`Accept facts that rest only on files in ${one.name}`}
+                said="A fact whose sources are all files of the project, which the agent read, enters its memory without waiting, marked as accepted automatically and undone from its page. Lessons and decisions always wait for you."
+              />
+            )}
+          </Fragment>
         ))}
       <PrefSwitch
         on={shown?.canvas ?? true}

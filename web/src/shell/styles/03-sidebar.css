@@ -65,6 +65,7 @@
 .act--live .act__ico { color: var(--accent); }
 .act--live .act__label { color: var(--text); }
 .act__n { margin-left: auto; flex: none; font-size: 11px; color: var(--text-3); font-variant-numeric: tabular-nums; }
+.act__n--memo { min-width: 16px; padding: 0 5px; border-radius: 8px; background: color-mix(in srgb, var(--accent) 22%, transparent); color: var(--text); text-align: center; line-height: 16px; }
 /* Nav rows were flush, so two hover backgrounds met with no seam and the
    list read as one block. Four pixels separates them without opening a gap
    you notice — three did it while the rows were narrower. */

@@ -36,6 +36,7 @@ vi.mock('./live', () => ({
     },
     pluginDataList: () => ({ files: [] }),
     maintenanceRead: () => ({ projectAgent: true }),
+    lessonsProposed: () => ({ proposals: [], decisions: [] }),
     pluginUninstall: () => {
       catalogue = { plugins: catalogue.plugins.map((one) => ({ ...one, installed: false, enabled: false })) }
       return { ...catalogue, removedFiles: 0 }

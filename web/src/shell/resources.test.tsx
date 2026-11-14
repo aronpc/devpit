@@ -26,7 +26,7 @@ let catalogue: PluginList = { plugins: [] }
 
 vi.mock('./live', () => ({
   ask: (call: () => unknown) => Promise.resolve(call()).then((data) => ({ data, error: null, loading: false })),
-  commands: { pluginList: () => catalogue, maintenanceRead: () => ({ projectAgent: true }) },
+  commands: { pluginList: () => catalogue, maintenanceRead: () => ({ projectAgent: true }), lessonsProposed: () => ({ proposals: [], decisions: [] }) },
 }))
 
 const shell = {

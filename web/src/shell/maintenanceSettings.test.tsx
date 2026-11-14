@@ -11,8 +11,8 @@ const before: Maintenance = {
   keepDays: 0,
   projectAgent: true,
   projectAgentProjects: [
-    { id: 'prj_api', name: 'api', on: true },
-    { id: 'prj_web', name: 'web', on: true },
+    { id: 'prj_api', name: 'api', on: true, acceptFacts: false },
+    { id: 'prj_web', name: 'web', on: true, acceptFacts: false },
   ],
   canvas: true,
   last: null,
@@ -32,6 +32,10 @@ const leave = vi.fn(async (projectId: string, on: boolean) => {
   stored = { ...stored, projectAgentProjects: stored.projectAgentProjects.map((one) => (one.id === projectId ? { ...one, on } : one)) }
   return stored
 })
+const accept = vi.fn(async (projectId: string, on: boolean) => {
+  stored = { ...stored, projectAgentProjects: stored.projectAgentProjects.map((one) => (one.id === projectId ? { ...one, acceptFacts: on } : one)) }
+  return stored
+})
 const cleanNow = vi.fn(async () => (stored = { ...stored, last: { at: Date.now() / 1000, removed: 3, freedBytes: 1.5 * GB } }))
 vi.mock('./live', () => ({
   ask: async (call: () => Promise<unknown>) => ({ data: await call(), error: null, loading: false }),
@@ -41,6 +45,7 @@ vi.mock('./live', () => ({
       write(powerSaver, keepDays, projectAgent, canvas),
     maintenanceCleanNow: () => cleanNow(),
     maintenanceProjectAgent: (projectId: string, on: boolean) => leave(projectId, on),
+    maintenanceAcceptFacts: (projectId: string, on: boolean) => accept(projectId, on),
   },
 }))
 
@@ -94,5 +99,15 @@ describe('Settings → Maintenance', () => {
     await waitFor(() => expect(leave).toHaveBeenLastCalledWith('prj_api', false))
     await waitFor(() => expect(screen.getByRole('switch', { name: 'Project agent in api' }).getAttribute('aria-checked')).toBe('false'))
     expect(screen.getByRole('switch', { name: 'Project agent in web' }).getAttribute('aria-checked')).toBe('true')
+  })
+
+  it("accepts one project's facts resting only on files, off by default", async () => {
+    render(<MaintenanceSettings />)
+    const api = await screen.findByRole('switch', { name: 'Accept facts that rest only on files in api' })
+    expect(api.getAttribute('aria-checked')).toBe('false')
+    fireEvent.click(api)
+    await waitFor(() => expect(accept).toHaveBeenLastCalledWith('prj_api', true))
+    await waitFor(() => expect(screen.getByRole('switch', { name: 'Accept facts that rest only on files in api' }).getAttribute('aria-checked')).toBe('true'))
+    expect(screen.getByRole('switch', { name: 'Accept facts that rest only on files in web' }).getAttribute('aria-checked')).toBe('false')
   })
 })

@@ -44,6 +44,7 @@ fn every_tool_named_here_is_one_devpit_has() {
         .chain(STAGED.iter().map(|(_, tool)| tool))
         .chain(&crate::assistant::TOOLS)
         .chain(&crate::consult::TOOLS)
+        .chain(&crate::consult::ORCHESTRATOR)
         .map(|tool| tool.name)
         .collect();
     for name in ORCHESTRATOR_ONLY
@@ -305,4 +306,24 @@ fn a_session_may_message_and_only_an_orchestrator_hears_of_idle() {
     let orchestrating = names(&listed);
     assert!(orchestrating.contains(&"devpit_session_message"));
     assert!(orchestrating.contains(&"devpit_session_notify_idle"));
+}
+
+#[test]
+fn the_orchestrator_is_offered_the_proposals_tool_and_a_session_is_not() {
+    let names = |seat: &Seat| -> Vec<String> {
+        tools(&Offer::Off, seat)
+            .iter()
+            .filter_map(|tool| tool["name"].as_str().map(str::to_owned))
+            .collect()
+    };
+    let orchestrator = Seat {
+        orchestrator: Some(true),
+        ..Seat::default()
+    };
+    let session = Seat {
+        orchestrator: Some(false),
+        ..Seat::default()
+    };
+    assert!(names(&orchestrator).contains(&"devpit_project_agent_proposals".to_owned()));
+    assert!(!names(&session).contains(&"devpit_project_agent_proposals".to_owned()));
 }

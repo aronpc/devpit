@@ -58,7 +58,7 @@ fn wake(bench: &Bench) -> Wake<'_> {
 /// Learned with the retry a just-written script needs.
 fn learned(agents: &Agents, bench: &Bench) -> usize {
     for _ in 0..5 {
-        match learn(agents, "p1", &wake(bench), "2026-11-14") {
+        match learn(agents, "p1", &wake(bench), "2026-11-14", false) {
             Err(why) if why.contains(crate::project_agent::NOT_STARTED) => {
                 std::thread::sleep(Duration::from_millis(50))
             }

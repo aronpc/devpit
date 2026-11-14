@@ -1,6 +1,8 @@
 use serde_json::json;
 
-use super::{asks_to_stop, authorises, from_channel, last_said, From, FROM_THE_REMOTE};
+use super::{
+    asks_to_stop, authorises, from_channel, last_said, on_proposals, From, Verdict, FROM_THE_REMOTE,
+};
 
 /// A log, one entry per line, in the shapes Claude Code 2.1.294 writes.
 fn log(entries: &[serde_json::Value]) -> String {
@@ -412,5 +414,32 @@ fn a_turn_devpit_started_for_a_session_is_never_the_persons() {
     ] {
         let said = last_said(&log(&[composer("u1", "olá"), composer("u2", &text)]));
         assert_eq!(said.map(|said| said.id), Some("u1".to_owned()), "{text}");
+    }
+}
+
+#[test]
+fn a_word_or_a_mark_alone_approves_or_discards_the_proposals_put_to_the_person() {
+    for said in [
+        "aprova",
+        "Aprova!",
+        "approve all",
+        "pode aprovar",
+        "✅",
+        "✔️ ✅",
+    ] {
+        assert_eq!(on_proposals(said), Some(Verdict::Approve), "{said}");
+    }
+    for said in ["descarta", "Discard.", "❌"] {
+        assert_eq!(on_proposals(said), Some(Verdict::Discard), "{said}");
+    }
+    for said in [
+        "",
+        "não aprova",
+        "aprova só a primeira",
+        "o que são esses avisos?",
+        "✅ ❌",
+        "sim",
+    ] {
+        assert_eq!(on_proposals(said), None, "{said}");
     }
 }

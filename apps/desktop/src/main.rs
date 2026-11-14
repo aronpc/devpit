@@ -177,6 +177,7 @@ mod mcp_cache;
 mod mcp_health;
 mod mcp_reading;
 mod media;
+mod memory_proposals;
 mod moving;
 mod notices;
 mod off_main;

@@ -37,6 +37,8 @@ pub struct LabsProject {
     pub id: String,
     pub name: String,
     pub on: bool,
+    /// Its facts resting only on files enter the memory without the person.
+    pub accept_facts: bool,
 }
 
 /// What one cleaning deleted.
@@ -189,6 +191,23 @@ pub async fn maintenance_project_agent(
         if on {
             crate::project_onboarding::sweep(&app);
         }
+        shown(&store)
+    })
+    .await
+}
+
+/// `maintenance.accept_facts` — one project's facts resting only on files
+/// enter its memory without the person, or wait for them again.
+#[tauri::command]
+#[specta::specta]
+pub async fn maintenance_accept_facts(
+    project_id: String,
+    on: bool,
+) -> Result<Maintenance, RpcError> {
+    crate::off_main::blocking(move || {
+        let store = store()?;
+        crate::project_onboarding::accept_file_facts(&store, &project_id, on)
+            .map_err(RpcError::internal)?;
         shown(&store)
     })
     .await

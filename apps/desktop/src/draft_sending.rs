@@ -128,14 +128,19 @@ pub(crate) fn send(
 /// The person's last message in the log of `profile`'s orchestrator,
 /// standing in `root`.
 pub(crate) fn last_word(profile: &str, root: &Path) -> Result<Said, String> {
+    last_said(&log_tail(profile, root)?)
+        .ok_or_else(|| "devpit found nothing the person said in this conversation".to_owned())
+}
+
+/// The end of the log of `profile`'s orchestrator, standing in `root`.
+pub(crate) fn log_tail(profile: &str, root: &Path) -> Result<String, String> {
     let config = crate::live_sessions::config_of(profile).map_err(|err| err.message)?;
     let root = root.canonicalize().unwrap_or_else(|_| root.to_path_buf());
     let log = devpit_agentcli::peers::newest(&devpit_agentcli::peers::logs_of(&config, &root))
         .ok_or(
             "devpit could not find this conversation's log, so it cannot read what the person said",
         )?;
-    last_said(&devpit_agentcli::peers::tail(&log))
-        .ok_or_else(|| "devpit found nothing the person said in this conversation".to_owned())
+    Ok(devpit_agentcli::peers::tail(&log))
 }
 
 /// A message cut to what a record needs.

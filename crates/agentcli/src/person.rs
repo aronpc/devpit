@@ -365,6 +365,80 @@ pub fn bare(said: &str) -> bool {
     SEND.contains(&said.trim_end_matches(['.', '!', ' ']))
 }
 
+/// What the person's word does to the memory proposals put to them.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Verdict {
+    Approve,
+    Discard,
+}
+
+/// Words that, said alone, approve the proposals put to the person.
+const APPROVE: [&str; 12] = [
+    "approve",
+    "approve all",
+    "approve them",
+    "approve it",
+    "aprova",
+    "aprove",
+    "aprovo",
+    "aprovar",
+    "aprova tudo",
+    "aprova todos",
+    "aprova todas",
+    "pode aprovar",
+];
+
+/// Words that, said alone, discard them.
+const DISCARD: [&str; 11] = [
+    "discard",
+    "discard all",
+    "discard them",
+    "discard it",
+    "descarta",
+    "descarte",
+    "descartar",
+    "descarta tudo",
+    "descarta todos",
+    "descarta todas",
+    "pode descartar",
+];
+
+/// Marks that say no in any language.
+const NO_MARKS: [char; 2] = ['❌', '✖'];
+
+/// What the person's whole message says to the proposals put to them: a yes
+/// mark or an approve word alone approves, a no mark or a discard word alone
+/// discards. A sentence says neither: it waits for their click.
+pub fn on_proposals(said: &str) -> Option<Verdict> {
+    let said: String = said
+        .trim()
+        .trim_end_matches(HANGING)
+        .to_lowercase()
+        .chars()
+        .filter(|c| !dresses_a_mark(*c))
+        .collect();
+    let only = |marks: &[char]| {
+        !said.trim().is_empty()
+            && said
+                .chars()
+                .all(|c| marks.contains(&c) || c.is_whitespace())
+    };
+    if only(&YES_MARKS) {
+        return Some(Verdict::Approve);
+    }
+    if only(&NO_MARKS) {
+        return Some(Verdict::Discard);
+    }
+    let words = spaced(&said);
+    if APPROVE.contains(&words.as_str()) {
+        Some(Verdict::Approve)
+    } else if DISCARD.contains(&words.as_str()) {
+        Some(Verdict::Discard)
+    } else {
+        None
+    }
+}
+
 /// Whether `words` name the session: whole, or by a part of its name long
 /// enough to mean it (`noiseless` for `noiseless-mvp`).
 fn names(words: &[&str], session: &str) -> bool {

@@ -107,8 +107,15 @@ fn real_file(root: &Path, named: &str) -> Option<String> {
 }
 
 /// Has `key`'s agent read its project and propose what it learned, in place
-/// of what an earlier read proposed and still waits; answers how many.
-pub(crate) fn learn(agents: &Agents, key: &str, wake: &Wake, day: &str) -> Result<usize, String> {
+/// of what an earlier read proposed and still waits; answers how many. With
+/// `accept`, a fact resting only on files is accepted without the person.
+pub(crate) fn learn(
+    agents: &Agents,
+    key: &str,
+    wake: &Wake,
+    day: &str,
+    accept: bool,
+) -> Result<usize, String> {
     let answer = agents.ask(key, wake, &learning_prompt())?;
     let root = wake.root;
     project_memory::drop_onboarding(root)?;
@@ -124,7 +131,7 @@ pub(crate) fn learn(agents: &Agents, key: &str, wake: &Wake, day: &str) -> Resul
     );
     let found = proposed_in(root, &answer.text, &known);
     for (source, text) in &found {
-        project_memory::propose(root, day, source, std::slice::from_ref(text))?;
+        project_memory::propose_or_accept(root, day, source, std::slice::from_ref(text), accept)?;
     }
     project_memory::onboarded(root, day)?;
     Ok(found.len())
@@ -168,6 +175,34 @@ pub(crate) fn left_out(store: &Store) -> Vec<String> {
         .unwrap_or_default()
 }
 
+/// The projects whose facts resting only on files are accepted without the person.
+fn accepting(store: &Store) -> Vec<String> {
+    store
+        .preference(preference::LABS_ACCEPT_FILE_FACTS)
+        .ok()
+        .flatten()
+        .and_then(|raw| serde_json::from_str(&raw).ok())
+        .unwrap_or_default()
+}
+
+/// Whether Labs accepts `project_id`'s facts that rest only on files.
+pub(crate) fn accepts_file_facts(store: &Store, project_id: &str) -> bool {
+    accepting(store).iter().any(|id| id == project_id)
+}
+
+/// Accepts `project_id`'s facts resting only on files without the person, or stops.
+pub(crate) fn accept_file_facts(store: &Store, project_id: &str, on: bool) -> Result<(), String> {
+    let mut ids = accepting(store);
+    ids.retain(|id| id != project_id);
+    if on {
+        ids.push(project_id.to_owned());
+    }
+    let ids = serde_json::to_string(&ids).map_err(|err| err.to_string())?;
+    store
+        .set_preference(preference::LABS_ACCEPT_FILE_FACTS, &ids)
+        .map_err(|err| err.to_string())
+}
+
 /// Whether the project agent is on for `project_id`: Labs has it on, and
 /// does not leave that project out.
 pub(crate) fn on_for(store: &Store, project_id: &str) -> bool {
@@ -191,7 +226,7 @@ pub(crate) fn leave_out(store: &Store, project_id: &str, out: bool) -> Result<()
 /// The projects Settings → Labs lists: each linked to an orchestrator, with
 /// its own switch.
 pub(crate) fn labs_projects(projects: &[Project], store: &Store) -> Vec<LabsProject> {
-    let (linked, out) = (linked(projects), left_out(store));
+    let (linked, out, accept) = (linked(projects), left_out(store), accepting(store));
     projects
         .iter()
         .filter(|one| one.orchestrator.is_none() && linked.contains(&one.id))
@@ -199,6 +234,7 @@ pub(crate) fn labs_projects(projects: &[Project], store: &Store) -> Vec<LabsProj
             id: one.id.clone(),
             name: one.name.clone(),
             on: !out.contains(&one.id),
+            accept_facts: accept.contains(&one.id),
         })
         .collect()
 }
@@ -328,7 +364,14 @@ fn read_one(app: &AppHandle, project_id: &str) -> Result<usize, String> {
     while agents.busy(project_id) {
         std::thread::sleep(BUSY_WAIT);
     }
-    learn(&agents, project_id, &wake, &crate::project_agent::today())
+    let accept = Store::open_default().is_ok_and(|store| accepts_file_facts(&store, project_id));
+    learn(
+        &agents,
+        project_id,
+        &wake,
+        &crate::project_agent::today(),
+        accept,
+    )
 }
 
 #[cfg(all(test, unix))]

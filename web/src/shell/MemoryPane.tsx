@@ -8,11 +8,22 @@ import { onCarried } from './window'
 
 /*
  * The project agent's page: what its memory keeps, each entry with its day
- * and the files it rests on, and what waits for the person. A proposal is
- * approved, edited or discarded here as under the top bar; what the agent's
- * own read of the project proposed can be approved at once, since it rests
- * only on the repository's files.
+ * and the files it rests on, and what waits for the person. A proposal reads
+ * as a card — its kind, who proposed it, one plain line, its sources, the
+ * whole text behind "details" — approved, edited or discarded here; what the
+ * agent's own read of the project proposed can be approved at once, since it
+ * rests only on the repository's files. A fact Labs accepted on its own says
+ * so, and can be undone.
  */
+
+const KINDS: Record<string, string> = { 'facts.md': 'Fact', 'lessons.md': 'Lesson', 'decisions.md': 'Decision' }
+
+/** A proposal's kind as its label: an update or a removal of a kept entry says so. */
+export function kindOf(proposal: { file: string; text: string; replaces: string | null }): string {
+  const kind = KINDS[proposal.file] ?? 'Lesson'
+  if (proposal.replaces === null) return kind
+  return proposal.text ? `${kind} · update` : `${kind} · removal`
+}
 
 function Sources({ files, cards }: { files: readonly string[]; cards: readonly string[] }): React.JSX.Element {
   const show = useShellPick((shell) => shell.show)
@@ -28,7 +39,7 @@ function Sources({ files, cards }: { files: readonly string[]; cards: readonly s
   )
 }
 
-function Kept({ title, entries }: { title: string; entries: readonly MemoryEntry[] }): React.JSX.Element {
+function Kept({ title, entries, onUndo }: { title: string; entries: readonly MemoryEntry[]; onUndo?: (one: MemoryEntry) => void }): React.JSX.Element {
   return (
     <section className="pmem__part" aria-label={title}>
       <h3 className="pmem__h">
@@ -41,7 +52,15 @@ function Kept({ title, entries }: { title: string; entries: readonly MemoryEntry
           <span className="pmem__meta">
             <span className="pmem__day">{one.day}</span>
             <Sources files={one.files} cards={one.cards} />
+            {one.auto && <span className="pmem__auto">accepted automatically</span>}
           </span>
+          {one.auto && onUndo && (
+            <span className="remind__acts">
+              <button className="remind__btn" onClick={() => onUndo(one)}>
+                Undo
+              </button>
+            </span>
+          )}
         </div>
       ))}
     </section>
@@ -112,21 +131,31 @@ export function MemoryPane(): React.JSX.Element {
             </h3>
             {shown.proposals.length === 0 && <p className="acc__note">Nothing waits for you.</p>}
             {shown.proposals.map((one) => {
-              const { source, text, replaces, file, day } = one.proposal
+              const { source, text, replaces, day, summary, by } = one.proposal
               const edited = editing?.of === one ? editing : null
+              const whole = replaces !== null && !text ? `Remove: ${replaces}` : text
               return (
-                <div key={`${source} ${text} ${replaces ?? ''}`} className="pmem__one" role="group" aria-label={text || `Remove: ${replaces ?? ''}`}>
+                <div key={`${source} ${text} ${replaces ?? ''}`} className="pmem__one pmem__prop" role="group" aria-label={summary}>
+                  <span className="pmem__head">
+                    <span className="pmem__kind">{kindOf(one.proposal)}</span>
+                    <span className="pmem__by">from {by}</span>
+                    <span className="pmem__day">{day}</span>
+                  </span>
                   {edited ? (
                     <input className="remind__edit" aria-label="Proposal" value={edited.text} onChange={(event) => setEditing({ of: one, text: event.target.value })} />
                   ) : (
-                    <p className="pmem__text">{replaces !== null && !text ? `Remove: ${replaces}` : text}</p>
+                    <p className="pmem__text pmem__sum">{summary}</p>
+                  )}
+                  {!edited && whole !== summary && (
+                    <details className="pmem__details">
+                      <summary>details</summary>
+                      <p className="pmem__text">{whole}</p>
+                      {replaces !== null && text && <p className="pmem__was">was: {replaces}</p>}
+                    </details>
                   )}
                   <span className="pmem__meta">
-                    <span className="pmem__day">{day}</span>
-                    <span className="pmem__file">{file}</span>
-                    {one.proposal.onboarding && <span className="pmem__file">onboarding</span>}
+                    <span className="pmem__label">Sources</span>
                     <Sources files={one.files} cards={one.cards} />
-                    {replaces !== null && text && <span className="pmem__file">was: {replaces}</span>}
                   </span>
                   <span className="remind__acts">
                     <button className="remind__btn" onClick={() => decide(one, null)}>
@@ -145,7 +174,7 @@ export function MemoryPane(): React.JSX.Element {
               )
             })}
           </section>
-          <Kept title="Facts" entries={shown.facts} />
+          <Kept title="Facts" entries={shown.facts} onUndo={(one) => void ask(() => commands.projectAgentUndoAccepted(here.id, one.text)).then(take)} />
           <Kept title="Lessons" entries={shown.lessons} />
           <Kept title="Decisions" entries={shown.decisions} />
         </>

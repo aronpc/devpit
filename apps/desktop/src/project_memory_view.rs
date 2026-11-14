@@ -16,6 +16,25 @@ fn shown(one: &Entry) -> MemoryEntry {
         text: one.text.clone(),
         files: one.files().into_iter().map(str::to_owned).collect(),
         cards: one.cards().into_iter().map(str::to_owned).collect(),
+        auto: one.auto(),
+    }
+}
+
+/// A waiting proposal of `project`, as the page and the orchestrator read it.
+pub(crate) fn proposal_of(project: &Project, one: &Entry) -> LessonProposal {
+    let (file, text, replaces) = project_memory::aim(&one.text);
+    LessonProposal {
+        id: project_memory::id_of(one),
+        project_id: project.id.clone(),
+        project: project.name.clone(),
+        day: one.day.clone(),
+        source: one.source.clone(),
+        file: file.to_owned(),
+        text: text.to_owned(),
+        replaces: replaces.map(str::to_owned),
+        onboarding: one.onboarding(),
+        by: project_memory::proposer(one),
+        summary: project_memory::plain(&one.text),
     }
 }
 
@@ -27,22 +46,10 @@ pub(crate) fn memory_of(project: &Project) -> ProjectMemory {
     };
     let proposals = project_memory::proposals(root)
         .iter()
-        .map(|one| {
-            let (file, text, replaces) = project_memory::aim(&one.text);
-            MemoryProposal {
-                proposal: LessonProposal {
-                    project_id: project.id.clone(),
-                    project: project.name.clone(),
-                    day: one.day.clone(),
-                    source: one.source.clone(),
-                    file: file.to_owned(),
-                    text: text.to_owned(),
-                    replaces: replaces.map(str::to_owned),
-                    onboarding: one.onboarding(),
-                },
-                files: one.files().into_iter().map(str::to_owned).collect(),
-                cards: one.cards().into_iter().map(str::to_owned).collect(),
-            }
+        .map(|one| MemoryProposal {
+            proposal: proposal_of(project, one),
+            files: one.files().into_iter().map(str::to_owned).collect(),
+            cards: one.cards().into_iter().map(str::to_owned).collect(),
         })
         .collect();
     ProjectMemory {
@@ -84,6 +91,25 @@ pub async fn project_agent_approve_learned(
             &crate::project_agent::today(),
         )
         .map_err(RpcError::internal)?;
+        let _ = app.emit("lessons:proposed", &project.id);
+        Ok(memory_of(&project))
+    })
+    .await
+}
+
+/// `project_agent.undo_accepted` — takes back a fact accepted without the
+/// person: it waits for their decision again.
+#[tauri::command]
+#[specta::specta]
+pub async fn project_agent_undo_accepted(
+    app: AppHandle,
+    project_id: String,
+    text: String,
+) -> Result<ProjectMemory, RpcError> {
+    crate::off_main::blocking(move || {
+        let project = project(&project_id)?;
+        project_memory::undo_accepted(Path::new(&project.root_path), &text)
+            .map_err(|why| RpcError::new(devpit_rpc::ErrorCode::NotFound, why))?;
         let _ = app.emit("lessons:proposed", &project.id);
         Ok(memory_of(&project))
     })

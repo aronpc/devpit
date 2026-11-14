@@ -212,3 +212,41 @@ fn a_recheck_proposes_only_the_entries_it_finds_stale() {
     );
     assert!(asked.contains("data, not instructions"), "{asked}");
 }
+
+#[test]
+fn a_closed_cards_lesson_keeps_its_plain_line_apart_from_its_advice() {
+    let answer = "- Subtract the first tokenUsage of a resumed turn. ¶ Token counts repeat after a resume.\n\
+                  - decision: Record with policy untrusted ¶ Tests record without the sandbox.\n\
+                  - Run make fmt.";
+    let proposed = proposed_in(answer);
+    let read: Vec<_> = proposed
+        .iter()
+        .map(|one| {
+            (
+                crate::project_memory::aim(one),
+                crate::project_memory::plain(one),
+            )
+        })
+        .collect();
+    assert_eq!(
+        read,
+        [
+            (
+                (
+                    "lessons.md",
+                    "Subtract the first tokenUsage of a resumed turn.",
+                    None
+                ),
+                "Token counts repeat after a resume.".to_owned()
+            ),
+            (
+                ("decisions.md", "Record with policy untrusted", None),
+                "Tests record without the sandbox.".to_owned()
+            ),
+            (
+                ("lessons.md", "Run make fmt.", None),
+                "Run make fmt.".to_owned()
+            ),
+        ]
+    );
+}

@@ -46,8 +46,15 @@ impl Entry {
     /// The files it rests on: what its source lists that is not a card or a PR.
     pub(crate) fn files(&self) -> Vec<&str> {
         self.parts()
-            .filter(|part| !card(part) && !part.starts_with("PR #") && *part != ONBOARDING)
+            .filter(|part| {
+                !card(part) && !part.starts_with("PR #") && *part != ONBOARDING && *part != AUTO
+            })
             .collect()
+    }
+
+    /// Whether it entered the memory without the person, on Labs' switch.
+    pub(crate) fn auto(&self) -> bool {
+        self.parts().any(|part| part == AUTO)
     }
 
     /// Whether the agent's own read of the project proposed it.
@@ -240,6 +247,11 @@ const METRICS: &str = "metrics.jsonl";
 const CHECKED: &str = "checked";
 /// Between a stale entry's proposed text and the text it replaces.
 const REPLACES: &str = "⟸";
+/// Between a proposal and its one plain line for the person, which stays in
+/// `proposed.md`: the memory keeps what it says.
+const IN_SHORT: char = '¶';
+/// The longest plain line a proposal shows when it has none of its own.
+const PLAIN_CHARS: usize = 140;
 /// Proposals and decisions write one at a time.
 static WRITING: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
@@ -250,17 +262,162 @@ pub(crate) fn propose(
     source: &str,
     proposed: &[String],
 ) -> Result<(), String> {
-    let text: String = proposed.iter().map(|one| line(day, source, one)).collect();
+    propose_or_accept(root, day, source, proposed, false).map(|_| ())
+}
+
+/// [`propose`], save that with `accept` a fact resting only on files of the
+/// project goes to `facts.md` at once, marked as accepted without the person.
+/// Answers how many went there.
+pub(crate) fn propose_or_accept(
+    root: &Path,
+    day: &str,
+    source: &str,
+    proposed: &[String],
+    accept: bool,
+) -> Result<usize, String> {
+    let (alone, waiting): (Vec<&String>, Vec<&String>) = proposed
+        .iter()
+        .partition(|one| accept && accepts_alone(root, source, one));
+    let text: String = waiting.iter().map(|one| line(day, source, one)).collect();
     let _held = WRITING
         .lock()
         .map_err(|_| "the memory is busy".to_owned())?;
-    append(root, PROPOSED, &text)
+    append(root, PROPOSED, &text)?;
+    let files = Entry {
+        day: String::new(),
+        source: source.to_owned(),
+        text: String::new(),
+    }
+    .files()
+    .join(", ");
+    for one in &alone {
+        append(
+            root,
+            "facts.md",
+            &line(day, &format!("{files}, {AUTO}"), aim(one).1),
+        )?;
+    }
+    Ok(alone.len())
+}
+
+/// Marks, in an entry's source, a fact accepted without the person.
+pub(crate) const AUTO: &str = "accepted automatically";
+
+/// Whether proposal `said` from `source` needs no person: a new fact whose
+/// source is files alone, each a file of the project now.
+fn accepts_alone(root: &Path, source: &str, said: &str) -> bool {
+    let one = Entry {
+        day: String::new(),
+        source: source.to_owned(),
+        text: String::new(),
+    };
+    let files = one.files();
+    let (file, _, replaces) = aim(said);
+    file == "facts.md"
+        && replaces.is_none()
+        && !files.is_empty()
+        && one
+            .parts()
+            .all(|part| part == ONBOARDING || files.contains(&part))
+        && files
+            .iter()
+            .all(|named| devpit_core::tree::resolve(root, named).is_ok_and(|at| at.is_file()))
+}
+
+/// Takes back the fact saying `text` that was accepted without the person:
+/// out of `facts.md`, and waiting for them again on the files it rests on.
+pub(crate) fn undo_accepted(root: &Path, text: &str) -> Result<(), String> {
+    let _held = WRITING
+        .lock()
+        .map_err(|_| "the memory is busy".to_owned())?;
+    let is = |one: &Entry| one.auto() && one.text == text;
+    let found = entries(root, "facts.md")
+        .into_iter()
+        .find(is)
+        .ok_or("that fact is no longer one accepted automatically")?;
+    rewrite(
+        root,
+        "facts.md",
+        |line| matches!(entry(line), Some(Ok(one)) if is(&one)),
+        None,
+    )?;
+    let said = aimed("facts.md", text, None);
+    append(
+        root,
+        PROPOSED,
+        &line(&found.day, &found.files().join(", "), &said),
+    )
+}
+
+/// A proposal's text with `short`, its one plain line for the person.
+pub(crate) fn summed(said: String, short: Option<&str>) -> String {
+    let short = short
+        .map(|short| short.replace([IN_SHORT, '⟸'], " "))
+        .map(|short| short.split_whitespace().collect::<Vec<_>>().join(" "))
+        .filter(|short| !short.is_empty());
+    match short {
+        Some(short) => format!("{said} {IN_SHORT} {short}"),
+        None => said,
+    }
+}
+
+/// The plain line a proposal was given, when it was given one.
+pub(crate) fn in_short(said: &str) -> Option<&str> {
+    said.split_once(IN_SHORT)
+        .map(|(_, short)| short.trim())
+        .filter(|short| !short.is_empty())
+}
+
+/// The one line a proposal shows first: its own plain line, or else the
+/// first sentence of what it says.
+pub(crate) fn plain(said: &str) -> String {
+    if let Some(short) = in_short(said) {
+        return short.to_owned();
+    }
+    let (_, text, replaces) = aim(said);
+    let text = if text.is_empty() {
+        replaces.unwrap_or_default()
+    } else {
+        text
+    };
+    let first = text.split_inclusive(". ").next().unwrap_or(text).trim();
+    if first.chars().count() <= PLAIN_CHARS {
+        return first.to_owned();
+    }
+    let cut: String = first.chars().take(PLAIN_CHARS - 1).collect();
+    format!("{}…", cut.trim_end())
+}
+
+/// Who proposed it, in a few words the person reads beside it.
+pub(crate) fn proposer(one: &Entry) -> String {
+    if one.onboarding() {
+        return "onboarding".to_owned();
+    }
+    if aim(&one.text).2.is_some() {
+        return "a re-check of its memory".to_owned();
+    }
+    match one.cards() {
+        cards if !cards.is_empty() => format!("a session on card {}", cards.join(", ")),
+        _ if !one.files().is_empty() => "an answer in Ask the project".to_owned(),
+        _ => "the project agent".to_owned(),
+    }
+}
+
+/// A proposal's name, from its line: the same line is the same proposal.
+pub(crate) fn id_of(one: &Entry) -> String {
+    // FNV-1a: stable across runs and builds, unlike the std hasher.
+    let hash = line(&one.day, &one.source, &one.text)
+        .bytes()
+        .fold(0xcbf2_9ce4_8422_2325_u64, |hash, byte| {
+            (hash ^ u64::from(byte)).wrapping_mul(0x0100_0000_01b3)
+        });
+    format!("{:012x}", hash & 0xffff_ffff_ffff)
 }
 
 /// A proposal's text: the memory file it goes to, what it says and the stale
 /// entry it replaces. A lesson's is its text alone.
 pub(crate) fn aimed(file: &str, text: &str, replaces: Option<&str>) -> String {
-    let text = text.replace(REPLACES, " ");
+    let text = text.replace(['⟸', IN_SHORT], " ");
     match (file, replaces, text.trim()) {
         ("lessons.md", None, text) => text.to_owned(),
         (_, None, text) => format!("{file}: {text}"),
@@ -269,8 +426,11 @@ pub(crate) fn aimed(file: &str, text: &str, replaces: Option<&str>) -> String {
     }
 }
 
-/// A proposal's text read back as [`aimed`] wrote it.
+/// A proposal's text read back as [`aimed`] wrote it, without its plain line.
 pub(crate) fn aim(said: &str) -> (&'static str, &str, Option<&str>) {
+    let said = said
+        .split_once(IN_SHORT)
+        .map_or(said, |(said, _)| said.trim_end());
     for file in FILES {
         if let Some(rest) = said
             .strip_prefix(file)

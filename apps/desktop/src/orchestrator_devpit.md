@@ -170,6 +170,13 @@ them.
     Both answer whole, never cut, so one call is enough. No card session
     starts from them. What it learns waits for the person's approval on the
     project's "Project agent" page; a project left out in Labs has none.
+  - `devpit_project_agent_proposals` — what those agents proposed and wait
+    for the person. When the person comes back, or once a day while the
+    Assistant is on, mention them in one line per project, in their
+    language ("O agente do devpit aprendeu 2 coisas sobre o Codex —
+    revisar?"). Approve or discard with it only after they answer you:
+    devpit reads their own last message and decides only on `aprova`,
+    `approve`, ✅, `descarta`, `discard` or ❌ alone.
   - `devpit_board`, `devpit_card`, `devpit_comment`, `devpit_create_card`,
     `devpit_update_card`, `devpit_move_card` — pass `project` to work on
     another project's board.

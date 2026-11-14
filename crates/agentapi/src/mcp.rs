@@ -573,7 +573,8 @@ fn call(
         .chain(&SETUP_TOOLS)
         .chain(STAGED.iter().map(|(_, tool)| tool))
         .chain(&crate::assistant::TOOLS)
-        .chain(&crate::consult::TOOLS);
+        .chain(&crate::consult::TOOLS)
+        .chain(&crate::consult::ORCHESTRATOR);
     let Some(tool) = every.find(|tool| tool.name == name) else {
         return said(&format!("devpit has no tool `{name}`"), true);
     };

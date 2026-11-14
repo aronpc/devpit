@@ -29,6 +29,8 @@ pub(crate) const SESSION_METHODS: [&str; 2] = ["project_agent_consult", "project
 pub(crate) const QUESTIONS: u32 = 10;
 /// The longest proposal a session makes: one line of the memory.
 const PROPOSAL_CHARS: usize = 1000;
+/// The longest plain line a proposal comes with.
+const SUMMARY_CHARS: usize = 200;
 /// The most proposals that wait at once, well within what the memory reads.
 const PENDING: usize = 50;
 /// What a brief says about the project agent starts here.
@@ -392,14 +394,29 @@ pub(crate) fn brief_prompt(
 }
 
 /// Keeps what a session wants remembered as a proposal from `source`, for
-/// the person to approve; answers the memory file it would go to.
+/// the person to approve, with `summary` as its plain line; answers the
+/// memory file it would go to.
 pub(crate) fn propose_for_session(
     root: &Path,
     day: &str,
     source: &str,
     kind: &str,
     text: &str,
+    summary: Option<&str>,
 ) -> Result<&'static str, String> {
+    let (file, said) = proposal_line(root, kind, text, summary)?;
+    crate::project_memory::propose(root, day, source, &[said])?;
+    Ok(file)
+}
+
+/// A proposal of `kind` saying `text`, as `proposed.md` keeps it, and the
+/// memory file it goes to; refused past one line or too many waiting.
+fn proposal_line(
+    root: &Path,
+    kind: &str,
+    text: &str,
+    summary: Option<&str>,
+) -> Result<(&'static str, String), String> {
     let file = match kind {
         "fact" => "facts.md",
         "lesson" => "lessons.md",
@@ -416,18 +433,18 @@ pub(crate) fn propose_for_session(
             "a proposal is one line of at most {PROPOSAL_CHARS} characters"
         ));
     }
+    if summary.is_some_and(|summary| summary.chars().count() > SUMMARY_CHARS) {
+        return Err(format!(
+            "`summary` is one plain line of at most {SUMMARY_CHARS} characters"
+        ));
+    }
     if crate::project_memory::proposals(root).len() >= PENDING {
         return Err(format!(
             "{PENDING} proposals already wait for the person: ask them to decide those first"
         ));
     }
-    crate::project_memory::propose(
-        root,
-        day,
-        source,
-        &[crate::project_memory::aimed(file, &text, None)],
-    )?;
-    Ok(file)
+    let said = crate::project_memory::aimed(file, &text, None);
+    Ok((file, crate::project_memory::summed(said, summary)))
 }
 
 /// `prompt`, telling a session to consult its project's agent first; as it
@@ -523,6 +540,7 @@ pub(crate) fn from_session(
             &source,
             text("kind").unwrap_or_default(),
             text("text").unwrap_or_default(),
+            text("summary"),
         )?;
         if let Some(app) = app {
             let _ = app.emit("lessons:proposed", &here.id);
@@ -731,12 +749,14 @@ pub(crate) fn chat(
 }
 
 /// An answer kept as a fact resting on the files it cited: a proposal, which
-/// changes the memory only once the person approves it.
+/// changes the memory only once the person approves it, or at once when
+/// Labs accepts such facts (`accept`).
 pub(crate) fn chat_fact(
     root: &Path,
     day: &str,
     text: &str,
     cited: &[String],
+    accept: bool,
 ) -> Result<(), String> {
     let files = self::cited(root, &cited.join(" "));
     if files.is_empty() {
@@ -744,7 +764,9 @@ pub(crate) fn chat_fact(
             "a fact rests on the files its answer names, and this one names none".to_owned(),
         );
     }
-    propose_for_session(root, day, &files.join(", "), "fact", text).map(|_| ())
+    let (_, said) = proposal_line(root, "fact", text, None)?;
+    crate::project_memory::propose_or_accept(root, day, &files.join(", "), &[said], accept)
+        .map(|_| ())
 }
 
 /// The project asked from its sidebar: never an orchestrator's.
@@ -815,11 +837,19 @@ pub async fn project_agent_fact(
     cited: Vec<String>,
 ) -> Result<LessonProposals, RpcError> {
     crate::off_main::blocking(move || {
-        labs_on(&crate::projects::store()?, &project_id)?;
+        let store = crate::projects::store()?;
+        labs_on(&store, &project_id)?;
         let listed = crate::projects::project_list_now()?;
         let project = sidebar_project(&listed.projects, &project_id)?;
-        chat_fact(Path::new(&project.root_path), &today(), &text, &cited)
-            .map_err(|why| RpcError::new(ErrorCode::Invalid, why))?;
+        let accept = crate::project_onboarding::accepts_file_facts(&store, &project.id);
+        chat_fact(
+            Path::new(&project.root_path),
+            &today(),
+            &text,
+            &cited,
+            accept,
+        )
+        .map_err(|why| RpcError::new(ErrorCode::Invalid, why))?;
         let _ = app.emit("lessons:proposed", &project.id);
         crate::project_lessons::waiting()
     })

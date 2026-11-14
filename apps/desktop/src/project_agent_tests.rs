@@ -478,7 +478,7 @@ fn a_sessions_proposal_writes_nothing_to_memory_until_approved() {
     ];
     for (kind, file, text) in proposed {
         assert_eq!(
-            propose_for_session(root, "2026-11-14", "#355", kind, text),
+            propose_for_session(root, "2026-11-14", "#355", kind, text, None),
             Ok(file)
         );
     }
@@ -495,7 +495,7 @@ fn a_sessions_proposal_writes_nothing_to_memory_until_approved() {
     assert!(memory()[1].contains("- 2026-11-15 · #355 · Run make fmt after a Rust edit.\n"));
 
     for (kind, text) in [("secret", "x"), ("fact", "  ")] {
-        assert!(propose_for_session(root, "2026-11-14", "#355", kind, text).is_err());
+        assert!(propose_for_session(root, "2026-11-14", "#355", kind, text, None).is_err());
     }
     // A session cannot fill the queue past what the memory reads back.
     let refused = (0..100)
@@ -506,6 +506,7 @@ fn a_sessions_proposal_writes_nothing_to_memory_until_approved() {
                 "#355",
                 "lesson",
                 &format!("Lesson {n}."),
+                None,
             )
             .err()
         })
@@ -655,6 +656,7 @@ fn a_fact_from_the_chat_waits_for_approval_and_writes_nothing_on_its_own() {
         day,
         "Unsourced.",
         &["../secret.txt".to_owned()],
+        false,
     );
     assert!(refused.is_err(), "a fact rests on a file of the project");
     chat_fact(
@@ -662,6 +664,7 @@ fn a_fact_from_the_chat_waits_for_approval_and_writes_nothing_on_its_own() {
         day,
         "Tests run with make test.",
         &["AGENTS.md".to_owned()],
+        false,
     )
     .expect("proposed");
     assert_eq!(std::fs::read_to_string(&facts).expect("facts"), before);

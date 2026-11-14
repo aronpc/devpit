@@ -470,3 +470,181 @@ fn a_memory_kept_before_onboarding_opens_unchanged() {
         assert_eq!(read(root, file), text, "{file} changed");
     }
 }
+
+/// What `proposed.md` held before proposals carried a summary.
+const PROPOSED_BEFORE: &str = "- 2026-11-10 · #360 · Codex app-server resends thread/tokenUsage/updated on resume. A turn's usage is its last total minus the first.\n\
+- 2026-11-10 · onboarding, AGENTS.md · facts.md: Tests run with make test.\n\
+- 2026-11-11 · AGENTS.md · facts.md: Run make test. ⟸ Run cargo test.\n";
+
+#[test]
+fn a_proposal_kept_before_summaries_opens_unchanged() {
+    let dir = project();
+    let root = dir.path();
+    seed(root, "2026-11-10").expect("seeded");
+    std::fs::write(root.join(DIR).join(PROPOSED), PROPOSED_BEFORE).expect("proposed");
+    let waiting = proposals(root);
+    assert_eq!(waiting.len(), 3);
+    let (file, text, replaces) = aim(&waiting[0].text);
+    assert_eq!(file, "lessons.md");
+    assert_eq!(
+        text,
+        "Codex app-server resends thread/tokenUsage/updated on resume. A turn's usage is its last total minus the first."
+    );
+    assert_eq!(replaces, None);
+    assert_eq!(in_short(&waiting[0].text), None);
+    // With no summary of its own, its first sentence is its one line.
+    assert_eq!(
+        plain(&waiting[0].text),
+        "Codex app-server resends thread/tokenUsage/updated on resume."
+    );
+    assert_eq!(
+        aim(&waiting[2].text),
+        ("facts.md", "Run make test.", Some("Run cargo test."))
+    );
+    // Approved, it goes to its file as before.
+    decide(root, "2026-11-14", "#360", text, None, Some(text)).expect("approved");
+    assert!(read(root, "lessons.md").contains(&format!("- 2026-11-14 · #360 · {text}\n")));
+}
+
+#[test]
+fn a_proposal_carries_its_plain_summary_apart_from_what_it_says() {
+    let dir = project();
+    let root = dir.path();
+    seed(root, "2026-11-14").expect("seeded");
+    let said = summed(
+        aimed(
+            "facts.md",
+            "The app-server resends thread/tokenUsage on resume.",
+            None,
+        ),
+        Some("Token counts repeat after a resume, so they are subtracted."),
+    );
+    propose(root, "2026-11-14", "#360", &[said]).expect("proposed");
+    let waiting = proposals(root);
+    let (file, text, replaces) = aim(&waiting[0].text);
+    assert_eq!(
+        (file, text, replaces),
+        (
+            "facts.md",
+            "The app-server resends thread/tokenUsage on resume.",
+            None
+        )
+    );
+    assert_eq!(
+        plain(&waiting[0].text),
+        "Token counts repeat after a resume, so they are subtracted."
+    );
+    decide(root, "2026-11-14", "#360", text, None, Some(text)).expect("approved");
+    let facts = read(root, "facts.md");
+    assert!(
+        facts.contains(&format!("- 2026-11-14 · #360 · {text}\n")),
+        "{facts}"
+    );
+    assert!(!facts.contains("subtracted"), "{facts}");
+}
+
+#[test]
+fn who_proposed_it_is_read_from_its_source() {
+    let by = |source: &str, text: &str| {
+        proposer(&Entry {
+            day: "2026-11-14".to_owned(),
+            source: source.to_owned(),
+            text: text.to_owned(),
+        })
+    };
+    assert_eq!(by("#360", "Wait for the queue."), "a session on card #360");
+    assert_eq!(
+        by("onboarding, AGENTS.md", "facts.md: Run make test."),
+        "onboarding"
+    );
+    assert_eq!(
+        by("AGENTS.md", "facts.md: Run make test. ⟸ Run cargo test."),
+        "a re-check of its memory"
+    );
+    assert_eq!(
+        by("AGENTS.md, Makefile", "facts.md: Run make test."),
+        "an answer in Ask the project"
+    );
+}
+
+#[test]
+fn a_proposal_is_named_by_what_it_says_and_where_it_came_from() {
+    let one = |source: &str, text: &str| Entry {
+        day: "2026-11-14".to_owned(),
+        source: source.to_owned(),
+        text: text.to_owned(),
+    };
+    let id = id_of(&one("#360", "Wait."));
+    assert_eq!(id, id_of(&one("#360", "Wait.")));
+    assert_ne!(id, id_of(&one("#361", "Wait.")));
+    assert_ne!(id, id_of(&one("#360", "Wait longer.")));
+}
+
+#[test]
+fn a_fact_resting_only_on_files_is_accepted_when_asked_and_can_be_undone() {
+    let dir = project();
+    let root = dir.path();
+    seed(root, "2026-11-14").expect("seeded");
+    let fact = aimed("facts.md", "Tests run with make test.", None);
+    let accepted = propose_or_accept(
+        root,
+        "2026-11-14",
+        &format!("{ONBOARDING}, AGENTS.md"),
+        &[fact],
+        true,
+    )
+    .expect("proposed");
+    assert_eq!(accepted, 1);
+    assert!(proposals(root).is_empty());
+    let facts = kept(root, "facts.md");
+    let auto: Vec<&Entry> = facts.iter().filter(|one| one.auto()).collect();
+    assert_eq!(auto.len(), 1);
+    assert_eq!(auto[0].text, "Tests run with make test.");
+    assert_eq!(auto[0].files(), ["AGENTS.md"]);
+
+    undo_accepted(root, "Tests run with make test.").expect("undone");
+    assert!(kept(root, "facts.md").iter().all(|one| !one.auto()));
+    let waiting = proposals(root);
+    assert_eq!(waiting.len(), 1);
+    assert_eq!(waiting[0].source, "AGENTS.md");
+    assert_eq!(
+        aim(&waiting[0].text),
+        ("facts.md", "Tests run with make test.", None)
+    );
+}
+
+#[test]
+fn lessons_decisions_and_facts_resting_on_more_than_files_still_wait() {
+    let dir = project();
+    let root = dir.path();
+    seed(root, "2026-11-14").expect("seeded");
+    let waits = |source: &str, said: String, accept: bool| {
+        let before = proposals(root).len();
+        let accepted =
+            propose_or_accept(root, "2026-11-14", source, &[said], accept).expect("proposed");
+        assert_eq!(accepted, 0, "{source}");
+        assert_eq!(proposals(root).len(), before + 1, "{source}");
+    };
+    waits(
+        "AGENTS.md",
+        aimed("lessons.md", "Read the guide first.", None),
+        true,
+    );
+    waits(
+        "AGENTS.md",
+        aimed("decisions.md", "Guides live at the root.", None),
+        true,
+    );
+    waits(
+        "#360, AGENTS.md",
+        aimed("facts.md", "A card's fact.", None),
+        true,
+    );
+    waits(
+        "missing.md",
+        aimed("facts.md", "A file that is not there.", None),
+        true,
+    );
+    waits("AGENTS.md", aimed("facts.md", "Now.", Some("Then.")), true);
+    waits("AGENTS.md", aimed("facts.md", "Switched off.", None), false);
+}

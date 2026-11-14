@@ -44,6 +44,9 @@ pub const MAINTENANCE_CLEAN_LAST: &str = "maintenance.clean_last";
 pub const LABS_PROJECT_AGENT: &str = "labs.project_agent";
 /// Labs: the projects left out of the project agent, as a JSON array of ids.
 pub const LABS_PROJECT_AGENT_OFF: &str = "labs.project_agent_off";
+/// Labs: the projects whose facts resting only on files are accepted without
+/// the person, as a JSON array of ids. Off unless a project is listed.
+pub const LABS_ACCEPT_FILE_FACTS: &str = "labs.accept_file_facts";
 /// Labs: whether the Canvas plugin is offered. On unless turned off.
 pub const LABS_CANVAS: &str = "labs.canvas";
 /// When each profile's idle conversations are compacted, by profile id, as

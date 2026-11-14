@@ -45,7 +45,7 @@ pub(crate) struct Asked {
 }
 
 /// The methods this build answers, for an agent asking what it can do.
-pub(crate) const METHODS: [&str; 60] = [
+pub(crate) const METHODS: [&str; 61] = [
     "context",
     "board",
     "card",
@@ -99,6 +99,7 @@ pub(crate) const METHODS: [&str; 60] = [
     "project_agent_brief",
     "project_agent_consult",
     "project_agent_propose",
+    "project_agent_proposals",
     "schedules",
     "schedule_propose",
     "heartbeat_status",
@@ -274,6 +275,32 @@ fn respond_in(
                 &linked,
                 home.as_deref(),
                 &asked,
+            );
+        }
+        crate::memory_proposals::METHOD => {
+            let profile = orchestrating(here)?;
+            let reaching: Vec<Project> =
+                match text("project").filter(|named| !named.trim().is_empty()) {
+                    Some(named) => {
+                        let one = reached(projects, here, Some(named.as_str()))?;
+                        crate::orchestrator_links::reaches(here, one)?;
+                        vec![one.clone()]
+                    }
+                    None => {
+                        let linked = crate::orchestrator_links::linked(Path::new(&here.root_path));
+                        projects
+                            .iter()
+                            .filter(|one| one.orchestrator.is_none() && linked.contains(&one.id))
+                            .cloned()
+                            .collect()
+                    }
+                };
+            return crate::memory_proposals::respond(
+                app,
+                profile,
+                Path::new(&here.root_path),
+                &reaching,
+                &asked.params,
             );
         }
         "sessions" => {

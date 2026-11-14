@@ -519,6 +519,11 @@ export const commands = {
 	 */
 	projectAgentApproveLearned: (projectId: string) => typedError<ProjectMemory, RpcError>(__TAURI_INVOKE("project_agent_approve_learned", { projectId })),
 	/**
+	 *  `project_agent.undo_accepted` — takes back a fact accepted without the
+	 *  person: it waits for their decision again.
+	 */
+	projectAgentUndoAccepted: (projectId: string, text: string) => typedError<ProjectMemory, RpcError>(__TAURI_INVOKE("project_agent_undo_accepted", { projectId, text })),
+	/**
 	 *  `project_agent.relearn` — has the agent read its project again, in the
 	 *  background; what it finds replaces its earlier read's proposals.
 	 */
@@ -1407,6 +1412,11 @@ export const commands = {
 	 *  or takes it back in, where it learns its project if it never did.
 	 */
 	maintenanceProjectAgent: (projectId: string, on: boolean) => typedError<Maintenance, RpcError>(__TAURI_INVOKE("maintenance_project_agent", { projectId, on })),
+	/**
+	 *  `maintenance.accept_facts` — one project's facts resting only on files
+	 *  enter its memory without the person, or wait for them again.
+	 */
+	maintenanceAcceptFacts: (projectId: string, on: boolean) => typedError<Maintenance, RpcError>(__TAURI_INVOKE("maintenance_accept_facts", { projectId, on })),
 	/**  `maintenance.clean_now` — the Delete now button, at the days chosen. */
 	maintenanceCleanNow: () => typedError<Maintenance, RpcError>(__TAURI_INVOKE("maintenance_clean_now")),
 	/**  `profile.models_read` */
@@ -4262,6 +4272,8 @@ export type LabsProject = {
 	id: string,
 	name: string,
 	on: boolean,
+	/**  Its facts resting only on files enter the memory without the person. */
+	acceptFacts: boolean,
 };
 
 export type LayoutNode = { type: "leaf"; id: string; 
@@ -4291,6 +4303,8 @@ id?: string; direction: SplitDirection; ratio: number | null; first: LayoutNode;
  *  removal of a stale entry a re-check found.
  */
 export type LessonProposal = {
+	/**  Its name, from its line: what the orchestrator approves it by. */
+	id: string,
 	projectId: string,
 	project: string,
 	/**  The day it was proposed, as YYYY-MM-DD. */
@@ -4308,6 +4322,10 @@ export type LessonProposal = {
 	 *  takes at once.
 	 */
 	onboarding: boolean,
+	/**  Who proposed it, in a few words: "a session on card #360", "onboarding". */
+	by: string,
+	/**  Its one plain line, shown first; `text` is behind "details". */
+	summary: string,
 };
 
 /**  A list, so tomorrow's field has somewhere to go. */
@@ -4477,6 +4495,8 @@ export type MemoryEntry = {
 	files: string[],
 	/**  The cards it came from, as `#12`. */
 	cards: string[],
+	/**  A fact that entered without the person, on Labs' switch: it can be undone. */
+	auto: boolean,
 };
 
 /**  A proposal, with what its page shows beside it. */

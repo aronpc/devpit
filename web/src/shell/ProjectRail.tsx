@@ -13,6 +13,7 @@ import { remembered } from './tabs'
 import { useRailDrag, type Grab, type Spot } from './useRailDrag'
 import { useShell } from './useShell'
 import { menuPoint } from './menuRules'
+import { useMemoryWaiting } from './memoryWaiting'
 
 /*
  * Every project, one icon each, down the left edge.
@@ -41,6 +42,7 @@ export function ProjectRail({ onAddProject, onRemove }: { onAddProject: () => vo
   const [editing, setEditing] = useState<Project | null>(null)
   const [renaming, setRenaming] = useState<string | null>(null)
   const [menu, setMenu] = useState<Menu | null>(null)
+  const memory = useMemoryWaiting()
   /* Orchestrators are drawn apart, above; they are not the person's projects. */
   const list = useMemo(() => ordered(projects.filter((one) => !one.orchestrator), order), [projects, order])
 
@@ -195,6 +197,7 @@ export function ProjectRail({ onAddProject, onRemove }: { onAddProject: () => vo
                 )}
                 {listed.map((one) => {
                   const tabs = tabsOf(one.id)
+                  const learned = memory.get(one.id) ?? 0
                   const branch = (one.worktrees.find((tree) => tree.current) ?? one.worktrees[0])?.branch
                   return (
                     <button
@@ -220,12 +223,18 @@ export function ProjectRail({ onAddProject, onRemove }: { onAddProject: () => vo
                       <span className="rail__ico">
                         <ProjectMark project={one} />
                         <span className="rail__dot" />
+                        {learned > 0 && (
+                          <span className="rail__memo" aria-hidden="true">
+                            {learned}
+                          </span>
+                        )}
                       </span>
                       <span className="rail__text">
                         <span className="rail__n">{one.name}</span>
                         <span className="rail__s">
                           {branch && <span className="rail__b">{branch}</span>}
                           {tabs > 0 && <span className="rail__t">{tabs} tab{tabs === 1 ? '' : 's'}</span>}
+                          {learned > 0 && <span className="rail__m">Agent · {learned}</span>}
                         </span>
                       </span>
                     </button>

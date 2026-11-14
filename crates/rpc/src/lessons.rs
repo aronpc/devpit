@@ -9,6 +9,8 @@ use specta::Type;
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct LessonProposal {
+    /// Its name, from its line: what the orchestrator approves it by.
+    pub id: String,
     pub project_id: String,
     pub project: String,
     /// The day it was proposed, as YYYY-MM-DD.
@@ -24,6 +26,10 @@ pub struct LessonProposal {
     /// Proposed by the agent's own read of the project, which "Approve all"
     /// takes at once.
     pub onboarding: bool,
+    /// Who proposed it, in a few words: "a session on card #360", "onboarding".
+    pub by: String,
+    /// Its one plain line, shown first; `text` is behind "details".
+    pub summary: String,
 }
 
 /// A decision of a project's memory, with the cards that made it.
@@ -71,6 +77,8 @@ pub struct MemoryEntry {
     pub files: Vec<String>,
     /// The cards it came from, as `#12`.
     pub cards: Vec<String>,
+    /// A fact that entered without the person, on Labs' switch: it can be undone.
+    pub auto: bool,
 }
 
 /// A project agent's memory as its page shows it.

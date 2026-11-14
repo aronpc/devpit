@@ -9,6 +9,9 @@ vi.mock('./window', () => ({
 }))
 
 const proposed = (source: string, text: string, replaces: string | null = null): LessonProposal => ({
+  id: `${source} ${text}`,
+  by: `a session on card ${source}`,
+  summary: text,
   projectId: 'prj_api',
   project: 'asc-api',
   day: '2026-11-13',
@@ -22,7 +25,6 @@ const proposed = (source: string, text: string, replaces: string | null = null):
 let waiting: LessonProposal[] = []
 let decisions: MemoryDecision[] = []
 const decided = vi.fn()
-const approvedAll = vi.fn()
 vi.mock('./live', () => ({
   ask: async (call: () => Promise<unknown>) => {
     try {
@@ -38,11 +40,6 @@ vi.mock('./live', () => ({
       waiting = waiting.filter((one) => one.text !== text)
       return { proposals: waiting, decisions }
     },
-    projectAgentApproveLearned: async (projectId: string) => {
-      approvedAll(projectId)
-      waiting = waiting.filter((one) => !one.onboarding)
-      return {}
-    },
   },
 }))
 
@@ -51,18 +48,17 @@ afterEach(() => {
   waiting = []
   decisions = []
   decided.mockReset()
-  approvedAll.mockReset()
 })
 
 describe('LessonProposals', () => {
   it('draws nothing while no lesson waits', async () => {
-    render(<LessonProposals />)
+    render(<LessonProposals projectId="prj_api" source="#331" />)
     await waitFor(() => expect(screen.queryByRole('region')).toBeNull())
   })
 
   it('approves a lesson as proposed, and it goes', async () => {
     waiting = [proposed('#331', 'Wait 3 s for the queue test.')]
-    render(<LessonProposals />)
+    render(<LessonProposals projectId="prj_api" source="#331" />)
     fireEvent.click(await screen.findByRole('button', { name: 'Approve' }))
     await waitFor(() => expect(decided).toHaveBeenCalledWith('prj_api', '#331', 'Wait 3 s for the queue test.', null, 'Wait 3 s for the queue test.'))
     await waitFor(() => expect(screen.queryByText('Wait 3 s for the queue test.')).toBeNull())
@@ -70,7 +66,7 @@ describe('LessonProposals', () => {
 
   it('approves a lesson as edited', async () => {
     waiting = [proposed('#331', 'Wait 3 s for the queue test.')]
-    render(<LessonProposals />)
+    render(<LessonProposals projectId="prj_api" source="#331" />)
     fireEvent.click(await screen.findByRole('button', { name: 'Edit' }))
     fireEvent.change(screen.getByRole('textbox', { name: 'Lesson' }), { target: { value: 'Wait 3 s under load.' } })
     fireEvent.click(screen.getByRole('button', { name: 'Approve' }))
@@ -79,7 +75,7 @@ describe('LessonProposals', () => {
 
   it('discards a lesson, keeping nothing', async () => {
     waiting = [proposed('#331', 'Run make fmt.')]
-    render(<LessonProposals />)
+    render(<LessonProposals projectId="prj_api" source="#331" />)
     fireEvent.click(await screen.findByRole('button', { name: 'Discard' }))
     await waitFor(() => expect(decided).toHaveBeenCalledWith('prj_api', '#331', 'Run make fmt.', null, null))
   })
@@ -93,7 +89,7 @@ describe('LessonProposals', () => {
 
   it('shows a stale fact as a proposal with what it replaces, changed only once approved', async () => {
     waiting = [proposed('AGENTS.md', 'Read "Working on devpit".', 'Read "Working in this repository".')]
-    render(<LessonProposals />)
+    render(<LessonProposals projectId="prj_api" source="AGENTS.md" />)
     expect(await screen.findByText('Read "Working on devpit".')).toBeTruthy()
     expect(screen.getByText(/was: Read "Working in this repository"\./)).toBeTruthy()
     expect(decided).not.toHaveBeenCalled()
@@ -105,7 +101,7 @@ describe('LessonProposals', () => {
 
   it('proposes removing a stale fact', async () => {
     waiting = [proposed('README.md', '', 'Builds with make.')]
-    render(<LessonProposals />)
+    render(<LessonProposals projectId="prj_api" source="README.md" />)
     expect(await screen.findByText('Remove: Builds with make.')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Approve' }))
     await waitFor(() => expect(decided).toHaveBeenCalledWith('prj_api', 'README.md', '', 'Builds with make.', ''))
@@ -121,29 +117,5 @@ describe('LessonProposals', () => {
     expect(made.textContent).toContain('Proposals share one queue.')
     expect(made.textContent).toContain('#331, #332')
     expect(made.textContent).not.toContain('Not this card.')
-  })
-
-  it('keeps decisions off the top bar', async () => {
-    waiting = [proposed('#331', 'Wait 3 s for the queue test.')]
-    decisions = [{ projectId: 'prj_api', day: '2026-11-14', cards: ['#331'], source: '#331', text: 'Proposals share one queue.' }]
-    render(<LessonProposals />)
-    expect(await screen.findByText('Wait 3 s for the queue test.')).toBeTruthy()
-    expect(screen.queryByText('Proposals share one queue.')).toBeNull()
-  })
-
-  it("folds the proposals of the agent's own read into one line per project, approved at once", async () => {
-    waiting = [
-      { ...proposed('onboarding, AGENTS.md', 'Everything versioned is in English.'), file: 'facts.md', onboarding: true },
-      { ...proposed('onboarding, Makefile', 'make test runs every test.'), file: 'facts.md', onboarding: true },
-      proposed('#331', 'Wait for the queue.'),
-    ]
-    render(<LessonProposals />)
-    await screen.findByText('Wait for the queue.')
-    expect(screen.queryByText('Everything versioned is in English.')).toBeNull()
-    expect(screen.getByText(/2 facts and decisions from its own read/)).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name: 'Approve all' }))
-    await waitFor(() => expect(approvedAll).toHaveBeenCalledWith('prj_api'))
-    await waitFor(() => expect(screen.queryByText(/from its own read/)).toBeNull())
-    expect(screen.getByText('Wait for the queue.')).toBeTruthy()
   })
 })
