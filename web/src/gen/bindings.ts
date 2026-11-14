@@ -1006,12 +1006,10 @@ export const commands = {
 	 */
 	permissionAskFromNow: (sessionId: string, on: boolean) => typedError<null, RpcError>(__TAURI_INVOKE("permission_ask_from_now", { sessionId, on })),
 	/**
-	 *  `permission.questions` — the shape the stream carries.
-	 * 
-	 *  It exists so the generated contract carries `Question`: the questions
-	 *  themselves arrive on an event, which specta does not describe.
+	 *  `permission.questions` — the questions still waiting on a session, drawn
+	 *  by a chat that opens after they were asked.
 	 */
-	permissionQuestions: () => typedError<Question[], RpcError>(__TAURI_INVOKE("permission_questions")),
+	permissionQuestions: (sessionId: string) => typedError<Questions, RpcError>(__TAURI_INVOKE("permission_questions", { sessionId })),
 	/**
 	 *  `mcp.list` — what one installation of the CLI resolved for this project,
 	 *  the default profile's when none is named.
@@ -5368,6 +5366,11 @@ export type Question = {
 	cwd: string,
 	/**  What it touches, as the island reads it: the choices, the command. */
 	touch?: Touch | null,
+};
+
+/**  The questions still waiting on one session. */
+export type Questions = {
+	questions: Question[],
 };
 
 /**  One message in a [`ChatQueue`], with what was attached when it was queued. */

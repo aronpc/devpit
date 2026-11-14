@@ -6,7 +6,6 @@
 # reach, and an event payload is reachable from no command.
 
 chat_frames carries Ask and Frame, which chat.send streams over a Channel specta cannot describe
-permission_questions carries Question, which arrives on an event
 terminal_happenings carries Happening, the payload of terminal:happening
 terminal_block_changes carries BlockChanged, the payload of terminal:block
 card_happenings carries CardHappening, the payload of card:happening

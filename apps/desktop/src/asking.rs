@@ -185,16 +185,6 @@ pub fn permission_ask_from_now(
     Ok(())
 }
 
-/// `permission.questions` — the shape the stream carries.
-///
-/// It exists so the generated contract carries `Question`: the questions
-/// themselves arrive on an event, which specta does not describe.
-#[tauri::command]
-#[specta::specta]
-pub fn permission_questions() -> Result<Vec<Question>, RpcError> {
-    Ok(Vec::new())
-}
-
 #[cfg(test)]
 #[path = "asking_tests.rs"]
 mod tests;
