@@ -608,3 +608,81 @@ fn the_sidebar_chat_is_refused_while_labs_has_the_project_agent_off() {
     let refused = labs_on(&store).expect_err("refused");
     assert_eq!(refused.message, crate::agent_api::LABS_OFF);
 }
+
+/// A CLI that answers each question with its `<q>` tag, after a while. One
+/// that leaves work in the background ends its turn early, and that work's
+/// own turn says the answer; one marked `<hang>` never answers.
+const ECHO: &str = r#"#!/bin/sh
+while IFS= read -r line; do
+  q="$(printf '%s' "$line" | sed -n 's/.*<q>\([^<]*\)<\/q>.*/\1/p')"
+  say() { printf '{"type":"assistant","message":{"id":"m-%s","role":"assistant","content":[{"type":"text","text":"%s"}]},"session_id":"s-1"}\n' "$1" "$2"; }
+  ended() { printf '{"type":"result","subtype":"success","session_id":"s-1","total_cost_usd":0}\n'; }
+  printf '{"type":"system","subtype":"init","session_id":"s-1"}\n'
+  case "$line" in
+    *"<hang>"*) ;;
+    *"<background>"*)
+      printf '{"type":"system","subtype":"task_started","task_id":"t-%s","description":"read"}\n' "$q"
+      say "$q-1" "started on $q"
+      ended
+      sleep 0.4
+      printf '{"type":"system","subtype":"task_notification","task_id":"t-%s","status":"completed"}\n' "$q"
+      say "$q-2" "answer to $q"
+      ended
+      ;;
+    *) sleep 0.2; say "$q" "answer to $q"; ended ;;
+  esac
+done
+"#;
+
+fn echoing() -> Bench {
+    let bench = bench();
+    std::fs::write(&bench.cli, ECHO).expect("stand-in");
+    bench
+}
+
+#[test]
+fn the_pane_and_the_orchestrator_asking_at_once_each_get_their_own_answer() {
+    let bench = echoing();
+    let agents = Agents::idling_after(Duration::from_secs(60));
+    // The pane's question leaves work in the background, as a deep read does.
+    let (pane, orchestrator) = std::thread::scope(|scope| {
+        let pane = scope.spawn(|| chatted(&agents, &bench, "<q>pane</q> <background>"));
+        std::thread::sleep(Duration::from_millis(100));
+        let orchestrator = scope.spawn(|| asked(&agents, &bench, "<q>orchestrator</q>"));
+        (
+            pane.join().expect("pane"),
+            orchestrator.join().expect("orchestrator"),
+        )
+    });
+    assert_eq!(pane.answer, "answer to pane");
+    assert_eq!(orchestrator.text, "answer to orchestrator");
+}
+
+#[test]
+fn a_question_not_answered_in_time_says_so_and_the_next_one_is_answered() {
+    let bench = echoing();
+    let agents = std::sync::Arc::new(
+        Agents::idling_after(Duration::from_secs(60)).answering_within(Duration::from_millis(500)),
+    );
+    let (tell, told) = std::sync::mpsc::channel();
+    let (asking, cli, root) = (agents.clone(), bench.cli.clone(), bench.root.clone());
+    // Not scoped: a question that hangs must fail the test, not hang it.
+    std::thread::spawn(move || {
+        let wake = Wake {
+            command: &cli,
+            env: &[],
+            root: &root,
+            name: "pilot",
+            mcp_config: None,
+        };
+        let _ = tell.send(asking.ask("p1", &wake, "<q>stuck</q> <hang>"));
+    });
+    let said = told
+        .recv_timeout(Duration::from_secs(5))
+        .expect("still waiting on a question nobody answers");
+    let why = said.err().expect("an error, not an answer");
+    assert!(why.contains("did not answer"), "{why}");
+    let next = asked(&agents, &bench, "<q>next</q>");
+    assert_eq!(next.text, "answer to next");
+    assert!(next.woke, "the stuck process was let go");
+}

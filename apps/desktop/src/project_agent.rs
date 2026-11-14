@@ -10,10 +10,11 @@
 
 use std::collections::HashMap;
 use std::path::Path;
-use std::sync::mpsc::{self, Receiver};
+use std::sync::mpsc::{self, Receiver, RecvTimeoutError};
 use std::sync::{Arc, Mutex};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
+use devpit_agentcli::control::Running;
 use devpit_agentcli::resident::{Heard, Resident};
 use devpit_agentcli::talk::Say;
 use devpit_rpc::{ErrorCode, LessonProposals, Part, Project, ProjectAgentAnswer, RpcError};
@@ -36,6 +37,8 @@ const NUDGE: &str = "## The project agent";
 const CITED: usize = 12;
 /// How long an agent nobody asks keeps its process.
 const IDLE: Duration = Duration::from_secs(10 * 60);
+/// Long enough for a deep read of a large project, short of forever.
+const ANSWER_WITHIN: Duration = Duration::from_secs(15 * 60);
 pub(crate) const NOT_STARTED: &str = "the project agent could not start";
 /// Read-only whatever mode the profile's own settings choose.
 const READ_ONLY: &str = "plan";
@@ -74,6 +77,8 @@ pub(crate) struct Answer {
 /// Every project's agent, by project id.
 pub(crate) struct Agents {
     idle: Duration,
+    /// How long one question may take before its asker is told so.
+    within: Duration,
     all: Mutex<HashMap<String, Arc<Mutex<Agent>>>>,
     /// The questions each session asked, by session.
     spent: Mutex<HashMap<String, u32>>,
@@ -102,9 +107,16 @@ impl Agents {
     pub(crate) fn idling_after(idle: Duration) -> Self {
         Self {
             idle,
+            within: ANSWER_WITHIN,
             all: Mutex::default(),
             spent: Mutex::default(),
         }
+    }
+
+    #[cfg(test)]
+    pub(crate) fn answering_within(mut self, within: Duration) -> Self {
+        self.within = within;
+        self
     }
 
     /// One question, answered by `key`'s agent, started when it is not
@@ -122,7 +134,7 @@ impl Agents {
                 .lock()
                 .map_err(|_| "the project agent is unavailable".to_owned())?;
             held.asked += 1;
-            (held.answer(wake, question), held.asked)
+            (held.answer(wake, question, self.within), held.asked)
         };
         let idle = self.idle;
         std::thread::spawn(move || {
@@ -176,14 +188,14 @@ impl Agents {
 }
 
 impl Agent {
-    fn answer(&mut self, wake: &Wake, question: &str) -> Result<Answer, String> {
+    fn answer(&mut self, wake: &Wake, question: &str, within: Duration) -> Result<Answer, String> {
         let (live, prompt, woke, proposed) = match self.live.take().filter(|live| !live.gone()) {
             Some(live) => (live, question.to_owned(), false, 0),
             None => {
                 let day = today();
                 crate::project_memory::seed(wake.root, &day)?;
                 let live = start(wake, self.session.as_deref())?;
-                match self.recheck(&live, wake, &day) {
+                match self.recheck(&live, wake, &day, within) {
                     Ok(Some(proposed)) => (live, question.to_owned(), true, proposed),
                     Ok(None) => (live, woken(wake, question), true, 0),
                     Err(why) => {
@@ -193,7 +205,7 @@ impl Agent {
                 }
             }
         };
-        match live.turn(&prompt) {
+        match live.turn(&prompt, within) {
             Ok((text, session)) => {
                 self.session = session.or(self.session.take());
                 self.live = Some(live);
@@ -214,14 +226,20 @@ impl Agent {
     /// branch changed are re-checked in the wake's first turn, and each stale
     /// one is proposed, never edited. `None` when nothing was flagged, so the
     /// question goes in that first turn.
-    fn recheck(&mut self, live: &Live, wake: &Wake, day: &str) -> Result<Option<usize>, String> {
+    fn recheck(
+        &mut self,
+        live: &Live,
+        wake: &Wake,
+        day: &str,
+        within: Duration,
+    ) -> Result<Option<usize>, String> {
         let Some(flagged) = crate::project_memory::flagged(wake.root) else {
             return Ok(None);
         };
         let mut proposed = None;
         if !flagged.entries.is_empty() {
             let asked = crate::project_lessons::rechecking(&flagged.entries);
-            let (said, session) = live.turn(&woken(wake, &asked))?;
+            let (said, session) = live.turn(&woken(wake, &asked), within)?;
             self.session = session.or(self.session.take());
             let stale = crate::project_lessons::stale_in(&said, &flagged.entries);
             for (source, text) in &stale {
@@ -242,22 +260,40 @@ impl Live {
             .any(|heard| matches!(heard, Heard::Gone))
     }
 
-    /// The answer, and the session that gave it.
-    fn turn(&self, prompt: &str) -> Result<(String, Option<String>), String> {
+    /// The answer, and the session that gave it, within `within`. Work the
+    /// turn left in the background ends in a turn of its own, which is still
+    /// this answer: read on, or that turn would answer whoever asks next.
+    fn turn(&self, prompt: &str, within: Duration) -> Result<(String, Option<String>), String> {
         if !self.resident.say(prompt) {
             return Err("the project agent stopped listening: ask again".to_owned());
         }
+        let until = Instant::now() + within;
         let mut said = Said::default();
+        let mut running = Running::default();
         loop {
-            match self.heard.recv() {
-                Ok(Heard::Part(part)) => said.heard(part),
+            match self
+                .heard
+                .recv_timeout(until.saturating_duration_since(Instant::now()))
+            {
+                Ok(Heard::Part(part)) => {
+                    running.saw(&part);
+                    said.heard(part);
+                }
                 Ok(Heard::Ended(ended)) if ended.end.is_error => {
                     return Err(format!("the project agent failed: {}", said.text()))
                 }
-                Ok(Heard::Ended(ended)) => return Ok((said.text(), ended.session_id)),
-                Ok(Heard::Control(_)) => {}
-                Ok(Heard::Gone) | Err(_) => {
+                Ok(Heard::Ended(ended)) if running.idle() => {
+                    return Ok((said.text(), ended.session_id))
+                }
+                Ok(Heard::Ended(_) | Heard::Control(_)) => {}
+                Ok(Heard::Gone) | Err(RecvTimeoutError::Disconnected) => {
                     return Err("the project agent's process ended before it answered".to_owned())
+                }
+                Err(RecvTimeoutError::Timeout) => {
+                    return Err(format!(
+                        "the project agent did not answer within {} minutes: ask again",
+                        within.as_secs().div_ceil(60)
+                    ))
                 }
             }
         }

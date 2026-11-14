@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 
 import type { ProjectAgentAnswer } from '../gen/bindings'
 import { ask, commands } from './live'
@@ -14,14 +14,28 @@ import { useShell } from './useShell'
  */
 
 interface Turn {
+  /* An answer finds its own question by this, whatever was asked since. */
+  readonly id: number
   readonly question: string
   readonly answer?: ProjectAgentAnswer
   readonly error?: string
   readonly proposed?: boolean
 }
 
-/* Per project, while the window lives: the agent keeps its own conversation. */
+/* Per project, while the window lives: the agent keeps its own conversation.
+ * Every pane open on it redraws, so an answer reaches a pane opened again. */
 const kept = new Map<string, readonly Turn[]>()
+const watching = new Set<() => void>()
+let asked = 0
+const put = (projectId: string, change: (was: readonly Turn[]) => readonly Turn[]): void => {
+  kept.set(projectId, change(kept.get(projectId) ?? []))
+  watching.forEach((redraw) => redraw())
+}
+const watch = (redraw: () => void): (() => void) => {
+  watching.add(redraw)
+  return () => watching.delete(redraw)
+}
+const none: readonly Turn[] = []
 
 const oneLine = (text: string): string => text.split(/\s+/).filter(Boolean).join(' ')
 
@@ -30,32 +44,27 @@ export function AskPane(): React.JSX.Element {
   const here = project && !project.orchestrator ? project : null
   const hereId = here?.id ?? null
   const show = useShellPick((shell) => shell.show)
-  const [, redraw] = useState(0)
   const [draft, setDraft] = useState('')
-  const [waiting, setWaiting] = useState(false)
   const [editing, setFact] = useState<{ projectId: string; at: number; text: string } | null>(null)
   const end = useRef<HTMLDivElement>(null)
-  const turns = hereId ? (kept.get(hereId) ?? []) : []
+  const turns = useSyncExternalStore(watch, () => (hereId ? (kept.get(hereId) ?? none) : none))
+  const waiting = turns.some((turn) => !turn.answer && !turn.error)
   const fact = editing?.projectId === hereId ? editing : null
 
   const last = turns.at(-1)
   useEffect(() => end.current?.scrollIntoView?.({ block: 'end' }), [last])
 
   if (!here) return <p className="acc__note">Ask the project belongs to a project.</p>
-  const put = (projectId: string, change: (was: readonly Turn[]) => readonly Turn[]): void => {
-    kept.set(projectId, change(kept.get(projectId) ?? []))
-    redraw((n) => n + 1)
-  }
   const send = (): void => {
     const question = draft.trim()
     if (!question || waiting) return
     const projectId = here.id
+    const id = ++asked
     setDraft('')
-    setWaiting(true)
-    put(projectId, (was) => [...was, { question }])
+    put(projectId, (was) => [...was, { id, question }])
     void ask(() => commands.projectAgentChat(projectId, question)).then((said) => {
-      setWaiting(false)
-      put(projectId, (was) => was.map((turn, at) => (at === was.length - 1 ? { question, answer: said.data ?? undefined, error: said.error ?? undefined } : turn)))
+      const error = said.error ?? (said.data ? undefined : 'the project agent gave no answer')
+      put(projectId, (was) => was.map((turn) => (turn.id === id ? { ...turn, answer: said.data ?? undefined, error } : turn)))
     })
   }
   const propose = (at: number, text: string, cited: readonly string[]): void => {
@@ -76,7 +85,7 @@ export function AskPane(): React.JSX.Element {
           </p>
         )}
         {turns.map((turn, at) => (
-          <div key={at} className="pask__turn">
+          <div key={turn.id} className="pask__turn">
             <p className="pask__q">{turn.question}</p>
             {turn.answer && (
               <div className="pask__a">
