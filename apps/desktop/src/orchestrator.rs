@@ -196,6 +196,9 @@ pub async fn orchestrator_account(project_id: String, profile_id: String) -> Res
             ));
         };
         crate::orchestrator_handoff::switched(&store, &root, &was, &profile.id);
+        if was != profile.id {
+            crate::pane_sessions::carry(&project_id, &root, &was, &profile.id);
+        }
         speaks_as(&store, &root, &profile.id)
     })
     .await

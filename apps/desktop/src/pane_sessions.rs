@@ -14,8 +14,6 @@ use devpit_rpc::{LivePane, LiveSession};
 pub(crate) struct Kept {
     /// The orchestrator's profile: whose session it is.
     pub profile: String,
-    /// The profile it runs as.
-    pub runs_as: String,
     pub name: String,
     pub project_id: String,
     pub project_name: Option<String>,
@@ -120,6 +118,41 @@ fn row(one: &Kept, looked: &Looked, now: f64) -> LiveSession {
         step: None,
         draft: None,
         remote: Default::default(),
+    }
+}
+
+/// The sessions `rows` an orchestrator had running as another profile, kept
+/// as the profile `to` it speaks as now: those in a devpit pane, which devpit
+/// reaches without that profile's registry.
+pub(crate) fn adopted(to: &str, rows: Vec<LiveSession>) -> Vec<Kept> {
+    rows.into_iter()
+        .filter_map(|one| {
+            let pane = one.pane?;
+            Some(Kept {
+                profile: to.to_owned(),
+                name: one.name,
+                project_id: pane.project_id,
+                project_name: one.project_name,
+                card_id: one.card_id,
+                cwd: one.cwd,
+                pane_id: pane.pane_id,
+            })
+        })
+        .collect()
+}
+
+/// An orchestrator in `root` switched from profile `from` to `to`: the
+/// sessions it reached keep running, so it keeps reaching them, drafts and
+/// all, rather than hearing they ended.
+pub(crate) fn carry(project_id: &str, root: &std::path::Path, from: &str, to: &str) {
+    let Ok(live) = crate::live_sessions::orchestrator_sessions_now(from) else {
+        return;
+    };
+    let linked = crate::orchestrator_links::linked(root);
+    let reached = crate::orchestrator_links::within(project_id, &linked, live.sessions);
+    for one in adopted(to, reached) {
+        crate::reply_drafts::carried(from, to, &one.name);
+        began(one);
     }
 }
 

@@ -41,10 +41,9 @@ fn codex_profile() -> devpit_rpc::Profile {
     }
 }
 
-fn kept(runs_as: &str, name: &str, project: &str, leaf: &str) -> Kept {
+fn kept(name: &str, project: &str, leaf: &str) -> Kept {
     Kept {
         profile: "codex".to_owned(),
-        runs_as: runs_as.to_owned(),
         name: name.to_owned(),
         project_id: project.to_owned(),
         project_name: Some(project.trim_start_matches("prj_").to_owned()),
@@ -118,8 +117,8 @@ fn an_orchestrator_on_codex_runs_a_claude_and_a_codex_session_to_the_end() {
     );
     assert!(keeps(false, true) && keeps(false, false));
     let mut held = vec![
-        kept("claude", "api-fix", "prj_api", "leaf_api"),
-        kept("codex", "web-fix", "prj_web", "leaf_web"),
+        kept("api-fix", "prj_api", "leaf_api"),
+        kept("web-fix", "prj_web", "leaf_web"),
     ];
 
     // Both at work, and listed by the names it gave them.

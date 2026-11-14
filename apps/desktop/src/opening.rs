@@ -132,7 +132,6 @@ pub(crate) fn open(
         runs_as,
         crate::pane_sessions::Kept {
             profile: profile_id.to_owned(),
-            runs_as: runs_as.to_owned(),
             name: name.clone(),
             project_id: project.id.clone(),
             project_name: Some(project.name.clone()),

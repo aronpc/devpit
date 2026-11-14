@@ -80,7 +80,6 @@ pub(crate) fn hand(
         runs_as,
         crate::pane_sessions::Kept {
             profile: profile_id.to_owned(),
-            runs_as: runs_as.to_owned(),
             name: name.clone(),
             project_id: board.project_id.clone(),
             project_name: project_name.clone(),

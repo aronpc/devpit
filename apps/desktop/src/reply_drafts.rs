@@ -61,6 +61,16 @@ pub(crate) fn draft(project: &str, profile: &str, name: &str, text: &str) -> Res
     Ok(false)
 }
 
+/// The draft for `name` moved from `from`'s orchestrator to `to`'s, the same
+/// orchestrator after a switch of profile.
+pub(crate) fn carried(from: &str, to: &str, name: &str) {
+    if let Ok(mut held) = drafts().lock() {
+        if let Some(text) = held.remove(&(from.to_owned(), name.to_owned())) {
+            held.insert((to.to_owned(), name.to_owned()), text);
+        }
+    }
+}
+
 /// The reply drafted for a session, if one is waiting to be sent.
 pub(crate) fn drafted(profile: &str, name: &str) -> Option<String> {
     drafts()

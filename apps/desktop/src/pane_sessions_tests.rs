@@ -1,4 +1,4 @@
-use super::{keeps, rows_in, Kept, Looked};
+use super::{adopted, keeps, rows_in, Kept, Looked};
 use crate::card_activity::Doing;
 
 /// Codex's screen at its prompt, and in a turn, as 0.160 draws them.
@@ -10,7 +10,6 @@ const CODEX_IN_A_TURN: &str =
 fn kept(profile: &str, name: &str, leaf: &str) -> Kept {
     Kept {
         profile: profile.to_owned(),
-        runs_as: "codex".to_owned(),
         name: name.to_owned(),
         project_id: "prj_api".to_owned(),
         project_name: Some("api".to_owned()),
@@ -83,4 +82,41 @@ fn devpit_keeps_what_no_registry_of_the_orchestrators_lists() {
     assert!(keeps(true, false));
     assert!(keeps(false, true));
     assert!(keeps(false, false));
+}
+
+/// A switch of profile keeps the sessions the orchestrator reached in a devpit
+/// pane: listed under the profile it speaks as now, by the same names, rather
+/// than announced as ended. One outside devpit's panes cannot be reached so.
+#[test]
+fn a_session_running_before_a_switch_is_still_listed_after_it() {
+    let row = |name: &str, pane: Option<&str>| {
+        let mut one = rows_in(
+            &mut vec![kept("claude", name, pane.unwrap_or("leaf_x"))],
+            "claude",
+            |_| looked(CODEX_IN_A_TURN, None),
+            0.0,
+        )
+        .remove(0);
+        if pane.is_none() {
+            one.pane = None;
+        }
+        one
+    };
+    let mut held = adopted(
+        "opencode",
+        vec![row("api-worker", Some("leaf_api")), row("outside", None)],
+    );
+    assert_eq!(held.len(), 1);
+    let rows = rows_in(
+        &mut held,
+        "opencode",
+        |_| looked(CODEX_AT_PROMPT, None),
+        0.0,
+    );
+    assert_eq!(rows.len(), 1);
+    assert_eq!(rows[0].name, "api-worker");
+    assert_eq!(
+        rows[0].pane.as_ref().map(|pane| pane.pane_id.as_str()),
+        Some("leaf_api")
+    );
 }
