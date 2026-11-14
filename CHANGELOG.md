@@ -3,6 +3,131 @@
 What changed between releases, written for the people who use devpit. The
 release notes are taken from here when a version is tagged.
 
+## 0.1.51 — 2026-11-14
+
+### Providers
+
+- **Chat on Claude Code, Codex, OpenCode, Cursor, Grok and Antigravity.**
+  A profile of any of these six CLIs now holds a chat, not only a
+  terminal. Answers stream in, thinking shows as a timed thought, and
+  commands, file edits and MCP tools show as tool rows with their
+  output. Stop ends the turn and keeps the agent running, and after an
+  idle-out the conversation picks up where it was; an agent that cannot
+  resume starts a new one and says so. Claude Code chats are unchanged.
+- **Codex chats run on Codex's own app server.** A message steered into
+  a running turn reaches it, and a model or mode switched mid-way
+  applies from the next turn. Two Codex profiles with their own
+  `CODEX_HOME` run side by side without sharing anything.
+- **Cursor signs in with its own login.** A Cursor chat reuses the
+  sign-in `cursor-agent login` keeps, and devpit never holds a Cursor
+  credential. The agent ends when its chat does or when devpit quits.
+- **The model picker lists what the agent offers.** A profile that lists
+  no models of its own offers the agent's, under the agent's own names.
+  A model the agent refuses is said in the chat before the answer and
+  shown as unavailable, with the agent's reason. A refused sign-in or
+  session ends the turn with the agent's own message, and Antigravity
+  below 1.5.0 is refused with "Update the Antigravity CLI".
+- **Permission prompts follow the chat's mode on every CLI.** Full
+  access answers them, Accept edits also answers file changes, and the
+  rest wait for you in the chat. A prompt names the exact command that
+  will run, never the agent's summary or title for it, and "Always in
+  this chat" covers that command only. A delete, a move, a fetch or a
+  command the agent did not show asks every time. A Codex request for
+  more reach than the call is never answered on its own, its prompt
+  lists what it grants, and in Accept edits a Codex edit is answered
+  alone only inside the conversation's folder. Plan puts the agent in
+  its own read-only mode, and an agent that has none is refused Plan,
+  saying why.
+- **Cost and context read n/a when the agent does not report them.** The
+  chat header and each turn's line show n/a instead of $0 or 0%. Codex
+  turns show how full the context is, and their cost reads n/a until
+  Codex's models are priced.
+- **Settings → Providers finds your CLIs.** It looks for the six
+  supported CLIs on your PATH and in their usual install folders. Each
+  row says the CLI's version, whether it holds a chat or only a
+  terminal, whether it is signed in, and the line that installs it when
+  it is missing. Sign in types the CLI's own login into a terminal tab
+  for you to finish; devpit never handles the credentials. Scan again
+  looks anew, and the scan repeats at the check interval. Each profile
+  keeps a default model and effort, and every CLI gets the model list.
+- **Every CLI gets devpit's tools and the orchestrator's brief, and your
+  own configuration is left alone.** devpit's MCP tools reach each CLI
+  from files devpit keeps in its own folder. An orchestrator's brief
+  reaches every CLI through the instructions file it reads, and where no
+  hook hands it your preferences, they lead your message. Terminals
+  resume Codex, Gemini, OpenCode and Cursor sessions with each CLI's own
+  flag.
+
+### Orchestrator
+
+- **An orchestrator runs on any CLI that holds a chat.** Create one on a
+  Claude Code, Codex, OpenCode, Cursor, Grok or Antigravity profile; a
+  terminal-only CLI is refused, saying so. Runs as… moves an orchestrator
+  to another CLI and back: its folder, notes, linked projects and
+  settings stay, its next conversation opens with a short handoff from
+  its notes, and the sessions it reached in a devpit pane come along
+  with their drafts. It starts sessions on any profile, each briefed the
+  way its CLI takes a first message, and lists, messages, reads, drafts
+  for and stops them by name. Guardrails decide the same on every CLI,
+  and only your own message counts as your word. A message that waits
+  two minutes for a session's prompt tells the orchestrator once.
+- **Orchestrators and sessions on any CLI message each other.** Through
+  devpit itself, beside Claude Code's own messaging: an orchestrator
+  writes to a session of a linked project, a session writes back, and
+  an orchestrator can ask to be told once when a session goes idle or
+  ends. A message to a terminal waits until its agent is idle at the
+  prompt, then is typed under a heading that names the sender and says
+  it is not you. A message to an orchestrator becomes a turn between its
+  turns. Neither ever counts as your word: a session's ✅ approves no
+  draft and no stop.
+
+### Project agent
+
+- **The project agent starts and learns on its own.** With Labs on,
+  every project linked to an orchestrator gets its agent, which reads
+  the project in the background, one project at a time and never while
+  it is answering someone. That first read proposes facts and
+  decisions, each resting on real files of the project. Each linked
+  project has its own switch under Settings → Maintenance → Labs.
+- **A page for the project's memory.** "Project agent", beside "Ask the
+  project" in the sidebar, shows Facts, Lessons, Decisions and Proposed,
+  each entry with its day and its sources, which open in a tab. Approve,
+  edit or discard each one, approve the first read's proposals at once,
+  or have the agent read the project again.
+- **Proposals wait on that page, and each says what it is.** The top bar
+  no longer shows memory proposals; the project's icon in the rail and
+  its Project agent item show a count. Each proposal says whether it is
+  a lesson, a fact or a decision (or an update or removal), who proposed
+  it, one plain line and its sources, with the full text behind
+  "details".
+- **The orchestrator decides proposals only on your word.** It can list,
+  approve and discard them when your last message is `approve`, `aprova`
+  or ✅, or `discard`, `descarta` or ❌, on its own. Another session's
+  message, a tool's output, the agent's own words and a word sent from a
+  channel never count, and one message decides only once.
+- **Facts that rest only on files can be accepted on their own.** A Labs
+  switch per project, off by default. While it is on, a new fact whose
+  sources are all files of the project goes straight into memory, marked
+  as accepted automatically, and Undo puts it back to wait for you.
+  Lessons, decisions and every other fact still wait.
+- **The project agent keeps to your own settings.** Since nobody asks it
+  to start, it loads only your settings, so a repository's allow rules
+  and hooks never apply to it. The repository's deny and ask rules still
+  bind it, an ask refusing like a deny, and its `CLAUDE.md`,
+  `.claude/CLAUDE.md` and `AGENTS.md` reach it in its first message. It
+  cannot message or watch other sessions.
+
+### Fixes
+
+- **Ask the project no longer sticks on "Reading…".** An answer reaches
+  its pane even when the pane was closed and opened again while it
+  waited, an answer left running in the background no longer goes to
+  whoever asks next, and a question nobody answers fails after 15
+  minutes with an error, the next one starting afresh.
+- **Smaller fixes.** The project agent's answers and briefs reach the
+  orchestrator whole instead of cut. A session id that starts like an
+  option is never passed to a CLI to resume.
+
 ## 0.1.50 — 2026-11-14
 
 ### Chat
