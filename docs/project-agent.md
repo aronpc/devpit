@@ -123,7 +123,9 @@ process is also started with deny rules, which win over any allow rule:
 never starts a turn in another session. It loads only the person's own
 settings (`--setting-sources user`), never a repository's: the agent also
 starts with nobody asking, and a repository's allow rules would widen what
-plan mode lets it run.
+plan mode lets it run. So the repository's `CLAUDE.md` and its deny rules
+are not loaded either; the agent reads the project's guides itself, as its
+memory points it at them.
 
 - **Wakes when called.** The first question starts the process. Further
   questions go to the same process, one at a time. Work an answer leaves
