@@ -73,42 +73,71 @@ pub(crate) fn taken(listening: &mut Listening, tell: &mpsc::Sender<Heard>) -> bo
     true
 }
 
+/// How a person's wait for the process ended.
+#[derive(Debug, PartialEq, Eq)]
+pub(crate) enum Claim {
+    /// The process is the person's.
+    Claimed,
+    /// Stop: the turn ends cancelled, whatever else happened to the process.
+    Stopped,
+    /// Displaced and closed: the turn goes to a new process.
+    Closed,
+}
+
+/// What displacing a conversation did to its process.
+#[derive(Debug, PartialEq, Eq)]
+pub(crate) enum Displaced {
+    /// Quiet: the closing is committed here and the caller closes the process.
+    Now,
+    /// A turn is on it: the closer runs when the turn ends.
+    Later,
+}
+
 impl Ear {
+    /// A person's turn is on its way to this process: it reads as busy from
+    /// here, so nobody closes it before the turn has claimed it. Called under
+    /// the residents' lock, where the process is published.
+    pub(crate) fn expect(&self) {
+        if let Ok(mut now) = self.now.lock() {
+            now.waiting = true;
+        }
+    }
+
     /// Waits for a woken turn to finish and takes the process, without letting
     /// go of the lock in between: a turn woken in that gap used to be
     /// overwritten, unsaved, and its words went into the person's answer.
-    /// False when the wait was stopped.
-    pub(crate) fn claim(&self, tell: &mpsc::Sender<Heard>) -> bool {
+    pub(crate) fn claim(&self, tell: &mpsc::Sender<Heard>) -> Claim {
         let Ok(mut now) = self.now.lock() else {
-            return false;
+            return Claim::Closed;
         };
         now.waiting = true;
         loop {
+            // Stop first: it wins over a closing committed beside it.
             if std::mem::take(&mut now.stopped) {
                 now.waiting = false;
-                return false;
+                return Claim::Stopped;
             }
             // Displaced and closed: this process is going. The person's turn
             // goes to a new one instead.
             if now.closed {
                 now.waiting = false;
-                return false;
+                return Claim::Closed;
             }
             if taken(&mut now.listening, tell) {
                 now.waiting = false;
-                return true;
+                return Claim::Claimed;
             }
             now = match self.quiet.wait(now) {
                 Ok(now) => now,
-                Err(_) => return false,
+                Err(_) => return Claim::Closed,
             };
         }
     }
 
     /// Whether a turn is on: the person's, one a session woke, or the
-    /// person's waiting for the process. A busy conversation is closed after
-    /// its turn, not under it. An ear that will not say reads as busy: the
-    /// side that does not close is the safe one.
+    /// person's waiting for the process. An ear that will not say reads as
+    /// busy: the side that does not close is the safe one.
+    #[cfg(test)]
     pub(crate) fn busy(&self) -> bool {
         self.now
             .lock()
@@ -116,12 +145,24 @@ impl Ear {
             .unwrap_or(true)
     }
 
-    /// Displaces this conversation: another of the same project listens now,
-    /// and `close` runs once, when the turn on this one ends — never under it.
-    pub(crate) fn mark(&self, close: impl FnOnce() + Send + 'static) {
-        if let Ok(mut now) = self.now.lock() {
+    /// Displaces this conversation: another of the same project listens now.
+    /// Whether a turn is on it and the closing is armed are decided in one
+    /// step, so a turn that ends in between cannot leave the closer unrun.
+    /// Quiet: committed here, and the caller closes it. Busy: `close` runs
+    /// once, when the turn ends — never under it.
+    pub(crate) fn displace(&self, close: impl FnOnce() + Send + 'static) -> Displaced {
+        let Ok(mut now) = self.now.lock() else {
+            // An ear that will not say reads as busy, and nothing closes it.
+            return Displaced::Later;
+        };
+        if now.waiting || !matches!(now.listening, Listening::Nobody) {
             now.closing = Some(Box::new(close));
+            return Displaced::Later;
         }
+        now.closed = true;
+        now.closing = None;
+        self.quiet.notify_all();
+        Displaced::Now
     }
 
     /// Undoes the displacement: a person's turn is beginning here, so this

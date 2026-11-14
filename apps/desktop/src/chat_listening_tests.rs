@@ -6,7 +6,7 @@ use devpit_agentcli::talk::Said;
 use devpit_rpc::{Frame, Part, TurnEnd};
 use tauri::ipc::{Channel, InvokeResponseBody};
 
-use super::{taken, Ear, Listening, Woken};
+use super::{taken, Claim, Displaced, Ear, Listening, Woken};
 use crate::chat_relay::Relay;
 
 fn text(said: &str) -> Part {
@@ -110,7 +110,7 @@ fn the_person_waits_for_the_woken_turn_then_hears_only_their_own() {
         &transcript,
         &head,
     );
-    assert!(claiming.join().unwrap());
+    assert_eq!(claiming.join().unwrap(), Claim::Claimed);
     ear.hear(
         Heard::Part(text("mine")),
         || panic!("the person's words started a woken turn"),
@@ -134,7 +134,7 @@ fn stopping_a_waiting_turn_leaves_the_woken_one_running() {
     until_waiting(&ear);
 
     assert!(ear.stop_waiting());
-    assert!(!claiming.join().unwrap());
+    assert_eq!(claiming.join().unwrap(), Claim::Stopped);
     assert!(is_woken(&ear));
     assert!(!ear.now.lock().unwrap().waiting);
 }
@@ -220,7 +220,7 @@ fn busy_names_every_way_a_turn_can_be_on() {
         &transcript,
         &head,
     );
-    assert!(claiming.join().unwrap());
+    assert_eq!(claiming.join().unwrap(), Claim::Claimed);
 }
 
 #[test]
@@ -235,7 +235,7 @@ fn a_displaced_conversation_closes_when_its_turn_ends() {
     let counting = ran.clone();
     let unlocked = outside.clone();
     let of = ear.clone();
-    ear.mark(move || {
+    ear.displace(move || {
         counting.fetch_add(1, Ordering::SeqCst);
         // The closer takes locks of its own: it cannot run under the ear's.
         unlocked.store(of.now.try_lock().is_ok(), Ordering::SeqCst);
@@ -290,7 +290,7 @@ fn a_displaced_conversation_takes_no_new_woken_turn() {
     let ear = ear_on(turn);
     let ran = Arc::new(AtomicUsize::new(0));
     let counting = ran.clone();
-    ear.mark(move || {
+    ear.displace(move || {
         counting.fetch_add(1, Ordering::SeqCst);
     });
 
@@ -309,7 +309,11 @@ fn a_displaced_conversation_takes_no_new_woken_turn() {
     // A message that reaches the process after does not wake another turn,
     // and the person's next one does not wait for this process either.
     let (tell, _) = mpsc::channel();
-    assert!(!ear.claim(&tell), "a closed process is not taken again");
+    assert_eq!(
+        ear.claim(&tell),
+        Claim::Closed,
+        "a closed process is not taken again"
+    );
     ear.hear(
         Heard::Part(text("too late")),
         || panic!("a displaced conversation took a new woken turn"),
@@ -334,7 +338,7 @@ fn a_person_turn_after_the_displacement_takes_the_listening_back() {
     let ear = ear_on(turn);
     let ran = Arc::new(AtomicUsize::new(0));
     let counting = ran.clone();
-    ear.mark(move || {
+    ear.displace(move || {
         counting.fetch_add(1, Ordering::SeqCst);
     });
 
@@ -349,7 +353,7 @@ fn a_person_turn_after_the_displacement_takes_the_listening_back() {
 
     // The person's turn runs and ends, and the conversation still listens.
     let (tell, from_person) = mpsc::channel();
-    assert!(ear.claim(&tell));
+    assert_eq!(ear.claim(&tell), Claim::Claimed);
     ear.hear(
         Heard::Part(text("the person's")),
         || unreachable!(),
@@ -379,4 +383,89 @@ fn a_person_turn_after_the_displacement_takes_the_listening_back() {
         &head,
     );
     assert!(is_woken(&ear));
+}
+
+/// The turn ends between "is it busy" and "arm the closer": with the two in
+/// one step there is no such gap, so the quiet ear closes on the spot and the
+/// closer is never stored to wait for an event that will not come.
+#[test]
+fn displacing_a_quiet_ear_commits_the_closing_and_stores_no_closer() {
+    let dir = tempfile::tempdir().unwrap();
+    let (transcript, head) = (dir.path().join("c.jsonl"), dir.path().join("c.json"));
+    let relay = Relay::default();
+    let (turn, _) = woken(&relay);
+    let ear = ear_on(turn);
+    assert!(ear.busy());
+    // The turn ends before the displacement is made.
+    ear.hear(
+        Heard::Ended(Box::new(ended())),
+        || unreachable!(),
+        &transcript,
+        &head,
+    );
+    let ran = Arc::new(AtomicUsize::new(0));
+    let counting = ran.clone();
+    let displaced = ear.displace(move || {
+        counting.fetch_add(1, Ordering::SeqCst);
+    });
+    assert_eq!(displaced, Displaced::Now);
+    assert!(ear.closed(), "the closing is committed with the decision");
+    assert!(
+        ear.now.lock().unwrap().closing.is_none(),
+        "no closer is left waiting for an event that will not come"
+    );
+    assert_eq!(
+        ran.load(Ordering::SeqCst),
+        0,
+        "the caller closes, not the ear"
+    );
+
+    // A busy ear is the other answer.
+    let (turn, _) = woken(&relay);
+    assert_eq!(ear_on(turn).displace(|| {}), Displaced::Later);
+}
+
+/// Stop and the closing arrive together: Stop wins, and the turn ends
+/// cancelled instead of starting on a new process.
+#[test]
+fn a_stop_beside_the_closing_still_stops_the_turn() {
+    let relay = Relay::default();
+    let (turn, _) = woken(&relay);
+    let ear = ear_on(turn);
+    ear.displace(|| {});
+    let (tell, _) = mpsc::channel();
+    let claiming = {
+        let ear = ear.clone();
+        std::thread::spawn(move || ear.claim(&tell))
+    };
+    until_waiting(&ear);
+
+    // Both land before the claim wakes: the ear lock is held across them.
+    {
+        let mut now = ear.now.lock().unwrap();
+        now.stopped = true;
+        now.closed = true;
+    }
+    ear.quiet.notify_all();
+    assert_eq!(
+        claiming.join().unwrap(),
+        Claim::Stopped,
+        "the stop was read as a closing"
+    );
+}
+
+/// A turn on its way to a process reads as busy before it has claimed it, so
+/// a displacement in that gap arms the closer instead of closing under it.
+#[test]
+fn an_expected_turn_is_busy_before_it_claims() {
+    let ear = Ear::default();
+    assert!(!ear.busy());
+    ear.expect();
+    assert!(ear.busy());
+    assert_eq!(ear.displace(|| {}), Displaced::Later);
+    assert!(!ear.closed());
+    // A Stop asked in the gap is kept for the claim.
+    assert!(ear.stop_waiting());
+    let (tell, _) = mpsc::channel();
+    assert_eq!(ear.claim(&tell), Claim::Stopped);
 }
