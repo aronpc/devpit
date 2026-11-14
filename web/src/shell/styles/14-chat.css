@@ -110,6 +110,7 @@ select.chip { appearance: none; border: 0; background: none; font-family: inheri
 .asking:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 60%, transparent); outline-offset: 2px; }
 .asking__what { display: inline-block; max-width: 100%; max-height: 180px; overflow: auto; vertical-align: top; font-family: var(--mono); font-size: var(--fs-sm); white-space: pre-wrap; word-break: break-all; }
 .asking__lines { font-size: var(--fs-xs); color: var(--text-3); }
+.asking__grants { margin: 0; padding-left: 18px; font-size: var(--fs-sm); color: var(--text); }
 .asking__more > summary { font-size: var(--fs-xs); color: var(--text-3); }
 .asking__more > .asking__in { margin-top: 6px; }
 .asking__plan { max-height: 320px; overflow: auto; padding: 4px 10px; border-radius: var(--radius-md); background: var(--inset); font-size: var(--fs-md); }

@@ -1,6 +1,7 @@
 //! What devpit writes to `codex app-server`: the handshake, the thread, each
 //! turn, approvals, steers and stops.
 
+use std::path::{Component, Path};
 use std::sync::{Arc, Mutex};
 
 use serde_json::{json, Value};
@@ -52,13 +53,69 @@ fn sandbox_policy(sandbox: &str) -> Value {
     }
 }
 
-/// Whether the mode answers this approval without the person.
-pub(super) fn allowed(mode: Option<&str>, method: &str) -> bool {
+/// What an approval asks beyond the call itself: write access under another
+/// root, more permissions, the network.
+const GRANTS: [&str; 3] = [
+    "grantRoot",
+    "additionalPermissions",
+    "networkApprovalContext",
+];
+
+/// The grants an approval asks for, or `None` when it asks for no more than the call.
+fn grants_of(params: &Value) -> Option<Value> {
+    let asked: serde_json::Map<String, Value> = GRANTS
+        .iter()
+        .filter(|key| !params[**key].is_null())
+        .map(|key| ((*key).to_owned(), params[*key].clone()))
+        .collect();
+    (!asked.is_empty()).then_some(Value::Object(asked))
+}
+
+/// Whether the mode answers this approval without the person: Full access
+/// any call, Accept edits an edit that stays `inside` the project. One that
+/// asks for more reach always waits for the person.
+fn allowed(
+    mode: Option<&str>,
+    method: &str,
+    params: &Value,
+    inside: impl FnOnce() -> bool,
+) -> bool {
+    if grants_of(params).is_some() {
+        return false;
+    }
     match mode {
         Some("bypassPermissions") => true,
-        Some("acceptEdits") => method == EDIT_APPROVAL,
+        Some("acceptEdits") => method == EDIT_APPROVAL && inside(),
         _ => false,
     }
+}
+
+/// Whether `path` stays under `root` once symlinks are resolved: the part of
+/// it that exists is resolved, and any `..` counts as leaving.
+fn inside(root: &Path, path: &Path) -> bool {
+    let path = root.join(path);
+    if path.components().any(|part| part == Component::ParentDir) {
+        return false;
+    }
+    let root = root.canonicalize().unwrap_or_else(|_| root.to_path_buf());
+    let mut known = path.as_path();
+    let mut rest = Vec::new();
+    let resolved = loop {
+        if let Ok(real) = known.canonicalize() {
+            break real;
+        }
+        match (known.file_name(), known.parent()) {
+            (Some(name), Some(parent)) => {
+                rest.push(name);
+                known = parent;
+            }
+            _ => break known.to_path_buf(),
+        }
+    };
+    rest.iter()
+        .rev()
+        .fold(resolved, |at, name| at.join(name))
+        .starts_with(root)
 }
 
 fn decision(id: &Value, decision: &str) -> String {
@@ -172,6 +229,29 @@ impl Thread {
         }
     }
 
+    /// Whether every path the edit under `item` writes, or moves to, stays in
+    /// the conversation's folder. An edit devpit never saw does not.
+    fn edit_inside(&self, item: &Value) -> bool {
+        let Some(changes) = item
+            .as_str()
+            .and_then(|id| self.edits.get(id))
+            .and_then(|edit| edit["changes"].as_array())
+        else {
+            return false;
+        };
+        let root = Path::new(&self.cwd);
+        !changes.is_empty()
+            && changes.iter().all(|change| {
+                [&change["path"], &change["kind"]["move_path"]]
+                    .iter()
+                    .filter(|path| !path.is_null())
+                    .all(|path| {
+                        path.as_str()
+                            .is_some_and(|path| inside(root, Path::new(path)))
+                    })
+            })
+    }
+
     /// The person's key for an approval request.
     fn key(&self, id: &Value) -> String {
         format!("{}#{id}", self.id.as_deref().unwrap_or_default())
@@ -263,6 +343,9 @@ impl Wire for CodexWire {
         if let Some(reason) = params["reason"].as_str() {
             input["reason"] = json!(reason);
         }
+        if let Some(grants) = grants_of(params) {
+            input["grants"] = grants;
+        }
         Some(Asked {
             prompt: Some(Prompt {
                 request_id: key,
@@ -329,7 +412,9 @@ impl Wire for CodexWire {
                 json!({ "code": NOT_SERVED, "message": format!("devpit does not serve {method}") });
             return vec![json!({ "id": id, "error": error }).to_string()];
         }
-        if allowed(thread.mode.as_deref(), method) {
+        let params = &said["params"];
+        let inside = || thread.edit_inside(&params["itemId"]);
+        if allowed(thread.mode.as_deref(), method, params, inside) {
             return vec![decision(id, "accept")];
         }
         let key = thread.key(id);

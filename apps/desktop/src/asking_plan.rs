@@ -43,13 +43,7 @@ fn put(app: &tauri::AppHandle, control: &Control, prompt: Prompt) {
         touch: devpit_agentcli::touch_of(&prompt.tool, &prompt.input),
     };
     let plan = prompt.tool == PLAN;
-    // Already allowed for the rest of this conversation, as the hook does.
-    let kept = app.state::<crate::asking_kept::Kept>().covers(
-        &question.session_id,
-        &question.tool,
-        &question.input,
-    );
-    if !plan && kept {
+    if already_allowed(&app.state::<crate::asking_kept::Kept>(), &question, plan) {
         control.answer(&prompt.request_id, json!({ "behavior": "allow" }));
         return;
     }
@@ -69,6 +63,18 @@ fn put(app: &tauri::AppHandle, control: &Control, prompt: Prompt) {
     };
     control.answer(&prompt.request_id, said);
     let _ = app.emit("permission:settled", &question.id);
+}
+
+/// Allowed for the rest of this conversation, as the hook does: never a plan,
+/// and never a request for more reach than the call, which waits every time.
+pub(crate) fn already_allowed(
+    kept: &crate::asking_kept::Kept,
+    question: &Question,
+    plan: bool,
+) -> bool {
+    let grants = serde_json::from_str::<Value>(&question.input)
+        .is_ok_and(|input| input.get("grants").is_some());
+    !plan && !grants && kept.covers(&question.session_id, &question.tool, &question.input)
 }
 
 /// Any other prompt's answer: allowed, or refused with why.

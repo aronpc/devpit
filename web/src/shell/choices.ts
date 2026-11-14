@@ -26,6 +26,27 @@ export function subjectOf(question: Pick<Question, 'input' | 'touch'>): string {
   return receiptSubject(question.input)
 }
 
+/* What a request asks beyond the call itself — write access under another
+   root, the network, more permissions — said on the card, never folded away. */
+export function grantsOf(input: string): readonly string[] {
+  let grants: unknown
+  try {
+    grants = (JSON.parse(input) as { grants?: unknown }).grants
+  } catch {
+    return []
+  }
+  if (!grants || typeof grants !== 'object') return []
+  const { grantRoot, networkApprovalContext: net, additionalPermissions: more } = grants as Record<string, unknown>
+  const said: string[] = []
+  if (typeof grantRoot === 'string') said.push(`Write access under ${grantRoot} for the rest of this session`)
+  if (net && typeof net === 'object') {
+    const { host, protocol } = net as { host?: unknown; protocol?: unknown }
+    said.push(`Network access to ${typeof host === 'string' ? host : 'a host'}${typeof protocol === 'string' ? ` (${protocol})` : ''}`)
+  }
+  if (more != null) said.push(`More permissions: ${JSON.stringify(more)}`)
+  return said
+}
+
 /** What a key does on a request's card: Enter allows only on the card itself, where no button would take it too. */
 export const allowKey = (key: string, onCard: boolean): 'allow' | 'deny' | null =>
   key === 'Escape' ? 'deny' : key === 'Enter' && onCard ? 'allow' : null

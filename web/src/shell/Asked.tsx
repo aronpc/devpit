@@ -1,7 +1,7 @@
 import { useState } from 'react'
 
 import type { Question } from '../gen/bindings'
-import { allowKey, questionsOf, subjectOf, useFocused, type Chosen } from './choices'
+import { allowKey, grantsOf, questionsOf, subjectOf, useFocused, type Chosen } from './choices'
 import { Choosing } from './Choosing'
 import { Markdown } from './MarkdownView'
 import { committed, composing } from './typing'
@@ -62,6 +62,7 @@ function Allowing({ question, onAnswer }: { question: Question; onAnswer: (said:
   const [editing, setEditing] = useState<string | null>(null)
   const edited = plan !== null && editing !== null && editing.trim() !== plan.trim() ? editing : undefined
   const what = plan ? '' : subjectOf(question)
+  const grants = grantsOf(question.input)
   const lines = what.split('\n').length
   return (
     <section
@@ -90,6 +91,13 @@ function Allowing({ question, onAnswer }: { question: Question; onAnswer: (said:
           </>
         )}
       </div>
+      {grants.length > 0 && (
+        <ul className="asking__grants" aria-label="It also asks for">
+          {grants.map((one) => (
+            <li key={one}>{one}</li>
+          ))}
+        </ul>
+      )}
       {plan &&
         (editing === null ? (
           <div className="asking__plan">
@@ -123,7 +131,7 @@ function Allowing({ question, onAnswer }: { question: Question; onAnswer: (said:
             Edit
           </button>
         )}
-        {!plan && (
+        {!plan && grants.length === 0 && (
           <button className="btn" onClick={() => onAnswer('always')} title={alwaysMeans(question.tool)}>
             Always in this chat
           </button>

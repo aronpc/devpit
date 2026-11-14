@@ -29,6 +29,21 @@ const asking = (...questions: { question: string; options: string[]; multi?: boo
 const card = (): HTMLElement => document.querySelector('.asking') as HTMLElement
 
 describe('a question in the chat', () => {
+  it('says what a request grants beyond the call, in plain sight, and offers no "always" for it', () => {
+    const wider: Question = {
+      ...question,
+      input: JSON.stringify({
+        command: 'curl https://example.com',
+        grants: { grantRoot: '/home/me', networkApprovalContext: { host: 'example.com', protocol: 'https' }, additionalPermissions: { network: { enabled: true } } },
+      }),
+      touch: { kind: 'run', command: 'curl https://example.com' },
+    }
+    render(<Asked questions={[wider]} onAnswer={vi.fn()} />)
+    const grants = [...card().querySelectorAll('.asking__grants li')].map((one) => one.textContent)
+    expect(grants).toEqual(['Write access under /home/me for the rest of this session', 'Network access to example.com (https)', 'More permissions: {"network":{"enabled":true}}'])
+    expect(screen.queryByText('Always in this chat')).toBeNull()
+  })
+
   it('is answered once either way, or always for the rest of the chat', () => {
     const answered = vi.fn()
     render(<Asked questions={[question]} onAnswer={answered} />)

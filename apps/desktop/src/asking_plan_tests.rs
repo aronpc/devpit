@@ -83,3 +83,26 @@ fn an_approval_on_the_prompt_is_answered_as_the_person_said() {
     assert_eq!(said["behavior"], "deny");
     assert_eq!(said["message"], "Refused in devpit: not on main");
 }
+
+/// "Always in this chat" answers the same call again, never one that asks
+/// for more reach on top of it, and never a plan.
+#[test]
+fn always_in_this_chat_never_covers_a_request_for_more_reach() {
+    use crate::asking::Question;
+    use crate::asking_kept::{rule_for, Kept};
+    let kept = Kept::default();
+    let plain = r#"{"command":"curl https://example.com"}"#;
+    kept.keep("s1", rule_for("Bash", plain));
+    let asked = |input: &str| Question {
+        id: "q".to_owned(),
+        session_id: "s1".to_owned(),
+        tool: "Bash".to_owned(),
+        input: input.to_owned(),
+        cwd: String::new(),
+        touch: None,
+    };
+    assert!(already_allowed(&kept, &asked(plain), false));
+    let wider = r#"{"command":"curl https://example.com","grants":{"networkApprovalContext":{"host":"example.com","protocol":"https"}}}"#;
+    assert!(!already_allowed(&kept, &asked(wider), false));
+    assert!(!already_allowed(&kept, &asked(plain), true));
+}

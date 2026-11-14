@@ -9,7 +9,7 @@ use std::time::Duration;
 use devpit_rpc::{CallState, Context, Part};
 use serde_json::{json, Value};
 
-use super::codex_wire::{allowed, policy};
+use super::codex_wire::policy;
 use super::{held, Codex};
 use crate::control::{Control, Prompt};
 use crate::driver::{Driver, Read};
@@ -585,22 +585,23 @@ fn the_permission_mode_is_codexs_approval_policy_and_sandbox() {
 
 #[test]
 fn accept_edits_takes_the_edit_and_asks_about_the_command() {
-    const COMMAND: &str = "item/commandExecution/requestApproval";
-    const EDIT: &str = "item/fileChange/requestApproval";
-    assert!(allowed(Some("acceptEdits"), EDIT));
-    assert!(!allowed(Some("acceptEdits"), COMMAND));
-    assert!(!allowed(Some("manual"), EDIT));
-    assert!(allowed(Some("bypassPermissions"), COMMAND));
-
+    let dir = tempfile::tempdir().expect("tempdir");
     let codex = Codex::default();
     let wire = codex.wire();
     let control = Control::new();
-    let dir = Path::new("/work");
-    wire.hello(&turn("codex", &[], dir, "", "acceptEdits", None, &control));
+    wire.hello(&turn(
+        "codex",
+        &[],
+        dir.path(),
+        "",
+        "acceptEdits",
+        None,
+        &control,
+    ));
     let mut answered = Vec::new();
     let mut asked = Vec::new();
     for line in transcript("approved").iter().filter(|line| line.dir == "<") {
-        let line = filled(&line.msg, dir).to_string();
+        let line = filled(&line.msg, dir.path()).to_string();
         answered.extend(wire.replies(&line));
         if let Some(prompt) = wire.asked(&line, None).and_then(|one| one.prompt) {
             asked.push(prompt.tool);
@@ -616,6 +617,160 @@ fn accept_edits_takes_the_edit_and_asks_about_the_command() {
     assert_eq!(
         decisions,
         [json!({ "id": 1, "result": { "decision": "accept" } })]
+    );
+}
+
+/// A wire past its handshake, on a thread in `dir`, in `mode`.
+fn opened(dir: &Path, mode: &str) -> (Codex, std::sync::Arc<dyn crate::wire::Wire>) {
+    let codex = Codex::default();
+    let wire = codex.wire();
+    let control = Control::new();
+    wire.hello(&turn("codex", &[], dir, "", mode, None, &control));
+    wire.replies(r#"{"id":0,"result":{}}"#);
+    wire.replies(r#"{"id":1,"result":{"thread":{"id":"t"},"model":"m"}}"#);
+    (codex, wire)
+}
+
+/// Codex proposing a change to `path` and asking for it, under request `id`;
+/// whether devpit answered alone.
+fn edit_answered_alone(
+    codex: &Codex,
+    wire: &dyn crate::wire::Wire,
+    id: u64,
+    path: &Path,
+    grant: Option<&str>,
+) -> bool {
+    let item = format!("exec-{id}");
+    let change = json!({ "path": path, "kind": { "type": "add" }, "diff": "x\n" });
+    let started = json!({ "method": "item/started", "params": {
+        "item": { "type": "fileChange", "id": item, "changes": [change], "status": "inProgress" } } });
+    codex.read(&started.to_string());
+    let asking = json!({ "id": id, "method": "item/fileChange/requestApproval",
+        "params": { "itemId": item, "reason": null, "grantRoot": grant } })
+    .to_string();
+    let said = wire.replies(&asking);
+    if said.is_empty() {
+        assert!(wire.asked(&asking, None).is_some(), "put to the person");
+        return false;
+    }
+    assert_eq!(
+        serde_json::from_str::<Value>(&said[0]).expect("json")["result"]["decision"],
+        "accept"
+    );
+    true
+}
+
+#[test]
+fn accept_edits_answers_alone_only_an_edit_that_stays_in_the_project() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let project = dir.path().join("project");
+    std::fs::create_dir_all(project.join("src")).expect("project");
+    let (codex, wire) = opened(&project, "acceptEdits");
+
+    assert!(edit_answered_alone(
+        &codex,
+        wire.as_ref(),
+        0,
+        &project.join("src/new.rs"),
+        None
+    ));
+    assert!(!edit_answered_alone(
+        &codex,
+        wire.as_ref(),
+        1,
+        &dir.path().join("outside.txt"),
+        None
+    ));
+    assert!(!edit_answered_alone(
+        &codex,
+        wire.as_ref(),
+        2,
+        &project.join("../outside.txt"),
+        None
+    ));
+    let root = dir.path().display().to_string();
+    assert!(
+        !edit_answered_alone(
+            &codex,
+            wire.as_ref(),
+            3,
+            &project.join("src/new.rs"),
+            Some(&root)
+        ),
+        "a wider root waits for the person"
+    );
+}
+
+#[cfg(unix)]
+#[test]
+fn an_edit_through_a_link_out_of_the_project_waits_for_the_person() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let project = dir.path().join("project");
+    std::fs::create_dir_all(&project).expect("project");
+    std::os::unix::fs::symlink(dir.path(), project.join("up")).expect("link");
+    let (codex, wire) = opened(&project, "acceptEdits");
+    assert!(!edit_answered_alone(
+        &codex,
+        wire.as_ref(),
+        0,
+        &project.join("up/outside.txt"),
+        None
+    ));
+}
+
+#[test]
+fn a_request_for_more_reach_waits_for_the_person_and_says_what_it_grants() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let (_codex, wire) = opened(dir.path(), "bypassPermissions");
+    let network = json!({ "host": "example.com", "protocol": "https" });
+    let asking = json!({ "id": 4, "method": "item/commandExecution/requestApproval", "params": {
+        "kind": "command", "itemId": "exec-9", "command": "curl https://example.com", "cwd": dir.path(),
+        "networkApprovalContext": network,
+        "additionalPermissions": { "network": { "enabled": true }, "fileSystem": null } } })
+    .to_string();
+    assert!(
+        wire.replies(&asking).is_empty(),
+        "not even Full access answers it alone"
+    );
+    let prompt = wire
+        .asked(&asking, None)
+        .and_then(|asked| asked.prompt)
+        .expect("asked");
+    assert_eq!(prompt.input["grants"]["networkApprovalContext"], network);
+    assert_eq!(
+        prompt.input["grants"]["additionalPermissions"]["network"]["enabled"],
+        true
+    );
+
+    let (codex, wire) = opened(dir.path(), "manual");
+    edit_answered_alone(
+        &codex,
+        wire.as_ref(),
+        5,
+        &dir.path().join("a.txt"),
+        Some("/"),
+    );
+    let asking = json!({ "id": 5, "method": "item/fileChange/requestApproval",
+        "params": { "itemId": "exec-5", "grantRoot": "/" } })
+    .to_string();
+    let prompt = wire
+        .asked(&asking, None)
+        .and_then(|asked| asked.prompt)
+        .expect("asked");
+    assert_eq!(prompt.input["grants"], json!({ "grantRoot": "/" }));
+
+    let plain = json!({ "id": 6, "method": "item/commandExecution/requestApproval",
+        "params": { "kind": "command", "itemId": "exec-6", "command": "ls", "cwd": dir.path() } })
+    .to_string();
+    let (_codex, wire) = opened(dir.path(), "manual");
+    wire.replies(&plain);
+    let prompt = wire
+        .asked(&plain, None)
+        .and_then(|asked| asked.prompt)
+        .expect("asked");
+    assert!(
+        prompt.input.get("grants").is_none(),
+        "a call that asks for nothing more says nothing more"
     );
 }
 
