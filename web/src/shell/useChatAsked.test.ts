@@ -175,4 +175,36 @@ describe("a chat's questions", () => {
     await act(async () => reads[0].resolve([colour]))
     expect(result.current.asked).toEqual([])
   })
+
+  it('drop a question that was asked and settled between the two listeners coming up', async () => {
+    heard.hold = true
+    const { result } = renderHook(() => useChat('conv_a'))
+    await waitFor(() => expect(result.current.session).toBe('ses_1'))
+    await act(async () => heard.ready[0]())
+    act(() => heard.asked?.(colour))
+    expect(result.current.asked.map((one) => one.id)).toEqual(['q2'])
+    /* Settled with nobody listening for it: the read finds nothing waiting. */
+    await act(async () => heard.ready[1]())
+    await waitFor(() => expect(result.current.asked).toEqual([]))
+  })
+
+  it('keep a question heard before the read when it is still waiting', async () => {
+    heard.hold = true
+    const { result } = renderHook(() => useChat('conv_a'))
+    await waitFor(() => expect(result.current.session).toBe('ses_1'))
+    await act(async () => heard.ready[0]())
+    act(() => heard.asked?.(colour))
+    waiting.push(colour)
+    await act(async () => heard.ready[1]())
+    await waitFor(() => expect(result.current.asked.map((one) => one.id)).toEqual(['q2']))
+  })
+
+  it('keep a question of the old conversation off the new one while its session loads', async () => {
+    const { result, rerender } = renderHook(({ id }) => useChat(id), { initialProps: { id: 'conv_a' } })
+    await waitFor(() => expect(result.current.session).toBe('ses_1'))
+    rerender({ id: 'conv_b' })
+    act(() => heard.asked?.(colour))
+    await waitFor(() => expect(result.current.session).toBe('ses_2'))
+    expect(result.current.asked).toEqual([])
+  })
 })
