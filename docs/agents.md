@@ -71,3 +71,39 @@ the reply is thrown away, as Gemini would show any text a hook prints.
 
 Antigravity is not covered. It is an editor whose agent settings are global,
 with no per-terminal file to point at, and devpit does not write a global file.
+
+## devpit's tools, instructions and sessions in each CLI
+
+devpit hands each CLI its MCP server for that launch only, and writes nothing
+in the person's own configuration:
+
+| CLI | How it gets devpit's tools |
+|---|---|
+| Claude Code | `--mcp-config=<home>/mcp.json` |
+| Codex | `-c mcp_servers.devpit.*` overrides on the terminal's line and on `codex app-server` |
+| Gemini CLI | `mcpServers.devpit` in `<home>/gemini-hooks.json`, beside the hooks |
+| OpenCode, Grok, Antigravity | `mcpServers` in the ACP request that opens the chat's session |
+
+A chat on Codex or an ACP agent reads its server from `<home>/mcp-<agent>.json`,
+signed with that agent. Every server waits on a tool past devpit's longest
+answer, so a card's checks are never cut off and run again.
+
+An orchestrator's folder holds its brief once, in `CLAUDE.md` and what it
+imports. `GEMINI.md` imports `CLAUDE.md`; `AGENTS.md`, which Codex and the ACP
+agents read and which imports nothing, is written from it on every opening and
+before each turn. Edit `CLAUDE.md`: `AGENTS.md` is rewritten. The person's
+preferences, which a Claude hook hands the model with each message, lead the
+message on a CLI without that hook.
+
+A chat's permission mode is held the CLI's own way. Claude Code takes it as
+`--permission-mode`; Codex as its approval policy and sandbox; an ACP agent
+through devpit's answers to its permission requests. Plan needs the agent's
+own read-only mode: OpenCode's `plan` is set before the message goes, and an
+agent that offers none is refused Plan, saying so, rather than run in a mode
+that may still write.
+
+A terminal is resumed with the CLI's own flag: `claude --resume`,
+`codex resume`, `gemini --resume`, `opencode --session` and
+`cursor-agent --resume`. A chat whose process went idle resumes its session
+through the driver: `--resume`, Codex's `thread/resume`, or ACP's
+`session/resume` or `session/load`.
