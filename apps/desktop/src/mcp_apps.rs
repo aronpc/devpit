@@ -319,7 +319,7 @@ fn host(app: &AppHandle, profile_id: &str, cwd: &str) -> Result<Arc<AppsHost>, R
     // account, and every other page's call used to wait on it.
     let (profile, path) = crate::chat_turn::spawnable(profile_id)?;
     let env = devpit_agentcli::running::runner(&profile).env;
-    let mcp = crate::agent_reach::chat_mcp(&profile.driver);
+    let mcp = crate::agent_reach::chat_mcp(&profile);
     let started = AppsHost::start(&HostOf {
         command: &path,
         env: &env,

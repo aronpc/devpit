@@ -108,7 +108,7 @@ pub async fn chat_send(
     // line it types and a step gets it from its runner; a chat was the one
     // path that spawned the binary with none of it.
     let env = devpit_agentcli::running::runner(&profile).env;
-    let mcp = crate::agent_reach::chat_mcp(&profile.driver);
+    let mcp = crate::agent_reach::chat_mcp(&profile);
     let reach = crate::orchestrator::reaches(&project_id);
     let address = crate::orchestrator::address_of(&project_id);
 

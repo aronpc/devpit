@@ -259,8 +259,15 @@ impl Thread {
 }
 
 impl Wire for CodexWire {
-    fn argv(&self, _turn: &Say<'_>) -> Vec<String> {
-        vec!["app-server".to_owned()]
+    /// devpit's tools as config overrides on the app-server's own line.
+    fn argv(&self, turn: &Say<'_>) -> Vec<String> {
+        let servers = turn
+            .mcp_config
+            .map(|file| crate::wire::mcp_servers::read(Path::new(file)))
+            .unwrap_or_default();
+        std::iter::once("app-server".to_owned())
+            .chain(crate::wire::mcp_servers::codex_overrides(&servers))
+            .collect()
     }
 
     /// A new process: its thread is opened from scratch.

@@ -690,9 +690,10 @@ fn hook_settings(profile_id: Option<&str>) -> Option<String> {
 }
 
 /// The defaults file Gemini CLI is pointed at in a devpit terminal, written if
-/// it differs: the system's own defaults with devpit's hooks added, so the
-/// person's settings file is never touched and the system's is never lost.
-fn gemini_settings(root: &std::path::Path) -> Option<String> {
+/// it differs: the system's own defaults with devpit's hooks and MCP server
+/// added, so the person's settings file is never touched and the system's is
+/// never lost.
+pub(crate) fn gemini_settings(root: &std::path::Path) -> Option<String> {
     let path = root.join("gemini-hooks.json");
     let system = devpit_agentcli::gemini::defaults_path();
     // Started from a devpit terminal, the variable already names ours.
@@ -705,10 +706,13 @@ fn gemini_settings(root: &std::path::Path) -> Option<String> {
             Err(_) => return None,
         }
     };
+    let server = crate::agent_reach::exe()
+        .and_then(|exe| Some(crate::agent_reach::gemini_server(exe.to_str()?)));
     let wanted = devpit_agentcli::gemini::settings_json(
         &devpit_agentcli::endpoint_file(root),
         &devpit_agentcli::auth_file(root),
         theirs.as_deref(),
+        server.as_ref(),
     )?;
     if std::fs::read_to_string(&path).ok().as_deref() != Some(wanted.as_str()) {
         // Private, as the Claude Code hooks: these are commands an agent runs.

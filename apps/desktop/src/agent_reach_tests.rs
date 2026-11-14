@@ -63,7 +63,7 @@ fn codex_hands_devpits_server_the_pane_it_runs_in() {
 fn codex_waits_on_a_tool_longer_than_devpit_does() {
     for method in crate::agent_api::METHODS {
         assert!(
-            codex_tool_timeout() > devpit_agentapi::client::wait_for(method),
+            tool_timeout() > devpit_agentapi::client::wait_for(method),
             "{method}"
         );
     }
@@ -138,4 +138,84 @@ fn on_windows_the_tools_are_reached_through_forward_slashes() {
     let flags = mcp_flags("codex", Path::new(r"C:\devpit\devpit.exe"), &config).expect("flags");
     assert!(flags.contains(r#"mcp_servers.devpit.command="C:/devpit/devpit.exe""#));
     assert!(mcp_flags("claude", Path::new(r"C:\devpit\devpit.exe"), &config).is_some());
+}
+
+/// Every file below `dir`, relative to it.
+fn files_under(dir: &Path) -> Vec<String> {
+    let mut found = Vec::new();
+    for entry in std::fs::read_dir(dir).expect("read dir").flatten() {
+        let path = entry.path();
+        if path.is_dir() {
+            found.extend(
+                files_under(&path)
+                    .into_iter()
+                    .map(|inner| format!("{}/{inner}", entry.file_name().to_string_lossy())),
+            );
+        } else {
+            found.push(entry.file_name().to_string_lossy().into_owned());
+        }
+    }
+    found.sort();
+    found
+}
+
+/// A Codex chat, an ACP chat and a Gemini terminal reach devpit's server
+/// through files in devpit's own folder, each signed with its agent: nothing
+/// else in the person's home is written.
+#[test]
+fn each_cli_is_handed_devpits_server_from_devpits_own_folder_only() {
+    let home = tempfile::tempdir().expect("tempdir");
+    let root = home.path().join(".devpit");
+    std::fs::create_dir_all(home.path().join(".codex")).expect("codex home");
+    std::fs::create_dir_all(&root).expect("root");
+    let exe = Path::new("/opt/devpit");
+    let codex = chat_mcp_in(&root, exe, "codex", "codex").expect("codex");
+    let opencode = chat_mcp_in(&root, exe, "acp", "opencode").expect("opencode");
+    chat_mcp_in(&root, exe, "claude", "claude").expect("claude");
+    crate::shell_launch::gemini_settings(&root).expect("gemini");
+
+    assert_eq!(
+        files_under(home.path()),
+        [
+            ".devpit/gemini-hooks.json",
+            ".devpit/mcp-codex.json",
+            ".devpit/mcp-opencode.json",
+            ".devpit/mcp.json",
+        ]
+    );
+    let signed = |file: &str| -> serde_json::Value {
+        let text = std::fs::read_to_string(file).expect("read");
+        serde_json::from_str::<serde_json::Value>(&text).expect("json")["mcpServers"]["devpit"]
+            ["env"]["DEVPIT_AGENT_ID"]
+            .clone()
+    };
+    assert_eq!(signed(&codex), "codex");
+    assert_eq!(signed(&opencode), "opencode");
+    let gemini: serde_json::Value = serde_json::from_str(
+        &std::fs::read_to_string(root.join("gemini-hooks.json")).expect("read"),
+    )
+    .expect("json");
+    let server = &gemini["mcpServers"]["devpit"];
+    assert_eq!(server["args"][0], "mcp");
+    assert_eq!(server["env"]["DEVPIT_AGENT_ID"], "gemini");
+    assert_eq!(server["env"]["DEVPIT_PANE"], "${DEVPIT_PANE}");
+}
+
+/// The agent names the file: one devpit does not know names none.
+#[test]
+fn a_chat_for_an_agent_devpit_does_not_know_gets_no_file() {
+    let root = tempfile::tempdir().expect("tempdir");
+    let exe = Path::new("/opt/devpit");
+    assert_eq!(chat_mcp_in(root.path(), exe, "acp", "../escape"), None);
+    assert_eq!(chat_mcp_in(root.path(), exe, "", "aider"), None);
+    assert!(files_under(root.path()).is_empty());
+}
+
+/// Every server devpit hands out waits past devpit's own longest answer.
+#[test]
+fn the_server_waits_on_a_tool_as_long_as_devpit_may_take() {
+    let timeout = server("/opt/devpit", "codex")["timeout"]
+        .as_u64()
+        .expect("ms");
+    assert_eq!(u128::from(timeout), tool_timeout().as_millis());
 }

@@ -136,6 +136,9 @@ impl Wire for Claude {
     }
 }
 
+#[path = "mcp_servers.rs"]
+pub(crate) mod mcp_servers;
+
 #[cfg(test)]
 #[path = "wire_tests.rs"]
 mod tests;

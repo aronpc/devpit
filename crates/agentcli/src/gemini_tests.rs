@@ -78,7 +78,7 @@ fn the_defaults_keep_the_systems_own_and_add_ours_once() {
         Path::new("/h/.devpit/hook-auth"),
     );
     let theirs = r#"{"general":{"vimMode":true},"hooks":{"BeforeTool":[{"matcher":"*","hooks":[{"type":"command","command":"audit"}]}]}}"#;
-    let written = settings_json(endpoint, auth, Some(theirs)).expect("settings");
+    let written = settings_json(endpoint, auth, Some(theirs), None).expect("settings");
     let settings: serde_json::Value = serde_json::from_str(&written).expect("json");
     assert_eq!(settings["general"]["vimMode"], true);
     let before = settings["hooks"]["BeforeTool"].as_array().expect("list");
@@ -89,17 +89,40 @@ fn the_defaults_keep_the_systems_own_and_add_ours_once() {
     assert!(settings["hooks"]["AfterModel"].is_null());
 
     // Written again over itself, still one copy of ours.
-    let again: serde_json::Value =
-        serde_json::from_str(&settings_json(endpoint, auth, Some(&written)).expect("settings"))
-            .expect("json");
+    let again: serde_json::Value = serde_json::from_str(
+        &settings_json(endpoint, auth, Some(&written), None).expect("settings"),
+    )
+    .expect("json");
     assert_eq!(
         again["hooks"]["BeforeTool"].as_array().map(Vec::len),
         Some(2)
     );
 
     // A system file that is not settings is not hidden behind ours.
-    assert_eq!(settings_json(endpoint, auth, Some("{ not json")), None);
-    assert!(settings_json(endpoint, auth, None).is_some());
+    assert_eq!(
+        settings_json(endpoint, auth, Some("{ not json"), None),
+        None
+    );
+    assert!(settings_json(endpoint, auth, None, None).is_some());
+}
+
+/// Gemini merges `mcpServers` from the defaults under the person's own, key
+/// by key: devpit's server joins theirs and the system's without writing either.
+#[test]
+fn the_defaults_carry_devpits_server_beside_the_systems_own() {
+    use std::path::Path;
+
+    use super::settings_json;
+
+    let (endpoint, auth) = (Path::new("/h/e"), Path::new("/h/a"));
+    let server = serde_json::json!({ "command": "/opt/devpit", "args": ["mcp"] });
+    let theirs = r#"{"mcpServers":{"search":{"command":"search-mcp"}}}"#;
+    let written = settings_json(endpoint, auth, Some(theirs), Some(&server)).expect("settings");
+    let settings: serde_json::Value = serde_json::from_str(&written).expect("json");
+    assert_eq!(settings["mcpServers"]["search"]["command"], "search-mcp");
+    assert_eq!(settings["mcpServers"]["devpit"], server);
+    let again = settings_json(endpoint, auth, Some(&written), Some(&server)).expect("settings");
+    assert_eq!(again, written, "written over itself, nothing changes");
 }
 
 /// As Gemini CLI 0.55 sent it, read from the defaults file a devpit terminal

@@ -359,7 +359,7 @@ fn resumed(
     let (profile, path) = crate::chat_turn::spawnable(&head.profile).ok()?;
     let driver = devpit_agentcli::driver::driver_for(&profile.driver, &profile.base)?;
     let env = devpit_agentcli::running::runner(&profile).env;
-    let mcp = crate::agent_reach::chat_mcp(&profile.driver);
+    let mcp = crate::agent_reach::chat_mcp(&profile);
     let reach = crate::orchestrator::reaches(project_id);
     let address = crate::orchestrator::address_of(project_id);
     let hooks = crate::steps::hook_settings_for(Some(&head.profile));

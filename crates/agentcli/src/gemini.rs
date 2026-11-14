@@ -122,7 +122,8 @@ pub fn defaults_path() -> PathBuf {
 pub const DEFAULTS_ENV: &str = "GEMINI_CLI_SYSTEM_DEFAULTS_PATH";
 
 /// The defaults file a devpit terminal points Gemini at: the system's own,
-/// when there is one, with devpit's hooks added to its own.
+/// when there is one, with devpit's hooks added to its own and `server`, devpit's
+/// MCP server, beside its servers.
 ///
 /// `None` when the system's file cannot be read as settings: pointed
 /// elsewhere, Gemini would lose them, and losing someone's settings is worse
@@ -131,6 +132,7 @@ pub fn settings_json(
     endpoint_file: &Path,
     auth_file: &Path,
     theirs: Option<&str>,
+    server: Option<&Value>,
 ) -> Option<String> {
     let mut settings = match theirs {
         None => Map::new(),
@@ -155,6 +157,13 @@ pub fn settings_json(
         // Written over a file that already has ours, it stays one copy.
         if !list.contains(&ours) {
             list.push(ours);
+        }
+    }
+    // A system file whose `mcpServers` is not a map keeps it as it is.
+    if let Some(server) = server {
+        let servers = settings.entry("mcpServers").or_insert_with(|| json!({}));
+        if let Some(servers) = servers.as_object_mut() {
+            servers.insert("devpit".to_owned(), server.clone());
         }
     }
     Some(Value::Object(settings).to_string())

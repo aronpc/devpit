@@ -598,7 +598,7 @@ pub(crate) fn waking(profile: &str) -> Result<Waking, String> {
         ));
     }
     let env = devpit_agentcli::running::runner(&found).env;
-    Ok((command, env, crate::agent_reach::chat_mcp(&found.driver)))
+    Ok((command, env, crate::agent_reach::chat_mcp(&found)))
 }
 
 /// `project_agent_ask` and `project_agent_brief`, for the orchestrator whose

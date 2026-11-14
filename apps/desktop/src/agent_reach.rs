@@ -20,12 +20,63 @@ pub(crate) fn exe() -> Option<PathBuf> {
     }
 }
 
-/// The MCP file a chat turn is handed, for the one driver that takes it.
-/// Written with the terminal's own flags, so both reach the same server.
-pub(crate) fn chat_mcp(driver: &str) -> Option<String> {
-    let config = devpit_core::Store::root().ok()?.join("mcp.json");
-    mcp_flags(driver, &exe()?, &config)?;
-    (driver == "claude").then(|| config.display().to_string())
+/// The MCP file a chat turn under `profile` is handed.
+pub(crate) fn chat_mcp(profile: &devpit_rpc::Profile) -> Option<String> {
+    let agent = crate::restoring::base_or(Some(&profile.base), &profile.id);
+    chat_mcp_in(
+        &devpit_core::Store::root().ok()?,
+        &exe()?,
+        &profile.driver,
+        agent,
+    )
+}
+
+/// Claude's own file, written with the terminal's flags so both reach the
+/// same server; for Codex and an ACP agent, a file of devpit's that their
+/// wire reads back, signed with the agent. Only ever under devpit's `root`.
+pub(crate) fn chat_mcp_in(root: &Path, exe: &Path, driver: &str, agent: &str) -> Option<String> {
+    let config = match driver {
+        "claude" => {
+            let config = root.join("mcp.json");
+            mcp_flags(driver, exe, &config)?;
+            config
+        }
+        "codex" | "acp" if devpit_pty::agents::known(agent).is_some() => {
+            let config = root.join(format!("mcp-{agent}.json"));
+            let file =
+                serde_json::json!({ "mcpServers": { "devpit": server(exe.to_str()?, agent) } });
+            kept(&config, &file.to_string())?;
+            config
+        }
+        _ => return None,
+    };
+    Some(config.display().to_string())
+}
+
+/// devpit's server for an agent that waits on a tool only so long.
+pub(crate) fn server(exe: &str, agent: &str) -> serde_json::Value {
+    let timeout = u64::try_from(tool_timeout().as_millis()).unwrap_or(u64::MAX);
+    serde_json::json!({
+        "command": exe,
+        "args": ["mcp"],
+        "env": { "DEVPIT_AGENT_ID": agent },
+        "timeout": timeout,
+    })
+}
+
+/// [`server`] for Gemini, which expands the pane devpit's terminal set.
+pub(crate) fn gemini_server(exe: &str) -> serde_json::Value {
+    let mut server = server(exe, "gemini");
+    server["env"]["DEVPIT_PANE"] = serde_json::json!("${DEVPIT_PANE}");
+    server
+}
+
+/// `path` holding `wanted`, written privately and only when it differs.
+fn kept(path: &Path, wanted: &str) -> Option<()> {
+    if std::fs::read_to_string(path).ok().as_deref() != Some(wanted) {
+        devpit_core::home::write_private(path, wanted.as_bytes()).ok()?;
+    }
+    Some(())
 }
 
 /// What to add to an agent's launch line so it has devpit's tools, or
@@ -46,10 +97,7 @@ pub(crate) fn mcp_flags(agent: &str, exe: &Path, config: &Path) -> Option<String
     }
     match agent {
         "claude" => {
-            let wanted = claude_config(exe, agent);
-            if std::fs::read_to_string(config).ok().as_deref() != Some(wanted.as_str()) {
-                devpit_core::home::write_private(config, wanted.as_bytes()).ok()?;
-            }
+            kept(config, &claude_config(exe, agent))?;
             let path = config.to_str()?;
             // `=`, because the flag takes several files: written as two words
             // it swallowed whatever came after it, a subcommand included.
@@ -64,15 +112,15 @@ pub(crate) fn mcp_flags(agent: &str, exe: &Path, config: &Path) -> Option<String
              -c 'mcp_servers.devpit.env={{DEVPIT_AGENT_ID=\"codex\"}}' \
              -c 'mcp_servers.devpit.env_vars=[\"DEVPIT_PANE\"]' \
              -c 'mcp_servers.devpit.tool_timeout_sec={}'",
-            codex_tool_timeout().as_secs()
+            tool_timeout().as_secs()
         )),
         _ => None,
     }
 }
 
-/// How long Codex waits on a devpit tool: past the longest the server itself
-/// waits, so the answer, or devpit's own "still working", always arrives.
-pub(crate) fn codex_tool_timeout() -> std::time::Duration {
+/// How long an agent waits on a devpit tool: past the longest the server
+/// itself waits, so the answer, or devpit's own "still working", always arrives.
+pub(crate) fn tool_timeout() -> std::time::Duration {
     crate::agent_api::METHODS
         .iter()
         .map(|method| devpit_agentapi::client::wait_for(method))

@@ -917,3 +917,34 @@ fn an_approval_names_the_command_that_runs_not_its_summary() {
         .expect("asked");
     assert_eq!(prompt.input["command"], runs);
 }
+
+/// A chat has devpit's tools the way a Codex terminal does: overrides on the
+/// app-server's own command line, and nothing in the person's `config.toml`.
+#[test]
+fn the_app_server_is_handed_devpits_tools_on_its_command_line() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let file = dir.path().join("mcp-codex.json");
+    let server = json!({ "mcpServers": { "devpit": {
+        "command": "/opt/devpit", "args": ["mcp"], "env": { "DEVPIT_AGENT_ID": "codex" }, "timeout": 1_260_000,
+    } } });
+    std::fs::write(&file, server.to_string()).expect("file");
+    let control = Control::new();
+    let mut say = turn("codex", &[], dir.path(), "", "manual", None, &control);
+    say.mcp_config = file.to_str();
+    assert_eq!(
+        Codex::default().wire().argv(&say),
+        [
+            "app-server",
+            "-c",
+            r#"mcp_servers.devpit.command="/opt/devpit""#,
+            "-c",
+            r#"mcp_servers.devpit.args=["mcp"]"#,
+            "-c",
+            r#"mcp_servers.devpit.env={DEVPIT_AGENT_ID="codex"}"#,
+            "-c",
+            "mcp_servers.devpit.tool_timeout_sec=1260",
+        ]
+    );
+    say.mcp_config = None;
+    assert_eq!(Codex::default().wire().argv(&say), ["app-server"]);
+}
