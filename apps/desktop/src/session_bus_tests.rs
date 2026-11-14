@@ -19,6 +19,7 @@ fn letter(to: Inbox, text: &str) -> Letter {
     Letter {
         to,
         text: text.to_owned(),
+        held: None,
     }
 }
 
@@ -295,4 +296,30 @@ fn a_half_typed_prompt_is_never_typed_over() {
             .map(|one| one.text),
         Some("status?".to_owned())
     );
+}
+
+/// A message a pane never frees — its prompt unreadable, or a mark devpit
+/// does not know — tells its orchestrator once that it still waits, and keeps
+/// waiting.
+#[test]
+fn a_message_held_too_long_tells_its_sender_once() {
+    let mut bus = Bus::default();
+    let mut held = letter(pane("leaf_1"), "go on");
+    held.held = Some(Held {
+        orchestrator: "prj_orchestrator".to_owned(),
+        name: "api-worker".to_owned(),
+        since: 1_000.0,
+    });
+    bus.post(held);
+    assert!(bus
+        .overdue(&pane("leaf_1"), 1_000.0 + HELD_TELLS_AFTER_MS - 1.0)
+        .is_empty());
+    let told = bus.overdue(&pane("leaf_1"), 1_000.0 + HELD_TELLS_AFTER_MS);
+    assert_eq!(told.len(), 1);
+    assert_eq!(told[0].orchestrator, "prj_orchestrator");
+    assert!(held_notice(&told[0].name).contains("your message to api-worker still waits"));
+    assert!(bus
+        .overdue(&pane("leaf_1"), 1_000.0 + 10.0 * HELD_TELLS_AFTER_MS)
+        .is_empty());
+    assert_eq!(bus.waiting(), vec![pane("leaf_1")], "it keeps waiting");
 }

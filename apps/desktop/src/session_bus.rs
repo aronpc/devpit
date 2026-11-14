@@ -27,6 +27,8 @@ const LONGEST: usize = 4000;
 const MOST_IN_A_TURN: usize = 16_000;
 /// How often what waits looks at its recipient again.
 const LOOK_EVERY: Duration = Duration::from_secs(2);
+/// How long an orchestrator's message may wait for a pane before it is told.
+pub(crate) const HELD_TELLS_AFTER_MS: f64 = 120_000.0;
 
 /// Where a message goes.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -42,6 +44,17 @@ pub(crate) struct Letter {
     pub to: Inbox,
     /// The words as they are given: devpit's heading, then the sender's.
     pub text: String,
+    /// For a pane, who to tell if it waits too long; gone once told.
+    pub held: Option<Held>,
+}
+
+/// An orchestrator's message to a session, waiting for its prompt.
+#[derive(Debug, Clone, PartialEq)]
+pub(crate) struct Held {
+    pub orchestrator: String,
+    pub name: String,
+    /// Milliseconds since the epoch.
+    pub since: f64,
 }
 
 /// An orchestrator waiting to hear, once, that a session went idle or ended.
@@ -128,6 +141,20 @@ impl Bus {
             taken.extend(self.queued.remove(at).map(|one| one.text));
         }
         (!taken.is_empty()).then(|| taken.join("\n\n"))
+    }
+
+    /// The messages for `to` that have waited too long, each told of once.
+    pub(crate) fn overdue(&mut self, to: &Inbox, now: f64) -> Vec<Held> {
+        self.queued
+            .iter_mut()
+            .filter(|one| &one.to == to)
+            .filter(|one| {
+                one.held
+                    .as_ref()
+                    .is_some_and(|held| now - held.since >= HELD_TELLS_AFTER_MS)
+            })
+            .filter_map(|one| one.held.take())
+            .collect()
     }
 
     /// A message that could not go after all, back before the rest.
@@ -395,6 +422,14 @@ pub(crate) fn to_orchestrator(from: &Sender, text: &str) -> String {
     format!("{heading}\n\n{text}")
 }
 
+/// What an orchestrator is told when its message to `name` still waits: a
+/// pane whose prompt devpit cannot read never frees it on its own.
+pub(crate) fn held_notice(name: &str) -> String {
+    devpit_agentcli::person::by_devpit(&format!(
+        "your message to {name} still waits in devpit. It is typed only at an empty prompt, and devpit has not seen one in its pane: a turn still running, a question open, words typed there, or a prompt devpit cannot read. It goes once it can; devpit_session_screen shows what the pane shows."
+    ))
+}
+
 /// What an orchestrator is told when a session it watches goes idle or ends.
 pub(crate) fn idle_notice(name: &str, ended: bool) -> String {
     let what = if ended {
@@ -469,7 +504,7 @@ fn go() {
     }
 }
 
-fn now_ms() -> f64 {
+pub(crate) fn now_ms() -> f64 {
     std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .map(|since| since.as_millis() as f64)
@@ -510,21 +545,24 @@ fn at_pane(project: &str, leaf: &str) {
     };
     match now {
         Pane::Busy => {}
-        Pane::Ended => ended(&inbox),
+        Pane::Ended => return ended(&inbox),
         Pane::Free => {
             let told = bus().idle(&inbox);
             for one in told {
                 wake(&one.orchestrator, idle_notice(&one.name, false));
             }
             // Words the person left on the prompt are theirs: it waits.
-            let Some(letter) = bus().next_to_type(&inbox, now, empty) else {
-                return;
-            };
-            match crate::pane_io::paste(&target, &letter.text, true) {
-                Ok(()) => bus().typed_into(leaf, now_ms()),
-                Err(_) => bus().put_back(letter),
+            if let Some(letter) = bus().next_to_type(&inbox, now, empty) {
+                match crate::pane_io::paste(&target, &letter.text, true) {
+                    Ok(()) => bus().typed_into(leaf, now_ms()),
+                    Err(_) => bus().put_back(letter),
+                }
             }
         }
+    }
+    let overdue = bus().overdue(&inbox, now_ms());
+    for held in overdue {
+        wake(&held.orchestrator, held_notice(&held.name));
     }
 }
 
@@ -542,6 +580,7 @@ fn wake(project: &str, text: String) {
             project: project.to_owned(),
         },
         text,
+        held: None,
     });
     to_chat(project);
 }
@@ -582,7 +621,11 @@ fn to_chat(project: &str) {
         match ran {
             // Another turn took the chat first: this one waits for its end.
             Err(err) if matches!(err.code, ErrorCode::Conflict | ErrorCode::Busy) => {
-                bus.put_back(Letter { to: inbox, text });
+                bus.put_back(Letter {
+                    to: inbox,
+                    text,
+                    held: None,
+                });
             }
             Err(err) => eprintln!(
                 "a message for an orchestrator was not delivered: {}",
@@ -620,6 +663,11 @@ pub(crate) fn message(
         bus().post(Letter {
             to: inbox.clone(),
             text: to_session(&from, text),
+            held: Some(Held {
+                orchestrator: here.id.clone(),
+                name: name.clone(),
+                since: now_ms(),
+            }),
         });
         go();
         let typed = !bus().waiting().contains(&inbox);
