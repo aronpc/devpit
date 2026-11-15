@@ -46,6 +46,9 @@ pub struct Posted {
     /// Posted to `/agent` — a question from an agent (`agent_api`) — rather
     /// than to `/hook`, a report.
     pub agent: bool,
+    /// The conversation whose chat process posted, from `x-devpit-chat`;
+    /// none for a session started anywhere else.
+    pub chat: Option<String>,
 }
 
 /// The body of a POST, or nothing.
@@ -68,6 +71,7 @@ pub(crate) fn read_post(mut reader: impl BufRead, door: Option<&str>) -> Option<
     let mut pane = None;
     let mut secret = None;
     let mut agent = false;
+    let mut chat = None;
     let mut gemini = false;
     let mut first = true;
     let mut seen = 0usize;
@@ -114,6 +118,7 @@ pub(crate) fn read_post(mut reader: impl BufRead, door: Option<&str>) -> Option<
             match name.trim().to_ascii_lowercase().as_str() {
                 "content-length" => length = value.trim().parse().ok()?,
                 devpit_agentcli::HOOK_HEADER => secret = Some(value.trim().to_owned()),
+                devpit_agentapi::hook::CHAT_HEADER => chat = ours(value.trim()),
                 _ => {}
             }
         }
@@ -152,6 +157,7 @@ pub(crate) fn read_post(mut reader: impl BufRead, door: Option<&str>) -> Option<
         pane,
         secret,
         agent,
+        chat,
     })
 }
 
@@ -162,7 +168,11 @@ pub(crate) fn read_post(mut reader: impl BufRead, door: Option<&str>) -> Option<
 /// reach the screen — a value nobody checked is a value somebody else can
 /// choose.
 fn pane_in(request_line: &str) -> Option<String> {
-    let named = query_says(request_line, "pane")?.trim();
+    ours(query_says(request_line, "pane")?.trim())
+}
+
+/// A name one of our own would have — a pane, a conversation — or nothing.
+fn ours(named: &str) -> Option<String> {
     let ours = !named.is_empty()
         && named.len() <= 64
         && named

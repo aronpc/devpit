@@ -27,7 +27,6 @@ use crate::card_activity::{hear, next_seq, pane_word, state_of_event, Activities
 use crate::card_route::{card_of_leaf, card_of_session, notice_for, Ring};
 use crate::happening::{agent_said, session_said, subagent_said};
 use crate::post::{read_request, Posted};
-use crate::question::question_in;
 
 /// Starts listening, and writes the address where the hook will look for it.
 ///
@@ -217,7 +216,7 @@ fn serve(app: AppHandle, mut stream: TcpStream, seq: u64) {
     // a person answers. Everything else is answered at once and empty, which
     // leaves the CLI's own permission mode in charge — a board step running
     // where nobody is watching must never wait on a window.
-    let held = question_in(body).filter(|question| {
+    let held = crate::question::asked_by(&posted).filter(|question| {
         let supervised = crate::question::changes_something(&question.tool)
             && app
                 .try_state::<Asking>()

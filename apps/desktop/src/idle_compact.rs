@@ -358,7 +358,7 @@ fn resumed(
 ) -> Option<Compacted> {
     let (profile, path) = crate::chat_turn::spawnable(&head.profile).ok()?;
     let driver = devpit_agentcli::driver::driver_for(&profile.driver, &profile.base)?;
-    let env = devpit_agentcli::running::runner(&profile).env;
+    let env = crate::chat_turn::env_of(&profile, conversation_id);
     let mcp = crate::agent_reach::chat_mcp(&profile);
     let reach = crate::orchestrator::reaches(project_id);
     let address = crate::orchestrator::address_of(project_id);

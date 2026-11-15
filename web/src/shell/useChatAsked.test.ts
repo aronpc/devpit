@@ -29,6 +29,7 @@ const waiting: Question[] = []
 const picked = vi.fn()
 const refused = vi.fn()
 const answered = vi.fn()
+const readFor = vi.fn()
 
 vi.mock('./chat', async (actual) => ({
   ...(await actual<typeof import('./chat')>()),
@@ -37,11 +38,11 @@ vi.mock('./chat', async (actual) => ({
 vi.mock('./live', () => ({
   ask: async (call: () => unknown) => ({ data: await call(), error: null, loading: false }),
   commands: {
-    chatHistory: (projectId: string, id: string) => ({ id, projectId, messages: [], profile: 'claude', rewindable: [], sessionId: id === 'conv_b' ? 'ses_2' : 'ses_1', costUsd: 0, cardId: null }),
+    chatHistory: (projectId: string, id: string) => ({ id, projectId, messages: [], profile: 'claude', rewindable: [], /* conv_c shares conv_a's session, as a rewind leaves it. */ sessionId: id === 'conv_b' ? 'ses_2' : 'ses_1', costUsd: 0, cardId: null }),
     agentProfiles: () => [{ id: 'claude', path: '/bin/claude' }],
     permissionAskFromNow: () => null,
-    permissionQuestions: (sessionId: string) =>
-      deferRead
+    permissionQuestions: (sessionId: string, conversationId: string) =>
+      (readFor(sessionId, conversationId), deferRead)
         ? new Promise((resolve) => reads.push({ session: sessionId, resolve: (questions) => resolve({ questions }) }))
         : { questions: waiting.filter((one) => one.sessionId === sessionId) },
     permissionPick: (id: string, chosen: string[][]) => (picked(id, chosen), null),
@@ -206,6 +207,36 @@ describe("a chat's questions", () => {
     act(() => heard.asked?.(colour))
     await waitFor(() => expect(result.current.session).toBe('ses_2'))
     expect(result.current.asked).toEqual([])
+  })
+})
+
+/* One session, two conversations: a rewind copies it, an adopted one can be adopted twice. */
+describe('two conversations on the same session', () => {
+  const fromA: Question = { ...bash, id: 'qa', conversationId: 'conv_a' }
+  const fromC: Question = { ...colour, id: 'qc', conversationId: 'conv_c' }
+
+  it("keep each one's question to the chat whose process asked it", async () => {
+    const { result } = renderHook(() => useChat('conv_c'))
+    await waitFor(() => expect(result.current.session).toBe('ses_1'))
+    act(() => {
+      heard.asked?.(fromA)
+      heard.asked?.(fromC)
+    })
+    expect(result.current.asked.map((one) => one.id)).toEqual(['qc'])
+  })
+
+  it('read at open only what this conversation asked', async () => {
+    waiting.push(fromA, fromC)
+    const { result } = renderHook(() => useChat('conv_c'))
+    await waitFor(() => expect(result.current.asked.map((one) => one.id)).toEqual(['qc']))
+    expect(readFor).toHaveBeenCalledWith('ses_1', 'conv_c')
+  })
+
+  it('still show a question from outside any chat to every chat on its session', async () => {
+    const { result } = renderHook(() => useChat('conv_c'))
+    await waitFor(() => expect(result.current.session).toBe('ses_1'))
+    act(() => heard.asked?.(bash))
+    expect(result.current.asked.map((one) => one.id)).toEqual(['q1'])
   })
 })
 

@@ -71,7 +71,7 @@ fn command_for(settings: &str, event: &str) -> String {
 /// Runs the real hook command for one event, the way the CLI does, and
 /// answers the post it made. `pane` is set only for an agent inside a pane.
 fn posted_by_hook(dir: &Path, event: &str, payload: &str, pane: Option<&str>) -> Posted {
-    hooked(dir, event, payload, pane, "").0
+    hooked(dir, event, payload, pane, None, "").0
 }
 
 /// [`posted_by_hook`], answering with `body`, and what the hook printed for
@@ -81,6 +81,7 @@ fn hooked(
     event: &str,
     payload: &str,
     pane: Option<&str>,
+    chat: Option<&str>,
     body: &str,
 ) -> (Posted, String) {
     let body = body.to_owned();
@@ -119,10 +120,14 @@ fn hooked(
     hook.arg("-c")
         .arg(&command)
         .env_remove("DEVPIT_PANE")
+        .env_remove(devpit_agentapi::hook::CHAT_ENV)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped());
     if let Some(pane) = pane {
         hook.env("DEVPIT_PANE", pane);
+    }
+    if let Some(chat) = chat {
+        hook.env(devpit_agentapi::hook::CHAT_ENV, chat);
     }
     let mut child = hook.spawn().expect("hook");
     child
@@ -157,7 +162,7 @@ fn a_refusal_reaches_the_cli_with_the_persons_reason() {
     let body = reply_for(&picks, "q1", input, asking.wait("q1", hear));
     let payload = r#"{"hook_event_name":"PreToolUse","session_id":"s1","cwd":"/tmp","tool_name":"Bash","tool_input":{"command":"grep -r x ."}}"#;
 
-    let (_, printed) = hooked(dir.path(), "PreToolUse", payload, None, &body);
+    let (_, printed) = hooked(dir.path(), "PreToolUse", payload, None, None, &body);
 
     let read: serde_json::Value = serde_json::from_str(&printed).expect("the CLI reads JSON");
     let said = &read["hookSpecificOutput"];
@@ -166,6 +171,32 @@ fn a_refusal_reaches_the_cli_with_the_persons_reason() {
         said["permissionDecisionReason"],
         "Refused in devpit: use rg, not grep"
     );
+}
+
+/// A question a chat's process asks names that chat, through the real hook
+/// (which also keeps the curl line and the Windows hook naming it alike);
+/// one from a session started anywhere else names none, and goes by session.
+#[test]
+fn a_question_names_the_chat_whose_process_asked_and_none_outside_a_chat() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let payload = r#"{"hook_event_name":"PreToolUse","session_id":"ses_shared","cwd":"/tmp","tool_use_id":"q1","tool_name":"Bash","tool_input":{"command":"ls"}}"#;
+
+    let (in_chat, _) = hooked(
+        dir.path(),
+        "PreToolUse",
+        payload,
+        None,
+        Some("conv_01A"),
+        "",
+    );
+    let asked = crate::question::asked_by(&in_chat).expect("a question");
+    assert_eq!(asked.conversation_id.as_deref(), Some("conv_01A"));
+    assert_eq!(asked.session_id, "ses_shared");
+
+    let (in_terminal, _) = hooked(dir.path(), "PreToolUse", payload, Some(LEAF), None, "");
+    let asked = crate::question::asked_by(&in_terminal).expect("a question");
+    assert_eq!(asked.conversation_id, None);
+    assert_eq!(asked.session_id, "ses_shared");
 }
 
 /// Every way a hook reaches a card, each one fired through the real hook
@@ -333,6 +364,7 @@ fn a_background_session_waiting_reaches_its_card() {
         pane: None,
         secret: None,
         agent: false,
+        chat: None,
     };
     hear_post(&sink, &posted, next_seq());
 
@@ -392,6 +424,7 @@ fn a_hook_from_an_archived_cards_pane_does_not_bring_it_back() {
         pane: Some(LEAF.to_owned()),
         secret: None,
         agent: false,
+        chat: None,
     };
     hear_post(&sink, &posted, next_seq());
     assert!(!sink
@@ -469,6 +502,7 @@ fn a_prompt_in_a_cards_session_moves_its_card_along() {
         pane: None,
         secret: None,
         agent: false,
+        chat: None,
     };
     hear_post(&sink, &said("Stop"), next_seq());
     assert!(sink.prompted.lock().expect("prompted").is_empty());
@@ -500,6 +534,7 @@ fn a_tool_that_fails_for_a_sign_in_says_what_fixes_it() {
         pane: None,
         secret: None,
         agent: false,
+        chat: None,
     };
     hear_post(&sink, &posted("error[E0425]: cannot find value"), 1);
     hear_post(

@@ -185,3 +185,27 @@ fn a_turn_ends_naming_its_model_effort_time_and_cost() {
     ran_on(&mut said, &head);
     assert_eq!(said.end.model.as_deref(), Some("opus"));
 }
+
+/// A chat's process names its conversation, over anything the profile set,
+/// and keeps the account's own variables.
+#[test]
+fn a_chats_process_is_started_naming_its_conversation() {
+    let account = vec![
+        ("CLAUDE_CONFIG_DIR".to_owned(), "/c".to_owned()),
+        (
+            devpit_agentapi::hook::CHAT_ENV.to_owned(),
+            "conv_other".to_owned(),
+        ),
+    ];
+    let env = with_chat(account, "conv_01A");
+    assert_eq!(
+        env,
+        [
+            ("CLAUDE_CONFIG_DIR".to_owned(), "/c".to_owned()),
+            (
+                devpit_agentapi::hook::CHAT_ENV.to_owned(),
+                "conv_01A".to_owned()
+            ),
+        ]
+    );
+}

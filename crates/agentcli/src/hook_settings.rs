@@ -169,10 +169,16 @@ pub(crate) fn post(
         None => format!("${{{pane}:+?pane=${pane}}}"),
         Some(agent) => format!("?from={agent}${{{pane}:+&pane=${pane}}}"),
     };
+    // An empty header is one curl does not send: outside a chat, none arrives.
+    let chat = format!(
+        "-H \"{}: ${}\"",
+        crate::hooks::CHAT_HEADER,
+        crate::hooks::CHAT_ENV
+    );
     format!(
         "E=$(cat {endpoint_file} 2>/dev/null) && [ -n \"$E\" ] && \
          curl -sS -X POST --noproxy '*' --connect-timeout 0.5 --max-time {seconds} \
-         -H 'content-type: application/json' -H @'{auth_file}' --data-binary @- \
+         -H 'content-type: application/json' -H @'{auth_file}' {chat} --data-binary @- \
          \"$E{query}\"{sink} 2>/dev/null || true"
     )
 }

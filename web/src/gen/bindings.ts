@@ -1009,7 +1009,7 @@ export const commands = {
 	 *  `permission.questions` — the questions still waiting on a session, drawn
 	 *  by a chat that opens after they were asked.
 	 */
-	permissionQuestions: (sessionId: string) => typedError<Questions, RpcError>(__TAURI_INVOKE("permission_questions", { sessionId })),
+	permissionQuestions: (sessionId: string, conversationId: string) => typedError<Questions, RpcError>(__TAURI_INVOKE("permission_questions", { sessionId, conversationId })),
 	/**
 	 *  `mcp.list` — what one installation of the CLI resolved for this project,
 	 *  the default profile's when none is named.
@@ -5366,9 +5366,11 @@ export type Question = {
 	cwd: string,
 	/**  What it touches, as the island reads it: the choices, the command. */
 	touch?: Touch | null,
+	/**  The chat whose process asked; none for one started outside a chat. */
+	conversationId?: string | null,
 };
 
-/**  The questions still waiting on one session. */
+/**  The questions still waiting on one conversation's session. */
 export type Questions = {
 	questions: Question[],
 };

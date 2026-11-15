@@ -236,6 +236,14 @@ pub fn endpoint_file(root: &Path) -> PathBuf {
 /// header and the side that checks it cannot drift apart.
 pub const HOOK_HEADER: &str = "x-devpit-hook";
 
+/// The variable a chat's process is started with, naming its conversation;
+/// `devpit_agentapi::hook` names it alike for the Windows hook.
+pub(crate) const CHAT_ENV: &str = "DEVPIT_CHAT";
+
+/// The header a hook carries [`CHAT_ENV`] in: a session is not one
+/// conversation's, so a question is tied to the chat whose process asked.
+pub(crate) const CHAT_HEADER: &str = "x-devpit-chat";
+
 /// Where the secret that header carries is kept.
 ///
 /// A file rather than an argument: the hook command lives in a settings file

@@ -41,6 +41,9 @@ pub struct Question {
     /// What it touches, as the island reads it: the choices, the command.
     #[serde(default)]
     pub touch: Option<devpit_rpc::Touch>,
+    /// The chat whose process asked; none for one started outside a chat.
+    #[serde(default)]
+    pub conversation_id: Option<String>,
 }
 
 /// The chat mode that stops to ask — the screen's `ASKS`. A turn started in

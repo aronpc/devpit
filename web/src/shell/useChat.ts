@@ -96,6 +96,11 @@ export const FORCE_AFTER_MS = 10_000
 const pickable = (all: readonly Profile[], belongs: string | null): Profile[] =>
   all.filter((profile) => profile.path !== null).filter(offers(belongs))
 
+/* A session can be two conversations' (a rewind copies it): a chat's question
+   goes to the chat that asked; one from outside any chat, by its session alone. */
+const asksHere = (question: Question, session: string, conversationId: string): boolean =>
+  question.sessionId === session && (question.conversationId == null || question.conversationId === conversationId)
+
 export function useChat(conversationId: string): Chat {
   const { project, show } = useShellPick((shell) => ({ project: shell.project, show: shell.show }))
   const [messages] = useState(() => chatMessages())
@@ -327,11 +332,11 @@ export function useChat(conversationId: string): Chat {
        between is in the read or in an event, never in neither. */
     const read = (): void => {
       if (--unheard > 0) return
-      void ask(() => commands.permissionQuestions(session)).then((found) => {
+      void ask(() => commands.permissionQuestions(session, conversationId)).then((found) => {
         reading = false
         /* Answered for a conversation or a session no longer on screen. */
         if (!alive || opened.current !== now || !now.open() || !found.data) return
-        const questions = found.data.questions.filter((one) => one.sessionId === session && !gone.has(one.id))
+        const questions = found.data.questions.filter((one) => asksHere(one, session, conversationId) && !gone.has(one.id))
         const waiting = new Set(questions.map((one) => one.id))
         setAsked((was) => [
           ...was.filter((one) => !early.has(one.id) || waiting.has(one.id)),
@@ -341,7 +346,7 @@ export function useChat(conversationId: string): Chat {
     }
     const dropAsked = onPermissionAsked((question) => {
       /* The read may have drawn it already: one question is one row. */
-      if (!alive || opened.current !== now || question.sessionId !== session) return
+      if (!alive || opened.current !== now || !asksHere(question, session, conversationId)) return
       if (unheard > 0) early.add(question.id)
       setAsked((was) => (was.some((had) => had.id === question.id) ? was : [...was, question]))
     }, read)

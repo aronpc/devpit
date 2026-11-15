@@ -104,10 +104,9 @@ pub async fn chat_send(
             format!("no driver called {}", profile.driver),
         ));
     };
-    // Which account this turn spends. A terminal gets it as assignments in the
-    // line it types and a step gets it from its runner; a chat was the one
-    // path that spawned the binary with none of it.
-    let env = devpit_agentcli::running::runner(&profile).env;
+    // Which account this turn spends, as a terminal's line and a step's runner
+    // carry it, and the conversation its hooks name.
+    let env = crate::chat_turn::env_of(&profile, &conversation_id);
     let mcp = crate::agent_reach::chat_mcp(&profile);
     let reach = crate::orchestrator::reaches(&project_id);
     let address = crate::orchestrator::address_of(&project_id);
@@ -184,7 +183,8 @@ pub async fn chat_send(
     let transcript = file.clone();
 
     let control = steering.hold(&conversation_id);
-    control.asks_with(crate::asking_plan::plans(&app, driver.asks()));
+    let plans = crate::asking_plan::plans(&app, driver.asks(), &conversation_id);
+    control.asks_with(plans);
     let steered = control.clone();
     crate::card_chat::turn_heard(&app, &conversation_id, Doing::Working);
     let noticed = (project_id.clone(), profile_id.clone(), from);

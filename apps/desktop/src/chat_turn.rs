@@ -66,6 +66,27 @@ pub(crate) fn turn_cwd(fixed: Option<&str>, asked: &str) -> Result<String, RpcEr
     }
 }
 
+/// What a chat's process is started with: the account's variables, and the
+/// conversation, which its hooks carry back so a question reaches this chat.
+pub(crate) fn env_of(
+    profile: &devpit_rpc::Profile,
+    conversation_id: &str,
+) -> Vec<(String, String)> {
+    with_chat(
+        devpit_agentcli::running::runner(profile).env,
+        conversation_id,
+    )
+}
+
+fn with_chat(mut env: Vec<(String, String)>, conversation_id: &str) -> Vec<(String, String)> {
+    env.retain(|(key, _)| key != devpit_agentapi::hook::CHAT_ENV);
+    env.push((
+        devpit_agentapi::hook::CHAT_ENV.to_owned(),
+        conversation_id.to_owned(),
+    ));
+    env
+}
+
 /// The profile a chat turn runs as, and the program to spawn for it: a name
 /// only the shell knows is refused here, since a turn is spawned, not typed.
 pub(crate) fn spawnable(profile_id: &str) -> Result<(devpit_rpc::Profile, String), RpcError> {
