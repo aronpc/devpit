@@ -45,8 +45,19 @@ pub fn question_in(body: &str) -> Option<Question> {
         touch: raw
             .get("tool_input")
             .and_then(|input| devpit_agentcli::touch_of(raw.get("tool_name")?.as_str()?, input)),
+        // Not in the payload: the listener names it from the request.
+        conversation_id: None,
     })
     .filter(|question| !question.id.is_empty())
+}
+
+/// The question a post asks, tied to the chat whose process posted it, when
+/// a chat's did.
+pub fn asked_by(posted: &crate::post::Posted) -> Option<Question> {
+    question_in(&posted.body).map(|question| Question {
+        conversation_id: posted.chat.clone(),
+        ..question
+    })
 }
 
 /// Whether a tool changes something, which is what Supervised asks about:

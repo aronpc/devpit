@@ -100,6 +100,7 @@ fn always_in_this_chat_never_covers_a_request_for_more_reach() {
         input: input.to_owned(),
         cwd: String::new(),
         touch: None,
+        conversation_id: None,
     };
     assert!(already_allowed(&kept, &asked(plain), false));
     let wider = r#"{"command":"curl https://example.com","grants":{"networkApprovalContext":{"host":"example.com","protocol":"https"}}}"#;
@@ -122,6 +123,7 @@ fn always_on_an_acp_shell_call_covers_that_command_and_no_other() {
         input: input.to_owned(),
         cwd: String::new(),
         touch: None,
+        conversation_id: None,
     };
     let build = r#"{"command":"rm -rf build","description":"bash"}"#;
     kept.keep("ses_1", rule_for("Bash", build));

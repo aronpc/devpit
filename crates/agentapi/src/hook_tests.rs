@@ -164,3 +164,12 @@ fn a_big_report_is_cut_down_before_it_is_sent() {
     // A small one goes as it came.
     assert_eq!(slim(b"{\"a\":1}".to_vec()), b"{\"a\":1}");
 }
+
+/// The Windows hook names the chat its process runs in, as the curl line does,
+/// and nothing outside one or for a value that is not one of ours.
+#[test]
+fn the_hook_names_the_chat_it_runs_in_and_nothing_outside_one() {
+    assert_eq!(chat_line("conv_01A"), "x-devpit-chat: conv_01A\r\n");
+    assert_eq!(chat_line(""), "");
+    assert_eq!(chat_line("conv\r\nx-devpit-hook: guess"), "");
+}

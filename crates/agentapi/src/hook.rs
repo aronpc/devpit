@@ -17,6 +17,11 @@ use crate::client;
 /// The variable a devpit terminal names its pane in, as `devpit_tmux` sets it.
 pub const PANE_ENV: &str = "DEVPIT_PANE";
 
+/// The conversation a chat's process is started in, as
+/// `devpit_agentcli::CHAT_ENV` names it, and the header it travels in.
+pub const CHAT_ENV: &str = "DEVPIT_CHAT";
+pub const CHAT_HEADER: &str = "x-devpit-chat";
+
 /// Set in a session launched with devpit's own hook settings
 /// (`devpit_agentcli::HOOKED`), where the plugin's copy stays quiet.
 pub const HOOKED_ENV: &str = "DEVPIT_HOOKED";
@@ -143,8 +148,9 @@ pub(crate) fn post(
     let mut stream = TcpStream::connect_timeout(&to, CONNECT).ok()?;
     stream.set_read_timeout(Some(wait)).ok()?;
     stream.set_write_timeout(Some(wait)).ok()?;
+    let chat = chat_line(&std::env::var(CHAT_ENV).unwrap_or_default());
     let head = format!(
-        "POST {route}{query} HTTP/1.1\r\nhost: {address}\r\ncontent-type: application/json\r\n{secret}\r\ncontent-length: {}\r\nconnection: close\r\n\r\n",
+        "POST {route}{query} HTTP/1.1\r\nhost: {address}\r\ncontent-type: application/json\r\n{secret}\r\n{chat}content-length: {}\r\nconnection: close\r\n\r\n",
         body.len()
     );
     stream.write_all(head.as_bytes()).ok()?;
@@ -166,6 +172,20 @@ pub(crate) fn query_of(pane: &str, from: Option<&str>) -> String {
         String::new()
     } else {
         format!("?{}", pairs.join("&"))
+    }
+}
+
+/// The header naming the chat whose process this hook runs in, or nothing
+/// outside one. Only a name of ours goes into the request.
+pub(crate) fn chat_line(chat: &str) -> String {
+    let ours = !chat.is_empty()
+        && chat.len() <= 64
+        && chat
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-');
+    match ours {
+        true => format!("{CHAT_HEADER}: {chat}\r\n"),
+        false => String::new(),
     }
 }
 

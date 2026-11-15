@@ -19,20 +19,20 @@ const NOT_YET: &str = "The person did not approve the plan. Keep planning.";
 
 /// Takes a turn's plan prompts to the window, and every prompt when its CLI
 /// `asks` there; any other prompt is refused as before.
-pub(crate) fn plans(app: &tauri::AppHandle, asks: bool) -> Asker {
-    let app = app.clone();
+pub(crate) fn plans(app: &tauri::AppHandle, asks: bool, conversation_id: &str) -> Asker {
+    let (app, conversation) = (app.clone(), conversation_id.to_owned());
     Arc::new(move |prompt: Prompt, control: &Control| {
         if prompt.tool != PLAN && !asks {
             return false;
         }
-        let (app, control) = (app.clone(), control.clone());
-        std::thread::spawn(move || put(&app, &control, prompt));
+        let (app, control, conversation) = (app.clone(), control.clone(), conversation.clone());
+        std::thread::spawn(move || put(&app, &control, prompt, conversation));
         true
     })
 }
 
 /// Waits for the person, as a question the hook holds does, then answers on stdin.
-fn put(app: &tauri::AppHandle, control: &Control, prompt: Prompt) {
+fn put(app: &tauri::AppHandle, control: &Control, prompt: Prompt, conversation: String) {
     use tauri::{Emitter, Manager};
     let question = Question {
         id: prompt.request_id.clone(),
@@ -41,6 +41,7 @@ fn put(app: &tauri::AppHandle, control: &Control, prompt: Prompt) {
         input: prompt.input.to_string(),
         cwd: String::new(),
         touch: devpit_agentcli::touch_of(&prompt.tool, &prompt.input),
+        conversation_id: Some(conversation),
     };
     let plan = prompt.tool == PLAN;
     if already_allowed(&app.state::<crate::asking_kept::Kept>(), &question, plan) {

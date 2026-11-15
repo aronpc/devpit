@@ -14,7 +14,7 @@ use crate::asking::Question;
 #[derive(Default)]
 pub struct Waiting(Mutex<Vec<Question>>);
 
-/// The questions still waiting on one session.
+/// The questions still waiting on one conversation's session.
 #[derive(serde::Serialize, specta::Type)]
 pub struct Questions {
     pub questions: Vec<Question>,
@@ -35,18 +35,30 @@ impl Waiting {
         }
     }
 
-    /// The questions waiting on this session, oldest first.
-    pub fn on_session(&self, session_id: &str) -> Vec<Question> {
+    /// The questions waiting on this conversation's session, oldest first.
+    pub fn of(&self, session_id: &str, conversation_id: &str) -> Vec<Question> {
         self.0
             .lock()
             .map(|held| {
                 held.iter()
-                    .filter(|one| one.session_id == session_id)
+                    .filter(|one| belongs(one, session_id, conversation_id))
                     .cloned()
                     .collect()
             })
             .unwrap_or_default()
     }
+}
+
+/// Whether a chat on this session and conversation is offered the question.
+/// A session is not one conversation's — a rewind copies it, an adopted one
+/// can be adopted twice — so a chat's question goes to the chat that asked; one
+/// asked outside any chat names none and goes by its session alone.
+pub fn belongs(question: &Question, session_id: &str, conversation_id: &str) -> bool {
+    question.session_id == session_id
+        && question
+            .conversation_id
+            .as_deref()
+            .is_none_or(|owner| owner == conversation_id)
 }
 
 /// `permission.questions` — the questions still waiting on a session, drawn
@@ -56,9 +68,10 @@ impl Waiting {
 pub fn permission_questions(
     state: State<'_, Waiting>,
     session_id: String,
+    conversation_id: String,
 ) -> Result<Questions, RpcError> {
     Ok(Questions {
-        questions: state.on_session(&session_id),
+        questions: state.of(&session_id, &conversation_id),
     })
 }
 

@@ -319,3 +319,19 @@ fn a_gemini_report_is_read_in_claude_codes_words() {
         Some(body.to_owned())
     );
 }
+
+/// The chat a post came from is read only when it looks like one of ours:
+/// it goes on to decide which window is offered the question.
+#[test]
+fn the_chat_a_post_names_is_read_only_when_it_looks_like_ours() {
+    let chat = |headers: &[&str]| {
+        read_post(&post_with(headers, "{}")[..], None).and_then(|posted| posted.chat)
+    };
+    assert_eq!(
+        chat(&["X-Devpit-Chat:  conv_01A "]),
+        Some("conv_01A".to_owned())
+    );
+    assert_eq!(chat(&[]), None);
+    assert_eq!(chat(&["x-devpit-chat:"]), None);
+    assert_eq!(chat(&["x-devpit-chat: conv/../a"]), None);
+}
