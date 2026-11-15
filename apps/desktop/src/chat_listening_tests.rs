@@ -1,5 +1,6 @@
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{mpsc, Arc, Mutex};
+use std::time::Duration;
 
 use devpit_agentcli::resident::Heard;
 use devpit_agentcli::talk::Said;
@@ -55,6 +56,15 @@ fn ended() -> Said {
         init: None,
         anchor: None,
     }
+}
+
+/// The closer runs on a thread of its own: waits for it to have run.
+fn until_ran(ran: &AtomicUsize) -> usize {
+    let start = std::time::Instant::now();
+    while ran.load(Ordering::SeqCst) == 0 && start.elapsed() < Duration::from_secs(5) {
+        std::thread::sleep(Duration::from_millis(5));
+    }
+    ran.load(Ordering::SeqCst)
 }
 
 fn ear_on(turn: Woken) -> Arc<Ear> {
@@ -236,9 +246,9 @@ fn a_displaced_conversation_closes_when_its_turn_ends() {
     let unlocked = outside.clone();
     let of = ear.clone();
     ear.displace(move || {
-        counting.fetch_add(1, Ordering::SeqCst);
         // The closer takes locks of its own: it cannot run under the ear's.
         unlocked.store(of.now.try_lock().is_ok(), Ordering::SeqCst);
+        counting.fetch_add(1, Ordering::SeqCst);
     });
 
     // The turn on it goes on to its end.
@@ -262,8 +272,8 @@ fn a_displaced_conversation_closes_when_its_turn_ends() {
         &head,
     );
     assert_eq!(
-        ran.load(Ordering::SeqCst),
         1,
+        until_ran(&ran),
         "the closer ran once, when the ear went quiet"
     );
     assert!(
@@ -300,11 +310,7 @@ fn a_displaced_conversation_takes_no_new_woken_turn() {
         &transcript,
         &head,
     );
-    assert_eq!(
-        ran.load(Ordering::SeqCst),
-        1,
-        "the closer ran at the turn's end"
-    );
+    assert_eq!(until_ran(&ran), 1, "the closer ran at the turn's end");
 
     // A message that reaches the process after does not wake another turn,
     // and the person's next one does not wait for this process either.
