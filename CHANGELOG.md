@@ -3,6 +3,38 @@
 What changed between releases, written for the people who use devpit. The
 release notes are taken from here when a version is tagged.
 
+## 0.1.52 — 2026-11-15
+
+### Project agent
+
+- **The project agent reads a project only once you turn it on.**
+  Nothing reads a project on its own any more: not when devpit starts,
+  not when a project is linked to an orchestrator, and not when Labs
+  turns the project agent on. That Labs switch only makes the agent
+  available, and each project stays off until you turn it on, under
+  Settings → Maintenance → Labs or with **Learn this project** on its
+  Project agent page. A project turned on that was never learned is read
+  once, and several are read one at a time.
+- **devpit asks before a project learns.** When a project is linked to
+  an orchestrator, the top bar asks "Turn on learning for this
+  project?", with **Turn on** and **Not now**, and Ask the project on a
+  project that is off asks the same in its pane. Nothing turns learning
+  on without your answer: Not now leaves the project off and is not
+  asked again, the question waits across restarts, and the agent's tools
+  on a project that is off refuse, saying only you turn it on. None of
+  them starts a read, and a card closed in a project that is off asks it
+  for no lessons.
+- **Facts read from files go straight into memory.** A fact from the
+  agent's own read that rests only on the project's files enters its
+  memory at once, marked as accepted automatically and undone from its
+  page. Decisions, lessons and other facts still wait for you, so the
+  count beside the project shows only what needs your judgment.
+- **Your earlier choices carry over once.** On the first start of this
+  version, a project already learned stays on, unless you had left it
+  out, and every other project is off. The proposals still waiting from
+  the first read are accepted once, as **Approve all from onboarding**
+  would, which clears the counts.
+
 ## 0.1.51 — 2026-11-14
 
 ### Providers
