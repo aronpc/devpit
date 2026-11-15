@@ -14,6 +14,12 @@ let answer: ProjectAgentAnswer = {
 }
 let here: { id: string; name: string; orchestrator: string | null } = { id: 'prj_api', name: 'api', orchestrator: null }
 let labs = true
+/* The projects the person has not turned on. */
+const off = new Set<string>()
+const maintenance = () => ({
+  projectAgent: labs,
+  projectAgentProjects: [{ id: here.id, name: here.name, on: !off.has(here.id), acceptFacts: false, asked: false }],
+})
 /* A chat answered by the test itself, when it wants to hold or fail one. */
 let chat: ((question: string) => Promise<ProjectAgentAnswer>) | null = null
 
@@ -33,7 +39,12 @@ vi.mock('./live', () => ({
           ? undefined
           : async (...args: unknown[]) => {
               called(name, ...args)
-              if (name === 'maintenanceRead') return { projectAgent: labs }
+              if (name === 'maintenanceRead') return maintenance()
+              if (name === 'maintenanceProjectAgent') {
+                if (args[1]) off.delete(args[0] as string)
+                else off.add(args[0] as string)
+                return maintenance()
+              }
               if (name === 'projectAgentChat' && chat) return chat(args[1] as string)
               return name === 'projectAgentChat' ? answer : { proposals: [], decisions: [] }
             },
@@ -50,6 +61,7 @@ afterEach(() => {
   shown.mockReset()
   here = { id: 'prj_api', name: 'api', orchestrator: null }
   labs = true
+  off.clear()
   chat = null
 })
 
@@ -124,6 +136,26 @@ describe('Ask the project', () => {
     await act(async () => answered({ answer: 'It is a desktop app.', woke: true, cited: [] }))
     await screen.findByText('It is a desktop app.')
     expect(screen.queryByText(/Reading/)).toBeNull()
+  })
+
+  it('offers to turn learning on in a project that is off, and asks its agent nothing until the person does', async () => {
+    here = { id: 'prj_off', name: 'off', orchestrator: null }
+    off.add('prj_off')
+    render(<AskPane />)
+    expect(await screen.findByText('Turn on learning for this project?')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Not now' }))
+    await waitFor(() => expect(called).toHaveBeenCalledWith('maintenanceProjectAgent', 'prj_off', false))
+    expect(await screen.findByText(/Off for this project/)).toBeTruthy()
+    fireEvent.change(screen.getByRole('textbox', { name: 'Ask the project' }), { target: { value: 'Anything?' } })
+    fireEvent.keyDown(screen.getByRole('textbox', { name: 'Ask the project' }), { key: 'Enter' })
+    expect(await screen.findByText('Turn on learning for this project?')).toBeTruthy()
+    expect(called).not.toHaveBeenCalledWith('projectAgentChat', 'prj_off', 'Anything?')
+    fireEvent.click(screen.getByRole('button', { name: 'Turn on' }))
+    await waitFor(() => expect(called).toHaveBeenCalledWith('maintenanceProjectAgent', 'prj_off', true))
+    await waitFor(() => expect(screen.queryByText('Turn on learning for this project?')).toBeNull())
+    fireEvent.keyDown(screen.getByRole('textbox', { name: 'Ask the project' }), { key: 'Enter' })
+    await screen.findByText(answer.answer)
+    expect(called).toHaveBeenCalledWith('projectAgentChat', 'prj_off', 'Anything?')
   })
 
   it('says a failed question failed instead of reading forever', async () => {

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 
-import type { ProjectAgentAnswer } from '../gen/bindings'
+import type { Maintenance, ProjectAgentAnswer } from '../gen/bindings'
+import { learnQuestion } from './LearnAsks'
 import { ask, commands } from './live'
 import { Markdown } from './MarkdownView'
 import { useShellPick } from './shellStore'
@@ -11,6 +12,7 @@ import { useShell } from './useShell'
  * "Ask the project": a chat with the project's own agent, the resident
  * read-only process the orchestrator asks. An answer names its files; it
  * becomes a fact only as a proposal the person approves under the top bar.
+ * On a project that is off it asks the person to turn its learning on first.
  */
 
 interface Turn {
@@ -39,6 +41,10 @@ const none: readonly Turn[] = []
 
 const oneLine = (text: string): string => text.split(/\s+/).filter(Boolean).join(' ')
 
+/** Whether the person turned `id` on, as Labs has it; null while unknown. */
+const turnedOn = (shown: Maintenance | null, id: string): boolean | null =>
+  shown ? (shown.projectAgentProjects.find((one) => one.id === id)?.on ?? false) : null
+
 export function AskPane(): React.JSX.Element {
   const { project } = useShell()
   const here = project && !project.orchestrator ? project : null
@@ -50,6 +56,23 @@ export function AskPane(): React.JSX.Element {
   const turns = useSyncExternalStore(watch, () => (hereId ? (kept.get(hereId) ?? none) : none))
   const waiting = turns.some((turn) => !turn.answer && !turn.error)
   const fact = editing?.projectId === hereId ? editing : null
+  const [on, setOn] = useState<boolean | null>(null)
+  const [offered, setOffered] = useState(true)
+  const [problem, setProblem] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!hereId) return
+    setOn(null)
+    setOffered(true)
+    setProblem(null)
+    let current = true
+    void ask(() => commands.maintenanceRead()).then((shown) => {
+      if (current) setOn(turnedOn(shown.data, hereId))
+    })
+    return () => {
+      current = false
+    }
+  }, [hereId])
 
   const last = turns.at(-1)
   useEffect(() => end.current?.scrollIntoView?.({ block: 'end' }), [last])
@@ -58,6 +81,7 @@ export function AskPane(): React.JSX.Element {
   const send = (): void => {
     const question = draft.trim()
     if (!question || waiting) return
+    if (on === false) return setOffered(true)
     const projectId = here.id
     const id = ++asked
     setDraft('')
@@ -67,6 +91,15 @@ export function AskPane(): React.JSX.Element {
       put(projectId, (was) => was.map((turn) => (turn.id === id ? { ...turn, answer: said.data ?? undefined, error } : turn)))
     })
   }
+  const turn = (yes: boolean): void => {
+    const projectId = here.id
+    void ask(() => commands.maintenanceProjectAgent(projectId, yes)).then((said) => {
+      setProblem(said.error)
+      if (said.data) setOn(turnedOn(said.data, projectId))
+      if (!said.error) setOffered(false)
+    })
+  }
+  const offer = learnQuestion()
   const propose = (at: number, text: string, cited: readonly string[]): void => {
     const projectId = here.id
     void ask(() => commands.projectAgentFact(projectId, text, [...cited])).then((said) => {
@@ -79,7 +112,24 @@ export function AskPane(): React.JSX.Element {
   return (
     <div className="pask">
       <div className="pask__log scroll" aria-live="polite">
-        {turns.length === 0 && (
+        {on === false &&
+          (offered ? (
+            <div className="pask__off" role="group" aria-label={offer.question}>
+              <p className="acc__note">
+                <b>{offer.question}</b> {offer.why}
+              </p>
+              <button className="btn btn--sm" onClick={() => turn(false)}>
+                {offer.no}
+              </button>
+              <button className="btn btn--sm btn--go" onClick={() => turn(true)}>
+                {offer.yes}
+              </button>
+            </div>
+          ) : (
+            <p className="acc__note">Off for this project: its agent neither learns nor answers until you turn it on.</p>
+          ))}
+        {problem && <p className="acc__note voice__bad" role="alert">{problem}</p>}
+        {on !== false && turns.length === 0 && (
           <p className="acc__note">
             Ask {here.name}&apos;s agent about its code and its memory. It reads and never writes; an answer becomes a fact only once you approve it.
           </p>
