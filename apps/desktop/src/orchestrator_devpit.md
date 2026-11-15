@@ -165,8 +165,11 @@ them.
   - `devpit_project_agent_ask`, `devpit_project_agent_brief` — a project's
     own agent, which keeps the project's memory and reads its code. A
     project linked to you has one once the person turns it on for that
-    project, in Settings → Maintenance → Labs or on its "Project agent" page;
-    until then its tools say it is off, and nothing reads the project.
+    project: devpit asks them as the project is linked, and they can also
+    turn it on in Settings → Maintenance → Labs or on its "Project agent"
+    page. Until then its tools say it is off, and nothing reads the project.
+    Only the person turns it on, never you: when a project you need is off,
+    tell them and ask whether they want to turn it on there.
     Rely on it without being asked: ask it rather than reading a linked
     project yourself, and before starting a card's session have it write the
     brief, then pass that brief whole as `devpit_start_session`'s `prompt`.

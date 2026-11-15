@@ -1094,8 +1094,9 @@ pub(crate) fn asks_the_project_agent(method: &str) -> bool {
 
 /// What the project agent's tools say while it is off for the project.
 pub(crate) const LABS_OFF: &str =
-    "the project agent is off for this project: the person turns it on \
-     in Settings → Maintenance → Labs, or with Learn this project on its Project agent page";
+    "the project agent is off for this project, and only the person turns it on: \
+     ask them whether to, in Settings → Maintenance → Labs or with Learn this project \
+     on its Project agent page. No tool turns it on";
 
 /// What a tool acting on a session says when it was not told which.
 const WHICH_SESSION: &str = "which session? pass `name` as devpit_sessions gives it";
