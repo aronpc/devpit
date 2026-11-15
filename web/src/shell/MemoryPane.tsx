@@ -12,11 +12,19 @@ import { onCarried } from './window'
  * as a card — its kind, who proposed it, one plain line, its sources, the
  * whole text behind "details" — approved, edited or discarded here; what the
  * agent's own read of the project proposed can be approved at once, since it
- * rests only on the repository's files. A fact Labs accepted on its own says
- * so, and can be undone.
+ * rests only on the repository's files. A fact accepted on its own says so,
+ * and can be undone. Off for the project, it says so and turns on from here.
  */
 
 const KINDS: Record<string, string> = { 'facts.md': 'Fact', 'lessons.md': 'Lesson', 'decisions.md': 'Decision' }
+
+/** What the page says of its agent's read of the project. */
+export function standing(memory: ProjectMemory): string {
+  if (!memory.on) return 'Off for this project: its agent neither learns nor answers until you turn it on.'
+  if (memory.learning) return 'Learning the project: facts that rest on its files enter the memory, the rest waits here for you.'
+  if (memory.learned) return `Learned the project on ${memory.learned}. Facts that rest on its files entered the memory; the rest waits for your approval.`
+  return 'Not learned yet: Re-learn has its agent read the project.'
+}
 
 /** A proposal's kind as its label: an update or a removal of a kept entry says so. */
 export function kindOf(proposal: { file: string; text: string; replaces: string | null }): string {
@@ -98,20 +106,26 @@ export function MemoryPane(): React.JSX.Element {
     })
   }
   const learned = shown?.proposals.filter((one) => one.proposal.onboarding).length ?? 0
+  const turnOn = (): void => {
+    void ask(() => commands.maintenanceProjectAgent(here.id, true)).then((said) => {
+      setProblem(said.error)
+      reload()
+    })
+  }
 
   return (
     <div className="pmem scroll">
       <div className="pmem__bar">
-        <p className="acc__note">
-          {shown?.learning
-            ? 'Learning the project: what it finds waits here for your approval.'
-            : shown?.learned
-              ? `Learned the project on ${shown.learned}. Nothing enters the memory until you approve it.`
-              : 'It learns the project on its own when Labs has it on. Nothing enters the memory until you approve it.'}
-        </p>
-        <button className="btn btn--sm" disabled={!shown || shown.learning} onClick={() => void ask(() => commands.projectAgentRelearn(here.id)).then(take)}>
-          Re-learn
-        </button>
+        <p className="acc__note">{shown ? standing(shown) : ''}</p>
+        {shown && !shown.on ? (
+          <button className="btn btn--sm btn--go" onClick={turnOn}>
+            Learn this project
+          </button>
+        ) : (
+          <button className="btn btn--sm" disabled={!shown || shown.learning} onClick={() => void ask(() => commands.projectAgentRelearn(here.id)).then(take)}>
+            Re-learn
+          </button>
+        )}
       </div>
       {problem && (
         <p className="acc__note voice__bad" role="alert">

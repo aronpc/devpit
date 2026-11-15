@@ -42,8 +42,12 @@ pub const MAINTENANCE_KEEP_DAYS: &str = "maintenance.keep_days";
 pub const MAINTENANCE_CLEAN_LAST: &str = "maintenance.clean_last";
 /// Labs: whether the project agent answers. On unless turned off.
 pub const LABS_PROJECT_AGENT: &str = "labs.project_agent";
-/// Labs: the projects left out of the project agent, as a JSON array of ids.
+/// Labs, before each project was turned on: the projects left out of the
+/// project agent, as a JSON array of ids. Read once, to carry them over.
 pub const LABS_PROJECT_AGENT_OFF: &str = "labs.project_agent_off";
+/// Labs: the projects the person turned the project agent on for, as a JSON
+/// array of ids. Absent until carried over from before; off unless listed.
+pub const LABS_PROJECT_AGENT_ON: &str = "labs.project_agent_on";
 /// Labs: the projects whose facts resting only on files are accepted without
 /// the person, as a JSON array of ids. Off unless a project is listed.
 pub const LABS_ACCEPT_FILE_FACTS: &str = "labs.accept_file_facts";

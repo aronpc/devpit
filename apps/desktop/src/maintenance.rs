@@ -30,7 +30,7 @@ pub struct Maintenance {
     pub last: Option<CleanRun>,
 }
 
-/// A project the project agent can learn, and whether Labs leaves it out.
+/// A project the project agent can learn, and whether the person turned it on.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct LabsProject {
@@ -128,7 +128,6 @@ pub async fn maintenance_read() -> Result<Maintenance, RpcError> {
 #[tauri::command]
 #[specta::specta]
 pub async fn maintenance_write(
-    app: tauri::AppHandle,
     power_saver: Option<bool>,
     keep_days: Option<u32>,
     project_agent: Option<bool>,
@@ -151,9 +150,6 @@ pub async fn maintenance_write(
         }
         if let Some(on) = project_agent {
             store.set_preference_flag(preference::LABS_PROJECT_AGENT, on)?;
-            if on {
-                crate::project_onboarding::sweep(&app);
-            }
         }
         if let Some(on) = canvas {
             store.set_preference_flag(preference::LABS_CANVAS, on)?;
@@ -175,8 +171,8 @@ pub async fn maintenance_clean_now() -> Result<Maintenance, RpcError> {
     .await
 }
 
-/// `maintenance.project_agent` — leaves one project out of the project agent,
-/// or takes it back in, where it learns its project if it never did.
+/// `maintenance.project_agent` — turns the project agent on for one project,
+/// where it learns its project if it never did, or off.
 #[tauri::command]
 #[specta::specta]
 pub async fn maintenance_project_agent(
@@ -186,11 +182,9 @@ pub async fn maintenance_project_agent(
 ) -> Result<Maintenance, RpcError> {
     crate::off_main::blocking(move || {
         let store = store()?;
-        crate::project_onboarding::leave_out(&store, &project_id, !on)
-            .map_err(RpcError::internal)?;
-        if on {
-            crate::project_onboarding::sweep(&app);
-        }
+        let projects = crate::projects::project_list_now()?.projects;
+        crate::project_onboarding::switch(&app, &store, &projects, &project_id, on)
+            .map_err(|why| RpcError::new(ErrorCode::Conflict, why))?;
         shown(&store)
     })
     .await

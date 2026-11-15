@@ -6,7 +6,7 @@ use serde_json::json;
 
 use super::*;
 use crate::project_agent::{Agents, Wake};
-use crate::project_memory::{self, ONBOARDING};
+use crate::project_memory;
 
 /// A CLI that answers a request to learn the project with what it read, a
 /// line of it resting on no real file and one said twice.
@@ -58,7 +58,7 @@ fn wake(bench: &Bench) -> Wake<'_> {
 /// Learned with the retry a just-written script needs.
 fn learned(agents: &Agents, bench: &Bench) -> usize {
     for _ in 0..5 {
-        match learn(agents, "p1", &wake(bench), "2026-11-14", false) {
+        match learn(agents, "p1", &wake(bench), "2026-11-14") {
             Err(why) if why.contains(crate::project_agent::NOT_STARTED) => {
                 std::thread::sleep(Duration::from_millis(50))
             }
@@ -69,7 +69,7 @@ fn learned(agents: &Agents, bench: &Bench) -> usize {
 }
 
 #[test]
-fn learning_proposes_the_facts_and_decisions_it_read_each_resting_on_real_files() {
+fn learning_puts_its_file_facts_in_the_memory_and_leaves_its_decisions_waiting() {
     let bench = bench();
     let agents = Agents::idling_after(Duration::from_secs(60));
     assert_eq!(learned(&agents, &bench), 3);
@@ -80,26 +80,29 @@ fn learning_proposes_the_facts_and_decisions_it_read_each_resting_on_real_files(
         .collect();
     assert_eq!(
         said,
+        [(
+            "onboarding, docs/adr/0001-sync.md, AGENTS.md",
+            "decisions.md: The person's workspace syncs, not their machine."
+        )]
+    );
+    let facts: Vec<(String, String)> = project_memory::kept(&bench.root, "facts.md")
+        .into_iter()
+        .filter(|one| one.auto())
+        .map(|one| (one.source, one.text))
+        .collect();
+    assert_eq!(
+        facts,
         [
             (
-                "onboarding, AGENTS.md",
-                "facts.md: Everything versioned is in English."
+                "AGENTS.md, accepted automatically".to_owned(),
+                "Everything versioned is in English.".to_owned()
             ),
             (
-                "onboarding, docs/adr/0001-sync.md, AGENTS.md",
-                "decisions.md: The person's workspace syncs, not their machine."
-            ),
-            (
-                "onboarding, Makefile",
-                "facts.md: make test runs the guards and every test."
+                "Makefile, accepted automatically".to_owned(),
+                "make test runs the guards and every test.".to_owned()
             ),
         ]
     );
-    assert!(waiting.iter().all(|one| one.source.starts_with(ONBOARDING)));
-    // Proposed, never written: the memory holds only what its first wake wrote.
-    assert!(!project_memory::kept(&bench.root, "facts.md")
-        .iter()
-        .any(|one| one.text.contains("English")));
     assert!(learned_before(&bench.root));
 }
 
@@ -108,17 +111,8 @@ fn learning_again_leaves_out_what_the_memory_already_says_and_replaces_its_old_p
     let bench = bench();
     let agents = Agents::idling_after(Duration::from_secs(60));
     learned(&agents, &bench);
-    project_memory::decide(
-        &bench.root,
-        "2026-11-14",
-        "onboarding, AGENTS.md",
-        "Everything versioned is in English.",
-        None,
-        Some("Everything versioned is in English."),
-    )
-    .expect("approved");
-    assert_eq!(learned(&agents, &bench), 2);
-    assert_eq!(project_memory::proposals(&bench.root).len(), 2);
+    assert_eq!(learned(&agents, &bench), 1, "its facts are kept already");
+    assert_eq!(project_memory::proposals(&bench.root).len(), 1);
 }
 
 fn project(id: &str, root: &Path, orchestrator: Option<&str>) -> devpit_rpc::Project {
@@ -139,54 +133,141 @@ fn project(id: &str, root: &Path, orchestrator: Option<&str>) -> devpit_rpc::Pro
     .expect("a project")
 }
 
-#[test]
-fn a_linked_project_learns_on_its_own_once_and_one_left_out_in_labs_does_not() {
-    let dir = tempfile::tempdir().expect("tempdir");
-    let (api, web, loose) = (
-        dir.path().join("api"),
-        dir.path().join("web"),
-        dir.path().join("loose"),
-    );
-    for root in [&api, &web, &loose] {
-        std::fs::create_dir_all(root).expect("root");
+fn store(dir: &Path) -> devpit_core::Store {
+    devpit_core::Store::open(&dir.join("state.db")).expect("open")
+}
+
+/// A project's folder, learned before when `learned`.
+fn folder(dir: &Path, name: &str, learned: bool) -> PathBuf {
+    let root = dir.join(name);
+    std::fs::create_dir_all(&root).expect("root");
+    if learned {
+        project_memory::seed(&root, "2026-11-14").expect("seed");
+        project_memory::onboarded(&root, "2026-11-14").expect("learned");
     }
+    root
+}
+
+#[test]
+fn a_project_is_off_until_the_person_turns_it_on_and_labs_only_makes_it_available() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let store = store(dir.path());
     let projects = [
-        project("api", &api, None),
-        project("web", &web, None),
-        project("loose", &loose, None),
-        project("orch", dir.path(), Some("claude")),
+        project("api", &folder(dir.path(), "api", false), None),
+        project("web", &folder(dir.path(), "web", false), None),
     ];
-    let linked = ["api".to_owned(), "web".to_owned(), "orch".to_owned()];
-    let left_out = ["web".to_owned()];
-
-    assert_eq!(to_learn(&projects, &linked, true, &left_out), ["api"]);
+    assert!(!on_for(&store, &projects[0]), "off by default");
     assert!(
-        to_learn(&projects, &linked, false, &[]).is_empty(),
-        "Labs off"
+        turn(&store, &projects, "api", true).expect("on"),
+        "turned on, it reads the project it never learned"
     );
-
-    project_memory::seed(&api, "2026-11-14").expect("seed");
-    project_memory::onboarded(&api, "2026-11-14").expect("learned");
+    assert!(on_for(&store, &projects[0]));
+    assert!(!on_for(&store, &projects[1]), "only the project turned on");
+    store
+        .set_preference_flag(devpit_core::preference::LABS_PROJECT_AGENT, false)
+        .expect("flag");
     assert!(
-        to_learn(&projects, &linked, true, &left_out).is_empty(),
-        "learned once"
+        !on_for(&store, &projects[0]),
+        "Labs off leaves every project out"
+    );
+    store
+        .set_preference_flag(devpit_core::preference::LABS_PROJECT_AGENT, true)
+        .expect("flag");
+    assert!(!turn(&store, &projects, "api", false).expect("off"));
+    assert!(!on_for(&store, &projects[0]));
+}
+
+#[test]
+fn turning_on_a_project_already_learned_does_not_read_it_again() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let store = store(dir.path());
+    let projects = [project("api", &folder(dir.path(), "api", true), None)];
+    turn(&store, &projects, "api", false).expect("off");
+    assert!(!turn(&store, &projects, "api", true).expect("on"));
+    assert!(on_for(&store, &projects[0]));
+}
+
+#[test]
+fn on_update_a_project_already_learned_stays_on_unless_labs_left_it_out() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let store = store(dir.path());
+    let projects = [
+        project("api", &folder(dir.path(), "api", true), None),
+        project("web", &folder(dir.path(), "web", true), None),
+        project("cli", &folder(dir.path(), "cli", false), None),
+    ];
+    store
+        .set_preference(
+            devpit_core::preference::LABS_PROJECT_AGENT_OFF,
+            r#"["web"]"#,
+        )
+        .expect("left out");
+    let on = |store: &devpit_core::Store| -> Vec<bool> {
+        projects.iter().map(|one| on_for(store, one)).collect()
+    };
+    assert_eq!(on(&store), [true, false, false], "read as it was left");
+    carry_over(&store, &projects, "2026-11-15").expect("carried over");
+    assert_eq!(on(&store), [true, false, false], "and kept so");
+    assert_eq!(
+        store
+            .preference(devpit_core::preference::LABS_PROJECT_AGENT_ON)
+            .expect("read")
+            .as_deref(),
+        Some(r#"["api"]"#)
     );
 }
 
 #[test]
-fn a_project_left_out_in_labs_is_refused_like_labs_off() {
+fn on_update_the_onboarding_proposals_waiting_are_accepted_once() {
     let dir = tempfile::tempdir().expect("tempdir");
-    let store = devpit_core::Store::open(&dir.path().join("state.db")).expect("open");
-    assert!(on_for(&store, "api"));
-    leave_out(&store, "api", true).expect("left out");
-    assert!(!on_for(&store, "api"));
-    assert!(on_for(&store, "web"));
-    leave_out(&store, "api", false).expect("back in");
-    assert!(on_for(&store, "api"));
-    store
-        .set_preference_flag(devpit_core::preference::LABS_PROJECT_AGENT, false)
-        .expect("flag");
-    assert!(!on_for(&store, "web"), "Labs off leaves every project out");
+    let store = store(dir.path());
+    let root = folder(dir.path(), "api", true);
+    std::fs::write(root.join("AGENTS.md"), "# Working here\n").expect("agents");
+    let projects = [project("api", &root, None)];
+    let day = "2026-11-14";
+    let fact = project_memory::aimed("facts.md", "Everything versioned is in English.", None);
+    let decision = project_memory::aimed("decisions.md", "The workspace syncs.", None);
+    project_memory::propose(&root, day, "onboarding, AGENTS.md", &[fact, decision])
+        .expect("proposed");
+    project_memory::propose(&root, day, "#12", &["Wait for the queue.".to_owned()])
+        .expect("proposed");
+
+    assert_eq!(
+        carry_over(&store, &projects, "2026-11-15").expect("carried over"),
+        ["api"]
+    );
+    let waiting = project_memory::proposals(&root);
+    assert_eq!(waiting.len(), 1);
+    assert_eq!(waiting[0].source, "#12", "only what onboarding proposed");
+    let kept = |file: &str| -> Vec<(String, String)> {
+        project_memory::kept(&root, file)
+            .into_iter()
+            .filter(|one| one.day == "2026-11-15")
+            .map(|one| (one.source, one.text))
+            .collect()
+    };
+    assert_eq!(
+        kept("facts.md"),
+        [(
+            "AGENTS.md".to_owned(),
+            "Everything versioned is in English.".to_owned()
+        )]
+    );
+    assert_eq!(
+        kept("decisions.md"),
+        [("AGENTS.md".to_owned(), "The workspace syncs.".to_owned())]
+    );
+
+    let later = project_memory::aimed("decisions.md", "A later read.", None);
+    project_memory::propose(&root, day, "onboarding, AGENTS.md", &[later]).expect("proposed");
+    assert!(carry_over(&store, &projects, "2026-11-16")
+        .expect("once")
+        .is_empty());
+    assert_eq!(
+        project_memory::proposals(&root).len(),
+        2,
+        "a later read waits"
+    );
 }
 
 #[test]

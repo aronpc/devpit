@@ -540,7 +540,13 @@ fn respond_in(
     }
     if asks_the_project_agent(&asked.method) {
         let store = devpit_core::Store::open_default().map_err(|err| said(err.into()))?;
-        if !crate::project_onboarding::on_for(&store, &project.id) {
+        // An orchestrator's own folder has no agent: its own tools say so below.
+        let off = if project.orchestrator.is_some() {
+            !crate::maintenance::project_agent_on(&store)
+        } else {
+            !crate::project_onboarding::on_for(&store, project)
+        };
+        if off {
             return Err(LABS_OFF.to_owned());
         }
     }
@@ -1086,9 +1092,10 @@ pub(crate) fn asks_the_project_agent(method: &str) -> bool {
         || crate::project_agent::SESSION_METHODS.contains(&method)
 }
 
-/// What the project agent's tools say while Labs has it off.
+/// What the project agent's tools say while it is off for the project.
 pub(crate) const LABS_OFF: &str =
-    "the project agent is off for this project: Settings → Maintenance → Labs turns it on";
+    "the project agent is off for this project: the person turns it on \
+     in Settings → Maintenance → Labs, or with Learn this project on its Project agent page";
 
 /// What a tool acting on a session says when it was not told which.
 const WHICH_SESSION: &str = "which session? pass `name` as devpit_sessions gives it";

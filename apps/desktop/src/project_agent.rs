@@ -779,9 +779,9 @@ pub(crate) fn sidebar_project(projects: &[Project], project_id: &str) -> Result<
 }
 
 /// The chat's commands are refused while Labs has the project agent off, or
-/// leaves the project out, as its MCP tools are.
-pub(crate) fn labs_on(store: &devpit_core::Store, project_id: &str) -> Result<(), RpcError> {
-    if crate::project_onboarding::on_for(store, project_id) {
+/// the person has not turned it on for the project, as its MCP tools are.
+pub(crate) fn labs_on(store: &devpit_core::Store, project: &Project) -> Result<(), RpcError> {
+    if crate::project_onboarding::on_for(store, project) {
         Ok(())
     } else {
         Err(RpcError::new(
@@ -805,9 +805,9 @@ pub async fn project_agent_chat(
         if question.is_empty() {
             return Err(RpcError::new(ErrorCode::Invalid, "what to ask?"));
         }
-        labs_on(&crate::projects::store()?, &project_id)?;
         let listed = crate::projects::project_list_now()?;
         let project = sidebar_project(&listed.projects, &project_id)?;
+        labs_on(&crate::projects::store()?, &project)?;
         let profile = linked_profile(&listed.projects, &project.id).map_err(refused)?;
         let (command, env, mcp) = waking(&profile).map_err(refused)?;
         let wake = Wake {
@@ -838,9 +838,9 @@ pub async fn project_agent_fact(
 ) -> Result<LessonProposals, RpcError> {
     crate::off_main::blocking(move || {
         let store = crate::projects::store()?;
-        labs_on(&store, &project_id)?;
         let listed = crate::projects::project_list_now()?;
         let project = sidebar_project(&listed.projects, &project_id)?;
+        labs_on(&store, &project)?;
         let accept = crate::project_onboarding::accepts_file_facts(&store, &project.id);
         chat_fact(
             Path::new(&project.root_path),

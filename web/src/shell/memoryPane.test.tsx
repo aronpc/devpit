@@ -7,6 +7,7 @@ import { ProjectPlaces } from './ProjectPlaces'
 
 const called = vi.fn()
 const shown = vi.fn()
+let agentOn = true
 
 const memory = (): ProjectMemory => ({
   projectId: 'prj_api',
@@ -43,6 +44,7 @@ const memory = (): ProjectMemory => ({
   ],
   learning: false,
   learned: '2026-11-14',
+  on: agentOn,
 })
 
 vi.mock('./live', () => ({
@@ -56,6 +58,10 @@ vi.mock('./live', () => ({
           : async (...args: unknown[]) => {
               called(name, ...args)
               if (name === 'maintenanceRead') return { projectAgent: true }
+              if (name === 'maintenanceProjectAgent') {
+                agentOn = true
+                return { projectAgent: true, projectAgentProjects: [] }
+              }
               if (name === 'projectAgentRelearn') return { ...memory(), learning: true }
               if (name === 'lessonDecide') return { proposals: [], decisions: [] }
               if (name === 'lessonsProposed') return { proposals: memory().proposals.map((one) => one.proposal), decisions: [] }
@@ -70,6 +76,7 @@ vi.mock('./window', () => ({ onCarried: () => () => undefined }))
 
 afterEach(() => {
   cleanup()
+  agentOn = true
   called.mockReset()
   shown.mockReset()
 })
@@ -157,5 +164,15 @@ describe('The project agent page', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Re-learn' }))
     await screen.findByText(/Learning the project/)
     expect(called).toHaveBeenCalledWith('projectAgentRelearn', 'prj_api')
+  })
+
+  it('is off for a project until the person turns it on, and Learn this project does', async () => {
+    agentOn = false
+    render(<MemoryPane />)
+    expect(await screen.findByText(/Off for this project/)).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Re-learn' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Learn this project' }))
+    await waitFor(() => expect(called).toHaveBeenCalledWith('maintenanceProjectAgent', 'prj_api', true))
+    expect(await screen.findByRole('button', { name: 'Re-learn' })).toBeTruthy()
   })
 })

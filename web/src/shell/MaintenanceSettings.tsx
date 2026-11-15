@@ -54,7 +54,7 @@ export function MaintenanceSettings(): React.JSX.Element {
     })
   }
 
-  const leaveOut = (projectId: string, on: boolean): void => {
+  const turn = (projectId: string, on: boolean): void => {
     void ask(() => commands.maintenanceProjectAgent(projectId, on)).then((answer) => {
       setError(answer.error)
       if (answer.data) take(answer.data)
@@ -113,23 +113,23 @@ export function MaintenanceSettings(): React.JSX.Element {
         on={shown?.projectAgent ?? true}
         onFlip={() => shown && write({ projectAgent: !shown.projectAgent })}
         title="Project agent"
-        said="Beta. An agent that knows one project: each project linked to an orchestrator gets one, which learns the project on its own and proposes what it finds. The orchestrator and the project's sessions ask it, and it draws lessons when a card is done."
+        said="Beta. An agent that knows one project. On, it is offered to each project linked to an orchestrator, and reads a project only once you turn it on for that project, below or from its Project agent page. The orchestrator and the project's sessions ask it, and it draws lessons when a card is done."
       />
       {shown?.projectAgent &&
         shown.projectAgentProjects.map((one) => (
           <Fragment key={one.id}>
             <PrefSwitch
               on={one.on}
-              onFlip={() => leaveOut(one.id, !one.on)}
+              onFlip={() => turn(one.id, !one.on)}
               title={`Project agent in ${one.name}`}
-              said={one.on ? 'Learns and answers for this project.' : 'Left out: no agent learns or answers for this project.'}
+              said={one.on ? 'Learns and answers for this project.' : 'Off: no agent learns or answers for this project. On, it learns the project once.'}
             />
             {one.on && (
               <PrefSwitch
                 on={one.acceptFacts}
                 onFlip={() => acceptFacts(one.id, !one.acceptFacts)}
                 title={`Accept facts that rest only on files in ${one.name}`}
-                said="A fact whose sources are all files of the project, which the agent read, enters its memory without waiting, marked as accepted automatically and undone from its page. Lessons and decisions always wait for you."
+                said="A fact saved from Ask the project whose sources are all files of the project enters its memory without waiting, marked as accepted automatically and undone from its page, as the facts its own read finds do. Lessons and decisions always wait for you."
               />
             )}
           </Fragment>

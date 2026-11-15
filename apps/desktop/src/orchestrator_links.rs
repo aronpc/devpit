@@ -103,15 +103,11 @@ pub async fn orchestrator_links(project_id: String) -> Result<Vec<String>, RpcEr
 }
 
 /// `orchestrator.link` — the projects it is linked to, as the person chose
-/// them. Only projects, never another orchestrator. A project newly linked
-/// gets its agent, which learns the project on its own.
+/// them. Only projects, never another orchestrator. Linking reads nothing:
+/// a project's agent learns it once the person turns it on for that project.
 #[tauri::command]
 #[specta::specta]
-pub async fn orchestrator_link(
-    app: tauri::AppHandle,
-    project_id: String,
-    linked: Vec<String>,
-) -> Result<(), RpcError> {
+pub async fn orchestrator_link(project_id: String, linked: Vec<String>) -> Result<(), RpcError> {
     crate::off_main::blocking(move || {
         let store = crate::projects::store()?;
         let (_, root) = crate::projects::locate(&store, &project_id)?;
@@ -129,7 +125,6 @@ pub async fn orchestrator_link(
         set_in(&store, &root, "projects", json!(linked))?;
         // Links sync: the other machines hear of it in seconds.
         crate::sync::nudge();
-        crate::project_onboarding::sweep(&app);
         Ok(())
     })
     .await

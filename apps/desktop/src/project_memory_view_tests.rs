@@ -26,7 +26,7 @@ fn the_page_lists_the_memory_and_what_waits_each_with_its_sources() {
     let dir = tempfile::tempdir().expect("tempdir");
     let root = dir.path();
     std::fs::write(root.join("AGENTS.md"), "# Working in this repository\n").expect("agents");
-    let before = memory_of(&project(root));
+    let before = memory_of(&project(root), true);
     assert!(!before.kept && before.facts.is_empty() && before.proposals.is_empty());
 
     seed(root, "2026-11-13").expect("seed");
@@ -49,7 +49,7 @@ fn the_page_lists_the_memory_and_what_waits_each_with_its_sources() {
     )
     .expect("lesson");
 
-    let page = memory_of(&project(root));
+    let page = memory_of(&project(root), true);
     assert!(page.kept);
     assert_eq!(page.facts[0].files, ["AGENTS.md"]);
     assert_eq!(page.facts[0].day, "2026-11-13");

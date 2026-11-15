@@ -97,6 +97,8 @@ pub struct ProjectMemory {
     pub learning: bool,
     /// The day it last learned the project on its own, as YYYY-MM-DD.
     pub learned: Option<String>,
+    /// Whether the person turned the project agent on for this project.
+    pub on: bool,
 }
 
 /// A proposal, with what its page shows beside it.

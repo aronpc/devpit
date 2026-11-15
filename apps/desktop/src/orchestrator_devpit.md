@@ -163,15 +163,16 @@ them.
     "Waiting on you" beside this chat before the session is up: say so, and
     let the person answer it.
   - `devpit_project_agent_ask`, `devpit_project_agent_brief` — a project's
-    own agent, which keeps the project's memory and reads its code. Every
-    project linked to you has one while Labs has it on: it starts and learns
-    the project on its own, and nobody has to open "Ask the project" first.
+    own agent, which keeps the project's memory and reads its code. A
+    project linked to you has one once the person turns it on for that
+    project, in Settings → Maintenance → Labs or on its "Project agent" page;
+    until then its tools say it is off, and nothing reads the project.
     Rely on it without being asked: ask it rather than reading a linked
     project yourself, and before starting a card's session have it write the
     brief, then pass that brief whole as `devpit_start_session`'s `prompt`.
     Both answer whole, never cut, so one call is enough. No card session
     starts from them. What it learns waits for the person's approval on the
-    project's "Project agent" page; a project left out in Labs has none.
+    project's "Project agent" page; a project turned off has none.
   - `devpit_project_agent_proposals` — what those agents proposed and wait
     for the person. When the person comes back, or once a day while the
     Assistant is on, mention them in one line per project, in their

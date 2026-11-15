@@ -1,8 +1,8 @@
-//! A project's agent learns its project on its own. With Labs on, a project
-//! linked to an orchestrator gets its agent once, in the background and one
-//! project at a time: the agent reads the repository and proposes the facts
-//! and decisions it found, each resting on the files that show it. They wait
-//! for the person like any proposal; "Re-learn" reads the project again.
+//! A project's agent learns its project once the person turns it on for that
+//! project, in the background and one project at a time: the agent reads the
+//! repository and answers the facts and decisions it found, each resting on
+//! the files that show it. Its facts enter the memory; its decisions wait for
+//! the person like any proposal. "Re-learn" reads the project again.
 
 use std::collections::{HashSet, VecDeque};
 use std::path::Path;
@@ -24,8 +24,6 @@ const FILES: usize = 6;
 const CHARS: usize = 1000;
 /// How often a read looks again at an agent busy answering someone.
 const BUSY_WAIT: Duration = Duration::from_secs(5);
-/// Linked projects are looked at once the app has settled after starting.
-const AFTER_START: Duration = Duration::from_secs(60);
 
 /// The projects waiting to be learned, and whether one is being learned.
 static QUEUE: Mutex<(VecDeque<String>, bool)> = Mutex::new((VecDeque::new(), false));
@@ -106,16 +104,10 @@ fn real_file(root: &Path, named: &str) -> Option<String> {
         .map(|_| named.to_owned())
 }
 
-/// Has `key`'s agent read its project and propose what it learned, in place
-/// of what an earlier read proposed and still waits; answers how many. With
-/// `accept`, a fact resting only on files is accepted without the person.
-pub(crate) fn learn(
-    agents: &Agents,
-    key: &str,
-    wake: &Wake,
-    day: &str,
-    accept: bool,
-) -> Result<usize, String> {
+/// Has `key`'s agent read its project and keep what it learned, in place of
+/// what an earlier read proposed and still waits; answers how many. A fact
+/// resting only on files enters the memory, the rest waits for the person.
+pub(crate) fn learn(agents: &Agents, key: &str, wake: &Wake, day: &str) -> Result<usize, String> {
     let answer = agents.ask(key, wake, &learning_prompt())?;
     let root = wake.root;
     project_memory::drop_onboarding(root)?;
@@ -131,7 +123,7 @@ pub(crate) fn learn(
     );
     let found = proposed_in(root, &answer.text, &known);
     for (source, text) in &found {
-        project_memory::propose_or_accept(root, day, source, std::slice::from_ref(text), accept)?;
+        project_memory::propose_or_accept(root, day, source, std::slice::from_ref(text), true)?;
     }
     project_memory::onboarded(root, day)?;
     Ok(found.len())
@@ -142,47 +134,108 @@ pub(crate) fn learned_before(root: &Path) -> bool {
     project_memory::learned_on(root).is_some()
 }
 
-/// The projects whose agent learns them on its own now: linked to an
-/// orchestrator, not left out in Labs, and not learned yet.
-pub(crate) fn to_learn(
-    projects: &[Project],
-    linked: &[String],
-    labs: bool,
-    left_out: &[String],
-) -> Vec<String> {
-    if !labs {
-        return Vec::new();
-    }
-    projects
-        .iter()
-        .filter(|one| one.orchestrator.is_none())
-        .filter(|one| linked.contains(&one.id) && !left_out.contains(&one.id))
-        .filter(|one| {
-            let root = Path::new(&one.root_path);
-            root.is_dir() && !learned_before(root)
-        })
-        .map(|one| one.id.clone())
-        .collect()
+/// The projects Labs left out before each was turned on: read once, to carry over.
+pub(crate) fn left_out(store: &Store) -> Vec<String> {
+    ids(store, preference::LABS_PROJECT_AGENT_OFF).unwrap_or_default()
 }
 
-/// The projects Labs leaves out of the project agent.
-pub(crate) fn left_out(store: &Store) -> Vec<String> {
+fn ids(store: &Store, key: &str) -> Option<Vec<String>> {
     store
-        .preference(preference::LABS_PROJECT_AGENT_OFF)
+        .preference(key)
         .ok()
         .flatten()
         .and_then(|raw| serde_json::from_str(&raw).ok())
-        .unwrap_or_default()
+}
+
+/// The projects the person turned on; `None` before the first start that asks.
+fn chosen(store: &Store) -> Option<Vec<String>> {
+    ids(store, preference::LABS_PROJECT_AGENT_ON)
+}
+
+/// Before projects were turned on one by one, a project its agent had learned
+/// was on, unless Labs left it out.
+fn was_on(store: &Store, project: &Project) -> bool {
+    project.orchestrator.is_none()
+        && learned_before(Path::new(&project.root_path))
+        && !left_out(store).contains(&project.id)
+}
+
+/// The projects turned on, carried over from before when none was chosen yet.
+fn turned_on(store: &Store, projects: &[Project]) -> Vec<String> {
+    chosen(store).unwrap_or_else(|| {
+        projects
+            .iter()
+            .filter(|one| was_on(store, one))
+            .map(|one| one.id.clone())
+            .collect()
+    })
+}
+
+fn choose(store: &Store, ids: &[String]) -> Result<(), String> {
+    let ids = serde_json::to_string(ids).map_err(|err| err.to_string())?;
+    store
+        .set_preference(preference::LABS_PROJECT_AGENT_ON, &ids)
+        .map_err(|err| err.to_string())
+}
+
+/// Choosing and carrying over, one at a time.
+static CHOOSING: Mutex<()> = Mutex::new(());
+
+/// Turns the project agent on for `project_id`, or off. Answers whether its
+/// agent reads the project now: turned on, and never learned.
+pub(crate) fn turn(
+    store: &Store,
+    projects: &[Project],
+    project_id: &str,
+    on: bool,
+) -> Result<bool, String> {
+    let _held = CHOOSING.lock().map_err(|_| "Labs is busy".to_owned())?;
+    let mut ids = turned_on(store, projects);
+    ids.retain(|id| id != project_id);
+    if on {
+        ids.push(project_id.to_owned());
+    }
+    choose(store, &ids)?;
+    Ok(on
+        && projects.iter().any(|one| {
+            let root = Path::new(&one.root_path);
+            one.id == project_id && root.is_dir() && !learned_before(root)
+        }))
+}
+
+/// Once, on the first start that turns projects on one by one: the projects
+/// learned before stay on, and what their reads left waiting is accepted,
+/// each to its memory file dated `day`. Answers the projects it accepted in.
+pub(crate) fn carry_over(
+    store: &Store,
+    projects: &[Project],
+    day: &str,
+) -> Result<Vec<String>, String> {
+    let _held = CHOOSING.lock().map_err(|_| "Labs is busy".to_owned())?;
+    if chosen(store).is_some() {
+        return Ok(Vec::new());
+    }
+    let on = turned_on(store, projects);
+    let accepted = projects
+        .iter()
+        .filter(|one| one.orchestrator.is_none())
+        .filter(|one| {
+            let root = Path::new(&one.root_path);
+            project_memory::proposals(root)
+                .iter()
+                .any(project_memory::Entry::onboarding)
+                && project_memory::approve_onboarding(root, day).is_ok()
+        })
+        .map(|one| one.id.clone())
+        .collect();
+    // Chosen last: a start that stops halfway carries over again.
+    choose(store, &on)?;
+    Ok(accepted)
 }
 
 /// The projects whose facts resting only on files are accepted without the person.
 fn accepting(store: &Store) -> Vec<String> {
-    store
-        .preference(preference::LABS_ACCEPT_FILE_FACTS)
-        .ok()
-        .flatten()
-        .and_then(|raw| serde_json::from_str(&raw).ok())
-        .unwrap_or_default()
+    ids(store, preference::LABS_ACCEPT_FILE_FACTS).unwrap_or_default()
 }
 
 /// Whether Labs accepts `project_id`'s facts that rest only on files.
@@ -203,37 +256,28 @@ pub(crate) fn accept_file_facts(store: &Store, project_id: &str, on: bool) -> Re
         .map_err(|err| err.to_string())
 }
 
-/// Whether the project agent is on for `project_id`: Labs has it on, and
-/// does not leave that project out.
-pub(crate) fn on_for(store: &Store, project_id: &str) -> bool {
+/// Whether the project agent is on for `project`: Labs makes it available,
+/// and the person turned it on for that project.
+pub(crate) fn on_for(store: &Store, project: &Project) -> bool {
     crate::maintenance::project_agent_on(store)
-        && !left_out(store).iter().any(|id| id == project_id)
-}
-
-/// Leaves `project_id` out of the project agent, or takes it back in.
-pub(crate) fn leave_out(store: &Store, project_id: &str, out: bool) -> Result<(), String> {
-    let mut ids = left_out(store);
-    ids.retain(|id| id != project_id);
-    if out {
-        ids.push(project_id.to_owned());
-    }
-    let ids = serde_json::to_string(&ids).map_err(|err| err.to_string())?;
-    store
-        .set_preference(preference::LABS_PROJECT_AGENT_OFF, &ids)
-        .map_err(|err| err.to_string())
+        && chosen(store).map_or_else(|| was_on(store, project), |ids| ids.contains(&project.id))
 }
 
 /// The projects Settings → Labs lists: each linked to an orchestrator, with
 /// its own switch.
 pub(crate) fn labs_projects(projects: &[Project], store: &Store) -> Vec<LabsProject> {
-    let (linked, out, accept) = (linked(projects), left_out(store), accepting(store));
+    let (linked, on, accept) = (
+        linked(projects),
+        turned_on(store, projects),
+        accepting(store),
+    );
     projects
         .iter()
         .filter(|one| one.orchestrator.is_none() && linked.contains(&one.id))
         .map(|one| LabsProject {
             id: one.id.clone(),
             name: one.name.clone(),
-            on: !out.contains(&one.id),
+            on: on.contains(&one.id),
             accept_facts: accept.contains(&one.id),
         })
         .collect()
@@ -248,30 +292,46 @@ fn linked(projects: &[Project]) -> Vec<String> {
         .collect()
 }
 
-/// Queues the linked projects not learned yet. On start, after linking.
-pub(crate) fn sweep(app: &AppHandle) {
-    let Ok(store) = crate::projects::store() else {
-        return;
-    };
-    let Ok(listed) = crate::projects::project_list_now() else {
-        return;
-    };
-    let ids = to_learn(
-        &listed.projects,
-        &linked(&listed.projects),
-        crate::maintenance::project_agent_on(&store),
-        &left_out(&store),
-    );
-    queue(app, ids);
-}
-
-/// Sweeps once the app has settled after starting.
+/// Carries the Labs choice over from before, once the app has started.
 pub(crate) fn on_start(app: &AppHandle) {
     let app = app.clone();
     std::thread::spawn(move || {
-        std::thread::sleep(AFTER_START);
-        sweep(&app);
+        let (Ok(store), Ok(listed)) = (
+            crate::projects::store(),
+            crate::projects::project_list_now(),
+        ) else {
+            return;
+        };
+        let day = crate::project_agent::today();
+        if let Ok(accepted) = carry_over(&store, &listed.projects, &day) {
+            for id in accepted {
+                let _ = app.emit("lessons:proposed", &id);
+            }
+        }
     });
+}
+
+/// Turns the project agent on for `project_id`, or off, from Labs or its
+/// page; turned on, its agent learns the project if it never did.
+pub(crate) fn switch(
+    app: &AppHandle,
+    store: &Store,
+    projects: &[Project],
+    project_id: &str,
+    on: bool,
+) -> Result<(), String> {
+    if on {
+        crate::project_agent::linked_profile(projects, project_id)?;
+    }
+    let day = crate::project_agent::today();
+    for id in carry_over(store, projects, &day)? {
+        let _ = app.emit("lessons:proposed", &id);
+    }
+    if turn(store, projects, project_id, on)? {
+        queue(app, vec![project_id.to_owned()]);
+    }
+    let _ = app.emit("lessons:proposed", project_id);
+    Ok(())
 }
 
 /// Whether `project_id` waits to be learned or is being learned.
@@ -341,15 +401,15 @@ fn read_each(app: &AppHandle) {
 /// One project's read, under the profile of an orchestrator linked to it.
 fn read_one(app: &AppHandle, project_id: &str) -> Result<usize, String> {
     let store = crate::projects::store().map_err(|err| err.message)?;
-    if !on_for(&store, project_id) {
-        return Ok(0);
-    }
     let listed = crate::projects::project_list_now().map_err(|err| err.message)?;
     let project = listed
         .projects
         .iter()
         .find(|one| one.id == project_id && one.orchestrator.is_none())
         .ok_or("that project is gone")?;
+    if !on_for(&store, project) {
+        return Ok(0);
+    }
     let profile = crate::project_agent::linked_profile(&listed.projects, project_id)?;
     let (command, env, mcp) = crate::project_agent::waking(&profile)?;
     let wake = Wake {
@@ -364,14 +424,7 @@ fn read_one(app: &AppHandle, project_id: &str) -> Result<usize, String> {
     while agents.busy(project_id) {
         std::thread::sleep(BUSY_WAIT);
     }
-    let accept = Store::open_default().is_ok_and(|store| accepts_file_facts(&store, project_id));
-    learn(
-        &agents,
-        project_id,
-        &wake,
-        &crate::project_agent::today(),
-        accept,
-    )
+    learn(&agents, project_id, &wake, &crate::project_agent::today())
 }
 
 #[cfg(all(test, unix))]

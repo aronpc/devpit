@@ -371,8 +371,8 @@ export const commands = {
 	orchestratorLinks: (projectId: string) => typedError<string[], RpcError>(__TAURI_INVOKE("orchestrator_links", { projectId })),
 	/**
 	 *  `orchestrator.link` — the projects it is linked to, as the person chose
-	 *  them. Only projects, never another orchestrator. A project newly linked
-	 *  gets its agent, which learns the project on its own.
+	 *  them. Only projects, never another orchestrator. Linking reads nothing:
+	 *  a project's agent learns it once the person turns it on for that project.
 	 */
 	orchestratorLink: (projectId: string, linked: string[]) => typedError<null, RpcError>(__TAURI_INVOKE("orchestrator_link", { projectId, linked })),
 	/**
@@ -1409,8 +1409,8 @@ export const commands = {
 	/**  `maintenance.write` — what is given changes; what is not stays. */
 	maintenanceWrite: (powerSaver: boolean | null, keepDays: number | null, projectAgent: boolean | null, canvas: boolean | null) => typedError<Maintenance, RpcError>(__TAURI_INVOKE("maintenance_write", { powerSaver, keepDays, projectAgent, canvas })),
 	/**
-	 *  `maintenance.project_agent` — leaves one project out of the project agent,
-	 *  or takes it back in, where it learns its project if it never did.
+	 *  `maintenance.project_agent` — turns the project agent on for one project,
+	 *  where it learns its project if it never did, or off.
 	 */
 	maintenanceProjectAgent: (projectId: string, on: boolean) => typedError<Maintenance, RpcError>(__TAURI_INVOKE("maintenance_project_agent", { projectId, on })),
 	/**
@@ -4268,7 +4268,7 @@ export type KnownApp = {
 	command: string,
 };
 
-/**  A project the project agent can learn, and whether Labs leaves it out. */
+/**  A project the project agent can learn, and whether the person turned it on. */
 export type LabsProject = {
 	id: string,
 	name: string,
@@ -5231,6 +5231,8 @@ export type ProjectMemory = {
 	learning: boolean,
 	/**  The day it last learned the project on its own, as YYYY-MM-DD. */
 	learned: string | null,
+	/**  Whether the person turned the project agent on for this project. */
+	on: boolean,
 };
 
 /**

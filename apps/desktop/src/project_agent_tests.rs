@@ -687,18 +687,33 @@ fn a_fact_from_the_chat_waits_for_approval_and_writes_nothing_on_its_own() {
 }
 
 #[test]
-fn the_sidebar_chat_is_refused_while_labs_has_the_project_agent_off() {
+fn the_sidebar_chat_is_refused_on_a_project_not_turned_on() {
     let dir = tempfile::tempdir().expect("tempdir");
     let store = devpit_core::Store::open(&dir.path().join("state.db")).expect("open");
-    assert!(labs_on(&store, "p1").is_ok(), "on unless turned off");
-    crate::project_onboarding::leave_out(&store, "p1", true).expect("left out");
-    let refused = labs_on(&store, "p1").expect_err("refused");
+    let projects: Vec<Project> = ["p1", "p2"]
+        .iter()
+        .map(|id| {
+            serde_json::from_value(serde_json::json!({
+                "id": id, "name": id, "rootPath": dir.path().join(id).display().to_string(),
+                "group": null, "accent": "#000000", "worktrees": [], "unreadable": null,
+                "orchestrator": null, "origin": null, "lastOpenedAt": null, "icon": null,
+                "color": null,
+            }))
+            .expect("a project")
+        })
+        .collect();
+    let refused = labs_on(&store, &projects[0]).expect_err("off unless turned on");
     assert_eq!(refused.message, crate::agent_api::LABS_OFF);
-    assert!(labs_on(&store, "p2").is_ok(), "only the project left out");
+    crate::project_onboarding::turn(&store, &projects, "p1", true).expect("on");
+    assert!(labs_on(&store, &projects[0]).is_ok());
+    assert!(
+        labs_on(&store, &projects[1]).is_err(),
+        "only the project turned on"
+    );
     store
         .set_preference_flag(devpit_core::preference::LABS_PROJECT_AGENT, false)
         .expect("flag");
-    let refused = labs_on(&store, "p2").expect_err("refused");
+    let refused = labs_on(&store, &projects[0]).expect_err("refused");
     assert_eq!(refused.message, crate::agent_api::LABS_OFF);
 }
 

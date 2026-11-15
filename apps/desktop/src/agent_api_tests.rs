@@ -399,14 +399,16 @@ fn the_assistants_methods_refuse_without_assistant_mode() {
 }
 
 /// A project's session reaches its own project's agent and no other one; an
-/// orchestrator asks with its own tool, and a project whose agent was never
-/// asked has none to consult.
+/// orchestrator asks with its own tool, and a project never learned is off,
+/// and consulting it reads nothing.
 #[test]
 fn a_session_consults_its_own_projects_agent_and_no_other() {
     let dir = tempfile::tempdir().expect("tempdir");
     let (app, other) = (dir.path().join("app"), dir.path().join("other"));
     for root in [&app, &other] {
         std::fs::create_dir_all(root.join(".devpit/project-agent")).expect("memory");
+        // Learned before projects were turned on one by one, so it is on.
+        crate::project_memory::onboarded(root, "2026-11-14").expect("learned");
     }
     let projects = vec![project("app", &app, &[]), project("other", &other, &[])];
     let consult = |params: Value| -> Asked {
@@ -438,7 +440,7 @@ fn a_session_consults_its_own_projects_agent_and_no_other() {
     std::fs::remove_dir_all(app.join(".devpit")).expect("forgotten");
     let none =
         respond_in(None, &projects, &projects[0], &consult(question)).expect_err("never asked");
-    assert!(none.contains("no project agent"), "{none}");
+    assert_eq!(none, LABS_OFF);
     assert!(!app.join(".devpit").exists(), "consulting made a memory");
 }
 

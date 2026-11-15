@@ -38,8 +38,9 @@ pub(crate) fn proposal_of(project: &Project, one: &Entry) -> LessonProposal {
     }
 }
 
-/// `project`'s memory and what waits for the person, as its page shows them.
-pub(crate) fn memory_of(project: &Project) -> ProjectMemory {
+/// `project`'s memory and what waits for the person, as its page shows them,
+/// `on` when the person turned its agent on.
+pub(crate) fn memory_of(project: &Project, on: bool) -> ProjectMemory {
     let root = Path::new(&project.root_path);
     let kept = |file: &str| -> Vec<MemoryEntry> {
         project_memory::kept(root, file).iter().map(shown).collect()
@@ -61,6 +62,7 @@ pub(crate) fn memory_of(project: &Project) -> ProjectMemory {
         proposals,
         learning: crate::project_onboarding::learning(&project.id),
         learned: project_memory::learned_on(root),
+        on,
     }
 }
 
@@ -69,11 +71,20 @@ fn project(project_id: &str) -> Result<Project, RpcError> {
     crate::project_agent::sidebar_project(&listed.projects, project_id)
 }
 
+/// [`memory_of`], read with whether its agent is on.
+fn page(project: &Project) -> Result<ProjectMemory, RpcError> {
+    let store = crate::projects::store()?;
+    Ok(memory_of(
+        project,
+        crate::project_onboarding::on_for(&store, project),
+    ))
+}
+
 /// `project_agent.memory` — the project agent's page.
 #[tauri::command]
 #[specta::specta]
 pub async fn project_agent_memory(project_id: String) -> Result<ProjectMemory, RpcError> {
-    crate::off_main::blocking(move || Ok(memory_of(&project(&project_id)?))).await
+    crate::off_main::blocking(move || page(&project(&project_id)?)).await
 }
 
 /// `project_agent.approve_learned` — approves every proposal of the agent's
@@ -92,7 +103,7 @@ pub async fn project_agent_approve_learned(
         )
         .map_err(RpcError::internal)?;
         let _ = app.emit("lessons:proposed", &project.id);
-        Ok(memory_of(&project))
+        page(&project)
     })
     .await
 }
@@ -111,7 +122,7 @@ pub async fn project_agent_undo_accepted(
         project_memory::undo_accepted(Path::new(&project.root_path), &text)
             .map_err(|why| RpcError::new(devpit_rpc::ErrorCode::NotFound, why))?;
         let _ = app.emit("lessons:proposed", &project.id);
-        Ok(memory_of(&project))
+        page(&project)
     })
     .await
 }
@@ -125,10 +136,10 @@ pub async fn project_agent_relearn(
     project_id: String,
 ) -> Result<ProjectMemory, RpcError> {
     crate::off_main::blocking(move || {
-        crate::project_agent::labs_on(&crate::projects::store()?, &project_id)?;
         let project = project(&project_id)?;
+        crate::project_agent::labs_on(&crate::projects::store()?, &project)?;
         crate::project_onboarding::queue(&app, vec![project.id.clone()]);
-        Ok(memory_of(&project))
+        page(&project)
     })
     .await
 }

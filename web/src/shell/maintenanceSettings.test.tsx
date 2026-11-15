@@ -12,7 +12,7 @@ const before: Maintenance = {
   projectAgent: true,
   projectAgentProjects: [
     { id: 'prj_api', name: 'api', on: true, acceptFacts: false },
-    { id: 'prj_web', name: 'web', on: true, acceptFacts: false },
+    { id: 'prj_web', name: 'web', on: false, acceptFacts: false },
   ],
   canvas: true,
   last: null,
@@ -28,7 +28,7 @@ const write = vi.fn(async (powerSaver: boolean | null, keepDays: number | null, 
   }
   return stored
 })
-const leave = vi.fn(async (projectId: string, on: boolean) => {
+const turn = vi.fn(async (projectId: string, on: boolean) => {
   stored = { ...stored, projectAgentProjects: stored.projectAgentProjects.map((one) => (one.id === projectId ? { ...one, on } : one)) }
   return stored
 })
@@ -44,7 +44,7 @@ vi.mock('./live', () => ({
     maintenanceWrite: (powerSaver: boolean | null, keepDays: number | null, projectAgent: boolean | null, canvas: boolean | null) =>
       write(powerSaver, keepDays, projectAgent, canvas),
     maintenanceCleanNow: () => cleanNow(),
-    maintenanceProjectAgent: (projectId: string, on: boolean) => leave(projectId, on),
+    maintenanceProjectAgent: (projectId: string, on: boolean) => turn(projectId, on),
     maintenanceAcceptFacts: (projectId: string, on: boolean) => accept(projectId, on),
   },
 }))
@@ -91,14 +91,17 @@ describe('Settings → Maintenance', () => {
     await waitFor(() => expect(write).toHaveBeenLastCalledWith(null, null, null, false))
   })
 
-  it('leaves one linked project out of the project agent, and only that one', async () => {
+  it('turns the project agent on for one linked project, and only that one', async () => {
     render(<MaintenanceSettings />)
-    const api = await screen.findByRole('switch', { name: 'Project agent in api' })
-    expect(api.getAttribute('aria-checked')).toBe('true')
-    fireEvent.click(api)
-    await waitFor(() => expect(leave).toHaveBeenLastCalledWith('prj_api', false))
-    await waitFor(() => expect(screen.getByRole('switch', { name: 'Project agent in api' }).getAttribute('aria-checked')).toBe('false'))
-    expect(screen.getByRole('switch', { name: 'Project agent in web' }).getAttribute('aria-checked')).toBe('true')
+    const web = await screen.findByRole('switch', { name: 'Project agent in web' })
+    expect(web.getAttribute('aria-checked')).toBe('false')
+    expect(screen.getByText(/Off: no agent learns or answers for this project/)).toBeTruthy()
+    fireEvent.click(web)
+    await waitFor(() => expect(turn).toHaveBeenLastCalledWith('prj_web', true))
+    await waitFor(() => expect(screen.getByRole('switch', { name: 'Project agent in web' }).getAttribute('aria-checked')).toBe('true'))
+    expect(screen.getByRole('switch', { name: 'Project agent in api' }).getAttribute('aria-checked')).toBe('true')
+    fireEvent.click(screen.getByRole('switch', { name: 'Project agent in api' }))
+    await waitFor(() => expect(turn).toHaveBeenLastCalledWith('prj_api', false))
   })
 
   it("accepts one project's facts resting only on files, off by default", async () => {
@@ -108,6 +111,6 @@ describe('Settings → Maintenance', () => {
     fireEvent.click(api)
     await waitFor(() => expect(accept).toHaveBeenLastCalledWith('prj_api', true))
     await waitFor(() => expect(screen.getByRole('switch', { name: 'Accept facts that rest only on files in api' }).getAttribute('aria-checked')).toBe('true'))
-    expect(screen.getByRole('switch', { name: 'Accept facts that rest only on files in web' }).getAttribute('aria-checked')).toBe('false')
+    expect(screen.queryByRole('switch', { name: 'Accept facts that rest only on files in web' })).toBeNull()
   })
 })
