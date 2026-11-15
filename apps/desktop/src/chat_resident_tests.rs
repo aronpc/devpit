@@ -4,7 +4,7 @@ use std::time::Duration;
 
 use devpit_agentcli::resident::Heard;
 
-use super::{evicted, give_way, speaks_to, take_generation};
+use super::{close_marked, evicted, give_way, publish_expecting, speaks_to};
 use crate::chat_listening::{Claim, Ear};
 
 #[test]
@@ -56,8 +56,7 @@ fn a_new_generation_is_not_seen_idle_before_its_turn_claims_it() {
         std::thread::spawn(move || {
             {
                 let mut held = all.lock().unwrap();
-                held.insert("a".into(), ear.clone());
-                ear.expect(); // as or_say does, before it lets go
+                publish_expecting(&mut held, "a", Some(ear.clone()), |ear| ear);
             }
             published.wait();
             resume.wait(); // paused between the unlock and the claim
@@ -544,8 +543,7 @@ fn a_late_closer_closes_only_the_generation_it_marked() {
         move |all: Arc<std::sync::Mutex<HashMap<String, Arc<Ear>>>>| {
             detached.wait();
             resume.wait();
-            let mut all = all.lock().unwrap();
-            take_generation(&mut all, "a", &mine, |ear| ear).is_some()
+            close_marked(&all, "a", &mine, |ear| ear).is_some()
         }
     };
     let all = Arc::new(std::sync::Mutex::new(all));
@@ -565,8 +563,8 @@ fn a_late_closer_closes_only_the_generation_it_marked() {
     assert!(Arc::ptr_eq(all.lock().unwrap().get("a").unwrap(), &new));
 
     // The generation it did mark goes.
-    let mut same: HashMap<String, Arc<Ear>> = HashMap::from([("a".into(), old.clone())]);
-    assert!(take_generation(&mut same, "a", &old, |ear| ear).is_some());
+    let same = std::sync::Mutex::new(HashMap::from([("a".to_string(), old.clone())]));
+    assert!(close_marked(&same, "a", &old, |ear| ear).is_some());
 }
 
 /// A closed ear is never spoken to, though the map still holds it: the prompt
@@ -609,4 +607,71 @@ fn a_turn_after_the_closing_is_heard_on_a_new_process() {
     let (transcript, head) = (dir.path().join("t.jsonl"), dir.path().join("h.json"));
     std::thread::spawn(move || speaker.hear(Heard::Gone, || unreachable!(), &transcript, &head));
     assert!(matches!(heard.recv_timeout(LIMIT), Ok(Heard::Gone)));
+}
+
+/// The deferred closer runs from the process's reader, which holds the
+/// Resident's `on` mutex; a switch the CLI keeps answers through that `on`
+/// while it holds the residents' lock. Neither may wait on the other for ever.
+#[test]
+fn the_deferred_closer_does_not_wait_on_residents_under_the_readers_lock() {
+    let residents = Arc::new(std::sync::Mutex::new(HashMap::<String, Arc<Ear>>::new()));
+    let on = Arc::new(std::sync::Mutex::new(()));
+    let ear = Arc::new(Ear::default());
+    residents.lock().unwrap().insert("b".into(), ear.clone());
+
+    // B has a turn on it; displaced, the closer is armed for the end.
+    let (tell, _heard) = mpsc::channel();
+    assert_eq!(ear.claim(&tell), Claim::Claimed);
+    let closed = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+    let closer = {
+        let (residents, ear, closed) = (residents.clone(), ear.clone(), closed.clone());
+        move || {
+            let gone = close_marked(&residents, "b", &ear, |ear| ear);
+            closed.fetch_add(
+                usize::from(gone.is_some()),
+                std::sync::atomic::Ordering::SeqCst,
+            );
+        }
+    };
+    assert!(give_way(&mut residents.lock().unwrap(), "b", |e| e, closer).is_none());
+
+    let gate = Arc::new(Barrier::new(2));
+    let (done, finished) = mpsc::channel();
+    // The reader: holds `on` and delivers the end of the turn.
+    {
+        let (on, ear, gate, done) = (on.clone(), ear.clone(), gate.clone(), done.clone());
+        std::thread::spawn(move || {
+            let _on = on.lock().unwrap();
+            gate.wait(); // the switch holds residents by now
+            let dir = tempfile::tempdir().unwrap();
+            ear.hear(
+                Heard::Gone,
+                || unreachable!(),
+                &dir.path().join("t.jsonl"),
+                &dir.path().join("t.json"),
+            );
+            done.send("reader").unwrap();
+        });
+    }
+    // The switch: holds residents, then answers through `on`.
+    {
+        let (on, residents, gate) = (on.clone(), residents.clone(), gate.clone());
+        std::thread::spawn(move || {
+            let _all = residents.lock().unwrap();
+            gate.wait();
+            let _on = on.lock().unwrap();
+            done.send("switch").unwrap();
+        });
+    }
+    for _ in 0..2 {
+        finished
+            .recv_timeout(LIMIT)
+            .expect("reader and switch deadlocked on residents and on");
+    }
+    // The closer ran once, off the reader, and took the generation it marked.
+    let start = std::time::Instant::now();
+    while closed.load(std::sync::atomic::Ordering::SeqCst) == 0 && start.elapsed() < LIMIT {
+        std::thread::sleep(Duration::from_millis(5));
+    }
+    assert_eq!(closed.load(std::sync::atomic::Ordering::SeqCst), 1);
 }

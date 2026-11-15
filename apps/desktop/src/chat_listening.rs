@@ -280,9 +280,18 @@ impl Ear {
             self.quiet.notify_all();
             close
         };
-        // Outside the lock: the closer takes locks of its own.
+        // Outside the ear's lock, and off this thread. `hear` runs on the
+        // process's reader, which still holds the Resident's `on` mutex, and
+        // the closer takes the residents' lock; `Live::switch` runs under the
+        // residents' lock and, when the CLI keeps the process (Codex model
+        // switch, ACP mode), answers through that same `on`. Closing inline
+        // made the two wait on each other. A thread of its own keeps the
+        // order one way (residents, then ear) whatever the reader holds; the
+        // closer is one-shot, so it still runs exactly once. Chosen over
+        // answering `Kept` outside the caller's lock: that changes the
+        // agentcli contract for every adapter, this changes one call.
         if let Some(close) = close {
-            close();
+            std::thread::spawn(close);
         }
     }
 }

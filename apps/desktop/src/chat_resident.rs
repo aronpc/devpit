@@ -236,17 +236,17 @@ pub(crate) fn or_say(
         if (fresh || back) && staying.listens {
             others_give_way(&mut all, &staying);
         }
-        if fresh {
-            let live = start(&staying, turn, wanted)?;
-            all.insert(staying.conversation_id.clone(), live);
-        }
-        let ear = all
-            .get(&staying.conversation_id)
-            .map(|live| live.ear.clone())
-            .ok_or(AgentError::NotInstalled)?;
+        let started = if fresh {
+            Some(start(&staying, turn, wanted)?)
+        } else {
+            None
+        };
         // Busy from here, under the lock that publishes it: another
         // conversation looking now finds a turn on it, not an idle process.
-        ear.expect();
+        let ear = publish_expecting(&mut all, &staying.conversation_id, started, |live| {
+            &live.ear
+        })
+        .ok_or(AgentError::NotInstalled)?;
         drop(all);
         // A new process is a new connection: one asked to be reachable is
         // reached again.
@@ -457,6 +457,35 @@ pub(crate) fn speaks_to(held: &Arc<Ear>, mine: &Arc<Ear>) -> bool {
     Arc::ptr_eq(held, mine) && !held.closed()
 }
 
+/// Publishes a new generation (when there is one) and marks the conversation's
+/// ear as expecting its turn, in the one step the residents' lock covers: no
+/// other conversation sees the process idle before the turn claims it.
+pub(crate) fn publish_expecting<T>(
+    all: &mut HashMap<String, T>,
+    key: &str,
+    fresh: Option<T>,
+    ear_of: impl Fn(&T) -> &Arc<Ear>,
+) -> Option<Arc<Ear>> {
+    if let Some(live) = fresh {
+        all.insert(key.to_owned(), live);
+    }
+    let ear = ear_of(all.get(key)?).clone();
+    ear.expect();
+    Some(ear)
+}
+
+/// The deferred closer's step under the residents' lock: the entry leaves the
+/// map only while it is still the generation `ear` marked.
+pub(crate) fn close_marked<T>(
+    all: &Mutex<HashMap<String, T>>,
+    key: &str,
+    ear: &Arc<Ear>,
+    ear_of: impl Fn(&T) -> &Arc<Ear>,
+) -> Option<T> {
+    let mut all = all.lock().ok()?;
+    take_generation(&mut all, key, ear, ear_of)
+}
+
 /// Takes the entry out only while it is still the generation `ear` marked: a
 /// closer that ran late must not close the process a later turn went to.
 pub(crate) fn take_generation<T>(
@@ -478,10 +507,9 @@ pub(crate) fn take_generation<T>(
 /// The deferred closer: ends this conversation's process if it is still the
 /// one that was displaced.
 fn close_generation(app: &AppHandle, conversation_id: &str, ear: &Arc<Ear>) {
-    let gone = app.try_state::<Residents>().and_then(|residents| {
-        let mut all = residents.0.lock().ok()?;
-        take_generation(&mut all, conversation_id, ear, |live| &live.ear)
-    });
+    let gone = app
+        .try_state::<Residents>()
+        .and_then(|residents| close_marked(&residents.0, conversation_id, ear, |live| &live.ear));
     if let Some(live) = gone {
         live.resident.close();
     }
