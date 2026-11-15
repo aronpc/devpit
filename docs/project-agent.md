@@ -69,6 +69,8 @@ orchestrator linked to the project, read-only like every wake. Its first
 question writes the memory, as `devpit_project_agent_ask` does, and after an
 idle-out the next question resumes the same conversation. While Labs has the
 project agent off, the entry is hidden and the chat is refused, as its tools are.
+On a project the person has not turned on, the chat and the tools say so
+plainly and point to where it is turned on; none of them starts a read.
 
 - **Answers name their files.** Each question asks the agent to name the
   files its answer rests on, and the files of the project an answer names
@@ -88,26 +90,40 @@ and Proposed, each entry with its day and its sources, a file opening in a
 tab. A proposal is approved, edited or discarded there as under the top bar.
 **Approve all from onboarding** approves at once what the agent's own read
 proposed, since that rests only on the repository's files, and **Re-learn**
-has the agent read the project again after big changes.
+has the agent read the project again after big changes. On a project that is
+off, the page says so and **Learn this project** turns it on.
 
-## It learns the project on its own
+## It learns a project once the person turns it on
 
-With Labs on, a project linked to an orchestrator gets its agent without
-anyone asking: on the app's next start, or as soon as it is linked. Projects
-are read one at a time in the background, and never while their agent is
-answering someone. Settings → Maintenance → Labs lists the linked projects,
-each with its own switch: a project left out gets no agent, and its tools,
-pane and page are refused as with Labs off.
+Nothing reads a project on its own. Labs' **Project agent** switch only makes
+the agent available; each project linked to an orchestrator is off until the
+person turns it on, in Settings → Maintenance → Labs, where each linked
+project has its own switch, or with **Learn this project** on its page. A
+newly linked project is off too. Turned on, a project never learned is read
+once, in the background; several turned on are read one at a time, and never
+while their agent is answering someone. A project that is off gets no agent,
+and its tools, chat and page are refused as with Labs off.
 
-On that first read the agent reads the repository the way it reads it to
-answer: its guides, ADRs, build and test commands, layout and conventions.
-It answers 15 to 30 facts and decisions, each one line resting on the files
-that show it. A line whose files are not files of the project is left out, as
-is one the memory already says. Each waits in `proposed.md` with the source
-`onboarding, <files>`; once approved, the entry keeps its files and the day,
-not the mark. `learned` keeps the day it last read the project, so a project
-is read on its own once. Re-learn reads it again, and its proposals take the
-place of the earlier read's still waiting.
+On that read the agent reads the repository the way it reads it to answer:
+its guides, ADRs, build and test commands, layout and conventions. It answers
+15 to 30 facts and decisions, each one line resting on the files that show it.
+A line whose files are not files of the project is left out, as is one the
+memory already says. A fact resting only on those files enters `facts.md`
+directly, marked `accepted automatically` and undone from the page. A decision
+waits in `proposed.md` with the source `onboarding, <files>`; once approved,
+the entry keeps its files and the day, not the mark. Lessons, decisions and
+any other fact still wait for the person, and only what waits is counted
+beside the project. `learned` keeps the day it last read the project, so a
+project is read on its own once. Re-learn reads it again, and its proposals
+take the place of the earlier read's still waiting.
+
+**Carried over once.** The first start of a version that turns projects on one
+by one keeps `labs.project_agent_on`, the projects turned on: each project
+already learned (it has `learned`) is on, unless the earlier
+`labs.project_agent_off` left it out, and the rest are off. On that start, the
+onboarding proposals still waiting in every project are accepted into their
+memory files, as **Approve all from onboarding** would. Both happen once, and
+`proposed.md` files and the earlier preference are read as they are.
 
 ## The process
 
@@ -224,9 +240,9 @@ is held to.
 
 ## Projects without an agent
 
-A project gets `.devpit/project-agent/` when it is first read or asked: on its
-own once linked to an orchestrator with Labs on. A closed card is measured and
-its lessons asked for only in a project that has that folder, so a project
-left out, or linked to no orchestrator, works exactly as it did, and every
-other tool keeps its shape. A memory kept before onboarding existed is read as
+A project gets `.devpit/project-agent/` when it is first read or asked, once
+the person turned it on. A closed card is measured and its lessons asked for
+only in a project that has that folder, so a project never turned on, or
+linked to no orchestrator, works exactly as it did, and every other tool keeps
+its shape. A memory kept before onboarding existed is read as
 it is: its files are not rewritten, and the read only adds proposals.
