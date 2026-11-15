@@ -101,8 +101,9 @@ person turns it on, in Settings → Maintenance → Labs, where each linked
 project has its own switch, or with **Learn this project** on its page. A
 newly linked project is off too. Turned on, a project never learned is read
 once, in the background; several turned on are read one at a time, and never
-while their agent is answering someone. A project that is off gets no agent,
-and its tools, chat and page are refused as with Labs off.
+while their agent is answering someone. A project that is off gets no agent:
+its tools and chat are refused as with Labs off, and its page offers
+**Learn this project**.
 
 On that read the agent reads the repository the way it reads it to answer:
 its guides, ADRs, build and test commands, layout and conventions. It answers
@@ -212,7 +213,7 @@ question. The first wake of a memory kept from before only notes the commit.
 
 ## Lessons and decisions from closed cards
 
-When a card lands in the done column, devpit:
+When a card lands in the done column of a project turned on, devpit:
 
 1. Logs one line to `metrics.jsonl`: the day, the card, its review rounds
    (the runs its `[devflow] review:` comments name, each once) and the
@@ -242,7 +243,7 @@ is held to.
 
 A project gets `.devpit/project-agent/` when it is first read or asked, once
 the person turned it on. A closed card is measured and its lessons asked for
-only in a project that has that folder, so a project never turned on, or
+only in a project that has that folder and is turned on, so a project off, or
 linked to no orchestrator, works exactly as it did, and every other tool keeps
 its shape. A memory kept before onboarding existed is read as
 it is: its files are not rewritten, and the read only adds proposals.

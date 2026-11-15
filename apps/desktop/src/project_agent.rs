@@ -511,7 +511,7 @@ pub(crate) fn from_session(
     let root = Path::new(&here.root_path);
     if !root.join(crate::project_memory::DIR).is_dir() {
         return Err(
-            "this project has no project agent yet: it gets one once linked to an orchestrator, with Labs on"
+            "this project has no project agent yet: it gets one once its agent has learned the project"
                 .to_owned(),
         );
     }

@@ -236,6 +236,15 @@ fn closed(app: &AppHandle, project_id: &str, card_id: &str) {
     });
 }
 
+/// Whether a card closed in `project` asks its agent for lessons: it has a
+/// memory, and the person has the project agent on for it.
+pub(crate) fn asks_lessons(store: &Store, project: &devpit_rpc::Project) -> bool {
+    Path::new(&project.root_path)
+        .join(project_memory::DIR)
+        .is_dir()
+        && crate::project_onboarding::on_for(store, project)
+}
+
 fn close(app: &AppHandle, project_id: &str, card_id: &str) -> Result<(), String> {
     let listed = crate::projects::project_list_now().map_err(|err| err.message)?;
     let project = listed
@@ -244,10 +253,10 @@ fn close(app: &AppHandle, project_id: &str, card_id: &str) -> Result<(), String>
         .find(|one| one.id == project_id)
         .ok_or("the project is gone")?;
     let root = Path::new(&project.root_path);
-    if !root.join(project_memory::DIR).is_dir() {
+    let store = crate::projects::store().map_err(|err| err.message)?;
+    if !asks_lessons(&store, project) {
         return Ok(());
     }
-    let store = crate::projects::store().map_err(|err| err.message)?;
     let card = store
         .card(card_id)
         .map_err(|err| err.to_string())?

@@ -250,3 +250,30 @@ fn a_closed_cards_lesson_keeps_its_plain_line_apart_from_its_advice() {
         ]
     );
 }
+
+#[test]
+fn a_closed_card_wakes_no_agent_in_a_project_turned_off() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let store = Store::open(&dir.path().join("state.db")).expect("open");
+    let root = dir.path().join("api");
+    std::fs::create_dir_all(&root).expect("root");
+    project_memory::seed(&root, "2026-11-14").expect("memory");
+    let projects: Vec<devpit_rpc::Project> = vec![serde_json::from_value(serde_json::json!({
+        "id": "api", "name": "api", "rootPath": root.display().to_string(),
+        "group": null, "accent": "#000000", "worktrees": [], "unreadable": null,
+        "orchestrator": null, "origin": null, "lastOpenedAt": null, "icon": null,
+        "color": null,
+    }))
+    .expect("a project")];
+    assert!(
+        !asks_lessons(&store, &projects[0]),
+        "its memory alone is not enough"
+    );
+    crate::project_onboarding::turn(&store, &projects, "api", true).expect("on");
+    assert!(asks_lessons(&store, &projects[0]));
+    crate::project_onboarding::turn(&store, &projects, "api", false).expect("off");
+    assert!(
+        !asks_lessons(&store, &projects[0]),
+        "turned off, it asks nothing"
+    );
+}
