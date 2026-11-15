@@ -69,8 +69,10 @@ orchestrator linked to the project, read-only like every wake. Its first
 question writes the memory, as `devpit_project_agent_ask` does, and after an
 idle-out the next question resumes the same conversation. While Labs has the
 project agent off, the entry is hidden and the chat is refused, as its tools are.
-On a project the person has not turned on, the chat and the tools say so
-plainly and point to where it is turned on; none of them starts a read.
+On a project the person has not turned on, the chat asks **Turn on learning
+for this project?**, with **Turn on** and **Not now**, and asks the agent
+nothing until the person turns it on. The tools say plainly that it is off and
+that only the person turns it on. None of them turns it on or starts a read.
 
 - **Answers name their files.** Each question asks the agent to name the
   files its answer rests on, and the files of the project an answer names
@@ -98,8 +100,20 @@ off, the page says so and **Learn this project** turns it on.
 Nothing reads a project on its own. Labs' **Project agent** switch only makes
 the agent available; each project linked to an orchestrator is off until the
 person turns it on, in Settings → Maintenance → Labs, where each linked
-project has its own switch, or with **Learn this project** on its page. A
-newly linked project is off too. Turned on, a project never learned is read
+project has its own switch, or with **Learn this project** on its page.
+
+**Asked, never assumed.** A project linked to an orchestrator while it is off
+stays off, and devpit asks the person under the top bar: **Turn on learning
+for <project>?**, with **Turn on** and **Not now**. The question waits until
+it is answered, across restarts (`labs.project_agent_asking`). Turn on is the
+person's yes. Not now leaves the project off, and linking it again asks
+nothing (`labs.project_agent_declined`); turning a project off counts as the
+same answer. A project added from an orchestrator is asked as it is linked;
+one added on its own has no agent until an orchestrator is linked to it, and
+is asked then. Nothing else turns a project on: not the orchestrator, a
+session, an MCP tool or the carry-over below.
+
+Turned on, a project never learned is read
 once, in the background; several turned on are read one at a time, and never
 while their agent is answering someone. A project that is off gets no agent:
 its tools and chat are refused as with Labs off, and its page offers
@@ -121,7 +135,8 @@ take the place of the earlier read's still waiting.
 **Carried over once.** The first start of a version that turns projects on one
 by one keeps `labs.project_agent_on`, the projects turned on: each project
 already learned (it has `learned`) is on, unless the earlier
-`labs.project_agent_off` left it out, and the rest are off. On that start, the
+`labs.project_agent_off` left it out, and the rest are off: a project never
+learned is not turned on by it. On that start, the
 onboarding proposals still waiting in every project are accepted into their
 memory files, as **Approve all from onboarding** would. Both happen once, and
 `proposed.md` files and the earlier preference are read as they are.
