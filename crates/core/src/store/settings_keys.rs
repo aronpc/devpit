@@ -48,6 +48,12 @@ pub const LABS_PROJECT_AGENT_OFF: &str = "labs.project_agent_off";
 /// Labs: the projects the person turned the project agent on for, as a JSON
 /// array of ids. Absent until carried over from before; off unless listed.
 pub const LABS_PROJECT_AGENT_ON: &str = "labs.project_agent_on";
+/// Labs: the projects linked while off, each waiting for the person to answer
+/// whether to turn on its learning, as a JSON array of ids.
+pub const LABS_PROJECT_AGENT_ASKING: &str = "labs.project_agent_asking";
+/// Labs: the projects the person answered Not now for, or turned off, as a
+/// JSON array of ids. Linking one again asks nothing.
+pub const LABS_PROJECT_AGENT_DECLINED: &str = "labs.project_agent_declined";
 /// Labs: the projects whose facts resting only on files are accepted without
 /// the person, as a JSON array of ids. Off unless a project is listed.
 pub const LABS_ACCEPT_FILE_FACTS: &str = "labs.accept_file_facts";

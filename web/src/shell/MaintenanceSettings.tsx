@@ -113,7 +113,7 @@ export function MaintenanceSettings(): React.JSX.Element {
         on={shown?.projectAgent ?? true}
         onFlip={() => shown && write({ projectAgent: !shown.projectAgent })}
         title="Project agent"
-        said="Beta. An agent that knows one project. On, it is offered to each project linked to an orchestrator, and reads a project only once you turn it on for that project, below or from its Project agent page. The orchestrator and the project's sessions ask it, and it draws lessons when a card is done."
+        said="Beta. An agent that knows one project. On, it is offered to each project linked to an orchestrator: devpit asks you as a project is linked, and reads a project only once you turn it on for it, below or from its Project agent page. The orchestrator and the project's sessions ask it, and it draws lessons when a card is done."
       />
       {shown?.projectAgent &&
         shown.projectAgentProjects.map((one) => (

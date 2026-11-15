@@ -11,8 +11,8 @@ const before: Maintenance = {
   keepDays: 0,
   projectAgent: true,
   projectAgentProjects: [
-    { id: 'prj_api', name: 'api', on: true, acceptFacts: false },
-    { id: 'prj_web', name: 'web', on: false, acceptFacts: false },
+    { id: 'prj_api', name: 'api', on: true, acceptFacts: false, asked: false },
+    { id: 'prj_web', name: 'web', on: false, acceptFacts: false, asked: false },
   ],
   canvas: true,
   last: null,

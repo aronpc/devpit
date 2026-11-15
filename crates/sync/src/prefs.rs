@@ -51,6 +51,14 @@ pub const LOCAL: &[(&str, &str)] = &[
     (key::LABS_PROJECT_AGENT, "a beta tried on this machine"),
     (key::LABS_PROJECT_AGENT_OFF, "a beta tried on this machine"),
     (key::LABS_PROJECT_AGENT_ON, "a beta tried on this machine"),
+    (
+        key::LABS_PROJECT_AGENT_ASKING,
+        "a beta tried on this machine",
+    ),
+    (
+        key::LABS_PROJECT_AGENT_DECLINED,
+        "a beta tried on this machine",
+    ),
     (key::LABS_ACCEPT_FILE_FACTS, "a beta tried on this machine"),
     (key::LABS_CANVAS, "a beta tried on this machine"),
     (key::AGENTS_IDLE_COMPACT, "conversations this machine runs"),

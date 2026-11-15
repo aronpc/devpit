@@ -294,3 +294,70 @@ fn a_project_is_queued_once_and_not_while_it_is_being_learned() {
     );
     assert_eq!(queued, ["api", "cli"]);
 }
+
+#[test]
+fn nothing_turns_a_project_on_without_the_persons_answer() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let store = store(dir.path());
+    let orch = dir.path().join("orch");
+    std::fs::create_dir_all(&orch).expect("orch");
+    let projects = [
+        project("orch", &orch, Some("claude")),
+        project("api", &folder(dir.path(), "api", false), None),
+        project("web", &folder(dir.path(), "web", false), None),
+    ];
+    let link = |ids: &[&str]| -> bool {
+        let ids = ids.iter().map(|id| (*id).to_owned()).collect();
+        crate::orchestrator_links::link_in(&store, &orch, &projects, ids).expect("linked")
+    };
+    let shown = || -> Vec<(String, bool, bool)> {
+        labs_projects(&projects, &store)
+            .into_iter()
+            .map(|one| (one.id, one.on, one.asked))
+            .collect()
+    };
+    let off = || projects.iter().all(|one| !on_for(&store, one));
+
+    assert!(link(&["api", "web"]), "linking asks the person");
+    assert_eq!(
+        shown(),
+        [("api".into(), false, true), ("web".into(), false, true)]
+    );
+    carry_over(&store, &projects, "2026-11-15").expect("carried over");
+    assert!(off(), "linking and the carry-over turn nothing on");
+    assert!(!learning("api") && !learning("web"), "and read nothing");
+    assert!(!link(&["api", "web"]), "a project waiting is asked once");
+
+    assert!(!turn(&store, &projects, "web", false).expect("not now"));
+    link(&["api"]);
+    assert!(!link(&["api", "web"]), "Not now is never asked again");
+    assert!(off(), "and leaves it off");
+
+    assert!(turn(&store, &projects, "api", true).expect("turn on"));
+    assert_eq!(
+        shown(),
+        [("api".into(), true, false), ("web".into(), false, false)]
+    );
+}
+
+#[test]
+fn linking_asks_nothing_while_labs_has_the_project_agent_off_or_of_a_project_on() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let store = store(dir.path());
+    let orch = dir.path().join("orch");
+    std::fs::create_dir_all(&orch).expect("orch");
+    let projects = [
+        project("orch", &orch, Some("claude")),
+        project("api", &folder(dir.path(), "api", true), None),
+        project("web", &folder(dir.path(), "web", false), None),
+    ];
+    let link = |ids: &[&str]| -> bool {
+        let ids = ids.iter().map(|id| (*id).to_owned()).collect();
+        crate::orchestrator_links::link_in(&store, &orch, &projects, ids).expect("linked")
+    };
+    assert!(!link(&["api"]), "learned before, so on: nothing to ask");
+    store
+        .set_preference_flag(devpit_core::preference::LABS_PROJECT_AGENT, false)
+        .expect("flag");
+    assert!(!link(&["api", "web"]), "Labs off asks nothing");
+}

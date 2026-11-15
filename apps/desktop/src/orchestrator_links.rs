@@ -11,6 +11,7 @@ use std::path::Path;
 use devpit_core::Store;
 use devpit_rpc::{ErrorCode, LiveSession, Project, RpcError};
 use serde_json::{json, Value};
+use tauri::Emitter;
 
 /// One setting changed, the rest kept.
 pub(crate) fn set_in(
@@ -104,30 +105,53 @@ pub async fn orchestrator_links(project_id: String) -> Result<Vec<String>, RpcEr
 
 /// `orchestrator.link` — the projects it is linked to, as the person chose
 /// them. Only projects, never another orchestrator. Linking reads nothing:
-/// a project's agent learns it once the person turns it on for that project.
+/// a project linked while off asks the person whether it learns.
 #[tauri::command]
 #[specta::specta]
-pub async fn orchestrator_link(project_id: String, linked: Vec<String>) -> Result<(), RpcError> {
+pub async fn orchestrator_link(
+    app: tauri::AppHandle,
+    project_id: String,
+    linked: Vec<String>,
+) -> Result<(), RpcError> {
     crate::off_main::blocking(move || {
         let store = crate::projects::store()?;
         let (_, root) = crate::projects::locate(&store, &project_id)?;
         let projects = crate::projects::project_list_now()?.projects;
-        if let Some(stray) = linked.iter().find(|id| {
-            !projects
-                .iter()
-                .any(|one| &one.id == *id && one.orchestrator.is_none())
-        }) {
-            return Err(RpcError::new(
-                ErrorCode::Invalid,
-                format!("{stray} is not a project that can be linked"),
-            ));
+        if link_in(&store, &root, &projects, linked)? {
+            let _ = app.emit(crate::project_onboarding::ASKED, ());
         }
-        set_in(&store, &root, "projects", json!(linked))?;
         // Links sync: the other machines hear of it in seconds.
         crate::sync::nudge();
         Ok(())
     })
     .await
+}
+
+/// Links the orchestrator at `folder` to `linked`, in a given store, and
+/// answers whether a project newly linked now waits for the person's answer.
+pub(crate) fn link_in(
+    store: &Store,
+    folder: &Path,
+    projects: &[Project],
+    linked: Vec<String>,
+) -> Result<bool, RpcError> {
+    if let Some(stray) = linked.iter().find(|id| {
+        !projects
+            .iter()
+            .any(|one| &one.id == *id && one.orchestrator.is_none())
+    }) {
+        return Err(RpcError::new(
+            ErrorCode::Invalid,
+            format!("{stray} is not a project that can be linked"),
+        ));
+    }
+    let before = linked_in(store, folder);
+    set_in(store, folder, "projects", json!(linked))?;
+    let added: Vec<String> = linked
+        .into_iter()
+        .filter(|id| !before.contains(id))
+        .collect();
+    crate::project_onboarding::ask_about(store, projects, &added).map_err(RpcError::internal)
 }
 
 #[cfg(test)]

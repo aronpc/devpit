@@ -2,7 +2,8 @@
 //! project, in the background and one project at a time: the agent reads the
 //! repository and answers the facts and decisions it found, each resting on
 //! the files that show it. Its facts enter the memory; its decisions wait for
-//! the person like any proposal. "Re-learn" reads the project again.
+//! the person like any proposal. "Re-learn" reads the project again. A
+//! project linked while off is asked about, never turned on.
 
 use std::collections::{HashSet, VecDeque};
 use std::path::Path;
@@ -24,6 +25,9 @@ const FILES: usize = 6;
 const CHARS: usize = 1000;
 /// How often a read looks again at an agent busy answering someone.
 const BUSY_WAIT: Duration = Duration::from_secs(5);
+
+/// The window reads again which projects wait for the person's answer.
+pub(crate) const ASKED: &str = "learning:asked";
 
 /// The projects waiting to be learned, and whether one is being learned.
 static QUEUE: Mutex<(VecDeque<String>, bool)> = Mutex::new((VecDeque::new(), false));
@@ -171,11 +175,70 @@ fn turned_on(store: &Store, projects: &[Project]) -> Vec<String> {
     })
 }
 
-fn choose(store: &Store, ids: &[String]) -> Result<(), String> {
+fn keep(store: &Store, key: &str, ids: &[String]) -> Result<(), String> {
     let ids = serde_json::to_string(ids).map_err(|err| err.to_string())?;
     store
-        .set_preference(preference::LABS_PROJECT_AGENT_ON, &ids)
+        .set_preference(key, &ids)
         .map_err(|err| err.to_string())
+}
+
+fn choose(store: &Store, ids: &[String]) -> Result<(), String> {
+    keep(store, preference::LABS_PROJECT_AGENT_ON, ids)
+}
+
+/// The projects waiting for the person to say whether they learn.
+fn asking(store: &Store) -> Vec<String> {
+    ids(store, preference::LABS_PROJECT_AGENT_ASKING).unwrap_or_default()
+}
+
+/// The projects never asked again: answered Not now, turned off, or left
+/// out by Labs before.
+fn declined(store: &Store) -> Vec<String> {
+    let mut ids = ids(store, preference::LABS_PROJECT_AGENT_DECLINED).unwrap_or_default();
+    ids.extend(left_out(store));
+    ids
+}
+
+/// The person's answer for `project_id`: it waits no more, and off is kept
+/// as their answer.
+fn answered(store: &Store, project_id: &str, on: bool) -> Result<(), String> {
+    let mut waiting = asking(store);
+    waiting.retain(|id| id != project_id);
+    keep(store, preference::LABS_PROJECT_AGENT_ASKING, &waiting)?;
+    let mut said = ids(store, preference::LABS_PROJECT_AGENT_DECLINED).unwrap_or_default();
+    said.retain(|id| id != project_id);
+    if !on {
+        said.push(project_id.to_owned());
+    }
+    keep(store, preference::LABS_PROJECT_AGENT_DECLINED, &said)
+}
+
+/// Asks the person about each of `linked` that is off and was never
+/// answered; linking turns nothing on. Answers whether one more waits.
+pub(crate) fn ask_about(
+    store: &Store,
+    projects: &[Project],
+    linked: &[String],
+) -> Result<bool, String> {
+    if !crate::maintenance::project_agent_on(store) {
+        return Ok(false);
+    }
+    let _held = CHOOSING.lock().map_err(|_| "Labs is busy".to_owned())?;
+    let (on, declined, mut waiting) = (turned_on(store, projects), declined(store), asking(store));
+    let before = waiting.len();
+    for id in linked {
+        let project = projects
+            .iter()
+            .any(|one| &one.id == id && one.orchestrator.is_none());
+        if project && !on.contains(id) && !declined.contains(id) && !waiting.contains(id) {
+            waiting.push(id.clone());
+        }
+    }
+    if waiting.len() == before {
+        return Ok(false);
+    }
+    keep(store, preference::LABS_PROJECT_AGENT_ASKING, &waiting)?;
+    Ok(true)
 }
 
 /// Choosing and carrying over, one at a time.
@@ -196,6 +259,7 @@ pub(crate) fn turn(
         ids.push(project_id.to_owned());
     }
     choose(store, &ids)?;
+    answered(store, project_id, on)?;
     Ok(on
         && projects.iter().any(|one| {
             let root = Path::new(&one.root_path);
@@ -250,10 +314,7 @@ pub(crate) fn accept_file_facts(store: &Store, project_id: &str, on: bool) -> Re
     if on {
         ids.push(project_id.to_owned());
     }
-    let ids = serde_json::to_string(&ids).map_err(|err| err.to_string())?;
-    store
-        .set_preference(preference::LABS_ACCEPT_FILE_FACTS, &ids)
-        .map_err(|err| err.to_string())
+    keep(store, preference::LABS_ACCEPT_FILE_FACTS, &ids)
 }
 
 /// Whether the project agent is on for `project`: Labs makes it available,
@@ -266,10 +327,11 @@ pub(crate) fn on_for(store: &Store, project: &Project) -> bool {
 /// The projects Settings → Labs lists: each linked to an orchestrator, with
 /// its own switch.
 pub(crate) fn labs_projects(projects: &[Project], store: &Store) -> Vec<LabsProject> {
-    let (linked, on, accept) = (
-        linked(projects),
+    let (linked, on, accept, waiting) = (
+        linked(store, projects),
         turned_on(store, projects),
         accepting(store),
+        asking(store),
     );
     projects
         .iter()
@@ -279,16 +341,17 @@ pub(crate) fn labs_projects(projects: &[Project], store: &Store) -> Vec<LabsProj
             name: one.name.clone(),
             on: on.contains(&one.id),
             accept_facts: accept.contains(&one.id),
+            asked: !on.contains(&one.id) && waiting.contains(&one.id),
         })
         .collect()
 }
 
 /// Every project linked to an orchestrator.
-fn linked(projects: &[Project]) -> Vec<String> {
+fn linked(store: &Store, projects: &[Project]) -> Vec<String> {
     projects
         .iter()
         .filter(|one| one.orchestrator.is_some())
-        .flat_map(|one| crate::orchestrator_links::linked(Path::new(&one.root_path)))
+        .flat_map(|one| crate::orchestrator_links::linked_in(store, Path::new(&one.root_path)))
         .collect()
 }
 
@@ -331,6 +394,7 @@ pub(crate) fn switch(
         queue(app, vec![project_id.to_owned()]);
     }
     let _ = app.emit("lessons:proposed", project_id);
+    let _ = app.emit(ASKED, ());
     Ok(())
 }
 

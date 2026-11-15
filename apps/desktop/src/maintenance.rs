@@ -39,6 +39,8 @@ pub struct LabsProject {
     pub on: bool,
     /// Its facts resting only on files enter the memory without the person.
     pub accept_facts: bool,
+    /// Linked while off, it waits for the person to say whether it learns.
+    pub asked: bool,
 }
 
 /// What one cleaning deleted.

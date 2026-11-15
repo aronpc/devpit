@@ -372,7 +372,7 @@ export const commands = {
 	/**
 	 *  `orchestrator.link` — the projects it is linked to, as the person chose
 	 *  them. Only projects, never another orchestrator. Linking reads nothing:
-	 *  a project's agent learns it once the person turns it on for that project.
+	 *  a project linked while off asks the person whether it learns.
 	 */
 	orchestratorLink: (projectId: string, linked: string[]) => typedError<null, RpcError>(__TAURI_INVOKE("orchestrator_link", { projectId, linked })),
 	/**
@@ -4275,6 +4275,8 @@ export type LabsProject = {
 	on: boolean,
 	/**  Its facts resting only on files enter the memory without the person. */
 	acceptFacts: boolean,
+	/**  Linked while off, it waits for the person to say whether it learns. */
+	asked: boolean,
 };
 
 export type LayoutNode = { type: "leaf"; id: string; 
