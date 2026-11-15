@@ -130,6 +130,10 @@ export function useChat(conversationId: string): Chat {
   const [previews, setPreviews] = useState<Readonly<Record<string, string>>>({})
   const [asked, setAsked] = useState<readonly Question[]>([])
   const [session, setSession] = useState<string | null>(null)
+  /* How many times the conversation effect opened: the questions' effect
+     follows it, because it holds that opening and a ref would not tell it. */
+  const shown = useRef('')
+  const [openings, setOpenings] = useState(0)
   const [card, setCard] = useState<ChatCard | null>(null)
   const [sending, setSending] = useState(false)
   /* Whether the turn in flight was asked to stop, whether that went unheeded
@@ -208,6 +212,12 @@ export function useChat(conversationId: string): Chat {
   useEffect(() => {
     const now = opening()
     opened.current = now
+    setOpenings((was) => was + 1)
+    /* Another conversation has no session until its history says so; the old
+       one's would let its questions in. The same one, renewed, keeps it. */
+    const key = `${project?.id}/${conversationId}`
+    if (shown.current !== key) setSession(null)
+    shown.current = key
     /* Questions belong to the conversation they were asked in. */
     setAsked([])
     if (!project) return now.close
@@ -345,7 +355,7 @@ export function useChat(conversationId: string): Chat {
       dropAsked()
       dropSettled()
     }
-  }, [session])
+  }, [session, openings])
 
   const choosePermission = useCallback(
     (mode: string) => {

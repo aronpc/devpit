@@ -208,3 +208,19 @@ describe("a chat's questions", () => {
     expect(result.current.asked).toEqual([])
   })
 })
+
+describe('a chat whose project object is renewed', () => {
+  it('still shows what is asked and reads what was waiting', async () => {
+    const { result, rerender } = renderHook(() => useChat('conv_a'))
+    await waitFor(() => expect(result.current.session).toBe('ses_1'))
+    shell.project = { ...shell.project }
+    rerender()
+    await waitFor(() => expect(result.current.session).toBe('ses_1'))
+    act(() => heard.asked?.(bash))
+    await waitFor(() => expect(result.current.asked.map((one) => one.id)).toEqual(['q1']))
+    waiting.push(colour)
+    shell.project = { ...shell.project }
+    rerender()
+    await waitFor(() => expect(result.current.asked.map((one) => one.id)).toEqual(['q2']))
+  })
+})
