@@ -381,7 +381,14 @@ fn main() {
             display_backend::handed_over();
             // A handover that names one of the panes is brought onto it; one
             // that names none, and one whose leaf the store would not answer
-            // for, comes forward as every handover did.
+            // for, comes forward as every handover did. But while the
+            // webview has yet to ask for a kept pane, no document exists to
+            // hear the island's event: the ask is kept for the webview, and
+            // only the window comes forward.
+            if tauri::Manager::state::<open_pane_arg::PendingPane>(app).kept(&argv) {
+                desk::forward(app);
+                return;
+            }
             match open_pane_arg::opening(&argv, |leaf| {
                 sessions::store()
                     .map_err(|err| err.to_string())

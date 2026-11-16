@@ -1,7 +1,8 @@
 //! The `--open-pane` a launch carries: the pane it asks to be brought
-//! forward on. A second launch's arguments reach the running copy, which
-//! opens the pane straight away; the first's are kept here until the
-//! webview asks for them, once, as it mounts.
+//! forward on. Until the webview has mounted and asked once, every ask —
+//! the first launch's and a handover's alike — is kept for it, the last
+//! one winning; once it has asked, a handover opens the pane straight
+//! away, for by then there is a document to hear the island's event.
 
 use std::sync::Mutex;
 
@@ -46,36 +47,68 @@ where
     holder(leaf).map(|held| held.map(|project| (project, leaf.to_owned())))
 }
 
-/// The pane a first launch asked to open, kept for the webview to ask for
-/// as it mounts: the ask happens before any document exists that could
-/// hear the island's event, which is what the keeping is for.
+/// The pane a launch asked to open, kept for the webview to ask for as it
+/// mounts: the ask happens before any document exists that could hear the
+/// island's event, which is what the keeping is for. Once the webview has
+/// asked once, there is nobody left to keep a pane for — a later ask is
+/// answered with nothing, and a handover opens the pane itself.
 #[derive(Default)]
-pub struct PendingPane(Mutex<Option<String>>);
+pub struct PendingPane(Mutex<Ask>);
+
+/// Where an ask stands: kept for a webview that has yet to mount, or spent
+/// on one that has. Under the one mutex, so a handover keeping an ask and
+/// the webview taking it cannot pass each other by.
+enum Ask {
+    /// No webview has asked yet; the last kept leaf, if any, waits for it.
+    Waiting(Option<String>),
+    /// The webview has asked once — a mount, a reload, a remount.
+    Mounted,
+}
+
+impl Default for Ask {
+    fn default() -> Self {
+        Self::Waiting(None)
+    }
+}
 
 impl PendingPane {
     /// What the launch's arguments asked to open, when they name a leaf.
     pub(crate) fn from(argv: &[String]) -> Self {
         let pending = Self::default();
-        pending.asked(argv);
+        pending.kept(argv);
         pending
     }
 
-    /// Another ask before the webview has taken one replaces it: the pane
-    /// opened is the one asked for last. Arguments that name no leaf are
-    /// no ask, and leave what there was.
-    pub(crate) fn asked(&self, argv: &[String]) {
-        if let Some(leaf) = leaf_from(argv) {
-            *self.held() = Some(leaf.to_owned());
+    /// Keep the pane a handover asks to open, for the webview to be given
+    /// as it mounts: a later ask replaces an earlier one. True when it was
+    /// kept — the webview has not asked yet, and need only be brought
+    /// forward — and false, keeping nothing, when the arguments name no
+    /// leaf or the webview has already asked.
+    pub(crate) fn kept(&self, argv: &[String]) -> bool {
+        // The leaf comes from outside the app: only a whole leaf is kept.
+        let Some(leaf) = leaf_from(argv) else {
+            return false;
+        };
+        match &mut *self.held() {
+            Ask::Mounted => false,
+            Ask::Waiting(kept) => {
+                *kept = Some(leaf.to_owned());
+                true
+            }
         }
     }
 
     /// The pane asked for, once: a second ask — a reload, a remount — is
-    /// told there is nothing.
+    /// told there is nothing. The first ask mounts the webview whether
+    /// anything was kept for it or not.
     pub(crate) fn take(&self) -> Option<String> {
-        self.held().take()
+        match std::mem::replace(&mut *self.held(), Ask::Mounted) {
+            Ask::Waiting(kept) => kept,
+            Ask::Mounted => None,
+        }
     }
 
-    fn held(&self) -> std::sync::MutexGuard<'_, Option<String>> {
+    fn held(&self) -> std::sync::MutexGuard<'_, Ask> {
         // Never held across anything that takes time.
         self.0
             .lock()

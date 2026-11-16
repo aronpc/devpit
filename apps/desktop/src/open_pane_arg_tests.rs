@@ -135,18 +135,52 @@ fn the_pane_is_delivered_once() {
 }
 
 #[test]
-fn a_second_ask_before_the_first_take_replaces_the_first() {
+fn a_handover_before_the_webview_mounts_is_kept_for_it() {
+    let pending = PendingPane::from(&argv(&["devpit"]));
+    // The webview is not there to hear the island's event yet, so the ask
+    // is kept for it to be handed as it mounts.
+    assert!(pending.kept(&argv(&["devpit", "--open-pane", LEAF])));
+    assert_eq!(pending.take(), Some(LEAF.to_owned()));
+    assert_eq!(pending.take(), None);
+}
+
+#[test]
+fn the_kept_ask_replaces_the_ask_there_was() {
     let pending = PendingPane::from(&argv(&["devpit", "--open-pane", LEAF]));
-    pending.asked(&argv(&["devpit", "--open-pane", OTHER_LEAF]));
+    assert!(pending.kept(&argv(&["devpit", "--open-pane", OTHER_LEAF])));
+    // The pane opened is the one asked for last.
     assert_eq!(pending.take(), Some(OTHER_LEAF.to_owned()));
     assert_eq!(pending.take(), None);
 }
 
 #[test]
-fn an_ask_that_names_no_leaf_leaves_the_ask_there_was() {
+fn an_ask_without_a_leaf_is_kept_by_no_one() {
     let pending = PendingPane::from(&argv(&["devpit", "--open-pane", LEAF]));
-    pending.asked(&argv(&["devpit"]));
+    // Arguments that name no leaf, or name a value that is not one, are
+    // no ask, and leave what there was.
+    assert!(!pending.kept(&argv(&["devpit"])));
+    assert!(!pending.kept(&argv(&["devpit", "--open-pane", "not-a-leaf"])));
     assert_eq!(pending.take(), Some(LEAF.to_owned()));
+}
+
+#[test]
+fn a_handover_after_the_webview_mounted_is_not_kept() {
+    let pending = PendingPane::from(&argv(&["devpit", "--open-pane", LEAF]));
+    assert_eq!(pending.take(), Some(LEAF.to_owned()));
+    // The webview has asked once: there is nobody left to keep a pane for,
+    // and nothing may be stored for a later ask to find.
+    assert!(!pending.kept(&argv(&["devpit", "--open-pane", OTHER_LEAF])));
+    assert_eq!(pending.take(), None);
+}
+
+#[test]
+fn a_take_with_nothing_kept_still_mounts_the_webview() {
+    let pending = PendingPane::from(&argv(&["devpit"]));
+    assert_eq!(pending.take(), None);
+    // The first take mounted the webview whether anything was kept or not;
+    // a second ask is told there is nothing.
+    assert!(!pending.kept(&argv(&["devpit", "--open-pane", LEAF])));
+    assert_eq!(pending.take(), None);
 }
 
 #[test]
