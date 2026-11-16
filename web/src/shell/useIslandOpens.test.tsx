@@ -1,12 +1,21 @@
+import { StrictMode } from 'react'
 import { act, renderHook } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { useIslandOpens } from './useIslandOpens'
 
 const heard = new Map<string, (payload: unknown) => void>()
+/* The listener's registration, already in place unless a test holds it back —
+   the state one in flight is. */
+let inFlight: Promise<void> | null = null
 vi.mock('./window', () => ({
   onCarried: (name: string, then: (payload: unknown) => void) => (heard.set(name, then), () => heard.delete(name)),
+  whenHeard: () => inFlight ?? Promise.resolve(),
 }))
+
+beforeEach(() => {
+  inFlight = null
+})
 
 /* What Rust holds until the webview asks for it, as this mount would. */
 let pending: { projectId: string; paneId: string } | null = null
@@ -76,5 +85,44 @@ describe('the island asking for a session', () => {
     })
     expect(setProject).not.toHaveBeenCalled()
     expect(openPane).not.toHaveBeenCalled()
+  })
+
+  it('asks for the pending pane only once its listener is in place', async () => {
+    let landed: () => void = () => {}
+    inFlight = new Promise<void>((resolve) => {
+      landed = resolve
+    })
+    pending = { projectId: 'prj_b', paneId: 'leaf_1' }
+    const setProject = vi.fn()
+    const openPane = vi.fn()
+    await act(async () => {
+      renderHook(() => useIslandOpens('prj_a', setProject, openPane, () => {}))
+    })
+    expect(openPane).not.toHaveBeenCalled()
+    await act(async () => {
+      landed()
+    })
+    expect(setProject).toHaveBeenCalledWith('prj_b')
+    expect(openPane).toHaveBeenCalledWith('leaf_1')
+  })
+
+  it('asks for the pending pane once under StrictMode, after the listener is up', async () => {
+    let landed: () => void = () => {}
+    inFlight = new Promise<void>((resolve) => {
+      landed = resolve
+    })
+    pending = { projectId: 'prj_b', paneId: 'leaf_1' }
+    const setProject = vi.fn()
+    const openPane = vi.fn()
+    await act(async () => {
+      renderHook(() => useIslandOpens('prj_a', setProject, openPane, () => {}), { wrapper: StrictMode })
+    })
+    expect(openPane).not.toHaveBeenCalled()
+    await act(async () => {
+      landed()
+    })
+    expect(setProject).toHaveBeenCalledTimes(1)
+    expect(openPane).toHaveBeenCalledTimes(1)
+    expect(openPane).toHaveBeenCalledWith('leaf_1')
   })
 })

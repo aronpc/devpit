@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { PaneName } from './paneList'
 import type { Tab } from './strip'
 import { ask, commands } from './live'
-import { onCarried } from './window'
+import { onCarried, whenHeard } from './window'
 
 /*
  * The island asking for a session: devpit is brought forward by Rust, and
@@ -45,15 +45,25 @@ export function useIslandOpens(
   )
 
   /* The launch's own ask, taken once: Rust kept it until a document was
-     there to ask, and answers nothing on a reload's second ask. */
+     there to ask, and answers nothing on a reload's second ask. It waits
+     for the listener, so a pane Rust emits while the registration is still
+     in flight is opened rather than lost — and StrictMode's thrown-away
+     pass is dropped, which is what keeps the ask to one. */
   useEffect(() => {
-    void ask(() => commands.islandPendingPane()).then((answer) => {
-      const pane = answer.data
-      if (!pane) return
-      const now = held.current
-      if (pane.projectId !== now.current) now.setProject(pane.projectId)
-      now.openPane(pane.paneId)
+    let gone = false
+    void whenHeard('island:open-pane').then(() => {
+      if (gone) return
+      void ask(() => commands.islandPendingPane()).then((answer) => {
+        const pane = answer.data
+        if (!pane) return
+        const now = held.current
+        if (pane.projectId !== now.current) now.setProject(pane.projectId)
+        now.openPane(pane.paneId)
+      })
     })
+    return () => {
+      gone = true
+    }
   }, [])
 
   /* The conversation opens in its own project's strip, which is there only

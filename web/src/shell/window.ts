@@ -156,13 +156,30 @@ export function onHappening(then: (happening: Happening) => void): () => void {
  * times. Here it crosses once and is handed to each subscriber; the listener
  * goes away with the last of them.
  */
-const listeners = new Map<string, { subscribers: Set<(payload: unknown) => void>; drop?: () => void; dropped?: boolean }>()
+const listeners = new Map<
+  string,
+  { subscribers: Set<(payload: unknown) => void>; drop?: () => void; dropped?: boolean; heard: Promise<void> }
+>()
 
 function shared<T>(name: string, then: (payload: T) => void): () => void {
   if (!inTauri()) return () => {}
   let entry = listeners.get(name)
   if (!entry) {
-    const made: { subscribers: Set<(payload: unknown) => void>; drop?: () => void; dropped?: boolean } = { subscribers: new Set() }
+    /* The promise says the listener is in place — or never will be: it
+       resolves on a failed registration too, because a waiter must not hang
+       on a listener that does not exist. */
+    let settled: () => void
+    const made: {
+      subscribers: Set<(payload: unknown) => void>
+      drop?: () => void
+      dropped?: boolean
+      heard: Promise<void>
+    } = {
+      subscribers: new Set(),
+      heard: new Promise<void>((resolve) => {
+        settled = resolve
+      }),
+    }
     entry = made
     listeners.set(name, made)
     void listen<unknown>(name, (event) => {
@@ -180,10 +197,12 @@ function shared<T>(name: string, then: (payload: T) => void): () => void {
       (unlisten) => {
         if (made.dropped) unlisten()
         else made.drop = unlisten
+        settled()
       },
       /* Never heard: the next subscriber tries again. */
       () => {
         if (listeners.get(name) === made) listeners.delete(name)
+        settled()
       },
     )
   }
@@ -233,6 +252,17 @@ export function onEvent(name: string, then: () => void): () => void {
  */
 export function onCarried<T>(name: string, then: (payload: T) => void): () => void {
   return shared<T>(name, then)
+}
+
+/*
+ * Resolves once the shared listener for `name` is in place — and when it never
+ * will be: the registration failed, nobody subscribed, or there is no Tauri
+ * to hear from. A caller that must not miss what the event carries waits for
+ * this before asking for whatever came before it.
+ */
+export function whenHeard(name: string): Promise<void> {
+  if (!inTauri()) return Promise.resolve()
+  return listeners.get(name)?.heard ?? Promise.resolve()
 }
 
 /**
