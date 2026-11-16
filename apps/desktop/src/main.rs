@@ -182,6 +182,7 @@ mod memory_proposals;
 mod moving;
 mod notices;
 mod off_main;
+mod open_pane_arg;
 mod openers;
 mod outside_sessions;
 mod pane_asking;
@@ -335,11 +336,14 @@ fn main() {
     // Before the engine reads any project: devpit's folder, devpit's spawner.
     devflow_dialect::pinned();
 
-    if let Some(code) = agent_door() {
+    // The whole of the process's argv, argv[0] included, as the
+    // single-instance handover also hears it.
+    let argv: Vec<String> = std::env::args().collect();
+    if let Some(code) = agent_door(&argv) {
         std::process::exit(code);
     }
     // `devpit` on a terminal: the menu, or a subcommand's plain lines.
-    if let Some(code) = terminal_run::from_args() {
+    if let Some(code) = terminal_run::from_args(&argv) {
         std::process::exit(code);
     }
 
@@ -372,10 +376,26 @@ fn main() {
     // its own listener and door would write over this one's endpoint and
     // secret, and every session's hooks would post to a dead port.
     if desk::one_copy() {
-        builder = builder.plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
+        builder = builder.plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
             #[cfg(target_os = "linux")]
             display_backend::handed_over();
-            desk::forward(app);
+            // A handover that names one of the panes is brought onto it; one
+            // that names none, and one whose leaf the store would not answer
+            // for, comes forward as every handover did.
+            match open_pane_arg::opening(&argv, |leaf| {
+                sessions::store()
+                    .map_err(|err| err.to_string())
+                    .and_then(|store| sessions::project_holding(&store, leaf))
+            }) {
+                Ok(Some((project_id, pane_id))) => {
+                    let _ = island::open_pane(app, Some(project_id), pane_id);
+                }
+                Ok(None) => desk::forward(app),
+                Err(why) => {
+                    devpit_core::reports::background("open pane", &why);
+                    desk::forward(app);
+                }
+            }
         }));
     }
     builder
@@ -623,9 +643,10 @@ fn main() {
         });
 }
 
-/// The exit code of an agent's command, when the arguments are one.
-fn agent_door() -> Option<i32> {
-    let args: Vec<String> = std::env::args().skip(1).collect();
+/// The exit code of an agent's command, when the arguments are one. `argv`
+/// is the process's whole argv, argv[0] and all.
+fn agent_door(argv: &[String]) -> Option<i32> {
+    let args = argv.get(1..).unwrap_or_default();
     let first = args.first()?.as_str();
     // `devpit hook` is how an agent's hooks reach the app on Windows, where
     // the `curl` line the settings carry elsewhere has nothing to run on.

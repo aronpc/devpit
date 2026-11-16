@@ -245,7 +245,9 @@ pub(crate) fn place_of(
         return Some(place);
     }
     let leaf = devpit_pty::environ_of(u32::try_from(pid?).ok()?, devpit_tmux::PANE_ENV)?;
-    let project = crate::sessions::project_holding(store, &leaf)?;
+    let project = crate::sessions::project_holding(store, &leaf)
+        .ok()
+        .flatten()?;
     Some((project, leaf))
 }
 

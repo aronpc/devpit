@@ -6,9 +6,8 @@ use std::io::IsTerminal as _;
 use crate::terminal::{self, Item, Look, Start};
 
 /// The exit code, when these arguments are for the terminal; `None` opens
-/// the app.
-pub(crate) fn from_args() -> Option<i32> {
-    let args: Vec<String> = std::env::args().skip(1).collect();
+/// the app. `argv` is the process's whole argv, argv[0] and all.
+pub(crate) fn from_args(argv: &[String]) -> Option<i32> {
     let (foreground, own) = groups();
     let terminal = terminal::owns_terminal(
         std::io::stdin().is_terminal(),
@@ -16,7 +15,11 @@ pub(crate) fn from_args() -> Option<i32> {
         foreground,
         own,
     );
-    match terminal::start(&args, terminal, cfg!(debug_assertions)) {
+    match terminal::start(
+        argv.get(1..).unwrap_or_default(),
+        terminal,
+        cfg!(debug_assertions),
+    ) {
         Start::Window => None,
         Start::Menu => Some(menu()),
         Start::Run(item) => Some(run(item, &Look::PLAIN, "")),
