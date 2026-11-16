@@ -445,6 +445,9 @@ fn main() {
         .manage(browser::Sessions::default())
         /* What the browser menu was last opened for, so its window can ask. */
         .manage(browser_menu::Opening::default())
+        /* The pane this launch asked to open, taken by the webview once it
+        is there to ask; see `open_pane_arg`. */
+        .manage(open_pane_arg::PendingPane::from(&argv))
         .manage(error_sender::Presence::new(devpit_core::reports::now()))
         // Whether somebody is at the window, for reports that only go when
         // nobody is.

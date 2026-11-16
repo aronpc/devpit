@@ -1245,6 +1245,15 @@ export const commands = {
 	/**  `island.questions` — the shape `island:asked` carries, for the contract. */
 	islandQuestions: () => __TAURI_INVOKE<IslandQuestion[]>("island_questions"),
 	/**
+	 *  `island.pending_pane` — the pane this launch asked to open, for the
+	 *  main webview to open as it mounts, on the same path a click on the
+	 *  island takes. Answered once, so a reload opens it no second time.
+	 */
+	islandPendingPane: () => typedError<{
+	projectId: string,
+	paneId: string,
+} | null, RpcError>(__TAURI_INVOKE("island_pending_pane")),
+	/**
 	 *  Every cookie store on this machine, with what stands in the way of each.
 	 * 
 	 *  Listing is not importing. This is what a person chooses from.

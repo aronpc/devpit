@@ -8,6 +8,13 @@ vi.mock('./window', () => ({
   onCarried: (name: string, then: (payload: unknown) => void) => (heard.set(name, then), () => heard.delete(name)),
 }))
 
+/* What Rust holds until the webview asks for it, as this mount would. */
+let pending: { projectId: string; paneId: string } | null = null
+vi.mock('./live', () => ({
+  ask: (call: () => unknown) => Promise.resolve({ data: call(), error: null, loading: false }),
+  commands: { islandPendingPane: () => pending },
+}))
+
 describe('the island asking for a session', () => {
   it('opens a chat in its own project, once that project is on screen', () => {
     const setProject = vi.fn()
@@ -36,5 +43,38 @@ describe('the island asking for a session', () => {
     renderHook(() => useIslandOpens('prj_a', () => {}, openPane, () => {}))
     act(() => heard.get('island:open-pane')?.(['prj_a', 'leaf_1']))
     expect(openPane).toHaveBeenCalledWith('leaf_1')
+  })
+
+  it('opens the pane the launch asked for, before this document was there to hear it', async () => {
+    pending = { projectId: 'prj_b', paneId: 'leaf_1' }
+    const setProject = vi.fn()
+    const openPane = vi.fn()
+    await act(async () => {
+      renderHook(() => useIslandOpens('prj_a', setProject, openPane, () => {}))
+    })
+    expect(setProject).toHaveBeenCalledWith('prj_b')
+    expect(openPane).toHaveBeenCalledWith('leaf_1')
+  })
+
+  it('opens a pending pane in the project on screen without switching to it', async () => {
+    pending = { projectId: 'prj_a', paneId: 'leaf_2' }
+    const setProject = vi.fn()
+    const openPane = vi.fn()
+    await act(async () => {
+      renderHook(() => useIslandOpens('prj_a', setProject, openPane, () => {}))
+    })
+    expect(setProject).not.toHaveBeenCalled()
+    expect(openPane).toHaveBeenCalledWith('leaf_2')
+  })
+
+  it('opens nothing when no pane is pending', async () => {
+    pending = null
+    const setProject = vi.fn()
+    const openPane = vi.fn()
+    await act(async () => {
+      renderHook(() => useIslandOpens('prj_a', setProject, openPane, () => {}))
+    })
+    expect(setProject).not.toHaveBeenCalled()
+    expect(openPane).not.toHaveBeenCalled()
   })
 })

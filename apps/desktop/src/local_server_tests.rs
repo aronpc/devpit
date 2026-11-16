@@ -165,6 +165,7 @@ fn a_stream_or_the_desktops_own_ui_is_not_run_from_a_browser() {
         "session_attach",
         "browser_open",
         "island_open_chat",
+        "island_pending_pane",
         "tray_read",
         "path_reveal",
         "url_open",
