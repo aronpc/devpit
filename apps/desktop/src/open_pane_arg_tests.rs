@@ -107,3 +107,82 @@ fn open_pane_arg_is_not_a_terminal_run() {
         None
     );
 }
+
+/// `leaf_` and a ULID's 26 uppercase letters or digits, another one whole.
+const OTHER_LEAF: &str = "leaf_01BX5ZZKBKABX7HD8E4ZZZZZZP";
+
+#[test]
+fn a_first_launch_keeps_the_leaf_it_asked_to_open() {
+    let pending = PendingPane::from(&argv(&["devpit", "--open-pane", LEAF]));
+    assert_eq!(pending.take(), Some(LEAF.to_owned()));
+}
+
+#[test]
+fn a_first_launch_without_a_leaf_keeps_nothing() {
+    let pending = PendingPane::from(&argv(&["devpit"]));
+    assert_eq!(pending.take(), None);
+    // A flag whose value is not a leaf is no ask at all.
+    let pending = PendingPane::from(&argv(&["devpit", "--open-pane", "not-a-leaf"]));
+    assert_eq!(pending.take(), None);
+}
+
+#[test]
+fn the_pane_is_delivered_once() {
+    let pending = PendingPane::from(&argv(&["devpit", "--open-pane", LEAF]));
+    assert_eq!(pending.take(), Some(LEAF.to_owned()));
+    // A second ask — a reload, a remount — is told there is nothing.
+    assert_eq!(pending.take(), None);
+}
+
+#[test]
+fn a_second_ask_before_the_first_take_replaces_the_first() {
+    let pending = PendingPane::from(&argv(&["devpit", "--open-pane", LEAF]));
+    pending.asked(&argv(&["devpit", "--open-pane", OTHER_LEAF]));
+    assert_eq!(pending.take(), Some(OTHER_LEAF.to_owned()));
+    assert_eq!(pending.take(), None);
+}
+
+#[test]
+fn an_ask_that_names_no_leaf_leaves_the_ask_there_was() {
+    let pending = PendingPane::from(&argv(&["devpit", "--open-pane", LEAF]));
+    pending.asked(&argv(&["devpit"]));
+    assert_eq!(pending.take(), Some(LEAF.to_owned()));
+}
+
+#[test]
+fn a_pending_leaf_a_project_holds_opens_that_pane() {
+    let opened = pending_opening(Some(LEAF.to_owned()), |leaf| {
+        assert_eq!(leaf, LEAF);
+        Ok(Some("prj_a".to_owned()))
+    });
+    assert_eq!(
+        opened,
+        Ok(Some(devpit_rpc::LivePane {
+            project_id: "prj_a".to_owned(),
+            pane_id: LEAF.to_owned(),
+        }))
+    );
+}
+
+#[test]
+fn a_pending_leaf_no_project_holds_opens_none() {
+    let opened = pending_opening(Some(LEAF.to_owned()), |leaf| {
+        assert_eq!(leaf, LEAF);
+        Ok(None)
+    });
+    assert_eq!(opened, Ok(None));
+}
+
+#[test]
+fn nothing_pending_opens_none_without_asking_the_store() {
+    let opened = pending_opening(None, |_| Err("the store was asked for nothing".to_owned()));
+    assert_eq!(opened, Ok(None));
+}
+
+#[test]
+fn a_store_that_will_not_answer_is_an_error_to_the_asker() {
+    let opened = pending_opening(Some(LEAF.to_owned()), |_| {
+        Err("the store would not answer".to_owned())
+    });
+    assert_eq!(opened, Err("the store would not answer".to_owned()));
+}
