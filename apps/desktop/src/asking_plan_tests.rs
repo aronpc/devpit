@@ -134,3 +134,70 @@ fn always_on_an_acp_shell_call_covers_that_command_and_no_other() {
     kept.keep("ses_1", rule_for("bash", each_time));
     assert!(!already_allowed(&kept, &asked("bash", each_time), false));
 }
+
+fn asked_on_the_prompt(id: &str, tool: &str) -> Question {
+    Question {
+        id: id.to_owned(),
+        session_id: "ses_orch".to_owned(),
+        tool: tool.to_owned(),
+        input: json!({ "plan": PLAN }).to_string(),
+        cwd: String::new(),
+        touch: None,
+        conversation_id: Some("conv_a".to_owned()),
+    }
+}
+
+fn ids(questions: &[Question]) -> Vec<&str> {
+    questions.iter().map(|one| one.id.as_str()).collect()
+}
+
+/// A question the CLI's own prompt asked — a plan to approve, a control
+/// channel's prompt — is in the Waiting before the window hears it asked,
+/// and what `permission.questions` draws returns it while it waits: a chat
+/// that opens or reloads then draws it, not an empty list.
+#[test]
+fn a_prompt_question_is_waiting_before_the_window_hears_it_asked() {
+    let asking = Asking::default();
+    let waiting = Waiting::default();
+    let question = asked_on_the_prompt("q1", "ExitPlanMode");
+    let hear = asking.opened(&question.id);
+    assert!(asking.answer(&question.id, Answer::Deny));
+
+    held_for_a_late_window(
+        &waiting,
+        &question,
+        // The window may re-read the moment it hears this.
+        |_| assert_eq!(ids(&waiting.of("ses_orch", "conv_a")), ["q1"]),
+        // The person has not answered yet.
+        || {
+            assert_eq!(ids(&waiting.of("ses_orch", "conv_a")), ["q1"]);
+            asking.wait(&question.id, hear)
+        },
+        |_| (),
+        |_| (),
+    );
+}
+
+/// Answered, refused or timed out — a question nobody answers denies — the
+/// question is out of the Waiting before the window hears it settled, so a
+/// chat that re-reads then draws nothing.
+#[test]
+fn a_settled_prompt_question_is_gone_before_the_window_hears_it_settled() {
+    for answer in [Answer::Allow, Answer::Deny] {
+        let asking = Asking::default();
+        let waiting = Waiting::default();
+        let question = asked_on_the_prompt("q1", "Bash");
+        let hear = asking.opened(&question.id);
+        assert!(asking.answer(&question.id, answer));
+
+        held_for_a_late_window(
+            &waiting,
+            &question,
+            |_| (),
+            || asking.wait(&question.id, hear),
+            |_| (),
+            // The window may re-read the moment it hears this.
+            |_| assert!(waiting.of("ses_orch", "conv_a").is_empty()),
+        );
+    }
+}

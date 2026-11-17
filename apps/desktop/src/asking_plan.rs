@@ -11,6 +11,7 @@ use serde_json::{json, Value};
 
 use crate::asking::{Answer, Asking, Question, ASKING_MODE};
 use crate::asking_picks::Picks;
+use crate::asking_waiting::Waiting;
 
 const PLAN: &str = "ExitPlanMode";
 
@@ -50,20 +51,51 @@ fn put(app: &tauri::AppHandle, control: &Control, prompt: Prompt, conversation: 
     }
     let asking = app.state::<Asking>();
     let hear = asking.opened(&question.id);
-    let _ = app.emit("permission:asked", &question);
-    crate::island_notify::asked(app, &question.tool, &question.input);
-    let answer = asking.wait(&question.id, hear);
-    if plan && answer == Answer::Allow {
-        // Out of plan mode, the session asks before what it changes.
-        asking.ask_from_now(&question.session_id, true);
-    }
-    let picks = app.state::<Picks>();
-    let said = match plan {
-        true => plan_reply(&picks, &question.id, prompt.input, answer),
-        false => approval_reply(&picks, &question.id, answer),
-    };
-    control.answer(&prompt.request_id, said);
-    let _ = app.emit("permission:settled", &question.id);
+    held_for_a_late_window(
+        &app.state::<Waiting>(),
+        &question,
+        |question| {
+            let _ = app.emit("permission:asked", question);
+            crate::island_notify::asked(app, &question.tool, &question.input);
+        },
+        || asking.wait(&question.id, hear),
+        |answer| {
+            if plan && answer == Answer::Allow {
+                // Out of plan mode, the session asks before what it changes.
+                asking.ask_from_now(&question.session_id, true);
+            }
+            let picks = app.state::<Picks>();
+            let said = match plan {
+                true => plan_reply(&picks, &question.id, prompt.input, answer),
+                false => approval_reply(&picks, &question.id, answer),
+            };
+            control.answer(&prompt.request_id, said);
+        },
+        |id| {
+            let _ = app.emit("permission:settled", id);
+        },
+    );
+}
+
+/// One question on the CLI's own prompt, kept for the Waiting the hook holds
+/// its own in: in before the window hears it asked, so a chat that opens or
+/// reloads then — the event only reaches windows already listening — still
+/// draws it, and out before the window hears it settled, whichever way it
+/// settled.
+fn held_for_a_late_window(
+    waiting: &Waiting,
+    question: &Question,
+    asked: impl FnOnce(&Question),
+    waited: impl FnOnce() -> Answer,
+    answered: impl FnOnce(Answer),
+    settled: impl FnOnce(&str),
+) {
+    waiting.opened(question);
+    asked(question);
+    let answer = waited();
+    answered(answer);
+    waiting.settled(&question.id);
+    settled(&question.id);
 }
 
 /// Allowed for the rest of this conversation, as the hook does: never a plan,
