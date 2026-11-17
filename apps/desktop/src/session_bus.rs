@@ -732,7 +732,7 @@ fn pane_named(here: &Project, profile: &str, to: &str) -> Result<(Inbox, String)
     if to.starts_with("leaf_") {
         let linked = crate::orchestrator_links::linked(Path::new(&here.root_path));
         let store = crate::projects::store().map_err(|err| err.message)?;
-        let project = crate::sessions::project_holding(&store, to)
+        let project = crate::sessions::project_holding(&store, to)?
             .filter(|project| linked.contains(project))
             .ok_or_else(|| format!("no pane {to} in a project linked to this orchestrator"))?;
         let inbox = Inbox::Pane {
