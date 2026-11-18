@@ -104,7 +104,7 @@ export function VoiceSettings(): React.JSX.Element {
         <span className="pref__t">Voice messages</span>
         <span className="pref__d">Speak to a chat: the words land in its composer, to read before sending.</span>
         <PrefMore>
-          The microphone sits beside the paperclip in a chat&rsquo;s composer ({keysLabel('attach')} attaches files); a terminal has neither. Click or hold it to speak. Without an engine the recording goes as a file. Nothing is sent anywhere unless <b>A service</b> is chosen here.
+          The microphone sits beside the paperclip in a chat&rsquo;s composer ({keysLabel('attach')} attaches files); a terminal has neither. Click or hold it to speak, or hold {keysLabel('talk')} while the chat is in front (Settings → Keyboard changes the key). Without an engine the recording goes as a file. Nothing is sent anywhere unless <b>A service</b> is chosen here.
         </PrefMore>
         <span className="voice__row" role="radiogroup" aria-label="Engine">
           {ENGINES.map((one) => (

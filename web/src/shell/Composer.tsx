@@ -181,7 +181,7 @@ export const Composer = memo(function Composer({
             {/* A control takes focus and gives it back: the cursor was mid-sentence. Cancelling
                 the press instead would be cheaper and swallow the click that opens the menu. */}
             <Chips chat={chat} refocus={() => field.current?.focus()} />
-            <ComposerTools chat={chat} onHeard={(text) => (setPrompt((was) => withHeard(was, text)), field.current?.focus())} />
+            <ComposerTools chat={chat} mine={mine} onHeard={(text) => (setPrompt((was) => withHeard(was, text)), field.current?.focus())} />
             <SendButton sending={chat.sending} showEsc={showEsc} can={ready(prompt, chat.sending, chat.profileId)} onSend={() => send()} onStop={halt} onForce={chat.forceable ? chat.force : undefined} />
           </div>
         </div>

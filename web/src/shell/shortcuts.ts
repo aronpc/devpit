@@ -1,4 +1,4 @@
-import { bare, comboOf, labelOf, onMacNow, pressMatches, sameCombo, specOf, type Press } from './keys'
+import { bare, comboOf, keyOf, labelOf, onMacNow, pressMatches, sameCombo, specOf, type Press } from './keys'
 import { keepRebound, rebound } from './rebound'
 
 /*
@@ -74,6 +74,8 @@ const LIST = [
   { id: 'clearLine', does: 'Clear the command line', scope: 'terminal', keys: ['Ctrl+C'], inTerminal: false },
 
   { id: 'attach', does: 'Attach files to the message', scope: 'chat', keys: ['Mod+Shift+A'], inTerminal: false },
+  /* Held, not pressed: it records until the key, or one held with it, is let go. */
+  { id: 'talk', does: 'Hold to speak; let go and the words land in the composer', scope: 'chat', keys: ['Mod+Shift+Space'], inTerminal: false },
   { id: 'stopTurn', does: 'Stop the agent’s turn — press it twice', scope: 'chat', keys: ['Escape'], inTerminal: false, fixed: true, when: ['turnRunning'] },
   { id: 'findChat', does: 'Find in the conversation', scope: 'chat', keys: ['Mod+F'], inTerminal: false },
   { id: 'steerNow', does: 'Send the other way: into the running turn, or after it', scope: 'chat', keys: ['Mod+Enter'], inTerminal: false, when: ['composerFocus'] },
@@ -207,3 +209,14 @@ export function resetKeys(id: ShortcutId, onMac = onMacNow()): string | null {
 }
 
 export const resetAllKeys = (): void => keepRebound({})
+
+const MODIFIERS: Readonly<Record<string, 'ctrl' | 'meta' | 'alt' | 'shift'>> = { Control: 'ctrl', Meta: 'meta', Alt: 'alt', Shift: 'shift' }
+
+/** Whether letting go of a key ends a hold of `id`: its own key, or a modifier it is held with. */
+export function letsGo(id: ShortcutId, release: Pick<Press, 'key' | 'code'>, onMac = onMacNow()): boolean {
+  const modifier = MODIFIERS[release.key]
+  return bindingsOf(id, onMac).some((spec) => {
+    const combo = comboOf(spec, onMac)
+    return modifier ? combo[modifier] : keyOf(release) === combo.key
+  })
+}
