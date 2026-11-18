@@ -79,15 +79,6 @@ fn the_launch_line_carries_the_directory_quoted_and_a_profile_of_its_own_still_w
 }
 
 #[test]
-fn a_transcript_says_which_directory_its_session_ran_in() {
-    assert_eq!(
-        dir_of_transcript("/home/me/.cfg-work/projects/-w-app/abc.jsonl").as_deref(),
-        Some("/home/me/.cfg-work")
-    );
-    assert_eq!(dir_of_transcript("/tmp/abc.jsonl"), None);
-}
-
-#[test]
 fn the_registry_survives_a_round_trip_and_a_missing_file_is_empty() {
     let root = tempfile::tempdir().expect("tempdir");
     assert_eq!(read_at(root.path()), Accounts::default());

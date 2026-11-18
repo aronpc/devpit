@@ -1,7 +1,7 @@
 //! The agent devpit started in a pane, and the session it is in.
 //!
-//! Written when the agent is launched and updated from its own hooks, so a
-//! pane tmux lost can start the same agent again on the same conversation.
+//! Written when the agent is launched and updated from its own hooks: where
+//! a session runs, and the one pane that holds each conversation.
 
 use rusqlite::OptionalExtension;
 

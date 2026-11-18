@@ -1,20 +1,14 @@
-//! Starting an agent again in a pane tmux or devpit-ptyd lost.
+//! The agent devpit started in a pane and the session it is in, and the
+//! line that continues a session.
 //!
-//! Both keep a pane's processes while the app is closed, so most of the time
-//! there is nothing to do. After a reboot, or a server that died, the layout
-//! still names the pane and it comes back as a fresh shell. The agent
-//! devpit had started there is typed in again, continuing its session when the
-//! CLI can resume one.
-
-use std::path::Path;
+//! A pane tmux or devpit-ptyd lost comes back as a shell and nothing more:
+//! it comes back whenever its tab is drawn, and drawing one, as entering a
+//! project does, starts no agent. A session is resumed when the person asks.
 
 use devpit_agentcli::{Event, Happening};
-use devpit_core::store::pane_agents::PaneAgent;
 use devpit_core::Store;
 
-use crate::shell_launch::{profile_id, to_start, Ready};
-
-/// What restoring the pane later needs, from the agent's own hooks.
+/// Where a session runs, from the agent's own hooks.
 pub(crate) fn remember(store: &Store, pane: &str, happening: &Happening) {
     let _ = match &happening.event {
         Event::SessionStarted => store.remember_pane_session(
@@ -28,76 +22,6 @@ pub(crate) fn remember(store: &Store, pane: &str, happening: &Happening) {
         }
         _ => return,
     };
-}
-
-/// Types the agent back into a pane just made again for this leaf: a window
-/// tmux lost, or a ptyd pane whose daemon died. `home` is the daemon's, for
-/// a ptyd target.
-///
-/// On its own thread: a fresh shell takes a second or more to reach its
-/// prompt, and the layout it belongs to is being opened while someone waits.
-pub(crate) fn start_again(store: &Store, home: Option<&Path>, target: &str, leaf_id: &str) {
-    let Ok(Some(agent)) = store.pane_agent(leaf_id) else {
-        return;
-    };
-    if running_elsewhere(&agent).is_some() {
-        return;
-    }
-    let Ok(line) = resume_line(&agent) else {
-        return;
-    };
-    let profile = profile_id(&agent.launch);
-    let (home, target) = (home.map(Path::to_path_buf), target.to_owned());
-    std::thread::spawn(move || type_again(home.as_deref(), &target, &line, &profile));
-}
-
-/// Types `line` at the pane once its shell settles, unless something else
-/// already runs there. Answers whether it typed it.
-pub(crate) fn type_again(home: Option<&Path>, target: &str, line: &str, profile: &str) -> bool {
-    if let Ready::Busy(_) = crate::pane_io::settled(target) {
-        return false;
-    }
-    let typed = crate::pane_io::send_line_at(home, target, line).is_ok();
-    if typed {
-        crate::pane_io::label(target, profile);
-    }
-    typed
-}
-
-/// The live process already running the conversation `agent` was in, by
-/// name: the pane it left gets no second one.
-fn running_elsewhere(agent: &PaneAgent) -> Option<String> {
-    let session = agent.session_id.as_deref()?;
-    let account = agent
-        .transcript_path
-        .as_deref()
-        .and_then(crate::claude_accounts::dir_of_transcript)?;
-    crate::live_sessions::running_conversation(&Path::new(&account).join("sessions"), session)
-}
-
-fn resume_line(agent: &PaneAgent) -> Result<String, devpit_rpc::RpcError> {
-    let start = to_start(&agent.launch)?;
-    // The account it ran in, whatever its project says now: a session keeps
-    // its account, and resuming elsewhere would find no conversation.
-    let start = match agent
-        .transcript_path
-        .as_deref()
-        .and_then(crate::claude_accounts::dir_of_transcript)
-        .filter(|dir| crate::claude_accounts::is_account_dir(dir))
-    {
-        Some(dir) => crate::claude_accounts::in_dir(&start, &dir),
-        None => start,
-    };
-    // Resuming a session that never wrote a line fails in the CLI; starting fresh does not.
-    let written = agent
-        .transcript_path
-        .as_deref()
-        .is_some_and(|path| std::fs::metadata(path).is_ok_and(|meta| meta.len() > 0));
-    Ok(with_resume(
-        &start,
-        resume_flag_of(&agent.launch),
-        agent.session_id.as_deref().filter(|_| written),
-    ))
 }
 
 pub(crate) fn resume_flag_of(launch: &str) -> Option<&'static str> {
@@ -136,7 +60,7 @@ pub(crate) fn with_resume(start: &str, flag: Option<&str>, session: Option<&str>
 
 #[cfg(test)]
 mod tests {
-    use super::{base_or, running_elsewhere, type_again, with_resume};
+    use super::{base_or, with_resume};
 
     /// The account discovered as `claude` has no base of its own, and resumed nothing.
     #[test]
@@ -144,35 +68,6 @@ mod tests {
         assert_eq!(base_or(Some(""), "claude"), "claude");
         assert_eq!(base_or(Some("claude"), "work"), "claude");
         assert_eq!(base_or(None, "claude"), "claude");
-    }
-
-    /// The pane a conversation left comes back as a shell when that
-    /// conversation already runs in a live process, listed in its account.
-    #[test]
-    fn a_pane_whose_conversation_runs_elsewhere_is_not_started_again() {
-        let account = tempfile::tempdir().expect("tempdir");
-        let (projects, sessions) = (
-            account.path().join("projects/-w"),
-            account.path().join("sessions"),
-        );
-        for dir in [&projects, &sessions] {
-            std::fs::create_dir_all(dir).expect("mkdir");
-        }
-        let me = std::process::id();
-        let listing =
-            serde_json::json!({ "pid": me, "name": "worker", "sessionId": "abc", "cwd": "/w" });
-        std::fs::write(sessions.join(format!("{me}.json")), listing.to_string()).expect("listing");
-        let agent = |session: &str| {
-            let transcript = projects.join(format!("{session}.jsonl"));
-            std::fs::write(&transcript, "{}\n").expect("transcript");
-            devpit_core::store::pane_agents::PaneAgent {
-                launch: "claude".to_owned(),
-                session_id: Some(session.to_owned()),
-                transcript_path: Some(transcript.display().to_string()),
-            }
-        };
-        assert_eq!(running_elsewhere(&agent("abc")).as_deref(), Some("worker"));
-        assert_eq!(running_elsewhere(&agent("def")), None);
     }
 
     const START: &str = "claude --settings /s.json";
@@ -226,67 +121,5 @@ mod tests {
                 "{id}"
             );
         }
-    }
-
-    /// The resume line, typed into a ptyd shell the daemon started afresh,
-    /// once the tap hears its shell in front, and never over an agent.
-    #[cfg(unix)]
-    #[test]
-    fn an_agent_is_typed_again_into_a_fresh_ptyd_shell_and_never_over_one_that_runs() {
-        use devpit_ptyd::frame::{self, Frame, Kind};
-
-        let daemon = crate::ptyd_link::tests::serving();
-        let home = daemon.home.path();
-        let leaf = "leaf_typed_again";
-        let pane = crate::ptyd_link::pane_number(leaf);
-        // Prints what it is given instead of running it: the line is an agent's.
-        let script = r#"printf 'ready\r\n'; read line; printf 'typed:%s\r\n' "$line"; sleep 30"#;
-        let asked = devpit_ptyd::pane::Asked {
-            rows: 24,
-            cols: 80,
-            cwd: home.to_string_lossy().into_owned(),
-            argv: vec!["/bin/sh".into(), "-c".into(), script.into()],
-            env: Vec::new(),
-        };
-        crate::ptyd_link::spawn(home, pane, &asked).expect("spawn");
-        let target = crate::ptyd_link::target(leaf);
-        // What the tap is pushed once the pane goes quiet.
-        let in_front = |program: &str| {
-            let told = Frame::new(pane, Kind::Program, program.as_bytes().to_vec());
-            let _ = crate::ptyd_tap::tap()
-                .fronts
-                .lock()
-                .expect("fronts")
-                .heard(&told);
-        };
-        let line = "claude --resume 94e3457c";
-
-        in_front("claude");
-        assert!(!type_again(Some(home), &target, line, "claude"));
-        in_front("sh");
-        assert!(type_again(Some(home), &target, line, "claude"));
-
-        let mut watching = crate::ptyd_link::connect(home).expect("connect");
-        frame::write(&mut watching, &Frame::new(pane, Kind::Attach, Vec::new())).expect("attach");
-        watching
-            .set_read_timeout(Some(std::time::Duration::from_secs(10)))
-            .expect("timeout");
-        let wanted = format!("typed:{line}");
-        let mut seen = Vec::new();
-        while !String::from_utf8_lossy(&seen).contains(&wanted) {
-            match frame::read(&mut watching) {
-                Ok(Some(one)) if matches!(one.kind(), Some(Kind::Output | Kind::Replay)) => {
-                    seen.extend(one.bytes)
-                }
-                Ok(Some(_)) => {}
-                _ => break,
-            }
-        }
-        crate::ptyd_link::kill(home, pane);
-        assert!(
-            String::from_utf8_lossy(&seen).contains(&wanted),
-            "{}",
-            String::from_utf8_lossy(&seen)
-        );
     }
 }

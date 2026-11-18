@@ -107,13 +107,6 @@ pub(crate) fn in_dir(line: &str, config_dir: &str) -> String {
     )
 }
 
-/// The configuration directory a transcript was written under:
-/// `<dir>/projects/<slug>/<id>.jsonl`.
-pub(crate) fn dir_of_transcript(transcript: &str) -> Option<String> {
-    let dir = Path::new(transcript).parent()?.parent()?;
-    (dir.file_name()? == "projects").then(|| dir.parent().map(|one| one.display().to_string()))?
-}
-
 fn root() -> Result<PathBuf, RpcError> {
     devpit_core::Store::root().map_err(|err| RpcError::internal(err.to_string()))
 }
@@ -126,11 +119,6 @@ pub(crate) fn read() -> Accounts {
 /// The directory `project_id`'s new sessions open in, if it has an account.
 pub(crate) fn dir_of_project(project_id: &str) -> Option<String> {
     of_project(&read(), project_id).map(|one| one.config_dir.clone())
-}
-
-/// Whether `dir` is a registered account's directory.
-pub(crate) fn is_account_dir(dir: &str) -> bool {
-    read().accounts.iter().any(|one| one.config_dir == dir)
 }
 
 /// `accounts.read` — the accounts and each project's default.

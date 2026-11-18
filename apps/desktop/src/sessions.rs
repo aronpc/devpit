@@ -195,16 +195,13 @@ fn load_or_create(
             let Some(server) = &server else { continue };
             // A window missing before this is one tmux lost with its server,
             // not one closed on purpose — closing forgets the pane's layout
-            // too. It comes back where its shell last was, not at the tab's.
+            // too. It comes back where its shell last was, not at the tab's,
+            // and as a shell: drawing a tab starts no agent.
             let lost = !had.iter().any(|name| name == leaf_id);
             let at = lost.then(|| was_in(leaf_id)).flatten();
             server
                 .ensure_session(&session, leaf_id, at.as_deref().unwrap_or(cwd))
                 .map_err(tmux_err)?;
-            if lost {
-                let target = devpit_tmux::Server::target(&session, leaf_id);
-                crate::restoring::start_again(&store, None, &target, leaf_id);
-            }
         }
         return Ok(layout);
     }

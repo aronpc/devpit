@@ -290,3 +290,59 @@ fn a_daemon_that_says_nothing_to_a_spawn_still_has_it_taken() {
     daemon_silent_on_spawn(home.path());
     spawn(home.path(), 7, &shell_in(home.path())).expect("taken");
 }
+
+/// A pane the daemon lost comes back whenever its tab is drawn, entering its
+/// project included: as a shell, with nothing typed into it, even where devpit
+/// had started an agent. A session starts only when the person asks for one.
+#[cfg(unix)]
+#[test]
+fn a_lost_pane_comes_back_as_a_shell_and_starts_no_agent() {
+    use devpit_ptyd::frame::{self, Frame, Kind};
+
+    let daemon = serving();
+    let home = daemon.home.path();
+    let store = Store::open(&home.join("state.db")).expect("store");
+    let root = home.join("project");
+    std::fs::create_dir_all(&root).expect("root");
+    let project = store.add_project(&root, None).expect("project");
+    let leaf = "leaf_lost_with_an_agent";
+    // What the agent's hooks kept: devpit launched it there, on a conversation with lines.
+    let transcript = home.join("94e3457c.jsonl");
+    std::fs::write(&transcript, "{}\n").expect("transcript");
+    store
+        .remember_pane_launch(&project, leaf, "claude")
+        .expect("launch");
+    store
+        .remember_pane_session(leaf, "94e3457c", Some(&transcript.display().to_string()))
+        .expect("session");
+
+    assert!(revive_at(&store, Some(home), &project, leaf, None, &root));
+    let pane = pane_number(leaf);
+    // A shell in front at once: whatever waited for the prompt is typed now.
+    let told = Frame::new(pane, Kind::Program, b"sh".to_vec());
+    let _ = crate::ptyd_tap::tap()
+        .fronts
+        .lock()
+        .expect("fronts")
+        .heard(&told);
+
+    let mut watching = connect(home).expect("connect");
+    frame::write(&mut watching, &Frame::new(pane, Kind::Attach, Vec::new())).expect("attach");
+    watching
+        .set_read_timeout(Some(std::time::Duration::from_secs(3)))
+        .expect("timeout");
+    let until = std::time::Instant::now() + std::time::Duration::from_secs(6);
+    let mut seen = Vec::new();
+    while std::time::Instant::now() < until {
+        match frame::read(&mut watching) {
+            Ok(Some(one)) if matches!(one.kind(), Some(Kind::Output | Kind::Replay)) => {
+                seen.extend(one.bytes)
+            }
+            Ok(Some(_)) => {}
+            _ => break,
+        }
+    }
+    kill(home, pane);
+    let screen = String::from_utf8_lossy(&seen);
+    assert!(!screen.contains("--resume"), "{screen}");
+}

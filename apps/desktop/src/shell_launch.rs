@@ -625,11 +625,8 @@ fn integrated() -> bool {
 /// A profile becomes `NAME='value' program --flags`; a built-in agent is the
 /// bare word it always was. Either way the hook flag is appended last, because
 /// it is about this launch and not about the account.
-pub(crate) fn to_start(id: &str) -> Result<String, RpcError> {
-    to_start_in(id, None)
-}
-
-/// [`to_start`] for a session of `project_id`, which brings Devflow's hooks
+///
+/// For a session of `project_id`, it brings Devflow's hooks
 /// and skills where the person switched it on there.
 pub(crate) fn to_start_in(id: &str, project_id: Option<&str>) -> Result<String, RpcError> {
     if let Ok(store) = crate::projects::store() {

@@ -321,8 +321,9 @@ pub(crate) fn new_pane(
 }
 
 /// A ptyd leaf of a layout being loaded, started again where its shell last
-/// was if the daemon of `home` lost it, with the agent devpit had started in
-/// it typed in again. Answers whether it was started again.
+/// was if the daemon of `home` lost it. Only the shell: drawing a tab, as
+/// entering its project does, starts no agent. Answers whether it was
+/// started again.
 pub(crate) fn revive_at(
     store: &Store,
     home: Option<&Path>,
@@ -337,9 +338,6 @@ pub(crate) fn revive_at(
         let shared = crate::checkout::shared_env_at(store, project_id, at);
         let revived = revive(home, leaf_id, at, shared);
         crate::ptyd_tap::tap().heed(project_id, leaf_id);
-        if revived {
-            crate::restoring::start_again(store, Some(home), &target(leaf_id), leaf_id);
-        }
         return revived;
     }
     let _ = (store, home, project_id, leaf_id, was_in, cwd);
