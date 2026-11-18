@@ -8,7 +8,7 @@ use devpit_core::Store;
 use devpit_rpc::{DevflowPlugin, DevflowPluginAction, RpcError};
 
 /// The release devpit is built against: the engine's tag.
-pub(crate) const KNOWN: &str = "0.2.2";
+pub(crate) const KNOWN: &str = "0.3.0";
 
 const KEY: &str = "devflow@devflow";
 const MARKETPLACE: &str = "devflow";

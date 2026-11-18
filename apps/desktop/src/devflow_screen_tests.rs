@@ -301,3 +301,52 @@ fn a_devflow_yaml_written_with_engine_0_2_1_reads_as_before() {
         "each card still runs its e2e"
     );
 }
+
+const WITH_ATTACK: &str = "version: 1\n\
+review:\n  consolidate: jev\n  attack: { run: per-item, model: large }\n\
+security:\n  targets: [\"http://localhost:8080\"]\n";
+
+#[test]
+fn a_devflow_yaml_with_0_3_0_fields_reads_and_keeps_them_through_any_edit() {
+    let (_home, store) = store();
+    let dir = repo();
+    let here = project("prj_screen_attack", dir.path());
+    write(dir.path(), WITH_ATTACK);
+    let said = screen(None, &store, &here);
+    assert_eq!(said.state, DevflowState::Disabled, "{:?}", said.error);
+
+    // A word swapped in place, then a list laid out again: both keep them.
+    edit_now(None, &store, &here, "review.consolidate", json!("none")).expect("edited");
+    edit_now(None, &store, &here, "review.block_on", json!(["critical"])).expect("edited");
+    let text = std::fs::read_to_string(dir.path().join(FILE)).expect("yaml");
+    let read = devflow_engine::config::parse(&text).expect("valid");
+    assert_eq!(read.review.block_on.len(), 1, "{text}");
+    assert_eq!(
+        serde_json::to_value(&read.review.attack).expect("attack"),
+        serde_json::to_value(
+            &devflow_engine::config::parse(WITH_ATTACK)
+                .expect("valid")
+                .review
+                .attack
+        )
+        .expect("attack"),
+        "{text}"
+    );
+    assert_eq!(read.security.targets, ["http://localhost:8080"], "{text}");
+}
+
+#[test]
+fn a_miscased_model_is_refused_with_its_line_and_what_to_write() {
+    let (_home, store) = store();
+    let dir = repo();
+    let here = project("prj_screen_model", dir.path());
+    write(
+        dir.path(),
+        "version: 1\nstages:\n  review:\n    model: Large\n",
+    );
+    let said = screen(None, &store, &here);
+    assert_eq!(said.state, DevflowState::Invalid);
+    let error = said.error.expect("why it is refused");
+    assert_eq!(error.line, Some(4), "{error:?}");
+    assert!(error.message.contains("large"), "{error:?}");
+}

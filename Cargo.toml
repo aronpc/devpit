@@ -34,7 +34,7 @@ devpit-tmux = { path = "crates/tmux" }
 devpit-agentcli = { path = "crates/agentcli" }
 devpit-steps = { path = "crates/steps" }
 devpit-cookies = { path = "crates/cookies" }
-devflow-engine = { git = "https://github.com/jholhewres/devflow", tag = "v0.2.2" }
+devflow-engine = { git = "https://github.com/jholhewres/devflow", tag = "v0.3.0" }
 devpit-remote = { path = "crates/remote" }
 devpit-sync = { path = "crates/sync" }
 
