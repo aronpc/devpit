@@ -488,14 +488,6 @@ pub(crate) fn running_conversation(sessions: &Path, session_id: &str) -> Option<
         .map(|listed| listed.name.unwrap_or_else(|| session_id.to_owned()))
 }
 
-/// [`running_conversation`], in every folder `profile_id`'s sessions are listed in.
-pub(crate) fn conversation_running(profile_id: &str, session_id: &str) -> Option<String> {
-    listed_dirs(profile_id)
-        .ok()?
-        .iter()
-        .find_map(|dir| running_conversation(dir, session_id))
-}
-
 /// Each live listing, for the one reply that needs it.
 fn listed_running(sessions: &Path) -> Vec<Listed> {
     let Ok(entries) = std::fs::read_dir(sessions) else {
@@ -695,7 +687,7 @@ pub(crate) fn in_their_accounts(
 
 /// Every folder this profile's sessions are listed in: its own account's,
 /// and that of each project with an account of its own, where it starts them.
-fn listed_dirs(profile_id: &str) -> Result<Vec<std::path::PathBuf>, RpcError> {
+pub(crate) fn listed_dirs(profile_id: &str) -> Result<Vec<std::path::PathBuf>, RpcError> {
     if !on_claude(profile_id) {
         return Ok(Vec::new());
     }

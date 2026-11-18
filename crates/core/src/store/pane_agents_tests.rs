@@ -102,3 +102,23 @@ fn a_conversation_resumed_in_another_pane_is_forgotten_by_the_one_it_left() {
         Some((project, "leaf_resumed".to_owned()))
     );
 }
+
+/// Resumed by hand in a pane devpit launched nothing in, the conversation
+/// stays with the pane that can start it again.
+#[test]
+fn a_conversation_resumed_by_hand_stays_with_the_pane_that_launched_it() {
+    let (_dir, store, project) = opened();
+    store
+        .remember_pane_launch(&project, "leaf_launched", "claude")
+        .expect("launch");
+    store
+        .remember_pane_session("leaf_launched", "abc", None)
+        .expect("first");
+    store
+        .remember_pane_session("leaf_by_hand", "abc", None)
+        .expect("by hand");
+    assert_eq!(
+        store.place_of_session("abc").expect("read"),
+        Some((project, "leaf_launched".to_owned()))
+    );
+}

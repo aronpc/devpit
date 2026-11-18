@@ -124,3 +124,20 @@ fn only_a_running_session_carries_its_terminal_and_remote_control() {
     );
     assert!(ended.pane.is_none() && !ended.remote.on);
 }
+
+/// A conversation a live process runs is not started a second time: the
+/// resume is refused, naming the process to message instead.
+#[test]
+fn a_conversation_a_live_process_runs_is_not_resumed_again() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let sessions = dir.path().join("sessions");
+    std::fs::create_dir_all(&sessions).expect("mkdir");
+    let me = std::process::id();
+    let listing = json!({ "pid": me, "name": "api-a", "sessionId": ID, "cwd": "/w" });
+    std::fs::write(sessions.join(format!("{me}.json")), listing.to_string()).expect("listing");
+
+    let refused = not_running(std::slice::from_ref(&sessions), ID).expect_err("refused");
+    assert_eq!(refused.code, ErrorCode::Conflict);
+    assert!(refused.message.contains("api-a"), "{}", refused.message);
+    assert!(not_running(&[sessions], "another").is_ok());
+}

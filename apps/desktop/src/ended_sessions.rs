@@ -193,6 +193,20 @@ pub(crate) fn ended_one(profile_id: &str, id_or_name: &str) -> Result<SeenSessio
     Ok(row)
 }
 
+/// Refuses a conversation a live process listed in `dirs` already runs.
+pub(crate) fn not_running(dirs: &[std::path::PathBuf], session_id: &str) -> Result<(), RpcError> {
+    match dirs
+        .iter()
+        .find_map(|dir| crate::live_sessions::running_conversation(dir, session_id))
+    {
+        Some(name) => Err(RpcError::new(
+            ErrorCode::Conflict,
+            format!("{name} already runs that conversation — message it instead"),
+        )),
+        None => Ok(()),
+    }
+}
+
 /// The line that resumes `session_id` as `name`, for this account.
 fn resumed_line(
     profile_id: &str,
@@ -256,15 +270,10 @@ pub(crate) fn resume(
 ) -> Result<Value, RpcError> {
     let row = ended_one(profile_id, id_or_name)?;
     // Its process may outlive what devpit last read: a second one would share its work.
-    if let Some(name) = crate::live_sessions::conversation_running(profile_id, &row.session_id) {
-        return Ok(json!({
-            "name": name,
-            "sessionId": row.session_id,
-            "cwd": row.cwd,
-            "running": true,
-            "next": "That conversation already runs, so nothing was started: message it by this name.",
-        }));
-    }
+    not_running(
+        &crate::live_sessions::listed_dirs(profile_id).unwrap_or_default(),
+        &row.session_id,
+    )?;
     let project_id = row.project_id.clone().ok_or_else(|| {
         RpcError::new(
             ErrorCode::Invalid,
