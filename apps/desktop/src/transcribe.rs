@@ -259,7 +259,7 @@ pub async fn transcribe_test(
     let ext = crate::pasting::extension_for(&media_type)
         .filter(|_| media_type.starts_with("audio/"))
         .ok_or_else(|| RpcError::new(ErrorCode::Invalid, "that is not a recording"))?;
-    let bytes = crate::pasting::decoded(&data)?;
+    let bytes = crate::pasting::decoded(&data, crate::pasting::MOST_RECORDING_BYTES)?;
     let audio = Store::root()?.join(format!("voice-test.{ext}"));
     std::fs::write(&audio, bytes).map_err(|err| RpcError::internal(err.to_string()))?;
     let heard = heard_in(&audio, language).await;
