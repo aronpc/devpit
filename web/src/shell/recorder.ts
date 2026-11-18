@@ -125,6 +125,7 @@ export function refusal(error: unknown): string {
   if (name === 'NotAllowedError' || name === 'SecurityError')
     return 'The microphone is blocked: allow devpit to use it in the system’s privacy settings, then try again.'
   if (name === 'NotFoundError') return 'No microphone was found.'
+  if (name === 'NotReadableError') return 'The microphone is in use by another program, or the system would not open it.'
   return 'The microphone could not be opened.'
 }
 
@@ -137,14 +138,103 @@ export function refusal(error: unknown): string {
  */
 export const MICROPHONE: MediaTrackConstraints = { sampleRate: { ideal: 48_000 } }
 
+/** A microphone as Settings lists it and the window remembers it. */
+export interface Microphone {
+  readonly id: string
+  readonly label: string
+}
+
+/*
+ * The microphone chosen in Settings, kept by this window: a device's id is
+ * only good inside the webview's own storage, which salts it, so it is kept
+ * there too. Its name is kept beside it, to find it again under a new id and
+ * to say which one went missing. None kept is the system's default.
+ */
+const CHOSEN = 'devpit:microphone'
+
+export function chosenMicrophone(): Microphone | null {
+  try {
+    const raw: unknown = JSON.parse(localStorage.getItem(CHOSEN) ?? 'null')
+    if (!raw || typeof raw !== 'object') return null
+    const { id, label } = raw as Record<string, unknown>
+    return typeof id === 'string' && id && typeof label === 'string' ? { id, label } : null
+  } catch {
+    return null
+  }
+}
+
+export function chooseMicrophone(one: Microphone | null): void {
+  try {
+    if (one) localStorage.setItem(CHOSEN, JSON.stringify(one))
+    else localStorage.removeItem(CHOSEN)
+  } catch {
+    /* Not kept: the next recording uses the system's default. */
+  }
+}
+
+/** The microphones this window can open; unnamed until one has been opened once. */
+export async function microphones(): Promise<Microphone[]> {
+  const all = (await navigator.mediaDevices?.enumerateDevices?.()) ?? []
+  return all
+    .filter((one) => one.kind === 'audioinput' && one.deviceId && one.deviceId !== 'default' && one.deviceId !== 'communications')
+    .map((one) => ({ id: one.deviceId, label: one.label }))
+}
+
+/** Their names: the window learns them once a microphone has been opened, so one is, for an instant. */
+export async function namedMicrophones(): Promise<Microphone[]> {
+  const stream = await opened()
+  stream.getTracks().forEach((track) => track.stop())
+  return microphones()
+}
+
+/* Gone, or answering to nothing asked of it. A device that is there but busy
+   (NotReadableError) is not missing: its error is the one to show. */
+const MISSING = new Set(['NotFoundError', 'OverconstrainedError'])
+
+const opened = (deviceId?: string): Promise<MediaStream> =>
+  navigator.mediaDevices.getUserMedia({ audio: deviceId ? { ...MICROPHONE, deviceId: { exact: deviceId } } : MICROPHONE })
+
+/**
+ * The chosen microphone, the same one under a new id, or the system's
+ * default with the name of the one that could not be had.
+ */
+async function openChosen(): Promise<{ stream: MediaStream; missing: string | null }> {
+  const chosen = chosenMicrophone()
+  if (!chosen) return { stream: await opened(), missing: null }
+  try {
+    return { stream: await opened(chosen.id), missing: null }
+  } catch (error) {
+    const name = error instanceof DOMException || error instanceof Error ? error.name : ''
+    if (!MISSING.has(name)) throw error
+  }
+  const stream = await opened()
+  const stopped = (): void => stream.getTracks().forEach((track) => track.stop())
+  let again: Microphone | undefined
+  try {
+    again = chosen.label ? (await microphones()).find((one) => one.label === chosen.label && one.id !== chosen.id) : undefined
+  } catch (error) {
+    stopped()
+    throw error
+  }
+  if (!again) return { stream, missing: chosen.label || 'The microphone chosen in Settings' }
+  stopped()
+  chooseMicrophone(again)
+  return { stream: await opened(again.id), missing: null }
+}
+
+/** What a recording that fell back to the default says about it. */
+export const fellBack = (missing: string): string => `${missing} is not connected: recording from the system’s default microphone.`
+
 export interface Recording {
+  /** The chosen microphone's name when it was not there and the default was used. */
+  readonly missing: string | null
   /** Stops and answers with what was heard; null when nothing was. */
   stop: () => Promise<Blob | null>
   cancel: () => void
 }
 
 /* The microphone's samples, kept as they come and made a WAV at the end. */
-async function sampled(stream: MediaStream, release: () => void): Promise<Recording> {
+async function sampled(stream: MediaStream, missing: string | null, release: () => void): Promise<Recording> {
   const context = new AudioContext()
   const pieces: Float32Array[] = []
   let source: MediaStreamAudioSourceNode | null = null
@@ -169,6 +259,7 @@ async function sampled(stream: MediaStream, release: () => void): Promise<Record
     throw error
   }
   return {
+    missing,
     stop: async () => {
       end()
       return pieces.length > 0 ? wavOf(resampled(pieces, context.sampleRate)) : null
@@ -186,11 +277,11 @@ async function sampled(stream: MediaStream, release: () => void): Promise<Record
  * the system's microphone light stays on with nothing recording.
  */
 export async function record(format: string): Promise<Recording> {
-  const stream = await navigator.mediaDevices.getUserMedia({ audio: MICROPHONE })
+  const { stream, missing } = await openChosen()
   const release = (): void => stream.getTracks().forEach((track) => track.stop())
   if (format === WAV) {
     try {
-      return await sampled(stream, release)
+      return await sampled(stream, missing, release)
     } catch (error) {
       release()
       throw error
@@ -209,6 +300,7 @@ export async function record(format: string): Promise<Recording> {
     throw error
   }
   return {
+    missing,
     stop: async () => {
       if (recorder.state !== 'inactive') recorder.stop()
       await done

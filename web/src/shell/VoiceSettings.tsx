@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import type { Transcribing } from '../gen/bindings'
 import { ask, commands } from './live'
 import { PrefMore } from './PrefRow'
-import { base64Of, formatHere, record, refusal, systemLanguage } from './recorder'
+import { base64Of, chooseMicrophone, chosenMicrophone, fellBack, formatHere, type Microphone, microphones, namedMicrophones, record, refusal, systemLanguage } from './recorder'
 import { keysLabel } from './shortcuts'
 
 /*
@@ -31,6 +31,24 @@ export function VoiceSettings(): React.JSX.Element {
   const [testing, setTesting] = useState<'no' | 'listening' | 'hearing'>('no')
   const [heard, setHeard] = useState<string | null>(null)
   const [fetching, setFetching] = useState(false)
+  const [mics, setMics] = useState<Microphone[]>([])
+  const [mic, setMic] = useState(chosenMicrophone)
+
+  /* The microphones, again whenever one is plugged in or pulled out. */
+  useEffect(() => {
+    const list = (): void => void microphones().then(setMics, () => setMics([]))
+    list()
+    navigator.mediaDevices?.addEventListener?.('devicechange', list)
+    return () => navigator.mediaDevices?.removeEventListener?.('devicechange', list)
+  }, [])
+
+  const pickMic = (id: string): void => {
+    const picked = mics.find((one) => one.id === id) ?? null
+    chooseMicrophone(picked)
+    setMic(picked)
+  }
+
+  const nameMics = (): void => void namedMicrophones().then(setMics, (error: unknown) => setHeard(refusal(error)))
 
   /* Three seconds through the same microphone and engine a chat uses, thrown away after. */
   const test = async (): Promise<void> => {
@@ -42,10 +60,14 @@ export function VoiceSettings(): React.JSX.Element {
       setTesting('listening')
       await new Promise((done) => window.setTimeout(done, TEST_MS))
       const blob = await recording.stop()
-      if (!blob) return setHeard('The microphone gave nothing: check it is the one selected in the system.')
+      /* Opened once, the microphones have names; and the chosen one may have a new id. */
+      setMic(chosenMicrophone())
+      void microphones().then(setMics, () => undefined)
+      const before = recording.missing ? `${fellBack(recording.missing)} ` : ''
+      if (!blob) return setHeard(`${before}The microphone gave nothing: check it is the one chosen above.`)
       setTesting('hearing')
       const answer = await ask(async () => commands.transcribeTest(blob.type, await base64Of(blob), systemLanguage()))
-      setHeard(answer.data?.text ? `Heard: “${answer.data.text}”` : `Recorded, not heard: ${answer.data?.note ?? answer.error ?? 'no answer'}.`)
+      setHeard(before + (answer.data?.text ? `Heard: “${answer.data.text}”` : `Recorded, not heard: ${answer.data?.note ?? answer.error ?? 'no answer'}.`))
     } catch (error) {
       setHeard(refusal(error))
     } finally {
@@ -180,6 +202,24 @@ export function VoiceSettings(): React.JSX.Element {
             <input className="voice__in voice__in--short" placeholder="system" defaultValue={now.language} onBlur={(event) => event.target.value !== now.language && save({ ...now, language: event.target.value })} />
           </label>
         )}
+        <span className="voice__row">
+          <span className="voice__l">Microphone</span>
+          <select className="voice__in" aria-label="Microphone" value={mic?.id ?? ''} onChange={(event) => pickMic(event.target.value)}>
+            <option value="">System default</option>
+            {mic && !mics.some((one) => one.id === mic.id) && <option value={mic.id}>{mic.label || 'The one chosen before'} — not connected</option>}
+            {mics.map((one, at) => (
+              <option key={one.id} value={one.id}>
+                {one.label || `Microphone ${at + 1}`}
+              </option>
+            ))}
+          </select>
+          {/* WebKitGTK lists none until a microphone has been opened, and other webviews list them unnamed. */}
+          {(mics.length === 0 || mics.some((one) => !one.label)) && (
+            <button className="btn" onClick={nameMics} title="Opens the microphone for an instant: the system lists and names them only then">
+              {mics.length === 0 ? 'Find microphones' : 'Show their names'}
+            </button>
+          )}
+        </span>
         <span className="voice__row">
           <button className="btn" disabled={testing !== 'no'} onClick={() => void test()}>
             {testing === 'listening' ? 'Listening… say something' : testing === 'hearing' ? 'Hearing…' : 'Test the microphone'}
