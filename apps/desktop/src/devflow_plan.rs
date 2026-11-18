@@ -584,6 +584,8 @@ fn planned_card(slice: Slice) -> PlannedCard {
         files: slice.files,
         verify: slice.verify,
         depends_on: slice.depends_on,
+        abuse: slice.abuse,
+        boundary: slice.boundary,
     }
 }
 
@@ -596,6 +598,8 @@ fn slice_of(card: PlannedCard) -> Slice {
         files: card.files,
         verify: card.verify,
         depends_on: card.depends_on,
+        abuse: card.abuse,
+        boundary: card.boundary,
     }
 }
 

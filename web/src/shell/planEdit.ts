@@ -28,6 +28,13 @@ export function edited(cards: readonly PlannedCard[], key: string, change: Parti
   return cards.map((card) => (card.key === key ? { ...card, ...change, key: card.key } : card))
 }
 
+/** A card's trust boundary and abuse cases, which become its `Abuse case:` criteria. */
+export function abuseSaid(card: Pick<PlannedCard, 'abuse' | 'boundary'>): string {
+  const cases = card.abuse ?? []
+  const said = cases.length > 0 ? `Abuse cases: ${cases.join('; ')}` : 'No abuse cases yet'
+  return card.boundary ? `Crosses a trust boundary · ${said}` : said
+}
+
 /** Criteria typed one per line. */
 export function linesOf(text: string): string[] {
   return text

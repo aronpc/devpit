@@ -4912,6 +4912,10 @@ export type PlannedCard = {
 	files: string[],
 	verify: string,
 	dependsOn: string[],
+	/**  How the card's boundary could be abused, each proved refused. */
+	abuse?: string[],
+	/**  The plan says the card crosses a trust boundary. */
+	boundary?: boolean,
 };
 
 /**

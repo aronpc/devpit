@@ -51,6 +51,12 @@ pub struct PlannedCard {
     pub files: Vec<String>,
     pub verify: String,
     pub depends_on: Vec<String>,
+    /// How the card's boundary could be abused, each proved refused.
+    #[serde(default)]
+    pub abuse: Vec<String>,
+    /// The plan says the card crosses a trust boundary.
+    #[serde(default)]
+    pub boundary: bool,
 }
 
 /// A plan previewed for an epic, waiting for the person to create its cards.

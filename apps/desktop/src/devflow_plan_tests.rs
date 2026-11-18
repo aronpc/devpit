@@ -422,3 +422,42 @@ fn a_plan_without_an_epic_is_a_preview_alone_and_needs_no_click() {
     assert!(applied.contains("epic"), "{applied}");
     assert!(store.cards(&project.id).expect("cards").is_empty());
 }
+
+#[test]
+fn the_persons_edit_keeps_a_cards_abuse_cases_and_its_trust_boundary() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let (store, project) = project(dir.path());
+    let epic = epic(&store, &project);
+    let guarded = json!([{
+        "key": "s1", "title": "Files are read under the root",
+        "criteria": ["a file under the root is read"],
+        "files": ["apps/desktop/src/files.rs"],
+        "abuse": ["a path outside the root is refused"], "boundary": true
+    }]);
+    respond(
+        None,
+        "devflow_plan",
+        &project,
+        &json!({ "epic": epic, "cards": guarded }),
+    )
+    .expect("a preview");
+
+    let mut edited = waiting(&store, &epic).expect("waiting").cards;
+    assert_eq!(edited[0].abuse, ["a path outside the root is refused"]);
+    assert!(edited[0].boundary);
+    edited[0].title = "Files are read under the project's root".into();
+    let kept = kept_on_board(&store, &project.id, &epic, edited).expect("kept");
+    assert_eq!(kept.cards[0].abuse, ["a path outside the root is refused"]);
+    assert!(kept.cards[0].boundary);
+
+    let made = created_on_board(&store, &project.id, &epic, None).expect("created");
+    let body = store
+        .card(&made.card_ids[0])
+        .expect("read")
+        .expect("card")
+        .body;
+    assert!(
+        body.contains("Abuse case: a path outside the root is refused"),
+        "{body}"
+    );
+}

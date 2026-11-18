@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 
 import type { DevflowPlan, PlannedCard } from '../gen/bindings'
 import { ask, commands } from './live'
-import { cut, edited, linesOf, moved } from './planEdit'
+import { abuseSaid, cut, edited, linesOf, moved } from './planEdit'
 
 /*
  * A Devflow plan waiting on its epic: the cards an agent proposed, none of
@@ -105,6 +105,7 @@ export function PlanReview({
               criteria={card.criteria}
               onDone={(criteria) => keep(edited(cards, card.key, { criteria }))}
             />
+            {(card.boundary || (card.abuse?.length ?? 0) > 0) && <p className="dplan__by">{abuseSaid(card)}</p>}
             {card.verify && <code className="dplan__verify">{card.verify}</code>}
           </li>
         ))}
