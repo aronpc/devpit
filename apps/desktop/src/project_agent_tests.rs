@@ -202,6 +202,22 @@ fn the_agent_cannot_message_or_watch_other_sessions() {
     }
 }
 
+/// Chats are offered the Artifact tools; a read-only agent fed repository
+/// and card text must not publish or change anything on the person's account.
+#[test]
+fn the_agent_cannot_publish_or_change_artifacts() {
+    let bench = bench();
+    let agents = Agents::idling_after(Duration::from_secs(60));
+    asked(&agents, &bench, "first");
+    let start = started(&bench);
+    for tool in ["Artifact", "ArtifactData", "ArtifactComments"] {
+        assert!(
+            start.contains(&format!("--disallowedTools={tool} ")),
+            "{tool} is not refused: {start}"
+        );
+    }
+}
+
 #[test]
 fn the_agent_is_refused_what_the_repository_denies_and_never_given_what_it_allows() {
     let bench = bench();

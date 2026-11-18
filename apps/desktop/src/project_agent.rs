@@ -45,10 +45,14 @@ pub(crate) const NOT_STARTED: &str = "the project agent could not start";
 /// Read-only whatever mode the profile's own settings choose.
 const READ_ONLY: &str = "plan";
 /// Plan mode keeps the profile's Bash allow rules; a deny rule wins over them.
-const DENIED: [&str; 12] = [
+const DENIED: [&str; 15] = [
     "Edit",
     "Write",
     "NotebookEdit",
+    // Writes to the person's claude.ai account, whatever the switch says.
+    "Artifact",
+    "ArtifactData",
+    "ArtifactComments",
     "Bash(rm *)",
     "Bash(mv *)",
     "Bash(git commit *)",
