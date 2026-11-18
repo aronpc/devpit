@@ -202,14 +202,18 @@ asks back for what only devpit has. A method devflow serves goes there, and
 one it does not serve yet stays on the linked engine.
 - **Lookup order:** `DEVPIT_DEVFLOW`, then `~/.local/bin/devflow`, then the
   login PATH. A devflow is used only if it answers `version --json` with
-  0.5.0 or later and protocol 1.
-- **Install and update:** with Devflow on and no usable devflow, devpit
-  installs the release itself, checksummed as the Install button does. With
-  one present, devpit runs `devflow update` at most once a day. Both ring the
-  bell.
-- **Same file only:** a project whose own `devflow.yaml` sits at its root
-  or in `.devflow/` is never handed to devflow, which would read that file
-  instead of `.devpit/devflow/`.
+  0.5.0 or later and protocol 1. `DEVPIT_DEVFLOW` set to nothing means there
+  is none.
+- **Install and update:** with Devflow on and no devflow, or only an older
+  one, devpit installs the release itself, once per run, checksummed as the
+  Install button does. A program called devflow that does not answer as one
+  is left alone. With a usable one, devpit runs `devflow update` once per run
+  and day. Both ring the bell. `DEVFLOW_NO_UPDATE` or an empty
+  `DEVPIT_DEVFLOW` turns both off.
+- **Same file only:** devflow stands in the git repository's top folder and
+  reads a `devflow.yaml` at its root or in `.devflow/` first. So a project
+  that is a repository's subfolder, or keeps such a file, is never handed to
+  devflow.
 - **Served today:**
   - `config/write` edits devflow.yaml in place, keeping comments and unread
     fields. devpit refuses a `security.*` path before devflow sees it.

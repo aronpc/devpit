@@ -570,3 +570,22 @@ fn what_an_attack_may_reach_is_never_set_by_a_tool_or_the_screen() {
     let text = std::fs::read_to_string(dir.path().join(FILE)).expect("yaml");
     assert_eq!(text, "version: 1\n");
 }
+
+/// Sabotage: hand devflow a project in a repository's subfolder, and it
+/// reads and writes the repository's own devflow.yaml instead.
+#[test]
+fn devflow_is_handed_only_a_project_whose_files_it_reads_as_devpit_does() {
+    let repo = tempfile::tempdir().expect("tempdir");
+    let top = repo.path().canonicalize().expect("top");
+    crate::devflow_review::tests::git(&top, &["init", "-q", "-b", "main"]);
+    std::fs::create_dir_all(top.join("app/.devpit/devflow")).expect("folder");
+    assert!(reads_devpits_file(&top));
+    assert!(
+        !reads_devpits_file(&top.join("app")),
+        "devflow would stand in the repository's top folder"
+    );
+    std::fs::write(top.join("devflow.yaml"), "version: 1\n").expect("devflow's own");
+    assert!(!reads_devpits_file(&top), "devflow would read its own file");
+    let plain = tempfile::tempdir().expect("no repository");
+    assert!(reads_devpits_file(plain.path()));
+}

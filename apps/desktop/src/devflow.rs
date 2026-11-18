@@ -358,12 +358,18 @@ fn none_asked(method: &str, _: Value) -> Result<Value, String> {
     Err(format!("devpit does not answer {method} here"))
 }
 
-/// Whether devflow reads the file devpit does: one at the root or in
-/// `.devflow/` comes first for devflow, and devpit keeps `.devpit/devflow/`.
+/// Whether devflow reads the file devpit does. devflow stands in the git
+/// repository's top folder, and takes a devflow.yaml at its root or in
+/// `.devflow/` before `.devpit/devflow/`.
 pub(crate) fn reads_devpits_file(root: &Path) -> bool {
-    ["devflow.yaml", ".devflow/devflow.yaml"]
-        .iter()
-        .all(|own| std::fs::symlink_metadata(root.join(own)).is_err())
+    let here = root.canonicalize().unwrap_or_else(|_| root.to_path_buf());
+    let top = devflow_engine::git::toplevel(&here)
+        .ok()
+        .and_then(|top| Path::new(&top).canonicalize().ok());
+    top.is_none_or(|top| top == here)
+        && ["devflow.yaml", ".devflow/devflow.yaml"]
+            .iter()
+            .all(|own| std::fs::symlink_metadata(here.join(own)).is_err())
 }
 
 /// devflow's answer to `method` for `project`, when the devflow here serves
@@ -576,6 +582,15 @@ pub(crate) fn setup_of(
         Some(Value::Object(set)) => set.clone(),
         Some(_) => return Err("`set` is an object of dotted path to value".to_owned()),
     };
+    if let Some(path) = set
+        .keys()
+        .find(|path| devflow_engine::security::persons_only(path))
+    {
+        return Err(format!(
+            "`{path}` is not set here: {}",
+            devflow_engine::security::PERSONS_ONLY
+        ));
+    }
     let detected = detect::detected_in(&DEVPIT, root, machine(store, &project.id));
     let proposal = proposal::setup_in(&layout(), state, preset, &set, &detected)
         .map_err(|why| why.to_string())?;

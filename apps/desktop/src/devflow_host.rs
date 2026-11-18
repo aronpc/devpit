@@ -491,8 +491,12 @@ pub(crate) fn updated(said: &str) -> Option<(String, String)> {
 pub(crate) fn tend(app: &tauri::AppHandle) {
     static INSTALLING: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
     static LOOKED: Mutex<Option<std::time::Instant>> = Mutex::new(None);
-    // The person's way to keep devflow as it is, and a test's.
-    if std::env::var_os("DEVFLOW_NO_UPDATE").is_some_and(|said| said == "1") {
+    // The person's way to keep devflow as it is, and a test's; and no
+    // devflow wanted at all.
+    let said = |name: &str| std::env::var(name).unwrap_or_default().to_ascii_lowercase();
+    if ["1", "true", "yes", "on"].contains(&said("DEVFLOW_NO_UPDATE").as_str())
+        || std::env::var_os("DEVPIT_DEVFLOW").is_some_and(|chosen| chosen.is_empty())
+    {
         return;
     }
     let app = app.clone();
