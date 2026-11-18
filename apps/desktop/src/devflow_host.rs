@@ -485,12 +485,19 @@ pub(crate) fn updated(said: &str) -> Option<(String, String)> {
 
 /// Keeps devflow here for a project with Devflow on, in the background:
 /// installed once when missing or too old, and asked to update itself at
-/// most once a day. Each says so on the bell.
+/// most once a day. Each says so on the bell. `DEVFLOW_NO_UPDATE=1` does
+/// neither.
 pub(crate) fn tend(app: &tauri::AppHandle) {
     static INSTALLING: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
     static LOOKED: Mutex<Option<std::time::Instant>> = Mutex::new(None);
+    // The person's way to keep devflow as it is, and a test's.
+    if std::env::var_os("DEVFLOW_NO_UPDATE").is_some_and(|said| said == "1") {
+        return;
+    }
     let app = app.clone();
     match devflow() {
+        // Another program called devflow is not replaced.
+        Err(Unusable::Unreadable { .. }) => {}
         Err(unusable) if !INSTALLING.swap(true, std::sync::atomic::Ordering::SeqCst) => {
             tauri::async_runtime::spawn(async move {
                 let (title, detail) = match install().await {

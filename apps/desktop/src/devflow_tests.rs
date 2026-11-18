@@ -554,3 +554,25 @@ fn the_installed_devflow_edits_in_place_holds_no_target_and_serves_skills_in_dev
     assert!(text.contains("`devpit_devflow_plan`"), "{text}");
     assert_eq!(plan["skill"]["frontmatter"]["name"], "devflow-plan");
 }
+
+#[test]
+fn what_an_attack_may_reach_is_never_set_by_a_tool_or_the_screen() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    std::fs::create_dir_all(dir.path().join(".devpit/devflow")).expect("folder");
+    std::fs::write(dir.path().join(FILE), "version: 1\n").expect("devflow.yaml");
+    let here = project("prj_devflow_persons_targets", dir.path());
+    let store = crate::projects::store().expect("store");
+    let refused = set_with(
+        None,
+        &store,
+        &here,
+        dir.path(),
+        &read(dir.path()),
+        &json!({ "path": "security.targets", "value": ["http://localhost:8080"], "apply": true }),
+        &|_, _| panic!("never handed to devflow"),
+    )
+    .expect_err("the person's alone");
+    assert!(refused.contains("in a terminal"), "{refused}");
+    let text = std::fs::read_to_string(dir.path().join(FILE)).expect("yaml");
+    assert_eq!(text, "version: 1\n");
+}

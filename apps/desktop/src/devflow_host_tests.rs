@@ -411,3 +411,38 @@ fn an_update_that_moved_says_from_and_to() {
     assert_eq!(updated(r#"{"error":"no network"}"#), None);
     assert_eq!(updated(""), None);
 }
+
+/// Sabotage: hand every project to devflow, and one with its own
+/// devflow.yaml at the root has that file read and written instead.
+#[cfg(unix)]
+#[test]
+fn a_project_with_a_devflow_yaml_of_devflows_own_is_never_handed_to_devflow() {
+    let scripts = tempfile::tempdir().unwrap();
+    let bin = serving_config_read(scripts.path());
+    TEST_DEVFLOW.with(|chosen| *chosen.borrow_mut() = Some(bin));
+    let root = tempfile::tempdir().unwrap();
+    std::fs::create_dir_all(root.path().join(".devpit/devflow")).unwrap();
+    std::fs::write(
+        root.path().join(".devpit/devflow/devflow.yaml"),
+        "version: 1\n",
+    )
+    .unwrap();
+    std::fs::write(root.path().join("devflow.yaml"), "version: 1\n").unwrap();
+    let store = crate::projects::store().unwrap();
+    let project: devpit_rpc::Project = serde_json::from_value(json!({
+        "id": "prj_devflow_own_file", "name": "own", "rootPath": root.path().display().to_string(),
+        "group": null, "accent": "#000000", "worktrees": [], "unreadable": null,
+        "orchestrator": null, "origin": null, "lastOpenedAt": null, "icon": null, "color": null,
+    }))
+    .unwrap();
+    let read = || crate::devflow::hosted(&store, &project, root.path(), "config/read", json!({}));
+
+    assert_eq!(read(), None);
+    assert!(
+        !scripts.path().join("sessions").exists(),
+        "devflow was not run"
+    );
+    std::fs::remove_file(root.path().join("devflow.yaml")).unwrap();
+    assert_eq!(read(), Some(Ok(json!({"state": "valid"}))));
+    TEST_DEVFLOW.with(|chosen| *chosen.borrow_mut() = None);
+}

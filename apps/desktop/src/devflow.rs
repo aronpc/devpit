@@ -358,7 +358,16 @@ fn none_asked(method: &str, _: Value) -> Result<Value, String> {
     Err(format!("devpit does not answer {method} here"))
 }
 
-/// devflow's answer to `method` for `project`, when the devflow here serves it.
+/// Whether devflow reads the file devpit does: one at the root or in
+/// `.devflow/` comes first for devflow, and devpit keeps `.devpit/devflow/`.
+pub(crate) fn reads_devpits_file(root: &Path) -> bool {
+    ["devflow.yaml", ".devflow/devflow.yaml"]
+        .iter()
+        .all(|own| std::fs::symlink_metadata(root.join(own)).is_err())
+}
+
+/// devflow's answer to `method` for `project`, when the devflow here serves
+/// it and reads the same devflow.yaml devpit does.
 pub(crate) fn hosted(
     store: &Store,
     project: &Project,
@@ -366,6 +375,9 @@ pub(crate) fn hosted(
     method: &str,
     params: Value,
 ) -> Option<Result<Value, crate::devflow_host::Failed>> {
+    if !reads_devpits_file(root) {
+        return None;
+    }
     crate::devflow_host::asked_of(
         root,
         host_init(store, project, root),
@@ -679,6 +691,12 @@ pub(crate) fn set_with(
     let value = params
         .get("value")
         .ok_or("pass the new `value` for the field")?;
+    if devflow_engine::security::persons_only(path) {
+        return Err(format!(
+            "`{path}` is not set here: {}",
+            devflow_engine::security::PERSONS_ONLY
+        ));
+    }
     let proposal =
         proposal::set_in(&layout(), state, path, value).map_err(|why| why.to_string())?;
     layered_as(root, &proposal)?;
