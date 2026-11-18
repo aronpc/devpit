@@ -12,7 +12,7 @@ export type Edit = (path: string, value: unknown) => void
 export const REVIEWER_AGENTS = ['claude', 'codex', 'cursor', 'gemini'] as const
 export const PERSONAS = ['devflow-spec', 'devflow-standards', 'devflow-security'] as const
 export const SEVERITIES = ['critical', 'high', 'medium', 'low', 'info'] as const
-export const REPORTS = ['junit', 'vitest', 'jest', 'cargo', 'go', 'none'] as const
+export const REPORTS = ['junit', 'vitest', 'jest', 'cargo', 'go', 'sarif', 'none'] as const
 export const CONSOLIDATIONS = ['jev', 'agent', 'none'] as const
 
 export const STAGE_SAYS: Readonly<Record<string, string>> = {
