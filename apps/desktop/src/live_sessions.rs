@@ -233,22 +233,22 @@ pub(crate) fn ptyd_pane_of(
     })
 }
 
-/// The project and leaf of a session: where its hooks said it started, else
-/// the `DEVPIT_PANE` its process was started with, the name those hooks report.
-/// The second finds one typed before devpit kept the launch, or by hand.
+/// The project and leaf of a session: the `DEVPIT_PANE` its process was
+/// started with, the name its hooks report, else where its hooks said it
+/// started. The process's own comes first: two processes on one conversation
+/// are in two panes.
 pub(crate) fn place_of(
     store: &devpit_core::Store,
     session_id: Option<&str>,
     pid: Option<i32>,
 ) -> Option<(String, String)> {
-    if let Some(place) = session_id.and_then(|id| store.place_of_session(id).ok().flatten()) {
-        return Some(place);
-    }
-    let leaf = devpit_pty::environ_of(u32::try_from(pid?).ok()?, devpit_tmux::PANE_ENV)?;
-    let project = crate::sessions::project_holding(store, &leaf)
-        .ok()
-        .flatten()?;
-    Some((project, leaf))
+    pid.and_then(|pid| u32::try_from(pid).ok())
+        .and_then(|pid| devpit_pty::environ_of(pid, devpit_tmux::PANE_ENV))
+        .and_then(|leaf| {
+            let project = crate::sessions::project_holding(store, &leaf).ok()??;
+            Some((project, leaf))
+        })
+        .or_else(|| session_id.and_then(|id| store.place_of_session(id).ok().flatten()))
 }
 
 /// The project and pane a devpit terminal's target names:

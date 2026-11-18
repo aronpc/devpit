@@ -409,6 +409,60 @@ fn a_session_its_hooks_never_placed_is_found_by_the_pane_its_process_started_in(
     assert_eq!(nowhere, None);
 }
 
+/// Two processes on one conversation are in two panes: each is placed in
+/// the pane it was started in, so stopping one by its pid closes only its own.
+#[cfg(target_os = "linux")]
+#[test]
+fn a_process_is_placed_in_its_own_pane_when_another_runs_its_conversation() {
+    use super::place_of;
+    use devpit_rpc::{LayoutNode, SplitDirection};
+
+    let dir = tempfile::tempdir().expect("tempdir");
+    let store = devpit_core::Store::open(&dir.path().join("state.db")).expect("store");
+    let root = dir.path().join("project");
+    std::fs::create_dir_all(&root).expect("root");
+    let project = store.add_project(&root, None).expect("project");
+    let tree = LayoutNode::leaf("leaf_resumed", "s:leaf_resumed")
+        .split_leaf(
+            "leaf_resumed",
+            SplitDirection::Horizontal,
+            LayoutNode::leaf("leaf_second", "s:leaf_second"),
+        )
+        .expect("split");
+    store
+        .set_pane_layout(
+            &project,
+            "tab_one",
+            &serde_json::to_string(&tree).expect("json"),
+            "leaf_resumed",
+        )
+        .expect("layout");
+    store
+        .remember_pane_launch(&project, "leaf_resumed", "claude")
+        .expect("launch");
+    store
+        .remember_pane_session("leaf_resumed", "abc", None)
+        .expect("session");
+    let mut second = std::process::Command::new("sleep")
+        .arg("30")
+        .env(devpit_tmux::PANE_ENV, "leaf_second")
+        .spawn()
+        .expect("spawn");
+    let environ = format!("/proc/{}/environ", second.id());
+    for _ in 0..500 {
+        if std::fs::read(&environ).is_ok_and(|bytes| !bytes.is_empty()) {
+            break;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(10));
+    }
+
+    let found = place_of(&store, Some("abc"), i32::try_from(second.id()).ok());
+    let _ = second.kill();
+    let _ = second.wait();
+
+    assert_eq!(found, Some((project, "leaf_second".to_owned())));
+}
+
 /// A project with a Claude Code account of its own starts its sessions there:
 /// they are the orchestrator's work all the same, and their state shows.
 #[test]
