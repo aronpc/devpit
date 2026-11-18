@@ -12,23 +12,22 @@ with this distribution in LICENSE, and is available at:
 --------------------------------------------------------------------------------
 Devflow skills
 
-The skills under flow/skills/, the reviewer personas under flow/personas/ and
-the findings schema in flow/schemas/devflow-findings.schema.json are devpit's
-own text, adapted from the sources below. Their evals follow the pattern of
-anthropics/skills' skill-creator.
+The Devflow skills, reviewer personas and findings schema built into devpit
+come with devflow-engine, whose text is adapted from the sources below. Their
+evals follow the pattern of anthropics/skills' skill-creator.
 
-  flow/skills/devflow-briefing      grilling, grill-me; interview-me
-  flow/skills/devflow-context       to-spec, domain-modeling; spec-driven-development
-  flow/skills/devflow-plan          to-tickets; planning-and-task-breakdown
-  flow/skills/devflow-execution     tdd, diagnosing-bugs; test-driven-development,
-                                    incremental-implementation
-  flow/skills/devflow-review        code-review; code-review-and-quality,
-                                    security-and-hardening; requesting-code-review
-  flow/skills/devflow-completion    handoff; verification-before-completion
-  flow/skills/devflow-setup         devpit's own
-  flow/personas/devflow-spec        agents/code-reviewer; code-review
-  flow/personas/devflow-standards   agents/code-reviewer; code-review
-  flow/personas/devflow-security    agents/security-auditor; security-and-hardening
+  devflow-briefing      grilling, grill-me; interview-me
+  devflow-context       to-spec, domain-modeling; spec-driven-development
+  devflow-plan          to-tickets; planning-and-task-breakdown
+  devflow-execution     tdd, diagnosing-bugs; test-driven-development,
+                        incremental-implementation
+  devflow-review        code-review; code-review-and-quality,
+                        security-and-hardening; requesting-code-review
+  devflow-completion    handoff; verification-before-completion
+  devflow-setup         devpit's own
+  devflow-spec          agents/code-reviewer; code-review
+  devflow-standards     agents/code-reviewer; code-review
+  devflow-security      agents/security-auditor; security-and-hardening
 
 mattpocock/skills
   https://github.com/mattpocock/skills, commit 49dd158

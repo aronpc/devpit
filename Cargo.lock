@@ -1072,8 +1072,8 @@ dependencies = [
 
 [[package]]
 name = "devflow-engine"
-version = "0.3.0"
-source = "git+https://github.com/jholhewres/devflow?tag=v0.3.0#70a3354cbffb5099bc6d9d6137f59e556ef0366b"
+version = "0.5.0"
+source = "git+https://github.com/jholhewres/devflow?tag=v0.5.0#66404d1a458b5e8594610f7d145f20995a9e32d2"
 dependencies = [
  "libc",
  "quick-xml",
@@ -1087,6 +1087,7 @@ dependencies = [
 name = "devpit-agentapi"
 version = "0.1.52"
 dependencies = [
+ "devflow-engine",
  "serde_json",
  "tempfile",
 ]

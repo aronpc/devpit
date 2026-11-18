@@ -189,8 +189,21 @@ fn the_brief_comes_only_with_its_stages_and_the_plan_wherever_devflow_is_on() {
     assert!(setup.contains(&PLAN_TOOL), "{setup:?}");
 }
 
-const EXECUTION: &str = include_str!("../../../flow/skills/devflow-execution/SKILL.md");
-const COMPLETION: &str = include_str!("../../../flow/skills/devflow-completion/SKILL.md");
+/// A text as devflow ships it, said in the words it ships for devpit.
+fn for_devpit(text: &str) -> String {
+    use devflow_engine::skills::{rendered, Words};
+    rendered(text, &Words::shipped("devpit").expect("devpit's words"))
+}
+
+/// A skill's text as devpit serves it.
+fn skill(name: &str) -> String {
+    devflow_engine::dialect::Assets::DEVFLOW
+        .skills
+        .iter()
+        .find(|(one, ..)| *one == name)
+        .map(|(.., text)| for_devpit(text))
+        .expect("a skill devflow ships")
+}
 
 /// Every field each skill's call to the evidence tool sends is one the
 /// tool's schema lists, at every level.
@@ -217,8 +230,9 @@ fn the_evidence_comes_with_execution_and_takes_what_its_skills_send() {
         }
     };
     let mut calls = 0;
-    for skill in [EXECUTION, COMPLETION] {
-        let blocks = skill.split("```json").skip(1);
+    for text in [skill("devflow-execution"), skill("devflow-completion")] {
+        let text = text.as_str();
+        let blocks = text.split("```json").skip(1);
         for block in blocks.filter_map(|rest| rest.split("```").next()) {
             let Ok(sent) = serde_json::from_str::<Value>(block) else {
                 continue;
@@ -375,14 +389,17 @@ fn the_gate_lists_only_the_card_an_agent_passes() {
     assert!(schema.get("required").is_none(), "a hook names no card");
 }
 
-const REVIEW: [&str; 6] = [
-    include_str!("../../../flow/skills/devflow-review/SKILL.md"),
-    include_str!("../../../flow/skills/devflow-review/verify.md"),
-    include_str!("../../../flow/skills/devflow-review/without-card.md"),
-    include_str!("../../../flow/skills/devflow-review/retro.md"),
-    include_str!("../../../flow/skills/devflow-review/publish.md"),
-    include_str!("../../../flow/skills/devflow-review/by-hand.md"),
-];
+/// The review skill and each of its parts, as devpit serves them.
+fn review_texts() -> Vec<String> {
+    let shipped = devflow_engine::dialect::Assets::DEVFLOW;
+    let parts = shipped
+        .parts
+        .iter()
+        .filter(|(skill, ..)| *skill == "devflow-review");
+    std::iter::once(skill("devflow-review"))
+        .chain(parts.map(|(.., text)| for_devpit(text)))
+        .collect()
+}
 
 /// The review is listed wherever Devflow is on in Settings, as it runs on
 /// demand without a card, and every call the review skill shows sends only
@@ -421,7 +438,7 @@ fn the_review_runs_on_demand_and_takes_what_its_skill_sends() {
         ]
     );
     let mut calls = 0;
-    for block in REVIEW
+    for block in review_texts()
         .concat()
         .split("```json")
         .skip(1)
@@ -440,8 +457,8 @@ fn the_review_runs_on_demand_and_takes_what_its_skill_sends() {
         }
     }
     assert_eq!(
-        calls, 7,
-        "a first call, the one that hands reports back, the verified PoCs, a re-review, and a pr, a range and a retro range without a card"
+        calls, 8,
+        "a first call, the one that hands reports back, the verified PoCs and an attack's, a re-review, and a pr, a range and a retro range without a card"
     );
 }
 
@@ -535,7 +552,7 @@ fn the_skill_tool_takes_each_part_the_review_skill_points_to() {
     );
     for part in offered {
         assert!(
-            REVIEW[0].contains(&format!("\"part\": \"{part}\"")),
+            review_texts()[0].contains(&format!("\"part\": \"{part}\"")),
             "the review skill points to {part}"
         );
     }

@@ -1,75 +1,38 @@
-//! devpit's words for the devflow engine, and its own `flow/`: a card where
-//! the engine says item, the `devpit_devflow_*` tools, `DEVPIT_*` variables,
-//! and `.devpit/devflow/` as every project's folder.
+//! devpit's words for the devflow engine: a card where the engine says item,
+//! the `devpit_devflow_*` tools, `DEVPIT_*` variables, and `.devpit/devflow/`
+//! as every project's folder. The flow's texts are devflow's own, said in the
+//! words devflow ships for devpit.
+
+use std::sync::LazyLock;
 
 use devflow_engine::dialect::{Assets, Tools};
+use devflow_engine::skills::{self, Words};
 use devflow_engine::Dialect;
 
-macro_rules! flow {
-    ($path:literal) => {
-        include_str!(concat!("../../../flow/", $path))
-    };
+/// devflow's skills, their parts and its publish templates in devpit's words;
+/// the personas, rubrics and schema as devflow ships them.
+fn said_for_devpit() -> &'static Assets {
+    let words = Words::shipped("devpit").unwrap_or_default();
+    let say =
+        |text: &str| -> &'static str { Box::leak(skills::rendered(text, &words).into_boxed_str()) };
+    let shipped = Assets::DEVFLOW;
+    let parts: Vec<(&'static str, &'static str, &'static str)> = shipped
+        .parts
+        .iter()
+        .map(|(skill, part, text)| (*skill, *part, say(text)))
+        .collect();
+    Box::leak(Box::new(Assets {
+        skills: shipped
+            .skills
+            .map(|(name, stage, text)| (name, stage, say(text))),
+        parts: Box::leak(parts.into_boxed_slice()),
+        publish: shipped.publish.map(say),
+        ..shipped
+    }))
 }
 
-static FLOW: Assets = Assets {
-    skills: [
-        (
-            "devflow-briefing",
-            Some("briefing"),
-            flow!("skills/devflow-briefing/SKILL.md"),
-        ),
-        (
-            "devflow-context",
-            Some("context"),
-            flow!("skills/devflow-context/SKILL.md"),
-        ),
-        (
-            "devflow-plan",
-            Some("plan"),
-            flow!("skills/devflow-plan/SKILL.md"),
-        ),
-        (
-            "devflow-execution",
-            Some("execution"),
-            flow!("skills/devflow-execution/SKILL.md"),
-        ),
-        (
-            "devflow-review",
-            Some("review"),
-            flow!("skills/devflow-review/SKILL.md"),
-        ),
-        (
-            "devflow-completion",
-            Some("completion"),
-            flow!("skills/devflow-completion/SKILL.md"),
-        ),
-        (
-            "devflow-setup",
-            None,
-            flow!("skills/devflow-setup/SKILL.md"),
-        ),
-    ],
-    personas: [
-        ("devflow-spec", flow!("personas/devflow-spec.md")),
-        ("devflow-standards", flow!("personas/devflow-standards.md")),
-        ("devflow-security", flow!("personas/devflow-security.md")),
-        ("devflow-all", flow!("personas/devflow-all.md")),
-    ],
-    rubrics: [
-        ("devflow-finding", flow!("rubrics/devflow-finding.json")),
-        ("devflow-brief", flow!("rubrics/devflow-brief.json")),
-        ("devflow-plan", flow!("rubrics/devflow-plan.json")),
-    ],
-    schema: flow!("schemas/devflow-findings.schema.json"),
-    publish: [
-        flow!("publish/github.md"),
-        flow!("publish/gitlab.md"),
-        flow!("publish/bitbucket.md"),
-    ],
-};
-
 /// devpit's, as the engine's golden test pins it.
-pub(crate) static DEVPIT: Dialect = Dialect {
+pub(crate) static DEVPIT: LazyLock<Dialect> = LazyLock::new(|| Dialect {
     product: "devpit",
     version: env!("CARGO_PKG_VERSION"),
     env: "DEVPIT",
@@ -103,8 +66,14 @@ pub(crate) static DEVPIT: Dialect = Dialect {
     yaml_provider: "the provider in Settings → Decisions",
     decisions_opted_out: "this project's state is not sent to Decisions — see Settings → Decisions",
     decisions_no_key: "no key — set one in Settings → Decisions",
-    assets: &FLOW,
-};
+    assets: said_for_devpit(),
+});
+
+/// devpit's words as `devflow host` takes them at `initialize`: the ones
+/// devflow ships for it.
+pub(crate) fn host_words() -> serde_json::Value {
+    serde_json::json!({ "host": "devpit" })
+}
 
 /// Pins `.devpit/devflow/` and devpit's way of starting programs, once,
 /// before the engine reads anything. Later calls do nothing.
