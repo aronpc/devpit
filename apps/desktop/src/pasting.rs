@@ -13,6 +13,30 @@ use devpit_rpc::{Attachment, ErrorCode, RpcError};
 /// is decoded, so an oversized paste is refused without ever being held whole.
 pub(crate) const MOST_BYTES: usize = 8 * 1024 * 1024;
 
+/// The longest a voice message runs: `LONGEST_MS` in `web/src/shell/recorder.ts`.
+pub(crate) const LONGEST_RECORDING_SECONDS: usize = 5 * 60;
+
+/// The size of a recording as the WAV a window makes where its webview writes
+/// no compressed format the services take: a 44-byte header, then 16 kHz of
+/// 16-bit mono samples (`WAV_RATE` and `wavOf` in `web/src/shell/recorder.ts`).
+pub(crate) const fn wav_bytes(seconds: usize) -> usize {
+    44 + 16_000 * 2 * seconds
+}
+
+/// The most a recording may be: the longest one as WAV (9.6 MB), with room to
+/// spare, and still well under the 25 MB the services accept.
+pub(crate) const MOST_RECORDING_BYTES: usize = 12 * 1024 * 1024;
+const _: () = assert!(wav_bytes(LONGEST_RECORDING_SECONDS) <= MOST_RECORDING_BYTES);
+
+/// The ceiling for a paste of this type.
+pub(crate) fn most_for(media_type: &str) -> usize {
+    if media_type.starts_with("audio/") {
+        MOST_RECORDING_BYTES
+    } else {
+        MOST_BYTES
+    }
+}
+
 /// The extension a pasted type is saved under, or nothing for a type this
 /// does not take — pictures, the voice messages the composer records, and a
 /// paste of text too long to sit in the composer.
@@ -32,15 +56,15 @@ pub(crate) fn extension_for(media_type: &str) -> Option<&'static str> {
     }
 }
 
-/// Decodes a paste, refusing it before allocation when it is too big.
-pub(crate) fn decoded(data: &str) -> Result<Vec<u8>, RpcError> {
+/// Decodes a paste, refusing it before allocation when it is past `most`.
+pub(crate) fn decoded(data: &str, most: usize) -> Result<Vec<u8>, RpcError> {
     // Base64 is four characters for three bytes.
-    if data.len() / 4 * 3 > MOST_BYTES {
+    if data.len() / 4 * 3 > most {
         return Err(RpcError::new(
             ErrorCode::Invalid,
             format!(
                 "that paste is past the {} MB a paste takes",
-                MOST_BYTES / 1_048_576
+                most / 1_048_576
             ),
         ));
     }
@@ -76,7 +100,7 @@ pub(crate) fn chat_paste_now(
             "only pictures, recordings and text can be pasted",
         )
     })?;
-    let bytes = decoded(&data)?;
+    let bytes = decoded(&data, most_for(&media_type))?;
     let dir = crate::projects::project_home(&project_id)?.pasted();
     kept_in(&dir, &media_type, ext, &bytes)
 }
