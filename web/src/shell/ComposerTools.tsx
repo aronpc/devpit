@@ -5,13 +5,15 @@ import { ask, commands } from './live'
 import { base64Of, formatHere, LONGEST_MS, record, refusal, systemLanguage, type Recording } from './recorder'
 import type { Chat } from './useChat'
 import { useShell } from './useShell'
+import { letsGo, matches } from './shortcuts'
 import { useKeys, useShortcut } from './useShortcut'
 
 /*
  * The composer's two ways in besides typing: files, chosen from the system's
  * picker (Ctrl/Cmd+Shift+A), and a voice message — recorded, made into words
  * the person reads and edits before sending, and sent as the recording when
- * no engine could hear it.
+ * no engine could hear it. The microphone is clicked, held, or its key held
+ * while the chat is the one in front (push to talk).
  */
 
 const clock = (ms: number): string => {
@@ -22,11 +24,17 @@ const clock = (ms: number): string => {
 /** A press held this long is a hold: let go, and the recording stops. */
 const HOLD_MS = 600
 
-export function ComposerTools({ chat, onHeard }: { chat: Chat; onHeard: (text: string) => void }): React.JSX.Element {
+export function ComposerTools({ chat, mine, onHeard }: { chat: Chat; mine: boolean; onHeard: (text: string) => void }): React.JSX.Element {
   const { project } = useShell()
   const box = useRef<HTMLSpanElement>(null)
   const recording = useRef<Recording | null>(null)
   const pressed = useRef(0)
+  /* While the talk key is down: what lets go of it. */
+  const held = useRef<(() => void) | null>(null)
+  /* The microphone is being opened: a second press waits for it, and a
+     composer gone meanwhile closes what it opens. */
+  const opening = useRef(false)
+  const gone = useRef(false)
   const [since, setSince] = useState<number | null>(null)
   const [now, setNow] = useState(0)
   const [hearing, setHearing] = useState(false)
@@ -55,18 +63,70 @@ export function ComposerTools({ chat, onHeard }: { chat: Chat; onHeard: (text: s
     return () => window.clearInterval(beat)
   })
 
+  /* Push to talk: held while this chat is the one in front, never from a
+     terminal, and let go by its key, a key held with it, or the window losing
+     focus — a key let go elsewhere never comes back as a keyup. */
+  useShortcut('talk', () => {
+    if (!mine || document.activeElement?.closest('.xterm')) return false
+    if (held.current || recording.current || hearing) return
+    if (!format) return setSaid('This window cannot record.')
+    const up = (event: KeyboardEvent): void => {
+      if (letsGo('talk', event)) letGo()
+    }
+    /* The key repeats while held: none of it is typed into the composer. */
+    const repeat = (event: KeyboardEvent): void => {
+      if (event.repeat && matches('talk', event)) event.preventDefault()
+    }
+    const letGo = (): void => {
+      window.removeEventListener('keyup', up, true)
+      window.removeEventListener('keydown', repeat, true)
+      window.removeEventListener('blur', letGo)
+      held.current = null
+      if (recording.current) void finish()
+    }
+    window.addEventListener('keyup', up, true)
+    window.addEventListener('keydown', repeat, true)
+    window.addEventListener('blur', letGo)
+    held.current = letGo
+    /* Let go before the microphone opened: the recording ends as it starts. */
+    void start().then(() => {
+      if (!held.current && recording.current) void finish()
+    })
+  })
+
   /* Gone with the composer, a recording does not keep the microphone. */
-  useEffect(() => () => recording.current?.cancel(), [])
+  useEffect(() => {
+    gone.current = false
+    return () => {
+      gone.current = true
+      recording.current?.cancel()
+      recording.current = null
+      held.current?.()
+    }
+  }, [])
+
+  /* Another tab in front: the composer is hidden, so nothing records unseen.
+     What was said so far is made words in this chat, where it was said. */
+  useEffect(() => {
+    if (mine) return
+    if (held.current) held.current()
+    else if (recording.current) void finish()
+  })
 
   const start = async (): Promise<void> => {
-    if (!format || recording.current) return
+    if (!format || recording.current || opening.current) return
+    opening.current = true
     setSaid(null)
     try {
-      recording.current = await record(format)
+      const got = await record(format)
+      if (gone.current) return got.cancel()
+      recording.current = got
       setSince(Date.now())
       setNow(Date.now())
     } catch (error) {
-      setSaid(refusal(error))
+      if (!gone.current) setSaid(refusal(error))
+    } finally {
+      opening.current = false
     }
   }
 
@@ -133,7 +193,7 @@ export function ComposerTools({ chat, onHeard }: { chat: Chat; onHeard: (text: s
           <button
             className="ctools__icon"
             disabled={!format || hearing}
-            title={!format ? 'This window cannot record' : hearing ? 'Making it words…' : 'Record a voice message — click, or hold and let go'}
+            title={!format ? 'This window cannot record' : hearing ? 'Making it words…' : `Record a voice message — click, or hold it or ${keys('talk')} and let go`}
             aria-label="Record a voice message"
             onPointerDown={() => {
               pressed.current = Date.now()

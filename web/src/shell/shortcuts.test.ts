@@ -9,6 +9,7 @@ import {
   defaultKeys,
   firing,
   keysLabel,
+  letsGo,
   matches,
   recordKeys,
   resetAllKeys,
@@ -227,5 +228,22 @@ describe('recording a key', () => {
     recordKeys('palette', press('j', { ctrlKey: true }), false)
     resetAllKeys()
     expect(bindingsOf('palette', false)).toEqual(['Mod+K'])
+  })
+})
+
+describe('a held key', () => {
+  it('is let go by its own key or by a modifier held with it, on every keyboard', () => {
+    expect(letsGo('talk', { key: ' ', code: 'Space' }, false)).toBe(true)
+    expect(letsGo('talk', { key: 'Control' }, false)).toBe(true)
+    expect(letsGo('talk', { key: 'Shift' }, false)).toBe(true)
+    expect(letsGo('talk', { key: 'Meta' }, true)).toBe(true)
+    expect(letsGo('talk', { key: 'Alt' }, false)).toBe(false)
+    expect(letsGo('talk', { key: 'a', code: 'KeyA' }, false)).toBe(false)
+  })
+
+  it('follows the key it was given', () => {
+    expect(recordKeys('talk', { key: 'F9' }, false)).toEqual({ kept: 'F9' })
+    expect(letsGo('talk', { key: 'F9' }, false)).toBe(true)
+    expect(letsGo('talk', { key: ' ', code: 'Space' }, false)).toBe(false)
   })
 })
