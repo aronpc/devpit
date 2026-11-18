@@ -2,7 +2,7 @@ import { open as pickFiles } from '@tauri-apps/plugin-dialog'
 import { useEffect, useRef, useState } from 'react'
 
 import { ask, commands } from './live'
-import { base64Of, formatHere, LONGEST_MS, record, refusal, systemLanguage, type Recording } from './recorder'
+import { base64Of, fellBack, formatHere, LONGEST_MS, record, refusal, systemLanguage, type Recording } from './recorder'
 import type { Chat } from './useChat'
 import { useShell } from './useShell'
 import { letsGo, matches } from './shortcuts'
@@ -121,6 +121,7 @@ export function ComposerTools({ chat, mine, onHeard }: { chat: Chat; mine: boole
       const got = await record(format)
       if (gone.current) return got.cancel()
       recording.current = got
+      if (got.missing) setSaid(fellBack(got.missing))
       setSince(Date.now())
       setNow(Date.now())
     } catch (error) {

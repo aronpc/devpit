@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { formatHere, record, refusal, resampled, systemLanguage, WAV, WAV_RATE, wavOf } from './recorder'
+import { chooseMicrophone, chosenMicrophone, formatHere, record, refusal, resampled, systemLanguage, WAV, WAV_RATE, wavOf } from './recorder'
 
 /* A MediaRecorder that hands over what it is told to, when it stops. */
 class FakeRecorder {
@@ -46,6 +46,7 @@ afterEach(() => {
   vi.unstubAllGlobals()
   FakeRecorder.gives = []
   streams = []
+  chooseMicrophone(null)
 })
 
 const tone = (hz: number, rate: number, seconds = 1): Float32Array =>
@@ -90,6 +91,33 @@ describe('recording a voice message', () => {
 
     FakeRecorder.gives = [0]
     expect(await (await record('audio/mp4')).stop()).toBeNull()
+  })
+
+  describe('the microphone chosen in Settings', () => {
+    const logi = { deviceId: 'logi-2', label: 'Logi USB Headset Mono' }
+
+    it('is the one recorded from', async () => {
+      const getUserMedia = microphone([logi])
+      chooseMicrophone({ id: 'logi-2', label: logi.label })
+      expect((await record('audio/mp4')).missing).toBeNull()
+      expect(getUserMedia).toHaveBeenCalledWith({ audio: { sampleRate: { ideal: 48_000 }, deviceId: { exact: 'logi-2' } } })
+    })
+
+    it('is found again by its name when its id changed', async () => {
+      const getUserMedia = microphone([logi])
+      chooseMicrophone({ id: 'logi-1', label: logi.label })
+      expect((await record('audio/mp4')).missing).toBeNull()
+      expect(getUserMedia).toHaveBeenLastCalledWith({ audio: { sampleRate: { ideal: 48_000 }, deviceId: { exact: 'logi-2' } } })
+      expect(chosenMicrophone()).toEqual({ id: 'logi-2', label: logi.label })
+    })
+
+    it('falls back to the default, naming the one missing, when it is unplugged', async () => {
+      const getUserMedia = microphone([{ deviceId: 'pixy', label: 'EMEET PIXY Mono' }])
+      chooseMicrophone({ id: 'logi-2', label: logi.label })
+      expect((await record('audio/mp4')).missing).toBe('Logi USB Headset Mono')
+      expect(getUserMedia).toHaveBeenLastCalledWith({ audio: { sampleRate: { ideal: 48_000 } } })
+      expect(chosenMicrophone()).toEqual({ id: 'logi-2', label: logi.label })
+    })
   })
 
   describe('where MediaRecorder writes only MP4', () => {
@@ -172,5 +200,24 @@ describe('recording a voice message', () => {
       await expect(record(WAV)).rejects.toThrow()
       expect(lit()).toBe(0)
     })
+
+    it('closes the default it fell back to when the microphones cannot be listed', async () => {
+      microphone([], { listing: new Error('no list') })
+      chooseMicrophone({ id: 'logi-2', label: 'Logi USB Headset Mono' })
+      await expect(record('audio/webm')).rejects.toThrow('no list')
+      expect(streams).toHaveLength(1)
+      expect(lit()).toBe(0)
+    })
+  })
+
+  /* Busy is not gone: looking it up again by name only finds the same device. */
+  it('says a chosen microphone is busy instead of reopening it in place of the default', async () => {
+    const logi = { deviceId: 'logi-2', label: 'Logi USB Headset Mono' }
+    const getUserMedia = microphone([logi], { busy: 'logi-2' })
+    chooseMicrophone({ id: 'logi-2', label: logi.label })
+    const failed = await record('audio/webm').catch((error: unknown) => error)
+    expect(refusal(failed)).toMatch(/in use by another program/)
+    expect(getUserMedia).toHaveBeenCalledTimes(1)
+    expect(lit()).toBe(0)
   })
 })

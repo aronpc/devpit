@@ -16,9 +16,15 @@ vi.mock('./live', () => ({
     transcribeTest: (...args: unknown[]) => (tested(...args), { text: 'testing one two', note: null }),
   },
 }))
-vi.mock('./recorder', () => ({
+let missing: string | null = null
+vi.mock('./recorder', async (actual) => ({
+  ...(await actual<typeof import('./recorder')>()),
   formatHere: () => format,
-  record: async () => ({ stop: async () => new Blob(['x'], { type: 'audio/webm' }), cancel: () => {} }),
+  microphones: async () => [
+    { id: 'u120', label: 'U-120 Analog Stereo' },
+    { id: 'pixy', label: 'EMEET PIXY Mono' },
+  ],
+  record: async () => ({ missing, stop: async () => new Blob(['x'], { type: 'audio/webm' }), cancel: () => {} }),
   refusal: () => 'The microphone is blocked.',
   systemLanguage: () => 'pt',
   base64Of: async () => 'eA==',
@@ -30,6 +36,8 @@ const { VoiceSettings } = await import('./VoiceSettings')
 afterEach(() => {
   cleanup()
   format = 'audio/webm'
+  missing = null
+  localStorage.clear()
 })
 
 describe('voice in Settings', () => {
@@ -53,5 +61,25 @@ describe('voice in Settings', () => {
     render(<VoiceSettings />)
     fireEvent.click(await screen.findByRole('button', { name: 'Test the microphone' }))
     expect(await screen.findByText(/GStreamer/)).toBeTruthy()
+  })
+
+  it('lists the microphones and keeps the one chosen', async () => {
+    render(<VoiceSettings />)
+    const pick = (await screen.findByRole('combobox', { name: 'Microphone' })) as HTMLSelectElement
+    await screen.findByRole('option', { name: 'EMEET PIXY Mono' })
+    expect([...pick.options].map((one) => one.text)).toEqual(['System default', 'U-120 Analog Stereo', 'EMEET PIXY Mono'])
+    fireEvent.change(pick, { target: { value: 'pixy' } })
+    cleanup()
+    render(<VoiceSettings />)
+    expect(((await screen.findByRole('combobox', { name: 'Microphone' })) as HTMLSelectElement).value).toBe('pixy')
+  })
+
+  it('says so when the chosen microphone is gone and the default was heard', async () => {
+    localStorage.setItem('devpit:microphone', JSON.stringify({ id: 'logi', label: 'Logi USB Headset Mono' }))
+    missing = 'Logi USB Headset Mono'
+    render(<VoiceSettings />)
+    expect(await screen.findByRole('option', { name: 'Logi USB Headset Mono — not connected' })).toBeTruthy()
+    fireEvent.click(await screen.findByRole('button', { name: 'Test the microphone' }))
+    expect(await screen.findByText(/Logi USB Headset Mono is not connected: recording from the system’s default microphone\. Heard: “testing one two”/, {}, { timeout: 5000 })).toBeTruthy()
   })
 })
