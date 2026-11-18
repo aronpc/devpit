@@ -45,7 +45,7 @@ pub(crate) fn respond(
 
     let root = checkout(project, cwd);
     let branch = devpit_git::branch_at(&root).unwrap_or_default();
-    let context = engine_context(
+    let mut context = engine_context(
         context_of(
             &card,
             Some(Checkout {
@@ -55,6 +55,10 @@ pub(crate) fn respond(
             Some(&project.root_path),
         )
         .for_a_command(),
+    );
+    devflow_engine::security::with_targets(
+        &mut context.shared,
+        &crate::devflow::targets_in_force(config),
     );
     let secrets = crate::kept_out::what_devpit_gave(&store);
     let redact = |text: &str| crate::kept_out::kept_out(text, &secrets);

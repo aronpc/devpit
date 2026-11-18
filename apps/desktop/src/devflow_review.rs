@@ -172,6 +172,7 @@ pub(crate) fn respond_with(
     .for_a_command()
     .environment();
     env.extend(crate::devflow_profile::env_of(profile));
+    devflow_engine::security::with_targets(&mut env, &crate::devflow::targets_in_force(config));
     let secrets = crate::kept_out::what_devpit_gave(&store);
     let redact = |text: &str| crate::kept_out::kept_out(text, &secrets);
     let evidence = crate::devflow_gate::newest(&runs, &card.id, "evidence.json");

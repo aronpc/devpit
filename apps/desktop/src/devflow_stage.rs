@@ -56,7 +56,8 @@ pub(crate) fn respond(
     let (passed, said, decisions) = match gate {
         StageGate::Command(command) => {
             confirmed(app, store, project, layered.as_ref(), step, command)?;
-            let (passed, said) = ran(command, &checkout, project, &card, name);
+            let targets = crate::devflow::targets_in_force(config);
+            let (passed, said) = ran(command, &checkout, project, &card, name, &targets);
             (passed, said, None)
         }
         StageGate::Rubric(rubric) => {
@@ -218,6 +219,7 @@ fn ran(
     project: &Project,
     card: &devpit_core::CardRow,
     name: &str,
+    targets: &[String],
 ) -> (bool, Vec<String>) {
     let branch = devpit_git::branch_at(checkout).unwrap_or_default();
     let mut context = context_of(
@@ -232,6 +234,7 @@ fn ran(
     context
         .shared
         .push(("DEVFLOW_STAGE".to_owned(), name.to_owned()));
+    devflow_engine::security::with_targets(&mut context.shared, targets);
     let mut output: Vec<String> = Vec::new();
     let ended = devpit_steps::run(
         command,

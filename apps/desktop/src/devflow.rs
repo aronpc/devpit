@@ -309,6 +309,17 @@ fn offer(store: &Store, project: &Project, root: &Path, state: &State) -> Value 
     })
 }
 
+/// The targets an attack may reach: those devflow.yaml lists that the person
+/// confirmed. devpit takes no such confirmation, so none is in force.
+pub(crate) fn targets_in_force(config: &devflow_engine::Config) -> Vec<String> {
+    devflow_engine::security::in_force(
+        &config.security.targets,
+        &[],
+        &devflow_engine::security::resolved_here,
+    )
+    .0
+}
+
 /// The fields a newer devpit wrote, left out here rather than refused.
 pub(crate) fn unread_note(unread: &[devflow_engine::Invalid]) -> Option<String> {
     let named: Vec<String> = unread.iter().map(ToString::to_string).collect();

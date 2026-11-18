@@ -399,3 +399,23 @@ fn an_applied_setup_says_what_it_wrote() {
     assert!(applied_note(true, false, &["enable"]).contains("stays off"));
     assert!(applied_note(false, false, &["enable", "enforce"]).contains("shadow"));
 }
+
+#[test]
+fn no_target_is_in_force_until_the_person_confirms_one() {
+    let config = parse(
+        "version: 1\nsecurity:\n  targets: [\"http://localhost:8080\", \"http://127.0.0.1:9\"]\n",
+    )
+    .expect("valid");
+    assert!(targets_in_force(&config).is_empty());
+    let mut env = vec![(
+        "DEVFLOW_SECURITY_TARGETS".to_owned(),
+        "http://inherited".to_owned(),
+    )];
+    devflow_engine::security::with_targets(&mut env, &targets_in_force(&config));
+    assert!(
+        env.iter()
+            .filter(|(name, _)| name.ends_with("_SECURITY_TARGETS"))
+            .all(|(_, value)| value.is_empty()),
+        "an inherited target never reaches a check: {env:?}"
+    );
+}
