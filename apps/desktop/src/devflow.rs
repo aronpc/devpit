@@ -326,6 +326,11 @@ fn offer(store: &Store, project: &Project, root: &Path, state: &State) -> Value 
     })
 }
 
+/// Why devpit sets no security path: what an attack may reach is the
+/// person's, and devpit holds none in force.
+const PERSONS_TARGETS: &str = "what an attack may reach is the person's alone to widen, and \
+     devpit holds no target in force: Devflow's checks and reviews here reach none";
+
 /// What one `devflow host` call is given, for the file and the status.
 const HOST_WAITS: std::time::Duration = std::time::Duration::from_secs(30);
 
@@ -359,14 +364,16 @@ fn none_asked(method: &str, _: Value) -> Result<Value, String> {
 }
 
 /// Whether devflow reads the file devpit does. devflow stands in the git
-/// repository's top folder, and takes a devflow.yaml at its root or in
-/// `.devflow/` before `.devpit/devflow/`.
+/// repository's top folder, takes a devflow.yaml at its root or in
+/// `.devflow/` before `.devpit/devflow/`, and that one only as a plain file.
 pub(crate) fn reads_devpits_file(root: &Path) -> bool {
     let here = root.canonicalize().unwrap_or_else(|_| root.to_path_buf());
     let top = devflow_engine::git::toplevel(&here)
         .ok()
         .and_then(|top| Path::new(&top).canonicalize().ok());
+    let devpits = std::fs::symlink_metadata(here.join(".devpit/devflow/devflow.yaml"));
     top.is_none_or(|top| top == here)
+        && devpits.is_ok_and(|meta| meta.is_file())
         && ["devflow.yaml", ".devflow/devflow.yaml"]
             .iter()
             .all(|own| std::fs::symlink_metadata(here.join(own)).is_err())
@@ -586,10 +593,7 @@ pub(crate) fn setup_of(
         .keys()
         .find(|path| devflow_engine::security::persons_only(path))
     {
-        return Err(format!(
-            "`{path}` is not set here: {}",
-            devflow_engine::security::PERSONS_ONLY
-        ));
+        return Err(format!("`{path}` is not set here: {}", PERSONS_TARGETS));
     }
     let detected = detect::detected_in(&DEVPIT, root, machine(store, &project.id));
     let proposal = proposal::setup_in(&layout(), state, preset, &set, &detected)
@@ -703,10 +707,7 @@ pub(crate) fn set_with(
         .get("value")
         .ok_or("pass the new `value` for the field")?;
     if devflow_engine::security::persons_only(path) {
-        return Err(format!(
-            "`{path}` is not set here: {}",
-            devflow_engine::security::PERSONS_ONLY
-        ));
+        return Err(format!("`{path}` is not set here: {}", PERSONS_TARGETS));
     }
     let proposal =
         proposal::set_in(&layout(), state, path, value).map_err(|why| why.to_string())?;

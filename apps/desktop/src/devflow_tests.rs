@@ -566,7 +566,7 @@ fn what_an_attack_may_reach_is_never_set_by_a_tool_or_the_screen() {
         &|_, _| panic!("never handed to devflow"),
     )
     .expect_err("the person's alone");
-    assert!(refused.contains("in a terminal"), "{refused}");
+    assert!(refused.contains("holds no target in force"), "{refused}");
     let text = std::fs::read_to_string(dir.path().join(FILE)).expect("yaml");
     assert_eq!(text, "version: 1\n");
 }
@@ -579,6 +579,10 @@ fn devflow_is_handed_only_a_project_whose_files_it_reads_as_devpit_does() {
     let top = repo.path().canonicalize().expect("top");
     crate::devflow_review::tests::git(&top, &["init", "-q", "-b", "main"]);
     std::fs::create_dir_all(top.join("app/.devpit/devflow")).expect("folder");
+    std::fs::create_dir_all(top.join(".devpit/devflow")).expect("folder");
+    assert!(!reads_devpits_file(&top), "no devflow.yaml of devpit's yet");
+    std::fs::write(top.join(".devpit/devflow/devflow.yaml"), "version: 1\n").expect("yaml");
+    std::fs::write(top.join("app/.devpit/devflow/devflow.yaml"), "version: 1\n").expect("yaml");
     assert!(reads_devpits_file(&top));
     assert!(
         !reads_devpits_file(&top.join("app")),
@@ -587,5 +591,7 @@ fn devflow_is_handed_only_a_project_whose_files_it_reads_as_devpit_does() {
     std::fs::write(top.join("devflow.yaml"), "version: 1\n").expect("devflow's own");
     assert!(!reads_devpits_file(&top), "devflow would read its own file");
     let plain = tempfile::tempdir().expect("no repository");
+    std::fs::create_dir_all(plain.path().join(".devpit/devflow")).expect("folder");
+    std::fs::write(plain.path().join(FILE), "version: 1\n").expect("yaml");
     assert!(reads_devpits_file(plain.path()));
 }
