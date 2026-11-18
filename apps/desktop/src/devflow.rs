@@ -389,19 +389,15 @@ pub(crate) fn hosted(
 }
 
 /// The targets an attack may reach: those devflow.yaml lists that the person
-/// confirmed on a terminal, as devflow reads them. With no devflow to ask,
-/// none is in force.
-pub(crate) fn targets_in_force(store: &Store, project: &Project, root: &Path) -> Vec<String> {
-    match hosted(store, project, root, "config/read", json!({})) {
-        Some(Ok(read)) => read["security"]["targets_in_force"]
-            .as_array()
-            .map_or(&[][..], Vec::as_slice)
-            .iter()
-            .filter_map(Value::as_str)
-            .map(str::to_owned)
-            .collect(),
-        _ => Vec::new(),
-    }
+/// confirmed. devpit takes no such confirmation, and a file any shell can
+/// write is not the person's, so none is in force.
+pub(crate) fn targets_in_force(config: &devflow_engine::Config) -> Vec<String> {
+    devflow_engine::security::in_force(
+        &config.security.targets,
+        &[],
+        &devflow_engine::security::resolved_here,
+    )
+    .0
 }
 
 /// The fields a newer devpit wrote, left out here rather than refused.

@@ -165,7 +165,7 @@ first, and a two-word name (`.arow`, `.tleaf`) when the obvious one is taken.
 
 ## Environment toggles
 
-Five, all off by default, none of them a feature:
+Seven, all off by default, none of them a feature:
 
 | | |
 |---|---|
@@ -174,6 +174,8 @@ Five, all off by default, none of them a feature:
 | `DEVPIT_TRACE_HOOKS` | timestamped lines on stderr saying how long each hook took |
 | `DEVPIT_GDK_BACKEND` | `wayland` or `x11`: the display a Linux start opens on, over Settings and the automatic fallback |
 | `DEVPIT_UPDATE_FEED_FILE` | reads the update feed from a file instead of the network. It only replaces where the answer is read from, the card says "test feed" on screen, and nothing it offers can be installed |
+| `DEVPIT_DEVFLOW` | the `devflow` program devpit hands Devflow's calls to, before `~/.local/bin` and the PATH; set to nothing, there is none and the linked engine answers everything |
+| `DEVFLOW_NO_UPDATE` | `1` stops devpit installing devflow or asking it to update itself, as it stops devflow's own updates |
 
 ## Tests
 

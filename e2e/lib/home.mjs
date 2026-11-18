@@ -166,6 +166,10 @@ export function seedEnv({ home, feed }) {
     DEVPIT_UPDATE_FEED_FILE: feed,
     // The hook timings, on the app's stderr, which the driver keeps in a file.
     DEVPIT_TRACE_HOOKS: '1',
+    // No devflow program: Devflow runs on the linked engine, and nothing is
+    // downloaded or updated.
+    DEVPIT_DEVFLOW: '',
+    DEVFLOW_NO_UPDATE: '1',
   }
 }
 

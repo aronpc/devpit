@@ -402,17 +402,12 @@ fn an_applied_setup_says_what_it_wrote() {
 }
 
 #[test]
-fn no_target_is_in_force_without_a_devflow_to_say_the_persons() {
-    let dir = tempfile::tempdir().expect("tempdir");
-    std::fs::create_dir_all(dir.path().join(".devpit/devflow")).expect("folder");
-    std::fs::write(
-        dir.path().join(FILE),
+fn no_target_is_in_force_until_the_person_confirms_one_in_devpit() {
+    let config = parse(
         "version: 1\nsecurity:\n  targets: [\"http://localhost:8080\", \"http://127.0.0.1:9\"]\n",
     )
-    .expect("devflow.yaml");
-    let here = project("prj_devflow_targets", dir.path());
-    let store = crate::projects::store().expect("store");
-    let targets = targets_in_force(&store, &here, dir.path());
+    .expect("valid");
+    let targets = targets_in_force(&config);
     assert!(targets.is_empty());
     let mut env = vec![(
         "DEVFLOW_SECURITY_TARGETS".to_owned(),
@@ -506,7 +501,7 @@ fn a_change_devflow_refuses_or_cannot_make_is_written_here_as_before() {
 /// `DEVPIT_TEST_DEVFLOW=<its path> cargo test -p devpit-desktop -- --ignored the_installed_devflow`.
 #[test]
 #[ignore = "needs a devflow 0.5.0 or later at DEVPIT_TEST_DEVFLOW"]
-fn the_installed_devflow_edits_in_place_holds_no_target_and_serves_skills_in_devpits_words() {
+fn the_installed_devflow_edits_in_place_and_serves_skills_in_devpits_words() {
     let Some(bin) = std::env::var_os("DEVPIT_TEST_DEVFLOW") else {
         return;
     };
@@ -535,7 +530,6 @@ fn the_installed_devflow_edits_in_place_holds_no_target_and_serves_skills_in_dev
     assert!(text.contains("# the person's note"), "{text}");
     assert!(text.contains("future_field: 3"), "{text}");
     assert_eq!(parse(&text).expect("valid").review.block_on.len(), 1);
-    assert!(targets_in_force(&store, &here, dir.path()).is_empty());
     let read = hosted(&store, &here, dir.path(), "config/read", json!({}))
         .expect("served")
         .expect("read");

@@ -207,14 +207,17 @@ one it does not serve yet stays on the linked engine.
   installs the release itself, checksummed as the Install button does. With
   one present, devpit runs `devflow update` at most once a day. Both ring the
   bell.
+- **Same file only:** a project whose own `devflow.yaml` sits at its root
+  or in `.devflow/` is never handed to devflow, which would read that file
+  instead of `.devpit/devflow/`.
 - **Served today:**
   - `config/write` edits devflow.yaml in place, keeping comments and unread
-    fields.
-  - `config/read` gives the security targets the person confirmed on a
-    terminal.
+    fields. devpit refuses a `security.*` path before devflow sees it.
   - `skills/get` gives the text of `devpit_devflow_skill`. A project with a
     team layer is the exception: devpit fetched that layer itself, so it keeps
     reading the text on its own side.
+- **Security targets:** devpit holds none in force. Their confirmation is the
+  person's, and devflow keeps it in a file any shell can write.
 
 - **Off until activated.** A project with no devflow.yaml, or one that says
   `enabled: false`, gets exactly what devpit listed before Devflow: no
@@ -256,9 +259,10 @@ one it does not serve yet stays on the linked engine.
   tools, resources and prompts, and watches the project's devflow.yaml and
   the app's stamp file, so switching Devflow on or off reaches a session
   already running.
-- **The skills are devpit's own text.** `flow/skills/` and `flow/personas/`
-  ship inside the binary; the MIT skills their method draws on are credited
-  in [`flow/NOTICE.md`](../flow/NOTICE.md).
+- **The skills are devflow's text, in devpit's words.** They ship inside
+  the binary with devflow-engine, and devflow host serves a newer one when
+  installed. The MIT skills their method draws on are credited in
+  [`NOTICE`](../NOTICE).
 - **The board is the plan.** `devpit_devflow_brief` writes the brief as an
   epic card, `[devflow] Brief: <title>`. `devpit_devflow_plan` previews the
   epic's cards and creates none: the preview waits on the epic, where the
@@ -310,7 +314,7 @@ one it does not serve yet stays on the linked engine.
   `devpit_devflow_publish` writes `publish.json` beside `findings.json`:
   each critical, high and medium on a line of the diff as one comment per
   line, everything else in one general comment, in the destination's
-  template (`flow/publish/`, replaced by a layer's `reviewers/publish/`).
+  template (devflow's, replaced by a layer's `reviewers/publish/`).
   Applied, it posts only the draft last shown, with `gh`, as a review that
   only comments; `published.json` keeps the ids, so publishing again edits.
 - **Code in production is followed up, not held.** A retro review
@@ -330,7 +334,7 @@ one it does not serve yet stays on the linked engine.
   `[devflow] gate: n of m criteria with evidence`. `devpit_finish_card` waits
   for it.
 - **Jev judges, the person labels.** Devflow asks Decisions four rubrics,
-  shipped from `flow/rubrics/` and overridden by the project's
+  shipped with devflow-engine and overridden by the project's
   `.devpit/devflow/rubrics/`: `devflow-brief` before planning,
   `devflow-plan` before the cards are made, `devflow-finding` of each
   finding the review consolidates (real, severity, duplicate, inside the
@@ -363,7 +367,7 @@ one it does not serve yet stays on the linked engine.
   (digest and size), the `devpit_devflow_skill` tool, and a prompt such as
   `/devpit:devflow-plan`. The app resolves it from the project root: the
   project's `.devpit/devflow/skills/`, then the person's under devpit's home,
-  then the one built from `flow/skills/`. When hosts declare
+  then devflow's built-in one. When hosts declare
   `io.modelcontextprotocol/skills`, `skills/list` and `skills/get` join
   these with the same entries, and the tool is deprecated.
 - **Personas by layer too.** A reviewer's persona is read from the project's

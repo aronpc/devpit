@@ -140,16 +140,17 @@ fn version_of(bin: &Path) -> Result<String, String> {
     Ok(String::from_utf8_lossy(&out.stdout).into_owned())
 }
 
+/// `DEVPIT_DEVFLOW` set to nothing: no devflow, the engine for everything.
 #[cfg(not(test))]
 fn where_to_look() -> Vec<PathBuf> {
+    let chosen = std::env::var_os("DEVPIT_DEVFLOW");
+    if chosen.as_ref().is_some_and(|chosen| chosen.is_empty()) {
+        return Vec::new();
+    }
     let installed = crate::devflow_binary::bin_dir()
         .ok()
         .map(|dir| dir.join("devflow"));
-    candidates(
-        std::env::var_os("DEVPIT_DEVFLOW"),
-        installed,
-        devpit_pty::login_path::search_path(),
-    )
+    candidates(chosen, installed, devpit_pty::login_path::search_path())
 }
 
 // A test sees only the devflow it put there, never the machine's.

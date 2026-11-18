@@ -138,7 +138,7 @@ pub(crate) fn respond_with(
     let asked = review::asked_in(&crate::devflow_dialect::DEVPIT, params)?;
     let store = crate::projects::store().map_err(|err| err.message)?;
     // devflow.yaml may list a target; a PoC reaches only one the person confirmed.
-    let targets = crate::devflow::targets_in_force(&store, project, Path::new(&project.root_path));
+    let targets = crate::devflow::targets_in_force(config);
     devflow_engine::security::refused(&asked.verified, &targets)?;
     let card = card_here(&store, project, &asked.card)?;
     let root = checkout(project, cwd);
