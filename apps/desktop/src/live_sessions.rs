@@ -479,6 +479,23 @@ pub(crate) fn reachable_in(sessions: &Path, name: &str) -> bool {
     })
 }
 
+/// The live process listed in `sessions` that runs conversation `session_id`,
+/// by name: a conversation runs in one process at a time.
+pub(crate) fn running_conversation(sessions: &Path, session_id: &str) -> Option<String> {
+    listed_running(sessions)
+        .into_iter()
+        .find(|listed| listed.session_id.as_deref() == Some(session_id))
+        .map(|listed| listed.name.unwrap_or_else(|| session_id.to_owned()))
+}
+
+/// [`running_conversation`], in every folder `profile_id`'s sessions are listed in.
+pub(crate) fn conversation_running(profile_id: &str, session_id: &str) -> Option<String> {
+    listed_dirs(profile_id)
+        .ok()?
+        .iter()
+        .find_map(|dir| running_conversation(dir, session_id))
+}
+
 /// Each live listing, for the one reply that needs it.
 fn listed_running(sessions: &Path) -> Vec<Listed> {
     let Ok(entries) = std::fs::read_dir(sessions) else {

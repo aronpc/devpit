@@ -255,6 +255,16 @@ pub(crate) fn resume(
     named: Option<&str>,
 ) -> Result<Value, RpcError> {
     let row = ended_one(profile_id, id_or_name)?;
+    // Its process may outlive what devpit last read: a second one would share its work.
+    if let Some(name) = crate::live_sessions::conversation_running(profile_id, &row.session_id) {
+        return Ok(json!({
+            "name": name,
+            "sessionId": row.session_id,
+            "cwd": row.cwd,
+            "running": true,
+            "next": "That conversation already runs, so nothing was started: message it by this name.",
+        }));
+    }
     let project_id = row.project_id.clone().ok_or_else(|| {
         RpcError::new(
             ErrorCode::Invalid,

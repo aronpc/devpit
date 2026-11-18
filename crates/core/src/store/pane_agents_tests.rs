@@ -79,3 +79,26 @@ fn a_session_is_found_in_the_project_and_pane_its_hooks_named() {
         Some((project, "leaf_1".to_owned()))
     );
 }
+
+/// A conversation runs in one pane. Resumed in another, the pane it left
+/// forgets it, so that pane coming back never starts it a second time.
+#[test]
+fn a_conversation_resumed_in_another_pane_is_forgotten_by_the_one_it_left() {
+    let (_dir, store, project) = opened();
+    for leaf in ["leaf_left", "leaf_resumed"] {
+        store
+            .remember_pane_launch(&project, leaf, "claude")
+            .expect("launch");
+    }
+    store
+        .remember_pane_session("leaf_left", "abc", None)
+        .expect("first");
+    store
+        .remember_pane_session("leaf_resumed", "abc", None)
+        .expect("resumed");
+    assert_eq!(store.pane_agent("leaf_left").expect("read"), None);
+    assert_eq!(
+        store.place_of_session("abc").expect("read"),
+        Some((project, "leaf_resumed".to_owned()))
+    );
+}

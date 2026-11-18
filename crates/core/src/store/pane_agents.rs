@@ -41,12 +41,19 @@ impl Store {
 
     /// Only for a pane devpit launched an agent in: a hook from an agent
     /// somebody typed by hand creates nothing, since there is no launch to repeat.
+    ///
+    /// A conversation runs in one pane: any other pane that held it forgets
+    /// it, or coming back it would start the same conversation a second time.
     pub fn remember_pane_session(
         &self,
         leaf_id: &str,
         session_id: &str,
         transcript_path: Option<&str>,
     ) -> Result<(), StoreError> {
+        self.conn.execute(
+            "DELETE FROM pane_agent WHERE session_id = ?1 AND leaf_id != ?2",
+            [session_id, leaf_id],
+        )?;
         self.conn.execute(
             "UPDATE pane_agent SET session_id = ?2, transcript_path = ?3, updated_at = ?4 \
              WHERE leaf_id = ?1",

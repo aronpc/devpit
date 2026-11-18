@@ -448,3 +448,24 @@ fn a_session_in_a_projects_own_account_is_listed_with_the_profiles() {
     )
     .is_empty());
 }
+
+/// A conversation runs in one process: one a live process lists is running,
+/// one only a dead process's leftover listing names is not.
+#[test]
+fn a_conversation_runs_while_a_live_process_lists_it() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let sessions = dir.path().join("sessions");
+    std::fs::create_dir_all(&sessions).expect("mkdir");
+    let me = std::process::id() as i32;
+    for (pid, session) in [(me, "abc"), (999_999_999, "gone")] {
+        let body = json!({ "pid": pid, "name": format!("worker-{session}"), "sessionId": session,
+            "status": "busy", "kind": "interactive", "cwd": "/w" });
+        std::fs::write(sessions.join(format!("{pid}.json")), body.to_string()).expect("listing");
+    }
+    assert_eq!(
+        super::running_conversation(&sessions, "abc").as_deref(),
+        Some("worker-abc")
+    );
+    assert_eq!(super::running_conversation(&sessions, "gone"), None);
+    assert_eq!(super::running_conversation(&sessions, "other"), None);
+}

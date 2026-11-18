@@ -40,6 +40,9 @@ pub(crate) fn start_again(store: &Store, home: Option<&Path>, target: &str, leaf
     let Ok(Some(agent)) = store.pane_agent(leaf_id) else {
         return;
     };
+    if running_elsewhere(&agent).is_some() {
+        return;
+    }
     let Ok(line) = resume_line(&agent) else {
         return;
     };
@@ -59,6 +62,17 @@ pub(crate) fn type_again(home: Option<&Path>, target: &str, line: &str, profile:
         crate::pane_io::label(target, profile);
     }
     typed
+}
+
+/// The live process already running the conversation `agent` was in, by
+/// name: the pane it left gets no second one.
+fn running_elsewhere(agent: &PaneAgent) -> Option<String> {
+    let session = agent.session_id.as_deref()?;
+    let account = agent
+        .transcript_path
+        .as_deref()
+        .and_then(crate::claude_accounts::dir_of_transcript)?;
+    crate::live_sessions::running_conversation(&Path::new(&account).join("sessions"), session)
 }
 
 fn resume_line(agent: &PaneAgent) -> Result<String, devpit_rpc::RpcError> {
@@ -122,7 +136,7 @@ pub(crate) fn with_resume(start: &str, flag: Option<&str>, session: Option<&str>
 
 #[cfg(test)]
 mod tests {
-    use super::{base_or, type_again, with_resume};
+    use super::{base_or, running_elsewhere, type_again, with_resume};
 
     /// The account discovered as `claude` has no base of its own, and resumed nothing.
     #[test]
@@ -130,6 +144,35 @@ mod tests {
         assert_eq!(base_or(Some(""), "claude"), "claude");
         assert_eq!(base_or(Some("claude"), "work"), "claude");
         assert_eq!(base_or(None, "claude"), "claude");
+    }
+
+    /// The pane a conversation left comes back as a shell when that
+    /// conversation already runs in a live process, listed in its account.
+    #[test]
+    fn a_pane_whose_conversation_runs_elsewhere_is_not_started_again() {
+        let account = tempfile::tempdir().expect("tempdir");
+        let (projects, sessions) = (
+            account.path().join("projects/-w"),
+            account.path().join("sessions"),
+        );
+        for dir in [&projects, &sessions] {
+            std::fs::create_dir_all(dir).expect("mkdir");
+        }
+        let me = std::process::id();
+        let listing =
+            serde_json::json!({ "pid": me, "name": "worker", "sessionId": "abc", "cwd": "/w" });
+        std::fs::write(sessions.join(format!("{me}.json")), listing.to_string()).expect("listing");
+        let agent = |session: &str| {
+            let transcript = projects.join(format!("{session}.jsonl"));
+            std::fs::write(&transcript, "{}\n").expect("transcript");
+            devpit_core::store::pane_agents::PaneAgent {
+                launch: "claude".to_owned(),
+                session_id: Some(session.to_owned()),
+                transcript_path: Some(transcript.display().to_string()),
+            }
+        };
+        assert_eq!(running_elsewhere(&agent("abc")).as_deref(), Some("worker"));
+        assert_eq!(running_elsewhere(&agent("def")), None);
     }
 
     const START: &str = "claude --settings /s.json";
