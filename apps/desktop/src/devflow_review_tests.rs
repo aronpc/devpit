@@ -575,3 +575,31 @@ fn a_claude_reviewer_runs_its_profiles_program_and_another_cli_its_own() {
         "no profile program and no plain CLI"
     );
 }
+
+#[test]
+fn a_poc_against_a_target_devflow_yaml_lists_but_nobody_confirmed_is_refused() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let root = dir.path().canonicalize().expect("root");
+    let (_store, project, card) = reviewed_project(&root);
+    std::fs::write(
+        root.join(".devpit/devflow/devflow.yaml"),
+        "version: 1\nenabled: true\nreview:\n  verify: required\nsecurity:\n  targets: [\"http://localhost:8080\"]\n",
+    )
+    .expect("yaml");
+    let reach = |_: Agent| Err::<String, String>("not asked".to_owned());
+    let refused = respond_with(
+        None,
+        &project,
+        &config_of(&root),
+        &root,
+        &json!({ "card": card, "run": "20261118T000000Z", "verified": [{
+            "finding": 0, "result": "confirmed", "evidence": "the PoC read /etc/passwd",
+            "test": "tests/attack.rs::a_path_outside_the_root_is_refused",
+            "target": "http://localhost:8080",
+        }] }),
+        &reach,
+        None,
+    )
+    .expect_err("a target nobody confirmed");
+    assert!(refused.contains("not a target in force"), "{refused}");
+}

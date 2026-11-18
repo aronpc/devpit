@@ -136,6 +136,8 @@ pub(crate) fn respond_with(
     profile: Option<&Declared>,
 ) -> Result<Value, String> {
     let asked = review::asked_in(&crate::devflow_dialect::DEVPIT, params)?;
+    // devflow.yaml may list a target; a PoC reaches only one the person confirmed.
+    devflow_engine::security::refused(&asked.verified, &crate::devflow::targets_in_force(config))?;
     let store = crate::projects::store().map_err(|err| err.message)?;
     let card = card_here(&store, project, &asked.card)?;
     let root = checkout(project, cwd);

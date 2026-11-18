@@ -235,6 +235,10 @@ fn ran(
         .shared
         .push(("DEVFLOW_STAGE".to_owned(), name.to_owned()));
     devflow_engine::security::with_targets(&mut context.shared, targets);
+    // A `DEVPIT_` name is the step context's own to set.
+    context
+        .shared
+        .retain(|(name, _)| !name.starts_with("DEVPIT_"));
     let mut output: Vec<String> = Vec::new();
     let ended = devpit_steps::run(
         command,
