@@ -22,6 +22,32 @@ use crate::control::Control;
 /// The switch that makes the CLI a host of MCP Apps.
 pub const APPS_HOST_ENV: (&str, &str) = ("CLAUDE_CODE_MCP_APPS_HOST", "1");
 
+/// Claude Code leaves its Artifact tools out of a printing session unless
+/// this is set (measured on 2.1.327), so a chat would lack what a terminal of
+/// the same account has.
+pub(crate) const ARTIFACT_ENV: (&str, &str) = ("CLAUDE_CODE_ARTIFACT", "1");
+
+/// The Artifact switch a chat's CLI is started with, unless the profile or
+/// devpit's own environment already sets it: a person's `0` stays `0`.
+pub(crate) fn artifact_switch(
+    profile: &[(String, String)],
+    inherited: impl Fn(&str) -> bool,
+) -> Option<(&'static str, &'static str)> {
+    let (key, _) = ARTIFACT_ENV;
+    let set = profile.iter().any(|(name, _)| name == key) || inherited(key);
+    (!set).then_some(ARTIFACT_ENV)
+}
+
+/// What a chat's CLI is started with on top of its profile: MCP Apps, and
+/// the Artifact tools unless something already sets that switch.
+pub(crate) fn chat_switches(
+    profile: &[(String, String)],
+) -> impl Iterator<Item = (&'static str, &'static str)> {
+    std::iter::once(APPS_HOST_ENV).chain(artifact_switch(profile, |key| {
+        std::env::var_os(key).is_some()
+    }))
+}
+
 type Waiting = Arc<Mutex<HashMap<String, mpsc::Sender<Value>>>>;
 
 /// The process, and the answers it owes.

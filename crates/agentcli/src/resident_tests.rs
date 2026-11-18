@@ -305,3 +305,27 @@ done
     assert_eq!(cost(), Some(0.25));
     resident.close();
 }
+
+/// The resident chat is offered the Artifact tools too: it is the
+/// orchestrator's chat, where the missing tools were first seen.
+#[test]
+fn a_resident_chat_is_offered_the_artifact_tools() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let command = script(
+        dir.path(),
+        r#"#!/bin/sh
+read -r _first
+printf '{"type":"system","subtype":"init","session_id":"s-1"}\n'
+printf '{"type":"assistant","message":{"id":"m-1","role":"assistant","content":[{"type":"text","text":"[%s]"}]},"session_id":"s-1"}\n' "$CLAUDE_CODE_ARTIFACT"
+printf '{"type":"result","subtype":"success","session_id":"s-1","total_cost_usd":0}\n'
+"#,
+    );
+    let (tell, heard) = mpsc::channel();
+    let resident = started(&command, tell);
+    assert!(resident.say("hello"));
+    let first = heard
+        .recv_timeout(Duration::from_secs(5))
+        .expect("heard in time");
+    assert_eq!(first, "[1]");
+    resident.close();
+}

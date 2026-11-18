@@ -86,11 +86,8 @@ impl Resident {
             .args(wire.argv(turn))
             .current_dir(turn.cwd)
             .envs(turn.env.iter().map(|(key, value)| (key, value)))
-            // Pages that come with MCP tools: the answers match what those pages read.
-            .env(
-                crate::apps_host::APPS_HOST_ENV.0,
-                crate::apps_host::APPS_HOST_ENV.1,
-            )
+            // MCP Apps pages, and the Artifact tools a terminal of the account has.
+            .envs(crate::apps_host::chat_switches(turn.env))
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::null())

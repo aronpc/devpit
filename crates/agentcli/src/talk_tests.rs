@@ -246,6 +246,69 @@ fn a_chat_turn_runs_under_its_profile_env() {
     );
 }
 
+/// What the CLI of a chat turn finds in `var`, as a stand-in prints it.
+#[cfg(unix)]
+fn seen(env: &[(String, String)], var: &str) -> String {
+    use std::os::unix::fs::PermissionsExt;
+
+    let dir = tempfile::tempdir().expect("tempdir");
+    let cli = dir.path().join("fake-claude");
+    let script = format!(
+        "#!/bin/sh\n\
+         read -r _prompt\n\
+         printf '{{\"type\":\"result\",\"subtype\":\"success\",\"session_id\":\"[%s]\",\"total_cost_usd\":0}}\\n' \"${var}\"\n"
+    );
+    std::fs::write(&cli, script).expect("script");
+    std::fs::set_permissions(&cli, std::fs::Permissions::from_mode(0o755)).expect("chmod");
+    let command = cli.to_string_lossy().into_owned();
+    let turn = Say {
+        command: &command,
+        env,
+        cwd: dir.path(),
+        ..turn(None)
+    };
+    let said = (0..5)
+        .find_map(|_| {
+            match crate::talk::say(&crate::driver::Claude::default(), &turn, |_| {}, |_| {}) {
+                Err(crate::AgentError::NotInstalled) => {
+                    std::thread::sleep(std::time::Duration::from_millis(50));
+                    None
+                }
+                other => Some(other),
+            }
+        })
+        .expect("the stand-in never started")
+        .expect("a turn");
+    said.session_id.expect("the stand-in named a session")
+}
+
+/// Claude Code leaves its Artifact tools out of a printing session unless
+/// `CLAUDE_CODE_ARTIFACT` is set (measured on 2.1.327), so a chat had fewer
+/// tools than a terminal of the same account, resumed or not.
+#[cfg(unix)]
+#[test]
+fn a_chat_turn_is_offered_the_artifact_tools() {
+    assert_eq!(seen(&[], "CLAUDE_CODE_ARTIFACT"), "[1]");
+}
+
+/// A profile that turns them off keeps them off.
+#[cfg(unix)]
+#[test]
+fn a_profile_that_turns_the_artifact_tools_off_keeps_them_off() {
+    let off = vec![("CLAUDE_CODE_ARTIFACT".to_owned(), "0".to_owned())];
+    assert_eq!(seen(&off, "CLAUDE_CODE_ARTIFACT"), "[0]");
+}
+
+/// A switch set where devpit was started is the person's, and left alone.
+#[test]
+fn an_artifact_switch_devpit_inherited_is_left_to_it() {
+    assert_eq!(crate::apps_host::artifact_switch(&[], |_| true), None);
+    assert_eq!(
+        crate::apps_host::artifact_switch(&[], |_| false),
+        Some(crate::apps_host::ARTIFACT_ENV)
+    );
+}
+
 /// A supervised turn asks through devpit's `PreToolUse` hook; without the
 /// settings that carry it, the CLI has nobody to ask and refuses every write.
 #[test]

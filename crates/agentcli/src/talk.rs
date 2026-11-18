@@ -94,10 +94,7 @@ pub fn say(
         .args(&argv)
         .current_dir(turn.cwd)
         .envs(turn.env.iter().map(|(key, value)| (key, value)))
-        .env(
-            crate::apps_host::APPS_HOST_ENV.0,
-            crate::apps_host::APPS_HOST_ENV.1,
-        )
+        .envs(crate::apps_host::chat_switches(turn.env))
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
