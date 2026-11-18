@@ -389,6 +389,17 @@ pub struct DevflowGated {
     pub missing: Vec<String>,
 }
 
+/// An exploit test that confirmed an attack finding: it stays a regression
+/// test the gate wants green.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct DevflowExploit {
+    pub test: String,
+    pub file: Option<String>,
+    pub line: Option<u32>,
+    pub title: Option<String>,
+}
+
 /// Response of `devflow.card_evidence`: what a card's Devflow runs left
 /// among the project's artifacts.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
@@ -405,4 +416,6 @@ pub struct DevflowCardEvidence {
     /// Where Decisions stands for the card's project.
     #[serde(default)]
     pub decisions: Option<DevflowDecisions>,
+    /// The newest review's confirmed exploits.
+    pub exploits: Vec<DevflowExploit>,
 }

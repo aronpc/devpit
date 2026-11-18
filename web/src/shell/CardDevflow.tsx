@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 
-import type { DevflowCardEvidence, DevflowReviewed } from '../gen/bindings'
+import type { DevflowCardEvidence, DevflowExploit, DevflowReviewed } from '../gen/bindings'
 import { decisionsLine, decisionsTone } from './devflowDecisions'
 import { ask, commands } from './live'
 import { useShell } from './useShell'
@@ -8,8 +8,8 @@ import { onCarried } from './window'
 
 /*
  * What a card's Devflow runs left, compact: the newest gate, the newest
- * review's reviewers, where Decisions stands, and the files that run
- * attached. Nothing at all for a card Devflow never ran on.
+ * review's reviewers and confirmed exploits, where Decisions stands, and
+ * the files that run attached. Nothing at all for a card Devflow never ran on.
  */
 
 const seconds = (ms: number): string => (ms >= 60000 ? `${Math.floor(ms / 60000)} min ${Math.round((ms % 60000) / 1000)} s` : `${Math.round(ms / 1000)} s`)
@@ -20,6 +20,12 @@ export function reviewerSaid(one: DevflowReviewed): string {
   if (one.durationMs != null) said.push(seconds(one.durationMs))
   if (one.costUsd != null) said.push(`$${one.costUsd.toFixed(2)}`)
   return said.join(' · ')
+}
+
+/** Where a confirmed exploit is, and the test the gate wants green for it. */
+export function exploitSaid(one: DevflowExploit): string {
+  const at = one.file ? `${one.file}${one.line != null ? `:${one.line}` : ''} · ` : ''
+  return `${at}${one.test}`
 }
 
 export function CardDevflow({ cardId }: { cardId: string }): React.JSX.Element | null {
@@ -40,7 +46,7 @@ export function CardDevflow({ cardId }: { cardId: string }): React.JSX.Element |
     }
   }, [projectId, cardId])
 
-  if (!evidence || (!evidence.gate && evidence.reviewers.length === 0 && evidence.artifacts.length === 0)) return null
+  if (!evidence || (!evidence.gate && evidence.reviewers.length === 0 && evidence.exploits.length === 0 && evidence.artifacts.length === 0)) return null
   const gate = evidence.gate
   const open = (name: string): void => {
     const path = `${evidence.folder}/${name}`
@@ -78,6 +84,14 @@ export function CardDevflow({ cardId }: { cardId: string }): React.JSX.Element |
         </div>
       )}
       {evidence.verdict && <p className="crun__s">Review: {evidence.verdict === 'request_changes' ? 'changes requested' : evidence.verdict}</p>}
+      {evidence.exploits.map((one) => (
+        <div className="crun" key={one.test} data-state="failed" title={one.test}>
+          <span className="crun__b">
+            <span className="crun__t">Exploit confirmed{one.title ? ` · ${one.title}` : ''}</span>
+            <span className="crun__s">{exploitSaid(one)}</span>
+          </span>
+        </div>
+      ))}
       {evidence.artifacts.map((name) => (
         <button key={name} className="conv__act" title={name} onClick={() => open(name)}>
           {name.split('/').slice(3).join('/') || name}

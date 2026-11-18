@@ -6,7 +6,7 @@
 use std::path::Path;
 
 use devflow_engine::runs;
-use devpit_rpc::{DevflowCardEvidence, DevflowGated, DevflowReviewed, RpcError};
+use devpit_rpc::{DevflowCardEvidence, DevflowExploit, DevflowGated, DevflowReviewed, RpcError};
 use serde_json::Value;
 
 /// The most of one JSON file read: gate.json and review.json are small.
@@ -76,6 +76,29 @@ fn reviewed(value: &Value) -> Vec<DevflowReviewed> {
         .collect()
 }
 
+/// Each exploit test findings.json keeps, the gate's regression tests.
+fn exploits(findings: &Value) -> Vec<DevflowExploit> {
+    let text = |value: &Value| value.as_str().map(str::to_owned);
+    findings["exploits"]
+        .as_array()
+        .map_or(&[][..], Vec::as_slice)
+        .iter()
+        .filter_map(|one| {
+            Some(DevflowExploit {
+                test: one["test"]
+                    .as_str()
+                    .filter(|test| !test.is_empty())?
+                    .to_owned(),
+                file: text(&one["file"]),
+                line: one["line"]
+                    .as_u64()
+                    .and_then(|line| u32::try_from(line).ok()),
+                title: text(&one["title"]),
+            })
+        })
+        .collect()
+}
+
 /// The files of one run, relative to it, looked at no deeper than the
 /// screenshots and video folders a run keeps.
 fn files_of(run: &Path) -> Vec<String> {
@@ -115,6 +138,7 @@ pub(crate) fn evidence_in(artifacts: &Path, card: &str) -> DevflowCardEvidence {
         folder: artifacts.display().to_string(),
         artifacts: Vec::new(),
         decisions: None,
+        exploits: Vec::new(),
     };
     if !runs::plain_card(card) {
         return said;
@@ -128,8 +152,10 @@ pub(crate) fn evidence_in(artifacts: &Path, card: &str) -> DevflowCardEvidence {
         if let Some(value) = json_at(&folder.join(&run).join("review.json")) {
             said.reviewers = reviewed(&value);
         }
-        said.verdict = json_at(&folder.join(&run).join("findings.json"))
-            .and_then(|findings| findings["verdict"].as_str().map(str::to_owned));
+        if let Some(findings) = json_at(&folder.join(&run).join("findings.json")) {
+            said.verdict = findings["verdict"].as_str().map(str::to_owned);
+            said.exploits = exploits(&findings);
+        }
     }
     let newest = ["gate.json", "review.json", "evidence.json"]
         .iter()

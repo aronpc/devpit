@@ -83,3 +83,33 @@ fn a_card_with_no_runs_or_a_strange_id_shows_nothing() {
     );
     assert!(evidence_in(dir.path(), "../escape").gate.is_none());
 }
+
+#[test]
+fn a_card_shows_the_exploits_its_newest_review_confirmed() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let card = "card_attacked";
+    let run = format!("devflow/{card}/20261118T120000Z");
+    put(dir.path(), &format!("{run}/review.json"), r#"{"ran": []}"#);
+    put(
+        dir.path(),
+        &format!("{run}/findings.json"),
+        &json!({ "verdict": "request_changes", "exploits": [
+            { "test": "tests/attack.rs::a_path_outside_the_root_is_refused",
+              "file": "src/files.rs", "line": 42, "title": "Path traversal" },
+            { "test": "" },
+            { "file": "no test" },
+        ] })
+        .to_string(),
+    );
+
+    let said = evidence_in(dir.path(), card);
+    assert_eq!(
+        said.exploits,
+        [DevflowExploit {
+            test: "tests/attack.rs::a_path_outside_the_root_is_refused".to_owned(),
+            file: Some("src/files.rs".to_owned()),
+            line: Some(42),
+            title: Some("Path traversal".to_owned()),
+        }]
+    );
+}

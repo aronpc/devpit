@@ -3222,6 +3222,8 @@ export type DevflowCardEvidence = {
 	artifacts: string[],
 	/**  Where Decisions stands for the card's project. */
 	decisions?: DevflowDecisions | null,
+	/**  The newest review's confirmed exploits. */
+	exploits: DevflowExploit[],
 };
 
 /**  What the click does. */
@@ -3310,6 +3312,17 @@ export type DevflowError = {
 	/**  A dotted path, empty when the file as a whole is refused. */
 	field: string,
 	message: string,
+};
+
+/**
+ *  An exploit test that confirmed an attack finding: it stays a regression
+ *  test the gate wants green.
+ */
+export type DevflowExploit = {
+	test: string,
+	file: string | null,
+	line: number | null,
+	title: string | null,
 };
 
 /**  One file a setup writes, and what writing it does. */

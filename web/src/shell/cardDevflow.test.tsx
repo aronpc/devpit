@@ -13,7 +13,7 @@ vi.mock('./live', () => ({
   commands: { devflowCardEvidence: async () => evidence },
 }))
 
-const { CardDevflow, reviewerSaid } = await import('./CardDevflow')
+const { CardDevflow, exploitSaid, reviewerSaid } = await import('./CardDevflow')
 
 afterEach(() => {
   cleanup()
@@ -22,7 +22,7 @@ afterEach(() => {
 
 describe("a card's Devflow", () => {
   it('is absent from a card Devflow never ran on', async () => {
-    evidence = { cardId: 'c1', gate: null, reviewers: [], verdict: null, folder: '/a', artifacts: [] }
+    evidence = { cardId: 'c1', gate: null, reviewers: [], verdict: null, folder: '/a', artifacts: [], exploits: [] }
     const { container } = render(<CardDevflow cardId="c1" />)
     await waitFor(() => expect(container.innerHTML).toBe(''))
   })
@@ -38,6 +38,7 @@ describe("a card's Devflow", () => {
       verdict: 'request_changes',
       folder: '/home/me/artifacts',
       artifacts: ['devflow/c1/20261011T150000Z/gate.json'],
+      exploits: [],
     }
     render(<CardDevflow cardId="c1" />)
     expect(await screen.findByText('Gate not passed')).toBeTruthy()
@@ -50,8 +51,24 @@ describe("a card's Devflow", () => {
     expect(screen.queryByText('Decisions')).toBeNull()
   })
 
+  it('shows each exploit the review confirmed, where it is and the test the gate wants green', async () => {
+    evidence = {
+      cardId: 'c1',
+      gate: null,
+      reviewers: [],
+      verdict: 'request_changes',
+      folder: '/a',
+      artifacts: [],
+      exploits: [{ test: 'tests/attack.rs::a_path_outside_the_root_is_refused', file: 'src/files.rs', line: 42, title: 'Path traversal' }],
+    }
+    render(<CardDevflow cardId="c1" />)
+    expect(await screen.findByText('Exploit confirmed · Path traversal')).toBeTruthy()
+    expect(screen.getByText('src/files.rs:42 · tests/attack.rs::a_path_outside_the_root_is_refused')).toBeTruthy()
+    expect(exploitSaid({ test: 't', file: null, line: null, title: null })).toBe('t')
+  })
+
   it('says where Decisions stands as the Jev panel does, and nothing of it when it is off', async () => {
-    const ran = { cardId: 'c1', gate: { passed: true, run: 'r', at: 'r', withEvidence: 1, criteria: 1, missing: [] }, reviewers: [], verdict: null, folder: '/a', artifacts: [] }
+    const ran = { cardId: 'c1', gate: { passed: true, run: 'r', at: 'r', withEvidence: 1, criteria: 1, missing: [] }, reviewers: [], verdict: null, folder: '/a', artifacts: [], exploits: [] }
     evidence = { ...ran, decisions: { state: 'failing', reason: 'Decisions refused it (400 Bad Request): no criteria' } }
     render(<CardDevflow cardId="c1" />)
     expect(await screen.findByText('failing: Decisions refused it (400 Bad Request): no criteria')).toBeTruthy()
