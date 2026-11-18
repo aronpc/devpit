@@ -87,7 +87,7 @@ impl Resident {
             .current_dir(turn.cwd)
             .envs(turn.env.iter().map(|(key, value)| (key, value)))
             // MCP Apps pages, and the Artifact tools a terminal of the account has.
-            .envs(crate::apps_host::chat_switches(turn.env))
+            .envs(crate::talk_args::chat_switches(turn.env))
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::null())

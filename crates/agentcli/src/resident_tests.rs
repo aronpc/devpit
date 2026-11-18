@@ -326,6 +326,8 @@ printf '{"type":"result","subtype":"success","session_id":"s-1","total_cost_usd"
     let first = heard
         .recv_timeout(Duration::from_secs(5))
         .expect("heard in time");
-    assert_eq!(first, "[1]");
+    // `[1]`, or the value this run inherited, which devpit leaves as it is.
+    let inherited = std::env::var("CLAUDE_CODE_ARTIFACT");
+    assert_eq!(first, format!("[{}]", inherited.as_deref().unwrap_or("1")));
     resident.close();
 }

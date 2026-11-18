@@ -186,62 +186,13 @@ fn a_rewound_turn_forks_at_the_message_it_was_rewound_to() {
 #[cfg(unix)]
 #[test]
 fn a_chat_turn_runs_under_its_profile_env() {
-    use std::os::unix::fs::PermissionsExt;
-
-    let dir = tempfile::tempdir().expect("tempdir");
-    let cli = dir.path().join("fake-claude");
-    std::fs::write(
-        &cli,
-        "#!/bin/sh\n\
-         read -r _prompt\n\
-         printf '{\"type\":\"system\",\"subtype\":\"init\",\"session_id\":\"%s\"}\\n' \"$DEVPIT_ACCOUNT\"\n\
-         printf '{\"type\":\"result\",\"subtype\":\"success\",\"session_id\":\"%s\",\"total_cost_usd\":0}\\n' \"$DEVPIT_ACCOUNT\"\n",
-    )
-    .expect("script");
-    std::fs::set_permissions(&cli, std::fs::Permissions::from_mode(0o755)).expect("chmod");
-
-    let command = cli.to_string_lossy().into_owned();
     let env = vec![(
         "DEVPIT_ACCOUNT".to_owned(),
         "the-profile-account".to_owned(),
     )];
-    let turn = Say {
-        command: &command,
-        env: &env,
-        prompt: "hi",
-        cwd: dir.path(),
-        model: None,
-        budget_usd: None,
-        session_id: None,
-        fork_at: None,
-        permission: None,
-        disallowed: &[],
-        settings: None,
-        setting_sources: None,
-        mcp_config: None,
-        effort: None,
-        control: None,
-        on_session: None,
-        add_dirs: &[],
-        name: None,
-    };
-    // Same retry as the test above, for the same reason: a script written a
-    // moment ago can be "text file busy" while another test forks.
-    let said = (0..5)
-        .find_map(|_| {
-            match crate::talk::say(&crate::driver::Claude::default(), &turn, |_| {}, |_| {}) {
-                Err(crate::AgentError::NotInstalled) => {
-                    std::thread::sleep(std::time::Duration::from_millis(50));
-                    None
-                }
-                other => Some(other),
-            }
-        })
-        .expect("the stand-in never started")
-        .expect("a turn");
     assert_eq!(
-        said.session_id.as_deref(),
-        Some("the-profile-account"),
+        seen(&env, "DEVPIT_ACCOUNT"),
+        "[the-profile-account]",
         "the turn did not run under the profile's environment"
     );
 }
@@ -288,7 +239,14 @@ fn seen(env: &[(String, String)], var: &str) -> String {
 #[cfg(unix)]
 #[test]
 fn a_chat_turn_is_offered_the_artifact_tools() {
-    assert_eq!(seen(&[], "CLAUDE_CODE_ARTIFACT"), "[1]");
+    assert_eq!(seen(&[], "CLAUDE_CODE_ARTIFACT"), switch_expected());
+}
+
+/// `[1]`, or the value this run inherited: a suite run from a devpit chat has
+/// one, and devpit leaves an inherited switch as it is.
+fn switch_expected() -> String {
+    let inherited = std::env::var("CLAUDE_CODE_ARTIFACT");
+    format!("[{}]", inherited.as_deref().unwrap_or("1"))
 }
 
 /// A profile that turns them off keeps them off.
@@ -302,10 +260,10 @@ fn a_profile_that_turns_the_artifact_tools_off_keeps_them_off() {
 /// A switch set where devpit was started is the person's, and left alone.
 #[test]
 fn an_artifact_switch_devpit_inherited_is_left_to_it() {
-    assert_eq!(crate::apps_host::artifact_switch(&[], |_| true), None);
+    assert_eq!(crate::talk_args::artifact_switch(&[], |_| true), None);
     assert_eq!(
-        crate::apps_host::artifact_switch(&[], |_| false),
-        Some(crate::apps_host::ARTIFACT_ENV)
+        crate::talk_args::artifact_switch(&[], |_| false),
+        Some(crate::talk_args::ARTIFACT_ENV)
     );
 }
 

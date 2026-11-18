@@ -1,4 +1,4 @@
-//! The command line a chat turn starts with.
+//! The command line and environment a chat turn starts with.
 //!
 //! Apart from `talk.rs` so the flags are tested rather than trusted: the CLI
 //! rejects an unknown one before doing any work, and a turn that fails on its
@@ -80,6 +80,32 @@ pub(crate) fn argv(turn: &Say<'_>) -> Vec<String> {
     }
 
     argv
+}
+
+/// Claude Code leaves its Artifact tools out of a printing session unless
+/// this is set (measured on 2.1.327), so a chat would lack what a terminal of
+/// the same account has.
+pub(crate) const ARTIFACT_ENV: (&str, &str) = ("CLAUDE_CODE_ARTIFACT", "1");
+
+/// The Artifact switch a chat's CLI is started with, unless the profile or
+/// devpit's own environment already sets it: a person's `0` stays `0`.
+pub(crate) fn artifact_switch(
+    profile: &[(String, String)],
+    inherited: impl Fn(&str) -> bool,
+) -> Option<(&'static str, &'static str)> {
+    let (key, _) = ARTIFACT_ENV;
+    let set = profile.iter().any(|(name, _)| name == key) || inherited(key);
+    (!set).then_some(ARTIFACT_ENV)
+}
+
+/// What a chat's CLI is started with on top of its profile: MCP Apps, and
+/// the Artifact tools unless something already sets that switch.
+pub(crate) fn chat_switches(
+    profile: &[(String, String)],
+) -> impl Iterator<Item = (&'static str, &'static str)> {
+    std::iter::once(crate::apps_host::APPS_HOST_ENV).chain(artifact_switch(profile, |key| {
+        std::env::var_os(key).is_some()
+    }))
 }
 
 #[cfg(test)]

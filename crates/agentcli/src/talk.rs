@@ -94,7 +94,7 @@ pub fn say(
         .args(&argv)
         .current_dir(turn.cwd)
         .envs(turn.env.iter().map(|(key, value)| (key, value)))
-        .envs(crate::apps_host::chat_switches(turn.env))
+        .envs(crate::talk_args::chat_switches(turn.env))
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
