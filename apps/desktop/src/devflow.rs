@@ -103,6 +103,9 @@ pub(crate) fn respond_from(
     let store = crate::projects::store().map_err(|err| err.message)?;
     let root = Path::new(&project.root_path);
     let state = looked(app, &store, project, root);
+    if let Some(app) = app.filter(|_| is_on_with(&store, project, &state)) {
+        crate::devflow_host::tend(app);
+    }
     match method {
         "devflow_offer" => Ok(offer(&store, project, root, &state)),
         "devflow_status" => Ok(status(&store, project, root, &state)),
@@ -120,7 +123,8 @@ pub(crate) fn respond_from(
         }
         "devflow_skill" => {
             on_demand_here(&store, project, &state)?;
-            crate::devflow_skills::respond(method, root, &[], params)
+            let by_devflow = |asked| hosted(&store, project, root, "skills/get", asked);
+            crate::devflow_skills::respond(method, root, &[], params, &by_devflow)
         }
         "devflow_review" if params.get("card").is_none_or(Value::is_null) => {
             on_demand_here(&store, project, &state)?;
@@ -142,6 +146,7 @@ pub(crate) fn respond_from(
             root,
             &stages_on(&store, project, &state)?,
             params,
+            &|_| None,
         ),
         _ => match (stage_of(method), &state) {
             (Some(stages), State::Valid(_, config))
@@ -231,6 +236,18 @@ pub(crate) fn is_on(project_id: &str, root: &Path) -> bool {
     )
 }
 
+/// [`is_on`], from a file already read.
+fn is_on_with(store: &Store, project: &Project, state: &State) -> bool {
+    matches!(
+        offered(
+            globally_on(store),
+            state,
+            made(store, &project.id, Ask::Enable)
+        ),
+        Offered::Active(_)
+    )
+}
+
 /// The stages switched on, when Devflow is on here: nowhere else are its
 /// skills given, whatever the MCP server last listed.
 pub(crate) fn stages_on(
@@ -309,15 +326,70 @@ fn offer(store: &Store, project: &Project, root: &Path, state: &State) -> Value 
     })
 }
 
-/// The targets an attack may reach: those devflow.yaml lists that the person
-/// confirmed. devpit takes no such confirmation, so none is in force.
-pub(crate) fn targets_in_force(config: &devflow_engine::Config) -> Vec<String> {
-    devflow_engine::security::in_force(
-        &config.security.targets,
-        &[],
-        &devflow_engine::security::resolved_here,
+/// What one `devflow host` call is given, for the file and the status.
+const HOST_WAITS: std::time::Duration = std::time::Duration::from_secs(30);
+
+/// What devpit tells devflow at `initialize`: itself, the project, its words
+/// and the person's switches here.
+pub(crate) fn host_init(store: &Store, project: &Project, root: &Path) -> Value {
+    json!({
+        "protocol": crate::devflow_host::PROTOCOL,
+        "host": { "name": "devpit", "version": env!("CARGO_PKG_VERSION") },
+        "root": root,
+        "dialect": crate::devflow_dialect::host_words(),
+        "consent": {
+            "enabled": made(store, &project.id, Ask::Enable),
+            "enforce": made(store, &project.id, Ask::Enforce),
+        },
+        "runs": crate::projects::project_home(&project.id)
+            .ok()
+            .map(|home| home.devflow_runs()),
+        "personal": {
+            "skills": crate::devflow_skills::personal().ok(),
+            "reviewers": devpit_core::Store::root()
+                .ok()
+                .map(|home| devpit_core::home::devflow_reviewers(&home)),
+        },
+    })
+}
+
+/// No request of devflow's is answered for the file or the status.
+fn none_asked(method: &str, _: Value) -> Result<Value, String> {
+    Err(format!("devpit does not answer {method} here"))
+}
+
+/// devflow's answer to `method` for `project`, when the devflow here serves it.
+pub(crate) fn hosted(
+    store: &Store,
+    project: &Project,
+    root: &Path,
+    method: &str,
+    params: Value,
+) -> Option<Result<Value, crate::devflow_host::Failed>> {
+    crate::devflow_host::asked_of(
+        root,
+        host_init(store, project, root),
+        method,
+        params,
+        &none_asked,
+        HOST_WAITS,
     )
-    .0
+}
+
+/// The targets an attack may reach: those devflow.yaml lists that the person
+/// confirmed on a terminal, as devflow reads them. With no devflow to ask,
+/// none is in force.
+pub(crate) fn targets_in_force(store: &Store, project: &Project, root: &Path) -> Vec<String> {
+    match hosted(store, project, root, "config/read", json!({})) {
+        Some(Ok(read)) => read["security"]["targets_in_force"]
+            .as_array()
+            .map_or(&[][..], Vec::as_slice)
+            .iter()
+            .filter_map(Value::as_str)
+            .map(str::to_owned)
+            .collect(),
+        _ => Vec::new(),
+    }
 }
 
 /// The fields a newer devpit wrote, left out here rather than refused.
@@ -577,6 +649,29 @@ pub(crate) fn set_of(
     state: &State,
     params: &Value,
 ) -> Result<Value, String> {
+    let by_devflow = |path: &str, value: &Value| {
+        let changes = json!({ "changes": [{ "path": path, "value": value }] });
+        hosted(store, project, root, "config/write", changes)
+    };
+    set_with(app, store, project, root, state, params, &by_devflow)
+}
+
+/// Writes devflow.yaml in place, comments and fields this devpit does not
+/// read kept, when devflow here serves `config/write`: `None` when it does not.
+pub(crate) type WrittenBy<'a> =
+    &'a dyn Fn(&str, &Value) -> Option<Result<Value, crate::devflow_host::Failed>>;
+
+/// [`set_of`], the file written by `written_by` when it can, else laid out
+/// again here.
+pub(crate) fn set_with(
+    app: Option<&AppHandle>,
+    store: &Store,
+    project: &Project,
+    root: &Path,
+    state: &State,
+    params: &Value,
+    written_by: WrittenBy,
+) -> Result<Value, String> {
     let path = params
         .get("path")
         .and_then(Value::as_str)
@@ -594,10 +689,21 @@ pub(crate) fn set_of(
     };
     let written = apply && !proposal.changes.is_empty();
     let planned = setup::with_unused_in(&DEVPIT, root, &proposal.config, proposal.files.clone());
-    let files = if written {
-        setup::write(root, &planned)?
-    } else {
-        setup::preview(root, &planned)
+    // A refusal of devflow's leaves the file as it was: laid out here instead.
+    let in_place = written && matches!(written_by(path, value), Some(Ok(_)));
+    let files = match (written, in_place) {
+        (true, true) => {
+            let yaml = file();
+            let rest: Vec<_> = planned.into_iter().filter(|one| one.path != yaml).collect();
+            let mut done = vec![setup::FileChange {
+                path: yaml,
+                change: "replace",
+            }];
+            done.extend(setup::write(root, &rest)?);
+            done
+        }
+        (true, false) => setup::write(root, &planned)?,
+        (false, _) => setup::preview(root, &planned),
     };
     if written {
         if !proposal.config.enabled && made(store, &project.id, Ask::Enable) {
@@ -634,8 +740,12 @@ pub(crate) fn set_of(
         "before": before,
         "after": preset::value_at(&proposal.config.to_json(), path),
         "changes": proposal.changes,
-        "yaml": proposal.yaml,
-        "laid_out": proposal.laid_out,
+        "yaml": if in_place {
+            std::fs::read_to_string(root.join(file())).unwrap_or(proposal.yaml)
+        } else {
+            proposal.yaml
+        },
+        "laid_out": proposal.laid_out && !in_place,
         "files": files,
         "asks": proposal.asks,
         "waiting_for_click": waiting,

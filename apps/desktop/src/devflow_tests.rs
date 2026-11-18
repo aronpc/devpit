@@ -186,7 +186,8 @@ fn a_setup_writes_only_when_applied_and_leaves_switching_on_to_the_click() {
         json!({ "path": "review.block_on", "value": ["critical"], "apply": true }),
     );
     assert_eq!(changed["applied"], true);
-    assert!(text().contains("block_on: [critical]"), "{}", text());
+    let read = parse(&text()).expect("valid");
+    assert_eq!(read.review.block_on.len(), 1, "{}", text());
 
     // A check taken out leaves its script: the next preview says it goes.
     let script = dir.path().join(".devpit/devflow/scripts/check-unit.sh");
@@ -401,21 +402,155 @@ fn an_applied_setup_says_what_it_wrote() {
 }
 
 #[test]
-fn no_target_is_in_force_until_the_person_confirms_one() {
-    let config = parse(
+fn no_target_is_in_force_without_a_devflow_to_say_the_persons() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    std::fs::create_dir_all(dir.path().join(".devpit/devflow")).expect("folder");
+    std::fs::write(
+        dir.path().join(FILE),
         "version: 1\nsecurity:\n  targets: [\"http://localhost:8080\", \"http://127.0.0.1:9\"]\n",
     )
-    .expect("valid");
-    assert!(targets_in_force(&config).is_empty());
+    .expect("devflow.yaml");
+    let here = project("prj_devflow_targets", dir.path());
+    let store = crate::projects::store().expect("store");
+    let targets = targets_in_force(&store, &here, dir.path());
+    assert!(targets.is_empty());
     let mut env = vec![(
         "DEVFLOW_SECURITY_TARGETS".to_owned(),
         "http://inherited".to_owned(),
     )];
-    devflow_engine::security::with_targets(&mut env, &targets_in_force(&config));
+    devflow_engine::security::with_targets(&mut env, &targets);
     assert!(
         env.iter()
             .filter(|(name, _)| name.ends_with("_SECURITY_TARGETS"))
             .all(|(_, value)| value.is_empty()),
         "an inherited target never reaches a check: {env:?}"
     );
+}
+
+const IN_PLACE: &str =
+    "version: 1\n# the person's note\nreview:\n  consolidate: none\n  quorum: 2\n";
+
+fn set_here(dir: &Path, written_by: WrittenBy) -> (Value, String) {
+    std::fs::create_dir_all(dir.join(".devpit/devflow")).expect("folder");
+    std::fs::write(
+        dir.join(FILE),
+        "version: 1\n# the person's note\nreview:\n  consolidate: jev\n  quorum: 2\n",
+    )
+    .expect("devflow.yaml");
+    let here = project("prj_devflow_in_place", dir);
+    let store = crate::projects::store().expect("store");
+    let state = read(dir);
+    let answer = set_with(
+        None,
+        &store,
+        &here,
+        dir,
+        &state,
+        &json!({ "path": "review.consolidate", "value": "none", "apply": true }),
+        written_by,
+    )
+    .expect("set");
+    let text = std::fs::read_to_string(dir.join(FILE)).expect("yaml");
+    (answer, text)
+}
+
+#[test]
+fn a_change_devflow_makes_in_place_keeps_the_file_as_devflow_left_it() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let root = dir.path().to_path_buf();
+    let asked = std::cell::RefCell::new(Vec::new());
+    let by_devflow = |path: &str, value: &Value| {
+        asked.borrow_mut().push((path.to_owned(), value.clone()));
+        std::fs::write(root.join(FILE), IN_PLACE).expect("devflow's edit");
+        Some(Ok(json!({ "changed": true })))
+    };
+    let (answer, text) = set_here(dir.path(), &by_devflow);
+    assert_eq!(
+        *asked.borrow(),
+        [("review.consolidate".to_owned(), json!("none"))]
+    );
+    assert_eq!(
+        text, IN_PLACE,
+        "the file is devflow's edit, not laid out again"
+    );
+    assert_eq!(answer["applied"], true);
+    assert_eq!(answer["laid_out"], false);
+    assert_eq!(answer["yaml"], IN_PLACE);
+    assert_eq!(answer["files"][0]["change"], "replace");
+}
+
+#[test]
+fn a_change_devflow_refuses_or_cannot_make_is_written_here_as_before() {
+    let refused = |_: &str, _: &Value| {
+        Some(Err(crate::devflow_host::Failed {
+            message: "cannot be edited in place".to_owned(),
+            data: None,
+            code: Some(-32000),
+        }))
+    };
+    let absent = |_: &str, _: &Value| None;
+    for written_by in [&refused as WrittenBy, &absent] {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let (answer, text) = set_here(dir.path(), written_by);
+        assert_eq!(answer["applied"], true);
+        let read = parse(&text).expect("valid");
+        assert_eq!(
+            serde_json::to_value(read.review.consolidate).expect("word"),
+            json!("none"),
+            "{text}"
+        );
+    }
+}
+
+/// devpit's own calls against a real devflow, run on demand:
+/// `DEVPIT_TEST_DEVFLOW=<its path> cargo test -p devpit-desktop -- --ignored the_installed_devflow`.
+#[test]
+#[ignore = "needs a devflow 0.5.0 or later at DEVPIT_TEST_DEVFLOW"]
+fn the_installed_devflow_edits_in_place_holds_no_target_and_serves_skills_in_devpits_words() {
+    let Some(bin) = std::env::var_os("DEVPIT_TEST_DEVFLOW") else {
+        return;
+    };
+    crate::devflow_host::TEST_DEVFLOW.with(|chosen| *chosen.borrow_mut() = Some(bin.into()));
+    let dir = tempfile::tempdir().expect("tempdir");
+    std::fs::create_dir_all(dir.path().join(".devpit/devflow")).expect("folder");
+    std::fs::write(
+        dir.path().join(FILE),
+        "version: 1\n# the person's note\nreview:\n  consolidate: jev\n  future_field: 3\n\
+         security:\n  targets: [\"http://localhost:8080\"]\n",
+    )
+    .expect("devflow.yaml");
+    let here = project("prj_devflow_installed", dir.path());
+    let store = crate::projects::store().expect("store");
+    let answer = set_of(
+        None,
+        &store,
+        &here,
+        dir.path(),
+        &read(dir.path()),
+        &json!({ "path": "review.block_on", "value": ["critical"], "apply": true }),
+    )
+    .expect("set");
+    let text = std::fs::read_to_string(dir.path().join(FILE)).expect("yaml");
+    assert_eq!(answer["laid_out"], false, "{answer}");
+    assert!(text.contains("# the person's note"), "{text}");
+    assert!(text.contains("future_field: 3"), "{text}");
+    assert_eq!(parse(&text).expect("valid").review.block_on.len(), 1);
+    assert!(targets_in_force(&store, &here, dir.path()).is_empty());
+    let read = hosted(&store, &here, dir.path(), "config/read", json!({}))
+        .expect("served")
+        .expect("read");
+    assert_eq!(read["state"], "valid", "{read}");
+
+    let by_devflow = |asked| hosted(&store, &here, dir.path(), "skills/get", asked);
+    let plan = crate::devflow_skills::respond(
+        "devflow_skill",
+        dir.path(),
+        &[],
+        &json!({ "name": "devflow-plan" }),
+        &by_devflow,
+    )
+    .expect("the plan skill");
+    let text = plan["text"].as_str().expect("text");
+    assert!(text.contains("`devpit_devflow_plan`"), "{text}");
+    assert_eq!(plan["skill"]["frontmatter"]["name"], "devflow-plan");
 }

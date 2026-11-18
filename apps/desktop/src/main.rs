@@ -121,6 +121,7 @@ mod devflow_codex;
 mod devflow_dialect;
 mod devflow_evidence;
 mod devflow_gate;
+mod devflow_host;
 mod devflow_jev;
 mod devflow_launch;
 mod devflow_mcp;

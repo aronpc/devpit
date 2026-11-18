@@ -136,9 +136,10 @@ pub(crate) fn respond_with(
     profile: Option<&Declared>,
 ) -> Result<Value, String> {
     let asked = review::asked_in(&crate::devflow_dialect::DEVPIT, params)?;
-    // devflow.yaml may list a target; a PoC reaches only one the person confirmed.
-    devflow_engine::security::refused(&asked.verified, &crate::devflow::targets_in_force(config))?;
     let store = crate::projects::store().map_err(|err| err.message)?;
+    // devflow.yaml may list a target; a PoC reaches only one the person confirmed.
+    let targets = crate::devflow::targets_in_force(&store, project, Path::new(&project.root_path));
+    devflow_engine::security::refused(&asked.verified, &targets)?;
     let card = card_here(&store, project, &asked.card)?;
     let root = checkout(project, cwd);
     let runs = runs_of(&project.id, &root)?;
@@ -174,7 +175,7 @@ pub(crate) fn respond_with(
     .for_a_command()
     .environment();
     env.extend(crate::devflow_profile::env_of(profile));
-    devflow_engine::security::with_targets(&mut env, &crate::devflow::targets_in_force(config));
+    devflow_engine::security::with_targets(&mut env, &targets);
     let secrets = crate::kept_out::what_devpit_gave(&store);
     let redact = |text: &str| crate::kept_out::kept_out(text, &secrets);
     let evidence = crate::devflow_gate::newest(&runs, &card.id, "evidence.json");

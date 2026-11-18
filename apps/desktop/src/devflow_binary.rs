@@ -1,7 +1,8 @@
-//! The standalone devflow binary, for the person's other tools: downloaded
-//! from its GitHub release and checked against the release's checksums.txt,
-//! as its own install.sh does, into `~/.local/bin`. devpit's Devflow does not use it,
-//! and registering it with the agent CLIs is left to `devflow register`.
+//! The devflow binary: downloaded from its GitHub release and checked against
+//! the release's checksums.txt, as its own install.sh does, into
+//! `~/.local/bin`. devpit's Devflow hands it the calls it serves
+//! (`devflow_host`); registering it with the agent CLIs is left to
+//! `devflow register`.
 
 use std::path::{Path, PathBuf};
 use std::time::Duration;
@@ -12,7 +13,7 @@ use sha2::{Digest, Sha256};
 
 use crate::devflow_plugin::KNOWN;
 
-const RELEASES: &str = "https://github.com/jholhewres/devflow/releases/download";
+pub(crate) const RELEASES: &str = "https://github.com/jholhewres/devflow/releases/download";
 
 /// Far above the 0.2.1 archives (about 3 MB) and their checksums.
 const MOST_ARCHIVE: u64 = 64 * 1024 * 1024;

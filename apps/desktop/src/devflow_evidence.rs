@@ -58,7 +58,7 @@ pub(crate) fn respond(
     );
     devflow_engine::security::with_targets(
         &mut context.shared,
-        &crate::devflow::targets_in_force(config),
+        &crate::devflow::targets_in_force(&store, project, Path::new(&project.root_path)),
     );
     let secrets = crate::kept_out::what_devpit_gave(&store);
     let redact = |text: &str| crate::kept_out::kept_out(text, &secrets);

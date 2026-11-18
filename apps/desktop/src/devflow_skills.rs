@@ -7,48 +7,29 @@
 use std::path::{Path, PathBuf};
 
 use devflow_engine::layers::Team;
-use devflow_engine::skills::{self, Skill};
+use devflow_engine::skills::{self, Layer, Skill};
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 
-/// devpit's text of each part `devpit_agentapi::skills::PARTS` names, beside
-/// its skill's SKILL.md.
-const PARTS: [(&str, &str, &str); 5] = [
-    (
-        "devflow-review",
-        "verify",
-        include_str!("../../../flow/skills/devflow-review/verify.md"),
-    ),
-    (
-        "devflow-review",
-        "without-card",
-        include_str!("../../../flow/skills/devflow-review/without-card.md"),
-    ),
-    (
-        "devflow-review",
-        "retro",
-        include_str!("../../../flow/skills/devflow-review/retro.md"),
-    ),
-    (
-        "devflow-review",
-        "publish",
-        include_str!("../../../flow/skills/devflow-review/publish.md"),
-    ),
-    (
-        "devflow-review",
-        "by-hand",
-        include_str!("../../../flow/skills/devflow-review/by-hand.md"),
-    ),
-];
+/// Each part `devpit_agentapi::skills::PARTS` names, beside its skill's
+/// SKILL.md: devflow's, in devpit's words.
+fn parts() -> &'static [(&'static str, &'static str, &'static str)] {
+    crate::devflow_dialect::DEVPIT.assets.parts
+}
 
 /// The most of a layer's part read.
 const LONGEST_PART: u64 = 64 * 1024;
+
+/// devflow's `skills/get` for these params, when the devflow here serves it.
+pub(crate) type Asking<'a> =
+    &'a dyn Fn(Value) -> Option<Result<Value, crate::devflow_host::Failed>>;
 
 pub(crate) fn respond(
     method: &str,
     root: &Path,
     stages: &[&str],
     params: &Value,
+    by_devflow: Asking,
 ) -> Result<Value, String> {
     let personal = personal()?;
     // A team layer that applies replaces a built-in skill by its name too.
@@ -57,7 +38,7 @@ pub(crate) fn respond(
         .unwrap_or_default();
     match method {
         "devflow_skills" => Ok(listed(root, &personal, &teams, stages)),
-        _ => one(root, &personal, &teams, params),
+        _ => one(root, &personal, &teams, params, by_devflow),
     }
 }
 
@@ -84,7 +65,13 @@ fn listed(root: &Path, personal: &Path, teams: &[Team], stages: &[&str]) -> Valu
 /// One skill, by `name` or `uri`, with its text: any stage's, asked by
 /// name, so a stage can be run on demand where devflow.yaml leaves it off.
 /// With `part`, or a part's URI, that part of it instead.
-fn one(root: &Path, personal: &Path, teams: &[Team], params: &Value) -> Result<Value, String> {
+fn one(
+    root: &Path,
+    personal: &Path,
+    teams: &[Team],
+    params: &Value,
+    by_devflow: Asking,
+) -> Result<Value, String> {
     let asked = ["name", "uri"]
         .iter()
         .find_map(|key| params.get(key).and_then(Value::as_str))
@@ -99,6 +86,19 @@ fn one(root: &Path, personal: &Path, teams: &[Team], params: &Value) -> Result<V
             skills::names().collect::<Vec<_>>().join(", ")
         )
     })?;
+    // devflow resolves the layers it knows; a team layer devpit fetched is
+    // devpit's to read.
+    if teams.is_empty() {
+        let mut asked = json!({ "name": name });
+        if let Some(part) = part {
+            asked["part"] = json!(part);
+        }
+        if let Some(said) = by_devflow(asked).and_then(Result::ok) {
+            if let Some(answer) = from_devflow(&said, part) {
+                return Ok(answer);
+            }
+        }
+    }
     let skill =
         skills::resolve_with_in(&crate::devflow_dialect::DEVPIT, root, personal, teams, name)?;
     if let Some(part) = part {
@@ -109,11 +109,58 @@ fn one(root: &Path, personal: &Path, teams: &[Team], params: &Value) -> Result<V
     Ok(said)
 }
 
+/// The layer devflow names by its word.
+fn layer_of(word: &str) -> Option<Layer> {
+    [Layer::Project, Layer::Team, Layer::Personal, Layer::BuiltIn]
+        .into_iter()
+        .find(|layer| layer.word() == word)
+}
+
+/// devflow's answer to `skills/get` as devpit answers a skill or a part;
+/// `None` when it says too little, from a devflow before frontmatter.
+fn from_devflow(said: &Value, part: Option<&str>) -> Option<Value> {
+    let name = skills::named(said["name"].as_str()?)?;
+    let text = said["text"].as_str()?.to_owned();
+    let layer = layer_of(said["source"]["layer"].as_str()?)?;
+    let file = said["source"]["file"].as_str();
+    let stage = crate::devflow_dialect::DEVPIT
+        .assets
+        .skills
+        .iter()
+        .find(|(one, ..)| *one == name)
+        .and_then(|(_, stage, _)| *stage);
+    if let Some(part) = part {
+        return Some(json!({
+            "name": name,
+            "part": part,
+            "stage": stage,
+            "layer": layer.word(),
+            "file": file,
+            "skill": { "resources": [resource(name, part, &text)] },
+            "text": text,
+        }));
+    }
+    let skill = Skill {
+        name,
+        stage,
+        layer,
+        file: file.map(PathBuf::from),
+        frontmatter: said
+            .get("frontmatter")
+            .filter(|one| one.is_object())?
+            .clone(),
+        text,
+    };
+    let mut answer = entry(&skill);
+    answer["text"] = json!(skill.text);
+    Some(answer)
+}
+
 /// The skill's JSON, its entry listing its parts after its SKILL.md.
 fn entry(skill: &Skill) -> Value {
     let mut said = skill.to_json();
     if let Some(resources) = said["skill"]["resources"].as_array_mut() {
-        for (_, part, text) in PARTS.iter().filter(|(of, ..)| *of == skill.name) {
+        for (_, part, text) in parts().iter().filter(|(of, ..)| *of == skill.name) {
             resources.push(resource(skill.name, part, text));
         }
     }
@@ -132,16 +179,18 @@ fn resource(name: &str, part: &str, text: &str) -> Value {
 fn part_uri(uri: &str) -> Option<(&str, &str)> {
     let (name, file) = uri.strip_prefix("skill://devflow/")?.split_once('/')?;
     let part = file.strip_suffix(".md")?;
-    PARTS
+    parts()
         .iter()
         .any(|(of, one, _)| *of == name && *one == part)
         .then_some((name, part))
 }
 
-/// A part of `skill`: the layer's own beside its SKILL.md, else devpit's.
+/// A part of `skill`: the layer's own beside its SKILL.md, else devflow's.
 fn part_of(skill: &Skill, part: &str) -> Result<Value, String> {
-    let ours: Vec<&(&str, &str, &str)> =
-        PARTS.iter().filter(|(of, ..)| *of == skill.name).collect();
+    let ours: Vec<&(&str, &str, &str)> = parts()
+        .iter()
+        .filter(|(of, ..)| *of == skill.name)
+        .collect();
     if ours.is_empty() {
         return Err(format!(
             "{} has no parts: ask for it without `part`",

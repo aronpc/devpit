@@ -56,7 +56,8 @@ pub(crate) fn respond(
     let (passed, said, decisions) = match gate {
         StageGate::Command(command) => {
             confirmed(app, store, project, layered.as_ref(), step, command)?;
-            let targets = crate::devflow::targets_in_force(config);
+            let targets =
+                crate::devflow::targets_in_force(store, project, Path::new(&project.root_path));
             let (passed, said) = ran(command, &checkout, project, &card, name, &targets);
             (passed, said, None)
         }

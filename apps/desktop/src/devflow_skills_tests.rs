@@ -12,7 +12,7 @@ fn project(id: &str, root: &Path) -> Project {
     .expect("a project")
 }
 
-/// The MCP server cannot read flow/skills/, so it names the skills itself.
+/// The MCP server cannot read the engine's skills, so it names them itself.
 #[test]
 fn the_skill_tool_offers_exactly_the_skills_devpit_ships() {
     assert_eq!(
@@ -21,7 +21,10 @@ fn the_skill_tool_offers_exactly_the_skills_devpit_ships() {
     );
     assert_eq!(
         devpit_agentapi::skills::PARTS.to_vec(),
-        PARTS.map(|(name, part, _)| (name, part)).to_vec()
+        parts()
+            .iter()
+            .map(|(name, part, _)| (*name, *part))
+            .collect::<Vec<_>>()
     );
 }
 
@@ -88,24 +91,17 @@ fn an_active_project_gets_its_skills_its_own_layer_first() {
     assert_eq!(off["name"], "devflow-context");
 }
 
-/// The review skill's size before its on-demand parts left it.
-const REVIEW_WHOLE: usize = 14_694;
+/// The parts of the review skill a card's session does not need, by name.
+const REVIEW_PARTS: [&str; 5] = ["verify", "without-card", "retro", "publish", "by-hand"];
 
-/// Each part of the review skill a card's session does not need, by name,
-/// with the heading it opens with.
-const REVIEW_PARTS: [(&str, &str); 5] = [
-    ("verify", "# Devflow review: verify the criticals and highs"),
-    ("without-card", "# Devflow review: without a card"),
-    (
-        "retro",
-        "# Devflow review: retro, code already in production",
-    ),
-    ("publish", "# Devflow review: publish on the pull request"),
-    (
-        "by-hand",
-        "# Devflow review: by hand, without devpit's tool",
-    ),
-];
+/// A part's text as devpit ships it.
+fn built_in(part: &str) -> &'static str {
+    parts()
+        .iter()
+        .find(|(skill, one, _)| *skill == "devflow-review" && *one == part)
+        .map(|(.., text)| *text)
+        .expect("a part devpit ships")
+}
 
 /// A project whose devflow.yaml says enabled, in a fresh folder.
 fn enabled_in(id: &str) -> (tempfile::TempDir, Project) {
@@ -121,7 +117,7 @@ fn enabled_in(id: &str) -> (tempfile::TempDir, Project) {
 }
 
 #[test]
-fn the_review_skill_served_per_card_is_a_third_shorter_and_its_parts_are_served_on_demand() {
+fn the_review_skills_parts_are_served_on_demand() {
     let (dir, here) = enabled_in("prj_devflow_review_parts");
     let ask = |method: &str, params: Value| {
         crate::devflow::respond_from(None, method, &here, dir.path(), None, &params)
@@ -129,11 +125,6 @@ fn the_review_skill_served_per_card_is_a_third_shorter_and_its_parts_are_served_
 
     let core = ask("devflow_skill", json!({ "name": "devflow-review" })).expect("the skill");
     let text = core["text"].as_str().expect("text");
-    assert!(
-        text.len() * 3 <= REVIEW_WHOLE * 2,
-        "{} chars, more than two thirds of {REVIEW_WHOLE}",
-        text.len()
-    );
     let listed: Vec<&str> = core["skill"]["resources"]
         .as_array()
         .expect("resources")
@@ -141,7 +132,7 @@ fn the_review_skill_served_per_card_is_a_third_shorter_and_its_parts_are_served_
         .filter_map(|one| one["uri"].as_str())
         .collect();
 
-    for (part, heading) in REVIEW_PARTS {
+    for part in REVIEW_PARTS {
         assert!(
             text.contains(&format!("\"part\": \"{part}\"")),
             "the skill points to {part}"
@@ -155,10 +146,7 @@ fn the_review_skill_served_per_card_is_a_third_shorter_and_its_parts_are_served_
         .expect("by name");
         assert_eq!(by_name["part"], part);
         assert_eq!(by_name["layer"], "built-in");
-        assert!(
-            by_name["text"].as_str().expect("text").starts_with(heading),
-            "{part}"
-        );
+        assert_eq!(by_name["text"], built_in(part), "{part}");
         let by_uri = ask("devflow_skill", json!({ "uri": uri })).expect("by uri");
         assert_eq!(by_uri["text"], by_name["text"]);
     }
@@ -196,32 +184,87 @@ fn a_projects_own_review_skill_serves_its_own_parts_first() {
     assert_eq!(retro["text"], "Our retro.\n");
     let publish = ask(json!({ "name": "devflow-review", "part": "publish" })).expect("devpit's");
     assert_eq!(publish["layer"], "built-in");
-    assert!(publish["text"]
-        .as_str()
-        .expect("text")
-        .starts_with(REVIEW_PARTS[3].1));
+    assert_eq!(publish["text"], built_in("publish"));
 }
 
-/// An approval ends the review loop, and a blocking finding that repeats goes
-/// to the person: both ride in the review skill every card is served.
+/// A skill devflow serves: its text, its layer and its frontmatter, in the
+/// shape devpit's tool answers.
+fn served(text: &str, frontmatter: Option<Value>) -> Value {
+    let mut said = json!({
+        "name": "devflow-plan", "stage": "plan", "text": text,
+        "sha256": "x", "source": { "layer": "built-in", "file": null },
+    });
+    if let Some(frontmatter) = frontmatter {
+        said["frontmatter"] = frontmatter;
+    }
+    said
+}
+
 #[test]
-fn the_review_skill_closes_on_an_approval_and_asks_about_a_repeated_blocker() {
-    let (dir, here) = enabled_in("prj_devflow_review_closes");
-    let served = crate::devflow::respond_from(
-        None,
-        "devflow_skill",
-        &here,
+fn a_skills_text_is_the_installed_devflows_when_it_serves_it() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let personal = dir.path().join("personal");
+    let newer = "---\nname: devflow-plan\ndescription: Newer.\n---\n\nA newer plan.\n";
+    let asked = std::cell::RefCell::new(Vec::new());
+    let by_devflow = |params: Value| {
+        asked.borrow_mut().push(params);
+        let frontmatter = json!({ "name": "devflow-plan", "description": "Newer." });
+        Some(Ok(served(newer, Some(frontmatter))))
+    };
+    let said = one(
         dir.path(),
-        None,
-        &json!({ "name": "devflow-review" }),
+        &personal,
+        &[],
+        &json!({ "name": "devflow-plan" }),
+        &by_devflow,
     )
-    .expect("the skill");
-    let text = served["text"].as_str().expect("text");
-    for rule in [
-        "**An approval closes the review.** Findings below `review.block_on` are not\nfixed in this card: they go under `Left` in the handoff",
-        "**A blocking finding that comes back is a design question.**",
-        "do not patch it a third time",
-    ] {
-        assert!(text.contains(rule), "the review skill says: {rule}");
+    .expect("served");
+    assert_eq!(*asked.borrow(), [json!({ "name": "devflow-plan" })]);
+    assert_eq!(said["text"], newer);
+    assert_eq!(said["layer"], "built-in");
+    assert_eq!(said["stage"], "plan");
+    assert_eq!(said["skill"]["frontmatter"]["description"], "Newer.");
+
+    let part = one(
+        dir.path(),
+        &personal,
+        &[],
+        &json!({ "name": "devflow-review", "part": "retro" }),
+        &|params: Value| {
+            assert_eq!(params, json!({ "name": "devflow-review", "part": "retro" }));
+            Some(Ok(json!({
+                "name": "devflow-review", "part": "retro", "text": "Newer retro.\n",
+                "source": { "layer": "built-in", "file": null },
+            })))
+        },
+    )
+    .expect("a part");
+    assert_eq!(part["text"], "Newer retro.\n");
+    assert_eq!(part["part"], "retro");
+}
+
+#[test]
+fn a_devflow_that_says_no_frontmatter_or_none_at_all_leaves_the_skill_to_devpit() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let personal = dir.path().join("personal");
+    let old = |_: Value| Some(Ok(served("old text\n", None)));
+    let absent = |_: Value| None;
+    for by_devflow in [&old as Asking, &absent] {
+        let said = one(
+            dir.path(),
+            &personal,
+            &[],
+            &json!({ "name": "devflow-plan" }),
+            by_devflow,
+        )
+        .expect("devpit's");
+        let built_in = crate::devflow_dialect::DEVPIT
+            .assets
+            .skills
+            .iter()
+            .find(|(name, ..)| *name == "devflow-plan")
+            .map(|(.., text)| *text)
+            .expect("plan");
+        assert_eq!(said["text"], built_in);
     }
 }

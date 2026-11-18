@@ -184,12 +184,37 @@ no copy, only that the person clicked.
 
 The rules are [devflow](https://github.com/jholhewres/devflow)'s engine,
 `devflow-engine`, the same one devflow's own MCP server runs. devpit passes
-it its words and its `flow/` (`devflow_dialect.rs`: a card where the engine
-says item, the `devpit_devflow_*` tools, `DEVPIT_*` variables), pins every
+it its words (`devflow_dialect.rs`: a card where the engine says item, the
+`devpit_devflow_*` tools, `DEVPIT_*` variables). The flow's texts (skills,
+personas, rubrics, schema) are devflow's own, said in the words devflow ships
+for devpit; devpit keeps none of them. devpit pins every
 project's folder to `.devpit/devflow/`, and keeps cards on its board as the
 engine's work items (`devflow_work.rs`). The board, the clicks, the gate on
 `devpit_finish_card`, the Stop hook, the autopilot, runs attached to cards,
 Jev's decision log and the Devflow screen stay devpit's.
+
+devflow is moving out of devpit's build, one method at a time, behind a
+process boundary (`devflow_host.rs`). devpit runs `devflow host --root <dir>`
+once per call: JSON-RPC 2.0, one line each way on stdio, protocol 1.
+`initialize` carries `dialect: {host: "devpit"}`, devpit's folders for runs
+and the person's own skills, and the person's switches, and devflow
+asks back for what only devpit has. A method devflow serves goes there, and
+one it does not serve yet stays on the linked engine.
+- **Lookup order:** `DEVPIT_DEVFLOW`, then `~/.local/bin/devflow`, then the
+  login PATH. A devflow is used only if it answers `version --json` with
+  0.5.0 or later and protocol 1.
+- **Install and update:** with Devflow on and no usable devflow, devpit
+  installs the release itself, checksummed as the Install button does. With
+  one present, devpit runs `devflow update` at most once a day. Both ring the
+  bell.
+- **Served today:**
+  - `config/write` edits devflow.yaml in place, keeping comments and unread
+    fields.
+  - `config/read` gives the security targets the person confirmed on a
+    terminal.
+  - `skills/get` gives the text of `devpit_devflow_skill`. A project with a
+    team layer is the exception: devpit fetched that layer itself, so it keeps
+    reading the text on its own side.
 
 - **Off until activated.** A project with no devflow.yaml, or one that says
   `enabled: false`, gets exactly what devpit listed before Devflow: no

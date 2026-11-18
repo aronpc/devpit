@@ -30,6 +30,8 @@ pub mod kind {
     pub const IRREVERSIBLE: &str = "irreversible";
     /// A terminal command that took a while finished while nobody looked.
     pub const COMMAND: &str = "command";
+    /// devpit installed or updated the devflow program Devflow runs on.
+    pub const DEVFLOW: &str = "devflow";
 }
 
 /// The event the window listens on so the bell updates without asking.
