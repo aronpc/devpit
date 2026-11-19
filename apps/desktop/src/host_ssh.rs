@@ -67,13 +67,6 @@ pub(crate) fn argv(host: &HostRow, sockets: &Path, remote: &[&str]) -> Vec<Strin
     argv
 }
 
-/// [`argv`] with a terminal on the host, for a window to attach through.
-pub(crate) fn argv_tty(host: &HostRow, sockets: &Path, remote: &[&str]) -> Vec<String> {
-    let mut argv = via(host, sockets, true);
-    argv.push(line(remote));
-    argv
-}
-
 /// Everything before the line: what runs one line on `host`.
 pub(crate) fn via(host: &HostRow, sockets: &Path, tty: bool) -> Vec<String> {
     let mut argv = vec!["ssh".to_owned()];

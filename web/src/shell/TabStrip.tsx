@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 
 import { AgentMark } from './AgentMark'
+import { HostBadge } from './HostBadge'
 import { paneMeta } from './paneList'
 import { Rename } from './Rename'
 import { busyIn, doingIn } from './running'
@@ -18,7 +19,7 @@ import { useKeys, useShortcut } from './useShortcut'
  */
 export function TabStrip(): React.JSX.Element {
   const { open, active, focus, close, move, rename, renaming, setRenaming, reopen } = useShell()
-  const { running, doing, unread, openPalette, mark } = useShell()
+  const { running, doing, unread, openPalette, mark, project } = useShell()
   useShortcut('reopenTab', () => reopen())
   useShortcut('goToTab', (event) => {
     const tab = open[Number(/\d$/.exec(event.code || event.key)?.[0] ?? 0) - 1]
@@ -196,6 +197,7 @@ export function TabStrip(): React.JSX.Element {
         >
           {icon(tab)}
           <span className="tab__n">{label(tab)}</span>
+          {tab.kind === 'term' && project && <HostBadge projectId={project.id} tabId={tab.id} shape={`${tab.regrouped ?? 0}:${tab.panes?.join(',') ?? ''}`} />}
           {/* Something is running here and it is not an agent. The name stays
               the tab's own; the dot is the whole message. */}
           {busyIn(running, tab)?.agent === null && <i className="tab__dot" aria-hidden="true" />}

@@ -193,6 +193,7 @@ pub(super) fn loaded(builder: Builder<tauri::Wry>) -> Builder<tauri::Wry> {
         host_links::project_host_link,
         host_links::project_host_unlink,
         host_panes::host_terminal_open,
+        host_panes::tab_host,
         assistant::assistant_mode,
         assistant::assistant_mode_set,
         assistant_watch::assistant_heartbeat,

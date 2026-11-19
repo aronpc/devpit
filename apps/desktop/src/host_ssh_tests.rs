@@ -208,6 +208,6 @@ fn a_command_given_up_on_takes_what_it_started_with_it() {
 fn only_an_attach_asks_the_host_for_a_terminal() {
     let sockets = Path::new("/s");
 
-    assert!(argv_tty(&host(), sockets, &["tmux"]).contains(&"-t".to_owned()));
+    assert!(via(&host(), sockets, true).contains(&"-t".to_owned()));
     assert!(!argv(&host(), sockets, &["tmux"]).contains(&"-t".to_owned()));
 }

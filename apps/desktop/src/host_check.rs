@@ -123,7 +123,7 @@ fn tool_row(said: &str, tool: &str) -> HostCheckRow {
                 false => line(
                     tool,
                     false,
-                    format!("{said} is older than devpit can drive: 2.9 or later"),
+                    format!("{said} is older than devpit can drive: 2.6 or later"),
                 ),
             }
         }
@@ -131,8 +131,9 @@ fn tool_row(said: &str, tool: &str) -> HostCheckRow {
     }
 }
 
-/// Whether a `tmux -V` line names a tmux devpit can drive: 2.9 or later,
-/// whose `set-option -q` passes over an option it does not know.
+/// Whether a `tmux -V` line names a tmux devpit can drive: 2.6 or later,
+/// whose `set-option -q` passes over an option it does not know and whose
+/// `new-session -A -D` takes a session from a client left behind.
 pub(crate) fn drivable(version: &str) -> bool {
     let number: String = version
         .chars()
@@ -141,7 +142,7 @@ pub(crate) fn drivable(version: &str) -> bool {
         .collect();
     let mut parts = number.split('.').map(|one| one.parse::<u32>().unwrap_or(0));
     let (major, minor) = (parts.next().unwrap_or(0), parts.next().unwrap_or(0));
-    (major, minor) >= (2, 9)
+    (major, minor) >= (2, 6)
 }
 
 fn agent_row(said: &str) -> HostCheckRow {

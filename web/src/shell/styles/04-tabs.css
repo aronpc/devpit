@@ -29,7 +29,15 @@
 .tabs__rail::-webkit-scrollbar { display: none; }
 /* One long filename must not be allowed to take the whole strip. */
 .tab__n { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tab__host { flex: none; display: inline-flex; gap: 4px; align-items: center; max-width: 140px; padding: 0 5px; border-radius: 4px; font-size: 10.5px; color: var(--text-2); background: var(--overlay-strong); white-space: nowrap; }
+.tab__host b { flex: none; font-weight: 600; }
+.tab__hostn { min-width: 0; max-width: 96px; overflow: hidden; text-overflow: ellipsis; }
+.tab__host[data-env='production'] { color: var(--canvas); background: var(--danger); }
+.tab__host[data-down='true'] { opacity: .55; text-decoration: line-through; }
 .tab { max-width: 190px; height: 30px; padding: 0 7px 0 11px; border-radius: 7px; display: flex; align-items: center; gap: 8px; font-size: 12.5px; white-space: nowrap; flex: none; }
+/* A tab on a host carries its badge besides its name: room for both, so its
+   label and close button stay inside it. */
+.tab:has(.tab__host) { max-width: 260px; }
 /* Closed panes are not listed; what you can open lives in the sidebar. */
 .tab[aria-pressed='false'] { display: none; }
 .tab__x { width: 17px; height: 17px; margin-left: 2px; border-radius: 4px; display: flex; align-items: center; justify-content: center; }

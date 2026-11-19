@@ -158,22 +158,23 @@ fn tree(dir: &Path) -> Vec<(PathBuf, u64, Option<std::time::SystemTime>)> {
 #[test]
 fn a_tmux_too_old_to_drive_fails_its_line() {
     let host = FakeHost::new();
-    host.installs("tmux", "tmux 2.6");
+    host.installs("tmux", "tmux 2.5");
     host.installs("git", "git version 2.43.0");
 
     let check = checked(&host, PATIENCE);
 
     assert!(!row(&check, "tmux").ok, "{check:?}");
+    assert!(row(&check, "tmux").said.contains("2.5"), "{check:?}");
     assert!(row(&check, "tmux").said.contains("2.6"), "{check:?}");
-    assert!(row(&check, "tmux").said.contains("2.9"), "{check:?}");
 }
 
-/// The tmux devpit can drive, from a version line: 2.9 and later.
+/// The tmux devpit can drive, from a version line: 2.6 and later.
 #[test]
 fn which_tmux_devpit_can_drive() {
     assert!(drivable("tmux 3.4"));
     assert!(drivable("tmux 2.9a"));
+    assert!(drivable("tmux 2.6"));
     assert!(drivable("tmux next-3.5"));
-    assert!(!drivable("tmux 2.8"));
+    assert!(!drivable("tmux 2.5"));
     assert!(!drivable("tmux 1.8"));
 }

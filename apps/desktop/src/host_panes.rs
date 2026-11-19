@@ -8,7 +8,9 @@
 use std::path::PathBuf;
 
 use devpit_core::{HostRow, Store};
-use devpit_rpc::{ErrorCode, HostTerminal, LayoutNode, RpcError, SessionLayout};
+use devpit_rpc::{
+    ErrorCode, HostOfTab, HostTerminal, LayoutNode, RpcError, SessionLayout, TabHost,
+};
 
 /// What every host target starts with.
 pub(crate) const PREFIX: &str = "ssh:";
@@ -25,12 +27,13 @@ const START: &str = "cd -- \"$p\" || exit 3; s=$2; shift 2; tmux -L devpit has-s
 /// lost it.
 const ATTACH: &str = "cd -- \"$p\" 2>/dev/null || cd; shift 2; exec tmux -u -L devpit \"$@\"";
 
-/// Runs the attach in `$2…` again, `$1` seconds apart, while ssh ends with
-/// 255: the connection dropped. Any other end is the terminal's own.
+/// Runs ssh in `$4…` with the host's line `$2`, and again with `$3`, `$1`
+/// seconds apart, while ssh ends with 255: the connection dropped. Any other
+/// end is the terminal's own.
 /// While it waits, Ctrl+C and the like never end it, the wait grows to a
 /// minute while the host stays away, and what was typed meanwhile is dropped
 /// rather than typed on the host once it is back.
-const RETRY: &str = "trap '' INT QUIT TSTP; i=$1; shift; w=$i; while :; do t=$(date +%s); \"$@\"; s=$?; [ \"$s\" -eq 255 ] || exit \"$s\"; [ $(( $(date +%s) - t )) -lt 30 ] || w=$i; printf '\\r\\n[devpit] the connection to the host dropped; reconnecting in %ss\\r\\n' \"$w\"; sleep \"$w\"; o=$(stty -g 2>/dev/null) && stty -icanon min 0 time 0 2>/dev/null && cat >/dev/null; [ -n \"$o\" ] && stty \"$o\" 2>/dev/null; w=$((w * 2)); [ \"$w\" -le 60 ] || w=60; done";
+const RETRY: &str = "trap '' INT QUIT TSTP; i=$1; line=$2; again=$3; shift 3; w=$i; while :; do t=$(date +%s); \"$@\" \"$line\"; s=$?; line=$again; [ \"$s\" -eq 255 ] || exit \"$s\"; [ $(( $(date +%s) - t )) -lt 30 ] || w=$i; printf '\\r\\n[devpit] the connection to the host dropped; reconnecting in %ss\\r\\n' \"$w\"; sleep \"$w\"; o=$(stty -g 2>/dev/null) && stty -icanon min 0 time 0 2>/dev/null && cat >/dev/null; [ -n \"$o\" ] && stty \"$o\" 2>/dev/null; w=$((w * 2)); [ \"$w\" -le 60 ] || w=60; done";
 
 /// How devpit reaches hosts: the ssh it runs, and where its sockets live.
 pub(crate) struct Reach {
@@ -46,20 +49,22 @@ impl Reach {
         })
     }
 
+    /// What runs one line on `host`, with this reach's ssh.
+    fn via(&self, host: &HostRow, tty: bool) -> Vec<String> {
+        let mut via = crate::host_ssh::via(host, &self.sockets, tty);
+        via[0] = self.ssh.display().to_string();
+        via
+    }
+
     fn argv(&self, host: &HostRow, words: &[&str], tty: bool) -> Vec<String> {
-        let mut argv = match tty {
-            true => crate::host_ssh::argv_tty(host, &self.sockets, words),
-            false => crate::host_ssh::argv(host, &self.sockets, words),
-        };
-        argv[0] = self.ssh.display().to_string();
+        let mut argv = self.via(host, tty);
+        argv.push(crate::host_ssh::line(words));
         argv
     }
 
     /// The tmux server on `host`, driven over its connection.
     pub(crate) fn server(&self, host: &HostRow) -> devpit_tmux::Server {
-        let mut via = crate::host_ssh::via(host, &self.sockets, false);
-        via[0] = self.ssh.display().to_string();
-        devpit_tmux::Server::over(via)
+        devpit_tmux::Server::over(self.via(host, false))
     }
 }
 
@@ -129,14 +134,24 @@ pub(crate) fn attach_argv_after(
         devpit_tmux::remote::HOST_PATH,
         crate::host_ssh::FOLDER_IN_P
     );
-    let mut words = vec!["sh", "-c", &script, "sh", path, session];
-    words.extend(devpit_tmux::remote::quieting());
-    words.extend([";", "new-session", "-A", "-s", session]);
-    let attach = reach.argv(host, &words, true);
+    let line = |again: bool| {
+        let mut words = vec!["sh", "-c", &script, "sh", path, session];
+        words.extend(devpit_tmux::remote::quieting());
+        words.extend([";", "new-session", "-A"]);
+        // After a drop, `-D`: the client it left there lets go of the window,
+        // which it would keep at its own size. The person's own stay, first.
+        if again {
+            words.push("-D");
+        }
+        words.extend(["-s", session]);
+        crate::host_ssh::line(&words)
+    };
+    let ssh = reach.via(host, true);
     ["sh", "-c", RETRY, "devpit-host", after]
         .into_iter()
         .map(str::to_owned)
-        .chain(attach)
+        .chain([line(false), line(true)])
+        .chain(ssh)
         .collect()
 }
 
@@ -270,6 +285,83 @@ pub(crate) fn opened_tab(
         tab_id,
         pane_id: leaf_id,
     })
+}
+
+/// Whether devpit's connection to `host` is up, as ssh says of the one it
+/// shares there; unknown where it shares none.
+pub(crate) fn connected(reach: &Reach, host: &HostRow) -> Option<bool> {
+    let mut argv = reach.via(host, false);
+    if argv.iter().any(|one| one == "ControlPath=none") {
+        return None;
+    }
+    let ends = argv.iter().position(|one| one == "--")?;
+    argv.splice(ends..ends, ["-O".to_owned(), "check".to_owned()]);
+    let said = crate::host_ssh::run(&argv, &[], CHECKED_WITHIN).ok()?;
+    Some(said.status.success())
+}
+
+/// How long a look at a host's connection may take: it asks a local socket.
+const CHECKED_WITHIN: std::time::Duration = std::time::Duration::from_secs(5);
+
+/// The host a tab's terminals run on, if any.
+pub(crate) fn tab_host_in(
+    store: &Store,
+    reach: &Reach,
+    project_id: &str,
+    tab_id: &str,
+) -> Result<TabHost, RpcError> {
+    let Some((tree, focused)) = store.pane_layout(project_id, tab_id)? else {
+        return Ok(TabHost { host: None });
+    };
+    let layout = crate::sessions::decode(project_id, &tree, &focused)?;
+    // Production first, whichever way its panes were joined: it is what the
+    // tab must never be mistaken for.
+    // One read of the hosts; a store that will not answer is an error, never
+    // a tab on this computer.
+    let known = store.hosts()?;
+    let hosts: Vec<HostRow> = layout
+        .tree
+        .leaves()
+        .into_iter()
+        .filter_map(|(_, target)| parsed(target).map(|(host, _)| host.to_owned()))
+        .filter_map(|host| known.iter().find(|one| one.id == host).cloned())
+        .collect();
+    let production = |one: &HostRow| {
+        crate::hosts::environment_of(&one.environment) == devpit_rpc::HostEnvironment::Production
+    };
+    let Some(host) = hosts
+        .iter()
+        .find(|one| production(one))
+        .or(hosts.first())
+        .cloned()
+    else {
+        return Ok(TabHost { host: None });
+    };
+    let host_id = host.id.clone();
+    Ok(TabHost {
+        host: Some(HostOfTab {
+            connected: connected(reach, &host),
+            environment: crate::hosts::environment_of(&host.environment),
+            host_id,
+            name: host.name,
+        }),
+    })
+}
+
+/// `tab.host` — the host a tab's terminals run on, and whether devpit's
+/// connection to it is up.
+#[tauri::command]
+#[specta::specta]
+pub async fn tab_host(project_id: String, tab_id: String) -> Result<TabHost, RpcError> {
+    crate::off_main::blocking(move || {
+        tab_host_in(
+            &Store::open_default()?,
+            &Reach::here()?,
+            &project_id,
+            &tab_id,
+        )
+    })
+    .await
 }
 
 /// Whether a target is a host's.

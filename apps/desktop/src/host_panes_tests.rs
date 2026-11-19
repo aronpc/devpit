@@ -1,4 +1,5 @@
 use std::io::Read;
+use std::path::PathBuf;
 use std::time::{Duration, Instant};
 
 use super::*;
@@ -357,4 +358,142 @@ fn a_stop_ends_the_session_on_the_host_or_says_it_could_not() {
     away.program(&away.ssh(), "exit 255");
     let refused = ended_on(&reach(&away), &profile(), &session).expect_err("said stopped");
     assert!(refused.message.contains("staging"), "{}", refused.message);
+}
+
+/// Whether devpit's connection to a host is up, as ssh says of the shared
+/// connection: up, down, or unknown where ssh shares none.
+#[test]
+fn a_host_s_connection_is_up_down_or_unknown() {
+    let fake = FakeHost::new();
+    // Up only when asked of the shared connection: never a login of its own.
+    fake.program(
+        &fake.ssh(),
+        "for one; do [ \"$prev\" = -O ] && [ \"$one\" = check ] && exit 0; prev=$one; done\nexit 2",
+    );
+    assert_eq!(connected(&reach(&fake), &profile()), Some(true));
+
+    fake.program(&fake.ssh(), "exit 255");
+    assert_eq!(connected(&reach(&fake), &profile()), Some(false));
+
+    let unshared = Reach {
+        ssh: fake.ssh(),
+        sockets: PathBuf::from("/a path ssh cannot take"),
+    };
+    assert_eq!(connected(&unshared, &profile()), None);
+}
+
+/// A tab whose terminal runs on a host names it, with its environment; a
+/// tab on this computer names none.
+#[test]
+fn a_tab_names_the_host_its_terminal_runs_on() {
+    let fake = FakeHost::new();
+    let dir = tempfile::tempdir().expect("tempdir");
+    let store = Store::open(&dir.path().join("state.db")).expect("open");
+    let project = store.add_project(dir.path(), None).expect("project");
+    store
+        .save_host(&HostRow {
+            environment: "production".to_owned(),
+            ..profile()
+        })
+        .expect("host");
+    let layout = |target: String| devpit_rpc::SessionLayout {
+        project_id: project.clone(),
+        focused_id: "leaf_1".to_owned(),
+        tree: devpit_rpc::LayoutNode::leaf("leaf_1", target),
+    };
+    crate::sessions::persist(&store, "tab_host", &layout(target("host_1", "devpit_s")))
+        .expect("kept");
+    crate::sessions::persist(&store, "tab_here", &layout("devpit_p:leaf_1".to_owned()))
+        .expect("kept");
+
+    let on_host = tab_host_in(&store, &reach(&fake), &project, "tab_host")
+        .expect("asked")
+        .host
+        .expect("a host");
+    assert_eq!(on_host.name, "staging");
+    assert_eq!(on_host.environment, devpit_rpc::HostEnvironment::Production);
+    assert_eq!(on_host.connected, Some(true));
+    assert_eq!(
+        tab_host_in(&store, &reach(&fake), &project, "tab_here")
+            .expect("asked")
+            .host,
+        None
+    );
+}
+
+/// The first attach leaves other clients of the session be — the person's
+/// own `tmux attach` there among them; only an attach after a dropped
+/// connection takes the session from a client the drop left behind.
+#[test]
+fn only_an_attach_after_a_drop_takes_the_session_from_other_clients() {
+    let fake = FakeHost::new();
+    let lines = fake.dir.path().join("lines");
+    fake.program(
+        &fake.ssh(),
+        &format!(
+            "for last; do :; done; printf '%s\\n' \"$last\" >> '{lines}'\n[ \"$(wc -l < '{lines}')\" -ge 2 ] && exit 0\nexit 255",
+            lines = lines.display()
+        ),
+    );
+
+    let argv = attach_argv_after(&reach(&fake), &profile(), "~", "devpit_s", "0");
+    let ended = std::process::Command::new(&argv[0])
+        .args(&argv[1..])
+        .output()
+        .expect("ran");
+
+    assert!(ended.status.success(), "{ended:?}");
+    let said = std::fs::read_to_string(&lines).expect("lines");
+    let said: Vec<&str> = said.lines().collect();
+    assert_eq!(said.len(), 2, "{said:?}");
+    assert!(
+        said[0].contains("new-session -A -s devpit_s"),
+        "{}",
+        said[0]
+    );
+    assert!(
+        said[1].contains("new-session -A -D -s devpit_s"),
+        "{}",
+        said[1]
+    );
+}
+
+/// A tab with terminals on two hosts names production when one of them is:
+/// whichever way its panes were joined, PROD is what it shows.
+#[test]
+fn a_tab_on_two_hosts_names_the_production_one() {
+    let fake = FakeHost::new();
+    let dir = tempfile::tempdir().expect("tempdir");
+    let store = Store::open(&dir.path().join("state.db")).expect("open");
+    let project = store.add_project(dir.path(), None).expect("project");
+    store.save_host(&profile()).expect("staging");
+    store
+        .save_host(&HostRow {
+            id: "host_2".to_owned(),
+            name: "web prod".to_owned(),
+            environment: "production".to_owned(),
+            ..profile()
+        })
+        .expect("production");
+    let tree = devpit_rpc::LayoutNode::leaf("leaf_a", target("host_1", "devpit_a"))
+        .split_leaf(
+            "leaf_a",
+            devpit_rpc::SplitDirection::Vertical,
+            devpit_rpc::LayoutNode::leaf("leaf_b", target("host_2", "devpit_b")),
+        )
+        .expect("joined");
+    let layout = devpit_rpc::SessionLayout {
+        project_id: project.clone(),
+        focused_id: "leaf_a".to_owned(),
+        tree,
+    };
+    crate::sessions::persist(&store, "tab_both", &layout).expect("kept");
+
+    let host = tab_host_in(&store, &reach(&fake), &project, "tab_both")
+        .expect("asked")
+        .host
+        .expect("a host");
+
+    assert_eq!(host.name, "web prod");
+    assert_eq!(host.environment, devpit_rpc::HostEnvironment::Production);
 }

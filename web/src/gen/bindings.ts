@@ -735,6 +735,11 @@ export const commands = {
 	 *  host, in the project's folder there.
 	 */
 	hostTerminalOpen: (projectId: string, hostId: string) => typedError<HostTerminal, RpcError>(__TAURI_INVOKE("host_terminal_open", { projectId, hostId })),
+	/**
+	 *  `tab.host` — the host a tab's terminals run on, and whether devpit's
+	 *  connection to it is up.
+	 */
+	tabHost: (projectId: string, tabId: string) => typedError<TabHost, RpcError>(__TAURI_INVOKE("tab_host", { projectId, tabId })),
 	/**  `assistant.mode` — whether this orchestrator's Assistant mode is on. */
 	assistantMode: (projectId: string) => typedError<AssistantMode, RpcError>(__TAURI_INVOKE("assistant_mode", { projectId })),
 	/**
@@ -4106,6 +4111,17 @@ export type HostLinks = {
 	links: HostLink[],
 };
 
+/**
+ *  The host a tab's terminals run on, and whether devpit's connection to it
+ *  is up: unknown when ssh cannot share one there.
+ */
+export type HostOfTab = {
+	hostId: string,
+	name: string,
+	environment: HostEnvironment,
+	connected: boolean | null,
+};
+
 /**  A terminal just opened on a host: its tab and its pane. */
 export type HostTerminal = {
 	tabId: string,
@@ -6673,6 +6689,11 @@ export type SyncStatus = {
 	machines: SyncMachine[],
 	/**  The offer this machine is making, while it lasts. */
 	offering: SyncOffer | null,
+};
+
+/**  A tab's host, or none for a tab on this computer. */
+export type TabHost = {
+	host: HostOfTab | null,
 };
 
 /**  Where Tailscale stands on this machine. */

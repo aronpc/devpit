@@ -90,3 +90,21 @@ pub struct HostTerminal {
     pub tab_id: String,
     pub pane_id: String,
 }
+
+/// The host a tab's terminals run on, and whether devpit's connection to it
+/// is up: unknown when ssh cannot share one there.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct HostOfTab {
+    pub host_id: String,
+    pub name: String,
+    pub environment: HostEnvironment,
+    pub connected: Option<bool>,
+}
+
+/// A tab's host, or none for a tab on this computer.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct TabHost {
+    pub host: Option<HostOfTab>,
+}
