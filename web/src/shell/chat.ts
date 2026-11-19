@@ -8,6 +8,7 @@ import type {
   Profile,
   TurnEnd,
 } from '../gen/bindings'
+import { formatDate } from '../i18n/format'
 import { inBrowser } from '../transport'
 import { millis, outcome, took } from './turnFold'
 import { inTauri } from './window'
@@ -261,8 +262,8 @@ export function putBackFrom(messages: readonly Message[], turnId: string): numbe
   return new Set(changes.flatMap((part) => part.files.map((file) => file.path))).size
 }
 
-/* A time of day in the person's own format. */
-export const clock = (ms: number): string => new Date(ms).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+/* A time of day in the language the person chose, not the machine's. */
+export const clock = (ms: number): string => formatDate(ms, { hour: '2-digit', minute: '2-digit' })
 
 /* The quiet line under a turn: when it ended, on what, how long, how much. */
 export function metaOf(message: Pick<Message, 'createdAt' | 'ended'>): readonly string[] {

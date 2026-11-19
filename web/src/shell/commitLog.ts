@@ -1,4 +1,5 @@
 import type { Commit } from '../gen/bindings'
+import { formatDate } from '../i18n/format'
 
 /*
  * The rules behind the History tab, apart from the drawing.
@@ -31,8 +32,8 @@ export function dayOf(atSeconds: number | null, now: Date): string {
   const days = Math.round((midnight(now) - midnight(at)) / 86_400_000)
   if (days <= 0) return 'Today'
   if (days === 1) return 'Yesterday'
-  if (days < 7) return at.toLocaleDateString(undefined, { weekday: 'long' })
-  return at.toLocaleDateString(undefined, {
+  if (days < 7) return formatDate(at, { weekday: 'long' })
+  return formatDate(at, {
     month: 'short',
     day: 'numeric',
     ...(at.getFullYear() === now.getFullYear() ? {} : { year: 'numeric' }),

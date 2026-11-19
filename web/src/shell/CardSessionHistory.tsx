@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 
 import type { LivePane, SessionOnCard } from '../gen/bindings'
 import { t } from '../i18n'
+import { formatDate } from '../i18n/format'
 import { endedHow } from './EndedSessions'
 import { ask, commands } from './live'
 import { RemoteControlMark } from './RemoteControlMark'
@@ -11,7 +12,7 @@ import { useShell } from './useShell'
 export const resumable = (one: SessionOnCard): boolean => one.endedAt !== null
 
 /* A time crosses as `number | null`: serde writes a NaN as null. */
-const when = (ms: number | null): string => (ms === null ? '' : new Date(ms).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' }))
+const when = (ms: number | null): string => (ms === null ? '' : formatDate(ms, { dateStyle: 'short', timeStyle: 'short' }))
 
 /** What a row says: how it stands, when, and what it left uncommitted. */
 export function sessionWords(one: SessionOnCard): string {

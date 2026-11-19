@@ -1,4 +1,6 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
+
+import { setLocale } from '../i18n'
 
 import { DAY_REMINDS_AT, dueLabel, fromField, nearness, toField, toTimeField } from './due'
 
@@ -83,5 +85,23 @@ describe('the date field', () => {
     expect(dueLabel(today, NOON, true)).toMatch(/^today \d/)
     expect(dueLabel(today, NOON)).toBe('today')
     expect(dueLabel(at(2026, 5, 23, 15), NOON, true)).toMatch(/ · /)
+  })
+})
+
+/* The date in the language the person chose, not the machine's: a runner
+   under LC_ALL=en_US with the app in pt-BR still reads the day first and a
+   24-hour clock. */
+describe('a deadline in the chosen language', () => {
+  afterEach(() => setLocale('en'))
+
+  it('reads in pt-BR when pt-BR is chosen', () => {
+    setLocale('pt-BR')
+    expect(dueLabel(at(2026, 5, 27, 15), NOON, true)).toMatch(/^27 de mai\.? · 15:00$/)
+    expect(dueLabel(at(2027, 1, 4), NOON)).toMatch(/^4 de jan\.? de 2027$/)
+  })
+
+  it('reads in English when English is chosen', () => {
+    expect(dueLabel(at(2026, 5, 27, 15), NOON, true)).toMatch(/^May 27 · 03:00\sPM$/)
+    expect(dueLabel(at(2027, 1, 4), NOON)).toBe('Jan 4, 2027')
   })
 })
