@@ -3,6 +3,79 @@
 What changed between releases, written for the people who use devpit. The
 release notes are taken from here when a version is tagged.
 
+## 0.1.53 — 2026-11-19
+
+### Hosts: terminals and sessions on your other machines
+
+- **Settings → Hosts keeps the machines you reach with ssh.** A host is a
+  target your own ssh resolves (an alias of your ssh config or a host name),
+  with an optional user, port and identity file *path*, a work root and an
+  environment: dev, staging or production. devpit stores no key and reads
+  none, and **Check** says whether ssh, tmux, git and an agent CLI signed in
+  are there.
+- **A project is linked to a folder on a host**, in its dialog. devpit checks
+  the folder is there and never creates, clones or moves anything on a host.
+- **New terminal on a host.** From a pane's corner, a tab opens with its
+  shell in the project's folder on that host, in tmux there. When the
+  connection drops, the tab says so and comes back by itself; the session on
+  the host goes on meanwhile. Nothing of devpit's is installed on the host.
+- **The tab says where it runs.** A badge names the host and its environment
+  and whether devpit's connection to it is up. Production reads **PROD**, in
+  red.
+- **The orchestrator starts sessions on a host.** `devpit_start_session`
+  takes `host`; `devpit_sessions` and `devpit_projects` say host and
+  environment. On a production host it starts only with
+  `confirm_production`, after your yes, its brief opens with production's
+  rules, and the start is written in the orchestrator's sessions log. A
+  session on a host reaches none of devpit's tools: the orchestrator types
+  into its terminal and reads its screen, and stopping it ends it on the
+  host, or says the host did not answer.
+
+### Sessions
+
+- **After a crash, agents do not come back by themselves.** A terminal that
+  comes back — devpit restarted, a tab drawn again, a project entered — is a
+  shell and nothing more. Resume a conversation when you want it, from its
+  row or with the CLI's own resume. *This is a change: earlier versions
+  started the agent again in the pane it had run in.*
+- **One conversation runs in one process.** A conversation another process
+  is running is refused by name instead of started twice, and its old pane
+  forgets it.
+- **A stop makes sure.** Stopping a session places it in the pane its own
+  process started in, closes only that pane, and checks the process ended:
+  one that outlived its terminal is ended directly, with its group, and the
+  stop says so; one that will not end is an error naming it, never
+  "stopped". A background job is stopped through its CLI only.
+- **A terminal the daemon no longer holds says why** instead of staying
+  blank.
+
+### Devflow
+
+- **Devflow moves out of devpit.** devpit runs the `devflow` program for
+  the calls it serves — devflow.yaml's edits, the security targets in force
+  and a skill's text — and keeps its built-in engine for the rest. Devflow's
+  skills, personas and schemas now ship with devflow, not inside devpit.
+- **devpit keeps devflow installed.** With Devflow on, a missing devflow, or
+  one older than 0.5.0, is installed, checksummed, and updated once a day; a
+  program called devflow that does not answer as one is left alone.
+  `DEVFLOW_NO_UPDATE` turns updates off, and an empty `DEVPIT_DEVFLOW` means
+  no devflow at all.
+- **Security targets reach checks, reviewers and gates only once you
+  confirm them**, a check's report can be SARIF, and a card shows the
+  exploits its newest review confirmed.
+
+### Chat and voice
+
+- **A question an agent asks waits for its chat**, even when the chat opens
+  late or the conversation moves, and leaves once it is answered.
+- **Holding a key speaks to the chat in front**, Settings → Voice chooses the
+  microphone, and recording works on Linux again.
+
+### Opening
+
+- **`devpit --open-pane <leaf>`** opens that pane, on a first launch as on a
+  second.
+
 ## 0.1.52 — 2026-11-15
 
 ### Project agent
