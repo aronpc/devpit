@@ -1,6 +1,7 @@
 import { useState } from 'react'
 
 import type { DevflowConfig, DevflowReviewer } from '../gen/bindings'
+import { t } from '../i18n'
 import { AgentMark } from './AgentMark'
 import { CONSOLIDATIONS, PERSONAS, REVIEWER_AGENTS, reviewerOf, SEVERITIES, type Edit } from './devflowEdit'
 import { useKnownAgents } from './useKnownAgents'
@@ -16,8 +17,8 @@ function ModelField({ model, onSave }: { model: string | null; onSave: (model: s
   return (
     <input
       className="dfinput"
-      aria-label="Model"
-      placeholder="small, large or a model id"
+      aria-label={t('devflow.reviewers.model')}
+      placeholder={t('devflow.reviewers.modelPlaceholder')}
       value={said}
       onChange={(event) => setSaid(event.target.value)}
       onBlur={() => (said.trim() || null) !== model && onSave(said.trim() || null)}
@@ -39,34 +40,34 @@ export function DevflowReviewers({ config, edit, bare = false }: { config: Devfl
     <div className="dfblock">
       {!bare && (
         <div className="dfblock__head">
-          <span className="dfblock__t">Reviewers</span>
-          <span className="dfblock__d">Each runs headless on your own CLI and subscription, all at once. A persona nobody runs is reviewed by the session itself.</span>
+          <span className="dfblock__t">{t('devflow.reviewers.title')}</span>
+          <span className="dfblock__d">{t('devflow.reviewers.body')}</span>
         </div>
       )}
       <div className="dfrevs">
         {config.reviewers.length > 0 && (
           <div className="dfrev dfrev--head" aria-hidden>
-            <span>Agent CLI</span>
-            <span>Persona</span>
-            <span>Model</span>
+            <span>{t('devflow.reviewers.headAgent')}</span>
+            <span>{t('devflow.reviewers.headPersona')}</span>
+            <span>{t('devflow.reviewers.headModel')}</span>
             <span />
           </div>
         )}
-        {config.reviewers.length === 0 && <span className="dfempty">No reviewer: the session reviews every persona itself.</span>}
+        {config.reviewers.length === 0 && <span className="dfempty">{t('devflow.reviewers.none')}</span>}
         {config.reviewers.map((one, at) => (
           <div className="dfrev" key={`${at}:${one.agent}:${one.persona}:${one.model ?? ''}`}>
             <span className="dfrev__agent">
               <AgentMark agent={one.agent} />
-              <select aria-label="Agent CLI" value={one.agent} onChange={(event) => change(at, { agent: event.target.value })}>
+              <select aria-label={t('devflow.reviewers.agentLabel')} value={one.agent} onChange={(event) => change(at, { agent: event.target.value })}>
                 {REVIEWER_AGENTS.map((agent) => (
                   <option key={agent} value={agent}>
                     {agent}
-                    {installed(agent) ? '' : ' (not installed)'}
+                    {installed(agent) ? '' : t('devflow.reviewers.notInstalled')}
                   </option>
                 ))}
               </select>
             </span>
-            <select aria-label="Persona" value={one.persona} onChange={(event) => change(at, { persona: event.target.value })}>
+            <select aria-label={t('devflow.reviewers.personaLabel')} value={one.persona} onChange={(event) => change(at, { persona: event.target.value })}>
               {[...new Set([...PERSONAS, one.persona])].map((persona) => (
                 <option key={persona} value={persona}>
                   {persona}
@@ -75,30 +76,30 @@ export function DevflowReviewers({ config, edit, bare = false }: { config: Devfl
             </select>
             <ModelField model={one.model} onSave={(model) => change(at, { model })} />
             <button className="btn btn--quiet btn--sm" data-danger onClick={() => save(config.reviewers.filter((_, here) => here !== at))}>
-              Remove
+              {t('devflow.remove')}
             </button>
           </div>
         ))}
         <div className="dfrevs__add">
           <button className="btn btn--sm" onClick={() => save([...config.reviewers, { agent: firstInstalled, persona: 'devflow-security', model: null }])}>
-            Add reviewer
+            {t('devflow.reviewers.add')}
           </button>
         </div>
       </div>
       <div className="dfblock__fields">
         <label className="dffield">
-          <span className="dffield__l">Merged by</span>
-          <select aria-label="How findings are merged" value={config.consolidate} onChange={(event) => edit('review.consolidate', event.target.value)}>
+          <span className="dffield__l">{t('devflow.reviewers.mergedBy')}</span>
+          <select aria-label={t('devflow.reviewers.mergeLabel')} value={config.consolidate} onChange={(event) => edit('review.consolidate', event.target.value)}>
             {CONSOLIDATIONS.map((how) => (
               <option key={how} value={how}>
-                {how === 'jev' ? 'Jev (Decisions), else one model pass' : how === 'agent' ? 'One model pass' : 'Kept as they are'}
+                {t(`devflow.reviewers.merge.${how}`)}
               </option>
             ))}
           </select>
         </label>
         <div className="dffield">
-          <span className="dffield__l">Holds the card on</span>
-          <div className="dfseg" role="group" aria-label="Severities that hold the card">
+          <span className="dffield__l">{t('devflow.reviewers.holdsOn')}</span>
+          <div className="dfseg" role="group" aria-label={t('devflow.reviewers.severitiesLabel')}>
             {SEVERITIES.map((severity) => (
               <button
                 key={severity}

@@ -4,6 +4,7 @@ import type { DevflowCalibration, DevflowConfig } from '../gen/bindings'
 import { accuracyLine } from './DevflowAccuracy'
 import { decisionsLine } from './devflowDecisions'
 import { rubricsWith, type Edit } from './devflowEdit'
+import { t } from '../i18n'
 import { ask, commands } from './live'
 import { PrefSwitch } from './PrefSwitch'
 import { useShell } from './useShell'
@@ -22,8 +23,8 @@ function RubricField({ stage, rubric, onSave }: { stage: string; rubric: string 
       <span className="dffield__l">{stage[0]!.toUpperCase() + stage.slice(1)}</span>
       <input
         className="dfinput"
-        aria-label={`The ${stage} stage's rubric`}
-        placeholder="Devflow's own"
+        aria-label={t('devflow.jev.rubricOf', { stage })}
+        placeholder={t('devflow.jev.rubricPlaceholder')}
         value={said}
         onChange={(event) => setSaid(event.target.value)}
         onBlur={() => said.trim() !== (rubric ?? '') && onSave(said)}
@@ -57,38 +58,38 @@ export function DevflowJev({
       <PrefSwitch
         on={config.decisionsUse}
         onFlip={() => edit('decisions.use', !config.decisionsUse)}
-        title="Ask Jev at the gates"
-        said="The brief, the plan, each finding and the card's criteria with their evidence are judged against a rubric — never the diff — with no retention and no training."
+        title={t('devflow.jev.title')}
+        said={t('devflow.jev.said')}
       >
         <div className="dffield">
-          <span className="dffield__l">Mode</span>
+          <span className="dffield__l">{t('devflow.jev.mode')}</span>
           <span className="dffield__v">
             <span className="dfmode" data-mode={enforcing ? 'enforce' : 'shadow'}>
-              <b>{enforcing ? 'Enforce' : 'Shadow'}</b>
-              {enforcing ? 'a failing rubric holds the card' : 'answers are recorded, nothing is held'}
+              <b>{t(enforcing ? 'devflow.jev.enforce' : 'devflow.jev.shadow')}</b>
+              {t(enforcing ? 'devflow.jev.enforceSaid' : 'devflow.jev.shadowSaid')}
             </span>
             {onEnforce && !enforcing && (
               <button className="btn btn--sm" onClick={onEnforce}>
-                Enforce…
+                {t('devflow.jev.enforceButton')}
               </button>
             )}
             {onEnforce && enforcing && (
               <button className="btn btn--sm" onClick={() => edit('decisions.mode', 'shadow')}>
-                Back to shadow
+                {t('devflow.jev.backToShadow')}
               </button>
             )}
           </span>
         </div>
         {accuracy?.decisions && (
           <div className="dffield">
-            <span className="dffield__l">State</span>
+            <span className="dffield__l">{t('devflow.jev.state')}</span>
             <span className="dffield__v" data-decisions={accuracy.decisions.state}>
               {decisionsLine(accuracy.decisions)}
             </span>
           </div>
         )}
-        {!onEnforce && <span className="pref__d">It starts in shadow. Enforcing is a click of yours once Devflow is set up.</span>}
-        {projectId && <span className="dfsubhead">Rubric per stage</span>}
+        {!onEnforce && <span className="pref__d">{t('devflow.jev.startsInShadow')}</span>}
+        {projectId && <span className="dfsubhead">{t('devflow.jev.rubricPerStage')}</span>}
         {projectId &&
           config.stages.map((stage) => (
             <RubricField
@@ -103,10 +104,10 @@ export function DevflowJev({
             {accuracyLine(one)}
           </span>
         ))}
-        {projectId && accuracy && accuracy.rubrics.length === 0 && <span className="pref__d">No rubric has judged anything here yet, so there is no accuracy to show.</span>}
+        {projectId && accuracy && accuracy.rubrics.length === 0 && <span className="pref__d">{t('devflow.jev.noAccuracy')}</span>}
         <div className="dfrow-end">
           <button className="btn btn--quiet btn--sm" onClick={() => openPrefs('decisions')}>
-            Key and provider in Settings → Decisions
+            {t('devflow.jev.keyAndProvider')}
           </button>
         </div>
       </PrefSwitch>

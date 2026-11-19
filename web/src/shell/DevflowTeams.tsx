@@ -1,6 +1,7 @@
 import { useState } from 'react'
 
 import type { DevflowConfig, DevflowScreen, DevflowTeam, DevflowTeamChange } from '../gen/bindings'
+import { t } from '../i18n'
 import { ask, commands } from './live'
 
 /*
@@ -15,13 +16,13 @@ const short = (commit: string | null): string => (commit ? commit.slice(0, 12) :
 export function teamSaid(team: DevflowTeam): string {
   switch (team.state) {
     case 'applied':
-      return `${team.wanted} applies, pinned at ${short(team.commit)}`
+      return t('devflow.teams.applied', { wanted: team.wanted, commit: short(team.commit) })
     case 'fetch':
-      return `pinned at ${short(team.commit)}, which is not on this machine yet: look at it to fetch it`
+      return t('devflow.teams.fetch', { commit: short(team.commit) })
     default:
       return team.lockedRef
-        ? `${team.wanted} waits for your approval; ${team.lockedRef} still applies`
-        : `${team.wanted} waits for your approval; nothing of it applies yet`
+        ? t('devflow.teams.waitsLocked', { wanted: team.wanted, locked: team.lockedRef })
+        : t('devflow.teams.waits', { wanted: team.wanted })
   }
 }
 
@@ -52,13 +53,13 @@ export function DevflowTeams({
       setProblem(answer.error)
       if (answer.data) {
         setChanges(null)
-        onScreen(answer.data, `${change.name} at ${change.toRef} approved and pinned in devflow.lock. devpit never commits: commit it with devflow.yaml.`)
+        onScreen(answer.data, t('devflow.teams.approved', { name: change.name, ref: change.toRef }))
       }
     })
 
   return (
     <>
-      <div className="acc__sub">Layers</div>
+      <div className="acc__sub">{t('devflow.teams.layers')}</div>
       {config.teams.map((team) => (
         <div className="pref" key={team.git}>
           <span className="pref__body">
@@ -69,11 +70,11 @@ export function DevflowTeams({
           </span>
         </div>
       ))}
-      {config.locked.length > 0 && <p className="acc__note">Locked by a layer, so this project cannot change them: {config.locked.join(', ')}.</p>}
+      {config.locked.length > 0 && <p className="acc__note">{t('devflow.teams.locked', { list: config.locked.join(', ') })}</p>}
       {config.teams.some((team) => team.state !== 'applied') && (
         <div className="voice__row">
           <button className="btn" disabled={busy} onClick={look}>
-            Look at what changes
+            {t('devflow.teams.look')}
           </button>
         </div>
       )}
@@ -81,18 +82,18 @@ export function DevflowTeams({
         <div className="pref pref--stack" key={change.git}>
           <div className="pref__body">
             <span className="pref__t">
-              {change.name}: {change.fromRef ?? 'nothing yet'} → {change.toRef} ({short(change.toCommit)})
+              {t('devflow.teams.change', { name: change.name, from: change.fromRef ?? t('devflow.teams.nothingYet'), to: change.toRef, commit: short(change.toCommit) })}
             </span>
-            {change.files.length === 0 && <span className="pref__d">No file changes.</span>}
+            {change.files.length === 0 && <span className="pref__d">{t('devflow.teams.noFiles')}</span>}
             {change.files.map((file) => (
               <span key={file} className="pref__d">
                 {file}
               </span>
             ))}
-            {change.diff.length > 0 && <pre className="errprev__body" aria-label={`${change.name}'s devflow.yaml change`}>{change.diff.join('\n')}</pre>}
+            {change.diff.length > 0 && <pre className="errprev__body" aria-label={t('devflow.teams.diffLabel', { name: change.name })}>{change.diff.join('\n')}</pre>}
             <div className="voice__row">
               <button className="btn btn--go" onClick={() => approve(change)}>
-                Approve {change.toRef}
+                {t('devflow.teams.approve', { ref: change.toRef })}
               </button>
             </div>
           </div>

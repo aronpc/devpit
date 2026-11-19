@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 
 import type { DevflowBinary, DevflowMcp, DevflowPlugin, DevflowPluginAction } from '../gen/bindings'
+import { t } from '../i18n'
+import { tRich } from '../i18n/rich'
 import { ask, commands } from './live'
 
 /*
@@ -11,16 +13,8 @@ import { ask, commands } from './live'
  * tools twice; that is said here, with a way to switch one off.
  */
 
-const ACTING: Record<DevflowPluginAction, string> = {
-  install: 'Installing…',
-  update: 'Updating…',
-  remove: 'Removing…',
-  enable: 'Enabling…',
-  disable: 'Disabling…',
-}
-
 function where(plugin: DevflowPlugin): string {
-  return `${plugin.profile ?? 'the default profile'} (${plugin.directory})`
+  return t('devflow.standalone.where', { profile: plugin.profile ?? t('devflow.standalone.defaultProfile'), directory: plugin.directory })
 }
 
 export function DevflowPluginRow({ projectId, devpitOn, onDeactivate }: { projectId: string; devpitOn: boolean; onDeactivate: () => void }): React.JSX.Element | null {
@@ -55,46 +49,50 @@ export function DevflowPluginRow({ projectId, devpitOn, onDeactivate }: { projec
   return (
     <div className="pref pref--stack">
       <div className="pref__body">
-        <span className="pref__t">devflow plugin for Claude Code</span>
+        <span className="pref__t">{t('devflow.standalone.pluginTitle')}</span>
         <span className="pref__d">
           {installed
-            ? `devflow@devflow ${plugin.version}, ${plugin.enabled ? 'on' : 'off'} in ${where(plugin)}.`
-            : `Not installed in ${where(plugin)}. devpit's Devflow does not need it; it is the standalone devflow, for sessions outside devpit's.`}
+            ? t(plugin.enabled ? 'devflow.standalone.pluginOn' : 'devflow.standalone.pluginOff', { version: plugin.version ?? '', where: where(plugin) })
+            : t('devflow.standalone.pluginNone', { where: where(plugin) })}
         </span>
         {plugin.twice && (
           <div className="pref" role="alert">
             <span className="pref__body">
-              <span className="pref__t">The devflow tools twice</span>
-              <span className="pref__d">The plugin is on and so is devpit&rsquo;s Devflow in this project: its agents get both sets of tools. Switch one off.</span>
+              <span className="pref__t">{t('devflow.standalone.twiceTitle')}</span>
+              <span className="pref__d">{t('devflow.standalone.twiceBody')}</span>
             </span>
             <button className="btn" onClick={() => act('disable')} disabled={busy !== null}>
-              Disable the plugin
+              {t('devflow.standalone.disablePlugin')}
             </button>
             <button className="btn" onClick={onDeactivate} disabled={busy !== null}>
-              Deactivate devpit&rsquo;s Devflow
+              {t('devflow.standalone.deactivateDevpit')}
             </button>
           </div>
         )}
         {!installed && sure && (
           <span className="pref__d">
-            This runs <code>claude plugin marketplace add jholhewres/devflow</code>, <code>claude plugin marketplace update devflow</code> and <code>claude plugin install devflow@devflow</code> with{' '}
-            <code>CLAUDE_CONFIG_DIR</code> at {plugin.directory}.
+            {tRich('devflow.standalone.pluginSure', {
+              add: <code>claude plugin marketplace add jholhewres/devflow</code>, // ui-text: ok identifier
+              update: <code>claude plugin marketplace update devflow</code>, // ui-text: ok identifier
+              install: <code>claude plugin install devflow@devflow</code>, // ui-text: ok identifier
+              env: <code>CLAUDE_CONFIG_DIR</code>, // ui-text: ok identifier
+            }, { directory: plugin.directory })}
           </span>
         )}
         <div className="voice__row">
-          {busy && <span className="pref__d">{ACTING[busy]}</span>}
+          {busy && <span className="pref__d">{t(`devflow.standalone.acting.${busy}`)}</span>}
           {!installed && !sure && (
             <button className="btn" onClick={() => setSure(true)}>
-              Install plugin…
+              {t('devflow.standalone.installPlugin')}
             </button>
           )}
           {!installed && sure && (
             <>
               <button className="btn" onClick={() => setSure(false)} disabled={busy !== null}>
-                Cancel
+                {t('devflow.cancel')}
               </button>
               <button className="btn btn--go" onClick={() => act('install')} disabled={busy !== null}>
-                Install
+                {t('devflow.install')}
               </button>
             </>
           )}
@@ -102,14 +100,14 @@ export function DevflowPluginRow({ projectId, devpitOn, onDeactivate }: { projec
             <>
               {!plugin.enabled && (
                 <button className="btn" onClick={() => act('enable')} disabled={busy !== null}>
-                  Enable
+                  {t('devflow.enable')}
                 </button>
               )}
               <button className="btn" onClick={() => act('update')} disabled={busy !== null}>
-                Update
+                {t('devflow.update')}
               </button>
               <button className="btn" onClick={() => act('remove')} disabled={busy !== null}>
-                Remove
+                {t('devflow.remove')}
               </button>
             </>
           )}
@@ -161,34 +159,37 @@ export function DevflowBinaryRow(): React.JSX.Element | null {
   return (
     <div className="pref pref--stack">
       <div className="pref__body">
-        <span className="pref__t">devflow outside devpit</span>
-        <span className="pref__d">{installed ? `devflow ${binary.version} at ${binary.path}.` : `Not installed at ${binary.path}.`} The binary is for other tools; devpit&rsquo;s own Devflow does not use it.</span>
+        <span className="pref__t">{t('devflow.standalone.binaryTitle')}</span>
+        <span className="pref__d">
+          {installed ? t('devflow.standalone.binaryInstalled', { version: binary.version ?? '', path: binary.path }) : t('devflow.standalone.binaryNone', { path: binary.path })}
+          {t('devflow.standalone.binaryNote')}
+        </span>
         {sure && (
           <span className="pref__d">
-            This downloads devflow {binary.known} for this machine from github.com/jholhewres/devflow, refuses it unless it matches the release&rsquo;s checksums.txt, and puts it at {binary.path}.
+            {t('devflow.standalone.binarySure', { known: binary.known, path: binary.path })}
           </span>
         )}
         <div className="voice__row">
-          {busy && <span className="pref__d">Downloading…</span>}
+          {busy && <span className="pref__d">{t('devflow.standalone.downloading')}</span>}
           {sure ? (
             <>
               <button className="btn" onClick={() => setSure(false)} disabled={busy}>
-                Cancel
+                {t('devflow.cancel')}
               </button>
               <button className="btn btn--go" onClick={install} disabled={busy}>
-                {installed ? 'Update' : 'Install'}
+                {installed ? t('devflow.update') : t('devflow.install')}
               </button>
             </>
           ) : (
             offered && (
               <button className="btn" onClick={() => setSure(true)}>
-                {installed ? `Update to ${binary.known}…` : 'Install devflow…'}
+                {installed ? t('devflow.standalone.updateTo', { known: binary.known }) : t('devflow.standalone.installDevflow')}
               </button>
             )
           )}
         </div>
         {binary.doctor.length > 0 && (
-          <pre className="errprev__body" aria-label="devflow doctor">
+          <pre className="errprev__body" aria-label={t('devflow.standalone.doctorLabel')}>
             {binary.doctor.join('\n')}
           </pre>
         )}
@@ -231,34 +232,34 @@ export function DevflowMcpRow(): React.JSX.Element | null {
   return (
     <div className="pref pref--stack">
       <div className="pref__body">
-        <span className="pref__t">devflow as an MCP server in other tools</span>
-        <span className="pref__d">
-          Each tool runs <code>{mcp.command} mcp</code> for its own sessions. devpit&rsquo;s Devflow does not need it.
-        </span>
+        <span className="pref__t">{t('devflow.standalone.mcpTitle')}</span>
+        <span className="pref__d">{tRich('devflow.standalone.mcpBody', {
+            command: <code>{mcp.command} mcp</code>, // ui-text: ok identifier
+          })}</span>
         {mcp.tools.map((one) => (
           <div className="pref" key={one.tool}>
             <span className="pref__body">
               <span className="pref__t">{one.label}</span>
               <span className="pref__d">
-                {one.added ? `Added in ${one.file}.` : sure === one.tool ? `Not added. This writes devflow into ${one.file}, leaving the rest of it as it is.` : 'Not added.'}
+                {one.added ? t('devflow.standalone.mcpAdded', { file: one.file }) : sure === one.tool ? t('devflow.standalone.mcpSure', { file: one.file }) : t('devflow.standalone.mcpNotAdded')}
               </span>
             </span>
             {one.added ? (
               <button className="btn" onClick={() => set(one.tool, false)} disabled={busy}>
-                Remove
+                {t('devflow.remove')}
               </button>
             ) : sure === one.tool ? (
               <>
                 <button className="btn" onClick={() => setSure(null)} disabled={busy}>
-                  Cancel
+                  {t('devflow.cancel')}
                 </button>
                 <button className="btn btn--go" onClick={() => set(one.tool, true)} disabled={busy}>
-                  Add
+                  {t('devflow.standalone.add')}
                 </button>
               </>
             ) : (
               <button className="btn" onClick={() => setSure(one.tool)} disabled={busy}>
-                Add…
+                {t('devflow.standalone.addAsk')}
               </button>
             )}
           </div>

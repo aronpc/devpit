@@ -1,8 +1,10 @@
 import { Children, useId, useState } from 'react'
 
 import type { DevflowConfig, DevflowStage } from '../gen/bindings'
+import { t } from '../i18n'
+import { tRich } from '../i18n/rich'
 import { DevflowChecks } from './DevflowChecks'
-import { added, moved, PUBLISH, removed, STAGE_SAYS, type Edit } from './devflowEdit'
+import { added, moved, PUBLISH, removed, type Edit } from './devflowEdit'
 import { ask, commands } from './live'
 
 /*
@@ -33,7 +35,7 @@ function SkillLine({ stage, projectId }: { stage: DevflowStage; projectId?: stri
   return (
     <>
       <div className="dffield">
-        <span className="dffield__l">Skill</span>
+        <span className="dffield__l">{t('devflow.stages.skill')}</span>
         <span className="dffield__v">
           <span className={skill.refused ? 'dfskill voice__bad' : 'dfskill'} title={where}>
             <b>{skill.name}</b>
@@ -41,7 +43,7 @@ function SkillLine({ stage, projectId }: { stage: DevflowStage; projectId?: stri
           </span>
           {viewable && (
             <button className="btn btn--quiet btn--sm" aria-expanded={text !== null} onClick={view}>
-              {text === null ? 'View SKILL.md' : 'Hide'}
+              {text === null ? t('devflow.stages.viewSkill') : t('devflow.stages.hide')}
             </button>
           )}
         </span>
@@ -56,10 +58,10 @@ function GateRow({ gate, edit }: { gate: string; edit: Edit }): React.JSX.Elemen
   const [rubric, setRubric] = useState(gate)
   return (
     <label className="dffield">
-      <span className="dffield__l">Gate</span>
+      <span className="dffield__l">{t('devflow.stages.gate')}</span>
       <input
         className="dfinput"
-        aria-label="The gate's rubric"
+        aria-label={t('devflow.stages.gateRubric')}
         value={rubric}
         onChange={(event) => setRubric(event.target.value)}
         onBlur={() => rubric.trim() !== gate && edit('stages.completion.gate', rubric.trim())}
@@ -72,14 +74,14 @@ function Arrange({ config, stage, edit }: { config: DevflowConfig; stage: Devflo
   const at = config.stages.findIndex((one) => one.name === stage.name)
   return (
     <div className="dfstage__tools">
-      <button className="btn btn--quiet btn--sm" aria-label={`Move ${stage.name} up`} disabled={at === 0} onClick={() => edit('stages', moved(config, stage.name, -1))}>
-        Up
+      <button className="btn btn--quiet btn--sm" aria-label={t('devflow.stages.moveUp', { stage: stage.name })} disabled={at === 0} onClick={() => edit('stages', moved(config, stage.name, -1))}>
+        {t('devflow.stages.up')}
       </button>
-      <button className="btn btn--quiet btn--sm" aria-label={`Move ${stage.name} down`} disabled={at === config.stages.length - 1} onClick={() => edit('stages', moved(config, stage.name, 1))}>
-        Down
+      <button className="btn btn--quiet btn--sm" aria-label={t('devflow.stages.moveDown', { stage: stage.name })} disabled={at === config.stages.length - 1} onClick={() => edit('stages', moved(config, stage.name, 1))}>
+        {t('devflow.stages.down')}
       </button>
-      <button className="btn btn--quiet btn--sm" data-danger aria-label={`Remove ${stage.name}`} onClick={() => edit('stages', removed(config, stage.name))}>
-        Remove
+      <button className="btn btn--quiet btn--sm" data-danger aria-label={t('devflow.stages.removeStage', { stage: stage.name })} onClick={() => edit('stages', removed(config, stage.name))}>
+        {t('devflow.remove')}
       </button>
     </div>
   )
@@ -96,18 +98,23 @@ function AddStage({ config, edit }: { config: DevflowConfig; edit: Edit }): Reac
   return (
     <div className="dfstage dfstage--add">
       <span className="dfstage__n" aria-hidden>
-        +
+        {'+'}
       </span>
       <div className="dfstage__card">
-        <span className="dfstage__t">Add a stage</span>
+        <span className="dfstage__t">{t('devflow.stages.addTitle')}</span>
         <span className="dfstage__d">
-          <code>project/&lt;skill&gt;</code> in .devpit/devflow/skills/, <code>personal/&lt;skill&gt;</code>, <code>skills/&lt;name&gt;</code> for one already installed, or a team&rsquo;s <code>&lt;name&gt;/&lt;skill&gt;</code>. Its skill is read where it is, never copied. A gate command must exit 0 for a card to be done.
+          {tRich('devflow.stages.addBody', {
+            project: <code>project/&lt;skill&gt;</code>, // ui-text: ok identifier
+            personal: <code>personal/&lt;skill&gt;</code>, // ui-text: ok identifier
+            skills: <code>skills/&lt;name&gt;</code>, // ui-text: ok identifier
+            team: <code>&lt;name&gt;/&lt;skill&gt;</code>, // ui-text: ok identifier
+          })}
         </span>
         <div className="dfadd">
-          <input className="dfinput dfinput--short" aria-label="The stage uses" placeholder="project/pr" value={uses} onChange={(event) => setUses(event.target.value)} />
-          <input className="dfinput" aria-label="Its gate command" placeholder="gate command, optional" value={command} onChange={(event) => setCommand(event.target.value)} />
+          <input className="dfinput dfinput--short" aria-label={t('devflow.stages.usesLabel')} placeholder={EXAMPLE_USES} value={uses} onChange={(event) => setUses(event.target.value)} />
+          <input className="dfinput" aria-label={t('devflow.stages.commandLabel')} placeholder={t('devflow.stages.commandPlaceholder')} value={command} onChange={(event) => setCommand(event.target.value)} />
           <button className="btn" disabled={!/^[a-z0-9][a-z0-9_-]*\/[a-z0-9][a-z0-9_-]*$/.test(uses.trim())} onClick={add}>
-            Add stage
+            {t('devflow.stages.add')}
           </button>
         </div>
       </div>
@@ -149,7 +156,7 @@ function StageCard({
               {said}
             </span>
           </div>
-          <span className="dfstage__state">{on ? 'On' : 'Off'}</span>
+          <span className="dfstage__state">{t(on ? 'devflow.on' : 'devflow.off')}</span>
           <button className="prefsw" role="switch" aria-checked={on} aria-labelledby={`${id}t`} aria-describedby={`${id}d`} onClick={onFlip}>
             <span className="sw"></span>
           </button>
@@ -158,6 +165,20 @@ function StageCard({
       </div>
     </section>
   )
+}
+
+const EXAMPLE_USES = 'project/pr' // ui-text: ok identifier
+
+/* The built-in stage ids; the catalog says what each is (`devflow.stages.says.<id>`). */
+const BUILT_IN = ['briefing', 'context', 'plan', 'execution', 'review', 'completion']
+
+/** What a stage says it is: an own stage by what gates it, a built-in one by its own sentence. */
+function stageSaid(stage: DevflowStage): string {
+  if (stage.own) {
+    if (stage.command) return t('devflow.stages.own.command', { command: stage.command })
+    return stage.gate ? t('devflow.stages.own.gate', { gate: stage.gate }) : t('devflow.stages.own.skill')
+  }
+  return BUILT_IN.includes(stage.name) ? t(`devflow.stages.says.${stage.name}`) : ''
 }
 
 export function DevflowStages({
@@ -184,24 +205,24 @@ export function DevflowStages({
           on={stage.enabled}
           onFlip={() => edit(`stages.${stage.name}.enabled`, !stage.enabled)}
           title={named(stage)}
-          said={stage.own ? (stage.command ? `Own stage, gated by: ${stage.command}` : stage.gate ? `Own stage, gated by the rubric ${stage.gate}` : 'Own stage: following its skill is the stage.') : (STAGE_SAYS[stage.name] ?? '')}
+          said={stageSaid(stage)}
         >
           {stage.approve !== null && (
             <label className="dffield">
-              <span className="dffield__l">Approval</span>
-              <select aria-label={`Who approves the ${stage.name}`} value={stage.approve} onChange={(event) => edit(`stages.${stage.name}.approve`, event.target.value)}>
-                <option value="person">The person approves it</option>
-                <option value="none">Nobody: it goes on</option>
+              <span className="dffield__l">{t('devflow.stages.approval')}</span>
+              <select aria-label={t('devflow.stages.approveLabel', { stage: stage.name })} value={stage.approve} onChange={(event) => edit(`stages.${stage.name}.approve`, event.target.value)}>
+                <option value="person">{t('devflow.stages.approvePerson')}</option>
+                <option value="none">{t('devflow.stages.approveNone')}</option>
               </select>
             </label>
           )}
           {stage.uses === 'builtin/plan' && (
             <label className="dffield">
-              <span className="dffield__l">Cards in</span>
-              <select aria-label="Where the plan's cards are made" value={stage.publish ?? 'board'} onChange={(event) => edit('stages.plan.publish', event.target.value)}>
+              <span className="dffield__l">{t('devflow.stages.cardsIn')}</span>
+              <select aria-label={t('devflow.stages.cardsInLabel')} value={stage.publish ?? 'board'} onChange={(event) => edit('stages.plan.publish', event.target.value)}>
                 {PUBLISH.map((where) => (
                   <option key={where} value={where}>
-                    {where === 'board' ? 'the devpit board' : `${where} (not yet)`}
+                    {where === 'board' ? t('devflow.stages.publishBoard') : t('devflow.stages.publishOther', { where })}
                   </option>
                 ))}
               </select>
@@ -209,16 +230,16 @@ export function DevflowStages({
           )}
           {stage.uses === 'builtin/plan' && (
             <label className="dffield">
-              <span className="dffield__l">Next cards start</span>
-              <select aria-label="When a card releases the cards waiting on it" value={stage.unblockOn ?? 'done'} onChange={(event) => edit('stages.plan.unblock_on', event.target.value)}>
-                <option value="done">once it is done</option>
-                <option value="gate">once its gate passed</option>
+              <span className="dffield__l">{t('devflow.stages.nextCards')}</span>
+              <select aria-label={t('devflow.stages.nextCardsLabel')} value={stage.unblockOn ?? 'done'} onChange={(event) => edit('stages.plan.unblock_on', event.target.value)}>
+                <option value="done">{t('devflow.stages.unblockDone')}</option>
+                <option value="gate">{t('devflow.stages.unblockGate')}</option>
               </select>
             </label>
           )}
           {stage.uses === 'builtin/execution' && withChecks && (
             <div className="dffield dffield--top">
-              <span className="dffield__l">Checks</span>
+              <span className="dffield__l">{t('devflow.stages.checks')}</span>
               <div className="dffield__v">
                 <DevflowChecks checks={stage.checks} edit={edit} />
               </div>
@@ -226,7 +247,7 @@ export function DevflowStages({
           )}
           {stage.uses === 'builtin/execution' && withChecks && (
             <div className="dffield dffield--top">
-              <span className="dffield__l">Release checks</span>
+              <span className="dffield__l">{t('devflow.stages.releaseChecks')}</span>
               <div className="dffield__v">
                 <DevflowChecks checks={stage.release ?? []} edit={edit} list="release" />
               </div>

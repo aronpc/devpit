@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import type { DevflowAsk, DevflowAsks as Asks } from '../gen/bindings'
+import { t } from '../i18n'
 import { ask, commands } from './live'
 import { onCarried } from './window'
 
@@ -12,25 +13,11 @@ import { onCarried } from './window'
  */
 
 export function devflowQuestion(one: DevflowAsk): { question: string; why: string; yes: string } {
-  switch (one.change) {
-    case 'enable':
-      return {
-        question: `Switch Devflow on in ${one.project}?`,
-        why: 'Its agents get the Devflow tools; the click writes enabled: true in its devflow.yaml.',
-        yes: 'Switch on',
-      }
-    case 'enforce':
-      return {
-        question: `Enforce Decisions in ${one.project}'s Devflow?`,
-        why: 'Its gates then block instead of only logging; the click writes mode: enforce.',
-        yes: 'Enforce',
-      }
-    case 'command':
-      return {
-        question: `Run a team layer's gate command in ${one.project}?`,
-        why: `${one.detail ?? ''} — code from outside the project, asked again whenever it or its commit changes.`,
-        yes: 'Run it',
-      }
+  const args = { project: one.project, detail: one.detail ?? '' }
+  return {
+    question: t(`devflow.asks.${one.change}.question`, args),
+    why: t(`devflow.asks.${one.change}.why`, args),
+    yes: t(`devflow.asks.${one.change}.yes`),
   }
 }
 
@@ -53,7 +40,7 @@ export function DevflowAsks(): React.JSX.Element | null {
   const answer = (id: string, yes: boolean): void => void ask(() => commands.devflowAnswer(id, yes)).then(told)
 
   return (
-    <section className="remind" role="alert" aria-label="Devflow">
+    <section className="remind" role="alert" aria-label={t('devflow.name')}>
       <div className="remind__list">
         {asks.map((one) => {
           const said = devflowQuestion(one)
@@ -65,7 +52,7 @@ export function DevflowAsks(): React.JSX.Element | null {
               </span>
               <span className="remind__acts">
                 <button className="remind__btn" onClick={() => answer(one.id, false)}>
-                  Not now
+                  {t('devflow.notNow')}
                 </button>
                 <button className="remind__btn remind__btn--done" onClick={() => answer(one.id, true)}>
                   {said.yes}

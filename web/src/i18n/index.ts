@@ -1,9 +1,11 @@
 import enCommon from './en/common.json'
 import enBoard from './en/board.json'
 import enSettings from './en/settings.json'
+import enDevflow from './en/devflow.json'
 import ptBrCommon from './pt-BR/common.json'
 import ptBrBoard from './pt-BR/board.json'
 import ptBrSettings from './pt-BR/settings.json'
+import ptBrDevflow from './pt-BR/devflow.json'
 
 /* One entry is a sentence, or the two plural forms of one. Flat keys —
    `board.emptyLane` — because the guard that compares catalogs (T7) reads
@@ -13,8 +15,8 @@ type Catalog = Record<string, Entry>
 
 /* English is the base: every key is born in its catalog (AGENTS.md). */
 const catalogs: Record<string, Catalog> = {
-  en: { ...enCommon, ...enSettings, ...enBoard },
-  'pt-BR': { ...ptBrCommon, ...ptBrSettings, ...ptBrBoard },
+  en: { ...enCommon, ...enSettings, ...enBoard, ...enDevflow },
+  'pt-BR': { ...ptBrCommon, ...ptBrSettings, ...ptBrBoard, ...ptBrDevflow },
 }
 
 export interface TranslateArgs {
