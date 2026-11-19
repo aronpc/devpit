@@ -66,6 +66,9 @@ release notes are taken from here when a version is tagged.
 
 ### Chat and voice
 
+- **A chat is offered Claude Code's Artifact tools**, the orchestrator's
+  included, as a terminal on the same account is: it can read, publish and
+  comment on artifacts. The read-only project agent is not offered them.
 - **A question an agent asks waits for its chat**, even when the chat opens
   late or the conversation moves, and leaves once it is answered.
 - **Holding a key speaks to the chat in front**, Settings → Voice chooses the
