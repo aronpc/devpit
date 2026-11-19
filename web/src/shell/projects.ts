@@ -1,4 +1,5 @@
 import type { Project } from '../gen/bindings'
+import { formatRelative } from '../i18n/format'
 
 /* What removing a project does to the list and to where you are standing.
    A function, so the test calls the rule instead of restating it. */
@@ -47,7 +48,7 @@ const SCALES: readonly (readonly [Intl.RelativeTimeFormatUnit, number])[] = [
   ['minute', 60],
 ]
 
-export function since(seconds: number | null, now = Date.now(), locale = 'en'): string {
+export function since(seconds: number | null, now = Date.now(), locale?: string): string {
   if (!seconds) return 'never opened'
 
   const elapsed = Math.round(now / 1000 - seconds)
@@ -55,11 +56,8 @@ export function since(seconds: number | null, now = Date.now(), locale = 'en'): 
      "in 3 hours", so anything inside the minute is simply now. */
   if (elapsed < 60) return 'just now'
 
-  /* A locale said out loud rather than taken from the machine, so the words
-     do not change from one runner to the next. */
-  const format = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' })
   for (const [unit, size] of SCALES) {
-    if (elapsed >= size) return format.format(-Math.floor(elapsed / size), unit)
+    if (elapsed >= size) return formatRelative(-Math.floor(elapsed / size), unit, { numeric: 'auto' }, locale)
   }
   return 'just now'
 }

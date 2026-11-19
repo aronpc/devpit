@@ -1,4 +1,5 @@
 import type { Change } from '../gen/bindings'
+import { formatNumber } from '../i18n/format'
 
 /*
  * The one button at the top of the Changes panel.
@@ -59,10 +60,9 @@ export function primary(changes: readonly Change[], message: string): Primary {
 /**
  * Thousands, so six thousand lines does not read as six hundred.
  *
- * In the locale the caller names, 'en' as the standing default: a thousand
- * separator is one of the few things a person reads without looking, and
- * the machine the code happens to run on is no way to choose one.
+ * In the locale the person chose, which the core resolved; a caller with
+ * its own words to say names one out loud.
  */
-export function counted(lines: number, locale = 'en'): string {
-  return lines.toLocaleString(locale)
+export function counted(lines: number, locale?: string): string {
+  return formatNumber(lines, {}, locale)
 }
