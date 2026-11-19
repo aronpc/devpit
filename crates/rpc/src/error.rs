@@ -83,11 +83,20 @@ impl From<devpit_core::StoreError> for RpcError {
         match err {
             // Busy, not Conflict: a conflict is the board's "move it anyway?",
             // and no answer to it lets a second run into the same checkout.
-            devpit_core::StoreError::AlreadyRunning => Self::new(ErrorCode::Busy, err.to_string()),
+            devpit_core::StoreError::AlreadyRunning => Self::new(
+                ErrorCode::Busy,
+                devpit_core::i18n::t("error.alreadyRunning", &[]),
+            ),
+            // `Internal` goes to the report, which is never translated: the
+            // `StoreError` text is English by construction.
             err => Self::internal(err.to_string()),
         }
     }
 }
+
+#[cfg(test)]
+#[path = "error_tests.rs"]
+mod error_tests;
 
 #[cfg(test)]
 mod tests {

@@ -38,5 +38,9 @@
   "sinceNotice.waiting": "{name} is waiting on a question",
   "sinceNotice.finished": "{name} finished its turn",
   "sinceNotice.ended": "{name} ended",
-  "sinceNotice.line": "[devpit, not the person] Since your last message: {said}."
+  "sinceNotice.line": "[devpit, not the person] Since your last message: {said}.",
+  "error.outsideProject": "{path} is outside the project",
+  "error.unreadable": "could not read {path}: {reason}",
+  "error.alreadyExists": "{path} already exists",
+  "error.alreadyRunning": "a run is already going on this card"
 }
