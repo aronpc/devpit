@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react'
 import type { LessonProposal, MemoryDecision, LessonProposals as Proposals } from '../gen/bindings'
 import { ask, commands } from './live'
 import { onCarried } from './window'
+import { t } from '../i18n'
 
 /*
  * What the project agent proposed for its memory from one card, on that card:
@@ -41,7 +42,7 @@ export function LessonProposals({ projectId, source }: { projectId: string; sour
   return (
     <>
       {shown.length > 0 && (
-        <section className="remind" aria-label="Lessons to approve">
+        <section className="remind" aria-label={t('workspace.lessons.toApprove')}>
           <div className="remind__list">
             {shown.map((one) => {
               const edited = editing?.of === one ? editing : null
@@ -50,31 +51,31 @@ export function LessonProposals({ projectId, source }: { projectId: string; sour
                   {edited ? (
                     <input
                       className="remind__edit"
-                      aria-label="Lesson"
+                      aria-label={t('workspace.lessons.lesson')}
                       value={edited.text}
                       onChange={(event) => setEditing({ of: one, text: event.target.value })}
                     />
                   ) : (
                     <span className="remind__what" title={one.replaces ?? one.text}>
-                      <b>{one.replaces !== null && !one.text ? `Remove: ${one.replaces}` : one.text}</b>
+                      <b>{one.replaces !== null && !one.text ? t('workspace.lessons.remove', { text: one.replaces }) : one.text}</b>
                       <span className="remind__when">
                         {one.project} · {one.source}
                         {one.file !== 'lessons.md' && ` · ${one.file}`}
-                        {one.replaces !== null && one.text && ` · was: ${one.replaces}`}
+                        {one.replaces !== null && one.text && t('workspace.lessons.was', { text: one.replaces })}
                       </span>
                     </span>
                   )}
                   <span className="remind__acts">
                     <button className="remind__btn" onClick={() => decide(one, null)}>
-                      Discard
+                      {t('workspace.lessons.discard')}
                     </button>
                     {!edited && (
                       <button className="remind__btn" onClick={() => setEditing({ of: one, text: one.text })}>
-                        Edit
+                        {t('workspace.lessons.edit')}
                       </button>
                     )}
                     <button className="remind__btn remind__btn--done" onClick={() => decide(one, edited ? edited.text : one.text)}>
-                      Approve
+                      {t('workspace.lessons.approve')}
                     </button>
                   </span>
                 </div>
@@ -85,14 +86,14 @@ export function LessonProposals({ projectId, source }: { projectId: string; sour
         </section>
       )}
       {made.length > 0 && (
-        <section className="remind" aria-label="Decisions from this card">
+        <section className="remind" aria-label={t('workspace.lessons.decisionsLabel')}>
           <div className="remind__list">
             {made.map((one) => (
               <div key={`${one.source} ${one.text}`} className="remind__one">
                 <span className="remind__what" title={one.text}>
                   <b>{one.text}</b>
                   <span className="remind__when">
-                    decisions.md · {one.day} · {one.cards.join(', ')}
+                    {t('workspace.lessons.decision', { day: one.day, cards: one.cards.join(', ') })}
                   </span>
                 </span>
               </div>

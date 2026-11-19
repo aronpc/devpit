@@ -1,4 +1,6 @@
 import type { MissingSignIn } from '../gen/bindings'
+import { t } from '../i18n'
+import { tRich } from '../i18n/rich'
 
 /*
  * A start held for a sign-in, above the terminal it was meant for. The shell
@@ -19,22 +21,21 @@ export function LaunchHeld({
   return (
     <div className="theld" role="alert">
       <div className="theld__t">
-        <strong>Not started.</strong>
+        <strong>{t('workspace.launch.notStarted')}</strong>
         {missing.map((one) => (
           <span key={one.command}>
             {' '}
-            {one.what[0]?.toUpperCase()}
-            {one.what.slice(1)}: run <code>{one.command}</code> here.
+            {tRich('workspace.launch.run', { command: <code>{one.command}</code> }, { what: `${one.what[0]?.toUpperCase() ?? ''}${one.what.slice(1)}` })}
           </span>
         ))}
       </div>
       <button className="btn" onClick={onAgain}>
-        Check and start
+        {t('workspace.launch.again')}
       </button>
       <button className="btn" onClick={onAnyway}>
-        Start anyway
+        {t('workspace.launch.anyway')}
       </button>
-      <button className="theld__x" onClick={onDismiss} aria-label="Dismiss">
+      <button className="theld__x" onClick={onDismiss} aria-label={t('workspace.launch.dismiss')}>
         ×
       </button>
     </div>

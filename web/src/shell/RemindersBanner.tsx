@@ -1,6 +1,7 @@
 import { useState } from 'react'
 
 import type { Reminder } from '../gen/bindings'
+import { t } from '../i18n'
 import { dueLabel } from './due'
 import { useShell } from './useShell'
 import { laterOptions, useReminders } from './useReminders'
@@ -37,8 +38,8 @@ function Row({
 }): React.JSX.Element {
   return (
     <div className="remind__one">
-      <button className="remind__what" onClick={onOpen} title="Open the card">
-        <b>{one.secret ? `Rotate ${one.secret}` : one.title}</b>
+      <button className="remind__what" onClick={onOpen} title={t('workspace.reminders.open')}>
+        <b>{one.secret ? t('workspace.reminders.rotate', { secret: one.secret }) : one.title}</b>
         <span className="remind__when">
           {dueLabel(one.dueAt, now, one.timed)}
           {one.project && ` · ${one.project}`}
@@ -52,16 +53,16 @@ function Row({
         ))}
         {one.secret ? (
           <>
-            <button className="remind__btn remind__btn--done" onClick={onRotated} title="Sets the next date">
-              Rotated
+            <button className="remind__btn remind__btn--done" onClick={onRotated} title={t('workspace.reminders.rotatedTitle')}>
+              {t('workspace.reminders.rotated')}
             </button>
-            <button className="remind__btn" onClick={onForget} title="No more reminders to rotate it">
-              Forget
+            <button className="remind__btn" onClick={onForget} title={t('workspace.reminders.forgetTitle')}>
+              {t('workspace.reminders.forget')}
             </button>
           </>
         ) : (
           <button className="remind__btn remind__btn--done" onClick={onDone}>
-            Done
+            {t('workspace.reminders.done')}
           </button>
         )}
       </span>
@@ -84,7 +85,7 @@ export function RemindersBanner(): React.JSX.Element | null {
   }
 
   return (
-    <section className="remind" role="alert" aria-label="Reminders">
+    <section className="remind" role="alert" aria-label={t('workspace.reminders.label')}>
       <svg className="remind__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><circle cx="12" cy="13" r="8" /><path d="M12 9v4l2 2M5 3 2 6M22 6l-3-3" /></svg>
       <div className="remind__list">
         {shown.map((one) => (
@@ -102,7 +103,7 @@ export function RemindersBanner(): React.JSX.Element | null {
       </div>
       {reminders.length > 1 && (
         <button className="remind__more" aria-expanded={all} onClick={() => setAll((was) => !was)}>
-          {all ? 'Fewer' : `${reminders.length - 1} more`}
+          {all ? t('workspace.reminders.fewer') : t('workspace.reminders.more', { count: reminders.length - 1 })}
         </button>
       )}
     </section>

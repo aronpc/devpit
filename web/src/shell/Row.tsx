@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 
+import { t } from '../i18n'
+import { formatNumber } from '../i18n/format'
 import { ask, commands } from './live'
 
 import type { FileNode } from '../gen/bindings'
@@ -160,7 +162,7 @@ export function Row({
           tabIndex={-1}
         >
           <span className="row__n">
-            Showing {visible.length.toLocaleString()} of {kids.length.toLocaleString()} entries. Show more.
+            {t('workspace.row.more', { shown: formatNumber(visible.length), total: formatNumber(kids.length) })}
           </span>
         </button>
       )}

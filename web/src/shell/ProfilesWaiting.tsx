@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import type { ProfileWaiting } from '../gen/bindings'
+import { t } from '../i18n'
+import { useLocale } from '../i18n/LocaleRoot'
+import { tRich } from '../i18n/rich'
 import { ask, commands } from './live'
 import { profilesChanged } from './profiles'
 import { onEvent } from './window'
@@ -14,6 +17,7 @@ import { onEvent } from './window'
  * person's to take — or to keep this machine's own, which then travels back.
  */
 export function ProfilesWaiting(): React.JSX.Element | null {
+  useLocale()
   const [waiting, setWaiting] = useState<readonly ProfileWaiting[]>([])
   const [error, setError] = useState<string | null>(null)
 
@@ -40,28 +44,27 @@ export function ProfilesWaiting(): React.JSX.Element | null {
         <div key={one.id}>
           {one.arrived && (
             <p>
-              <strong>{one.label}</strong> came from another computer. Look it over below before it runs here.{' '}
+              <strong>{one.label}</strong>{t('waiting.arrived')}{' '}
               {one.changed.length === 0 && (
                 <button className="btn" onClick={() => settle(one.id, true)}>
-                  Take it
+                  {t('waiting.takeIt')}
                 </button>
               )}
             </p>
           )}
           {one.needs.length > 0 && (
             <p>
-              <strong>{one.label}</strong> came from another computer and needs {one.needs.join(', ')} here before it can start.
-              Edit it below to fill it in.
+              <strong>{one.label}</strong>{t('waiting.needs', { needs: one.needs.join(', ') })}
             </p>
           )}
           {one.changed.map((change) => (
             <p key={change.name}>
-              <strong>{one.label}</strong>&apos;s {change.name.replace(/^env\./, '')} was changed on another computer to <code>{change.value}</code>.{' '}
+              {tRich('waiting.changed', { label: <strong>{one.label}</strong>, value: <code>{change.value}</code> }, { name: change.name.replace(/^env\./, '') })}{' '}
               <button className="btn" onClick={() => settle(one.id, true, change)}>
-                Use it
+                {t('waiting.useIt')}
               </button>{' '}
               <button className="btn" onClick={() => settle(one.id, false, change)}>
-                Keep this one
+                {t('waiting.keepThis')}
               </button>
             </p>
           ))}

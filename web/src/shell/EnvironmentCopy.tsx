@@ -1,6 +1,7 @@
 import { writeText } from '@tauri-apps/plugin-clipboard-manager'
 import { useState } from 'react'
 
+import { t } from '../i18n'
 import { ask, commands } from './live'
 
 /* Copies what devpit sees of this machine, for a bug report. */
@@ -14,7 +15,7 @@ export function EnvironmentCopy(): React.JSX.Element {
       return
     }
     await writeText(answer.data.text).then(
-      () => setSaid('Copied.'),
+      () => setSaid(t('workspace.environmentCopy.copied')),
       () => setSaid(answer.data?.text ?? null),
     )
   }
@@ -22,7 +23,7 @@ export function EnvironmentCopy(): React.JSX.Element {
   return (
     <p className="acc__note">
       <button className="btn" onClick={() => void copy()}>
-        Copy environment info
+        {t('workspace.environmentCopy.copy')}
       </button>
       {said && <span className="envcopy__said">{said}</span>}
     </p>

@@ -1,6 +1,7 @@
 import { createContext, useContext } from 'react'
 
 import type { Message } from '../gen/bindings'
+import { t } from '../i18n'
 import type { Act } from './acts'
 import type { Segment } from './turnFold'
 
@@ -15,10 +16,10 @@ import type { Segment } from './turnFold'
 export type Activity = 'all' | 'failed' | 'none' | 'zen'
 
 export const ACTIVITIES: readonly { readonly id: Activity; readonly label: string; readonly what: string }[] = [
-  { id: 'all', label: 'Show all', what: 'Every tool call, thought and reply.' },
-  { id: 'failed', label: 'Hide successful', what: 'Only the calls that failed or are still running.' },
-  { id: 'none', label: 'Hide all', what: 'The replies, without the work between them.' },
-  { id: 'zen', label: 'Zen', what: 'Your messages and the final answers.' },
+  { id: 'all', get label() { return t('workspace.activity.showAll') }, get what() { return t('workspace.activity.showAllWhat') } },
+  { id: 'failed', get label() { return t('workspace.activity.failed') }, get what() { return t('workspace.activity.failedWhat') } },
+  { id: 'none', get label() { return t('workspace.activity.none') }, get what() { return t('workspace.activity.noneWhat') } },
+  { id: 'zen', get label() { return t('workspace.activity.zen') }, get what() { return t('workspace.activity.zenWhat') } },
 ]
 
 const KEY = 'devpit.chatActivity'

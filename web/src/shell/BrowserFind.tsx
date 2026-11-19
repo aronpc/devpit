@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 
 import { ask, commands } from './live'
 import { abandoned, committed } from './typing'
+import { t } from '../i18n'
 
 /*
  * Finding text in the page, from a bar that belongs to devpit.
@@ -46,8 +47,8 @@ export function BrowserFind({
       <input
         className="bfind__in"
         ref={field}
-        aria-label="Find in page"
-        placeholder="Find in page"
+        aria-label={t('workspace.browserFind.find')}
+        placeholder={t('workspace.browserFind.find')}
         spellCheck={false}
         value={what}
         onChange={(event) => setWhat(event.target.value)}
@@ -65,13 +66,13 @@ export function BrowserFind({
           }
         }}
       />
-      <button className="browser__act" type="button" aria-label="Find previous" title="Find previous" onClick={() => seek(true)}>
+      <button className="browser__act" type="button" aria-label={t('workspace.browserFind.previous')} title={t('workspace.browserFind.previous')} onClick={() => seek(true)}>
         ‹
       </button>
-      <button className="browser__act" type="submit" aria-label="Find next" title="Find next">
+      <button className="browser__act" type="submit" aria-label={t('workspace.browserFind.next')} title={t('workspace.browserFind.next')}>
         ›
       </button>
-      <button className="browser__act" type="button" aria-label="Close find" title="Close find" onClick={onDone}>
+      <button className="browser__act" type="button" aria-label={t('workspace.browserFind.close')} title={t('workspace.browserFind.close')} onClick={onDone}>
         ✕
       </button>
     </form>

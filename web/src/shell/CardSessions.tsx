@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 
 import type { CardHappening, CardSession } from '../gen/bindings'
+import { t } from '../i18n'
 import { ask, commands } from './live'
 import { adoptable } from './sessionRows'
 import { useShell } from './useShell'
@@ -11,12 +12,7 @@ export const READ_AFTER_MS = 250
 /** How often a card with a session working reads again, for the step it is on. */
 export const STEP_EVERY_MS = 4000
 
-const KIND: Readonly<Record<CardSession['kind'], string>> = {
-  pane: 'Terminal',
-  run: 'Run',
-  background: 'Background session',
-  chat: 'Chat',
-}
+const kindLabel = (kind: CardSession['kind']): string => t(`card.kind.${kind}`)
 
 /** Whether a chat can go on with a session. A run with no agent is heard under
  *  its own id, and no conversation was ever filed under that. */
@@ -81,20 +77,20 @@ export function CardSessions({
 
   const goTo = (tabId: string, leafId: string) =>
     doing(async () => {
-      if (!projectId) return 'no project open'
+      if (!projectId) return t('card.noProject')
       show('term', { id: tabId, title, cardId })
       return (await ask(() => commands.sessionFocus(projectId, tabId, leafId))).error
     })
 
   const asChat = (session: CardSession) =>
     doing(async () => {
-      if (!projectId) return 'no project open'
+      if (!projectId) return t('card.noProject')
       const found = await ask(() => commands.agentProfiles())
       const runnable = (found.data ?? []).filter((profile) => profile.reach === 'runnable' && profile.driver === 'claude')
       const profile = runnable.find((one) => !one.mine) ?? runnable[0]
-      if (!profile) return 'no installed profile can go on with this session'
+      if (!profile) return t('card.noProfile')
       const adopted = await ask(() => commands.chatAdopt(projectId, session.ref, profile.id, null, cardId))
-      if (!adopted.data) return adopted.error ?? 'could not open the chat'
+      if (!adopted.data) return adopted.error ?? t('card.chatFailed')
       show('chat', { id: adopted.data })
       onChanged()
       return null
@@ -109,56 +105,56 @@ export function CardSessions({
 
   const attach = () =>
     doing(async () => {
-      if (!projectId) return 'no project open'
+      if (!projectId) return t('card.noProject')
       const answer = await ask(() => commands.terminalAttachAgent(projectId, cardId))
-      if (!answer.data) return answer.error ?? 'could not attach'
+      if (!answer.data) return answer.error ?? t('card.attachFailed')
       show('term', { id: answer.data.tabId, title, cardId: answer.data.cardId })
       return null
     })
 
   return (
     <section>
-      <h2 className="cardp__h">Sessions</h2>
+      <h2 className="cardp__h">{t('card.sessions')}</h2>
       {sessions.map((session) => {
         const adoption = adoptable(session.kind, session.state)
         const { tabId, leafId, runId } = session
         return (
-          <div className="crun" key={`${session.kind}:${session.ref}`} aria-label={KIND[session.kind]}>
+          <div className="crun" key={`${session.kind}:${session.ref}`} aria-label={kindLabel(session.kind)}>
             <span className="crun__b">
-              <span className="crun__t">{KIND[session.kind]}</span>
+              <span className="crun__t">{kindLabel(session.kind)}</span>
             </span>
             <span className="crun__s" title={session.step ?? undefined}>
-              {session.state ?? 'not heard from yet'}
+              {session.state ?? t('card.notHeard')}
               {session.step && session.state === 'working' && ` · ${session.step}`}
             </span>
             {tabId && leafId && (
               <button className="btn" disabled={busy} onClick={() => void goTo(tabId, leafId)}>
-                Go to terminal
+                {t('card.goToTerminal')}
               </button>
             )}
             {session.kind === 'chat' && (
               <button className="btn" disabled={busy} onClick={() => show('chat', { id: session.ref })}>
-                Open chat
+                {t('card.openChat')}
               </button>
             )}
             {session.kind === 'background' && (
               <button className="btn" disabled={busy} onClick={() => void attach()}>
-                Attach in terminal
+                {t('card.attach')}
               </button>
             )}
             {session.kind === 'run' && session.state === 'working' && runId && (
               <button className="btn" data-danger disabled={busy} onClick={() => void stop(runId)}>
-                Stop
+                {t('card.stop')}
               </button>
             )}
             {(adoption === 'adopt' || adoption === 'stop-first') && hasConversation(session) && (
               <button
                 className="btn"
                 disabled={busy || adoption === 'stop-first'}
-                title={adoption === 'stop-first' ? 'It is still running: stop it first' : undefined}
+                title={adoption === 'stop-first' ? t('card.stopFirst') : undefined}
                 onClick={() => void asChat(session)}
               >
-                Open as chat
+                {t('card.openAsChat')}
               </button>
             )}
           </div>

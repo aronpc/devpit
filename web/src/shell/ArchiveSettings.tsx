@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react'
 
 import type { Thread } from '../gen/bindings'
+import { t } from '../i18n'
+import { formatDate } from '../i18n/format'
+import { useLocale } from '../i18n/LocaleRoot'
 import { ask, commands } from './live'
 import { NO_MARKS } from './useConversations'
 import { useShell } from './useShell'
@@ -10,6 +13,8 @@ import { useShell } from './useShell'
 
 export function ArchiveSettings(): React.JSX.Element {
   const { project, reload } = useShell()
+  /* Hears the locale, so the rows re-say themselves when it changes. */
+  useLocale()
   const [archived, setArchived] = useState<readonly Thread[] | null>(null)
   const projectId = project?.id ?? null
 
@@ -36,18 +41,18 @@ export function ArchiveSettings(): React.JSX.Element {
   return (
     <>
       <p className="acc__note">
-        Conversations of {project?.name ?? 'this project'} you archived from their menu. Restoring one puts it back in the lists.
+        {t('archive.note', { name: project?.name ?? t('archive.thisProject') })}
       </p>
-      {(!projectId || archived?.length === 0) && <p className="prefs__none">Nothing archived.</p>}
+      {(!projectId || archived?.length === 0) && <p className="prefs__none">{t('archive.none')}</p>}
       {projectId && archived?.map((one) => (
         <div className="pref" key={one.id}>
           <span className="pref__body">
             <span className="pref__t">{one.marks?.name ?? one.title}</span>
-            <span className="pref__d">{one.lastAt ? new Date(one.lastAt * 1000).toLocaleString() : null}</span>
+            <span className="pref__d">{one.lastAt ? formatDate(one.lastAt * 1000) : null}</span>
           </span>
           <span className="prefs__acts">
             <button className="btn" onClick={() => restore(one)}>
-              Restore
+              {t('archive.restore')}
             </button>
           </span>
         </div>

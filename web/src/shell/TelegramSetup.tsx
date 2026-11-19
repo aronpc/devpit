@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react'
 
 import type { Privacy, TelegramStatus } from '../gen/bindings'
+import { t } from '../i18n'
+import { tRich } from '../i18n/rich'
 import { ask, commands } from './live'
 
 const PRIVACY: [Privacy, string][] = [
-  ['minimal', 'Only that something waits or was answered'],
-  ['titles', 'Which session, card or project, and the first line of an answer'],
-  ['full', 'Names, and the orchestrator’s whole answer'],
+  ['minimal', 'workspace.telegram.privacyMinimal'],
+  ['titles', 'workspace.telegram.privacyTitles'],
+  ['full', 'workspace.telegram.privacyFull'],
 ]
 
 /* devpit's bot carries names at most: a whole answer is the person's own bot's. */
@@ -72,41 +74,38 @@ export function TelegramSetup({ onLinked }: { onLinked: () => void }): React.JSX
       <div className="pref">
         <span className="pref__body">
           <span className="pref__t">
-            Telegram, @{status.bot}
-            {status.throughDevpit && ' — devpit’s bot'}
+            {t('workspace.telegram.linkedTitle', { bot: status.bot ?? '' })}
+            {status.throughDevpit && ` — ${t('workspace.telegram.devpitBot')}`}
           </span>
           {status.throughDevpit ? (
             <span className="pref__d">
-              Notices go to the chat you linked through devpit.app, which passes on only what you let it and keeps none of it; what you write there goes to
-              your orchestrator as you while devpit is open, and waits ten minutes for it at most. Sending a draft, stopping a session or starting a lane’s
-              step waits for a button there. Telegram is not end-to-end encrypted: what a message says, Telegram can read.
+              {t('workspace.telegram.throughDevpit')}
             </span>
           ) : (
             <span className="pref__d">
-              Notices go to the chat you linked, and what you write or say there goes to your orchestrator as you. Sending a draft, stopping a session or
-              starting a lane’s step waits for a button there. Telegram is not end-to-end encrypted: what a message says, Telegram can read.
+              {t('workspace.telegram.direct')}
             </span>
           )}
           <label className="voice__row">
-            Says
-            <select aria-label="What Telegram is told" value={status.privacy} onChange={(event) => void ask(() => commands.telegramPrivacySet(event.target.value as Privacy)).then(saved)}>
+            {t('workspace.telegram.says')}
+            <select aria-label={t('workspace.telegram.saysLabel')} value={status.privacy} onChange={(event) => void ask(() => commands.telegramPrivacySet(event.target.value as Privacy)).then(saved)}>
               {(status.throughDevpit ? THROUGH_DEVPIT : PRIVACY).map(([level, label]) => (
                 <option key={level} value={level}>
-                  {label}
+                  {t(label)}
                 </option>
               ))}
             </select>
           </label>
-          {status.orchestrators.length === 1 && <span className="pref__d">Talks to {status.orchestrators[0].name}, your only orchestrator.</span>}
+          {status.orchestrators.length === 1 && <span className="pref__d">{t('workspace.telegram.talksToOnly', { name: status.orchestrators[0].name })}</span>}
           {status.orchestrators.length > 1 && (
             <label className="voice__row">
-              Talks to
+              {t('workspace.telegram.talksTo')}
               <select
-                aria-label="The orchestrator Telegram talks to"
+                aria-label={t('workspace.telegram.talksToLabel')}
                 value={chosen ? (status.orchestrator ?? '') : ''}
                 onChange={(event) => void ask(() => commands.telegramOrchestratorSet(event.target.value || null)).then(saved)}
               >
-                {!chosen && <option value="">Choose an orchestrator</option>}
+                {!chosen && <option value="">{t('workspace.telegram.choose')}</option>}
                 {status.orchestrators.map((one) => (
                   <option key={one.project} value={one.project}>
                     {one.name}
@@ -118,7 +117,7 @@ export function TelegramSetup({ onLinked }: { onLinked: () => void }): React.JSX
           {said && <span className="pref__d voice__bad">{said}</span>}
         </span>
         <button className="btn" onClick={() => void ask(() => commands.telegramUnlink()).then((answer) => (setStatus(answer.data), onLinked()))}>
-          Unlink
+          {t('workspace.telegram.unlink')}
         </button>
       </div>
     )
@@ -126,38 +125,36 @@ export function TelegramSetup({ onLinked }: { onLinked: () => void }): React.JSX
   return (
     <div className="pref">
       <span className="pref__body">
-        <span className="pref__t">Telegram</span>
-        <span className="pref__d">
-          Make a bot with @BotFather and paste its token here. It is kept on this computer, readable by you alone, and never shown again.
-        </span>
+        <span className="pref__t">{t('workspace.telegram.name')}</span>
+        <span className="pref__d">{t('workspace.telegram.makeBot')}</span>
         {status?.code ? (
           <span className="pref__d">
-            Now send <code>/start {status.code}</code> to @{status.bot} from the chat devpit should use
+            {tRich('workspace.telegram.sendCode', { cmd: <code>/start {status.code}</code> /* // ui-text: ok a command */ }, { bot: status.bot ?? '' })}
             {status.link && (
               <>
                 {' '}
                 &mdash;{' '}
                 <button className="plusl" onClick={() => void ask(() => commands.urlOpen(status.link ?? ''))}>
-                  open it in Telegram
+                  {t('workspace.telegram.openIt')}
                 </button>
               </>
             )}
-            . The code holds for ten minutes.
+            {t('workspace.telegram.codeHolds')}
           </span>
         ) : (
           <>
             <span className="voice__row">
-              <input type="password" autoComplete="off" placeholder="123456:ABC…" value={token} onChange={(event) => setToken(event.target.value)} />
+              <input type="password" autoComplete="off" placeholder="123456:ABC…" /* // ui-text: ok the shape of a token */ value={token} onChange={(event) => setToken(event.target.value)} />
               <button className="btn" disabled={!token.trim()} onClick={link}>
-                Link
+                {t('workspace.telegram.link')}
               </button>
             </span>
             {status?.devpitBot && (
               <span className="voice__row">
                 <button className="btn" onClick={useDevpit}>
-                  Use devpit’s bot
+                  {t('workspace.telegram.useDevpit')}
                 </button>
-                <span className="pref__d">No bot to make: devpit.app carries it, and by default says only that something waits.</span>
+                <span className="pref__d">{t('workspace.telegram.devpitHint')}</span>
               </span>
             )}
           </>

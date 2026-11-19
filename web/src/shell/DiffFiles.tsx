@@ -2,6 +2,7 @@ import { ignoringWhitespace, parse } from './diff'
 import { falsePositiveOf, newLines, SHAPE, type Note } from './diffNotes'
 import { severityWord } from './found'
 import { useViewPrefs } from './viewPrefs'
+import { t } from '../i18n'
 
 /*
  * A unified diff, one folded section per file: what a card's changes and a
@@ -31,7 +32,7 @@ export function DiffFiles({
             <summary className="cdiff__s">
               <span className="cdiff__p">{file.path}</span>
               <span className="cdiff__n">
-                {file.binary ? 'binary' : `${file.hunks.reduce((sum, hunk) => sum + hunk.rows.length, 0)} lines`}
+                {file.binary ? t('workspace.diffFiles.binary') : t('workspace.diffFiles.lines', { count: file.hunks.reduce((sum, hunk) => sum + hunk.rows.length, 0) })}
               </span>
             </summary>
             {elsewhere.map((note) => (
@@ -77,14 +78,14 @@ function Marker({ note, onDismiss }: { note: Note; onDismiss?: (note: Note, dism
         <span className="fnd__s" data-severity={finding.severity}>
           {SHAPE[finding.severity]} {severityWord(finding.severity)}
         </span>
-        {finding.line !== null && <span className="cdiff__fl">line {finding.line}</span>}
-        {old && <span className="cdiff__fl">Outdated · made at {note.atRevision?.slice(0, 10) ?? 'an unknown commit'}</span>}
-        {note.dismissed && <span className="cdiff__fl">{falsePositive ? 'A false positive, you said' : 'Dismissed by you'}</span>}
+        {finding.line !== null && <span className="cdiff__fl">{t('workspace.diffFiles.line', { line: finding.line })}</span>}
+        {old && <span className="cdiff__fl">{t('workspace.diffFiles.outdated', { at: note.atRevision?.slice(0, 10) ?? t('workspace.diffFiles.unknownCommit') })}</span>}
+        {note.dismissed && <span className="cdiff__fl">{falsePositive ? t('workspace.diffFiles.falsePositiveSaid') : t('workspace.diffFiles.dismissedSaid')}</span>}
       </summary>
       <p className="fnd__y">{finding.why}</p>
       {onDismiss && (
         <button className="btn" onClick={() => onDismiss(note, !note.dismissed)}>
-          {falsePositive ? (note.dismissed ? 'Not a false positive' : 'False positive') : note.dismissed ? 'Keep' : 'Dismiss'}
+          {falsePositive ? t(note.dismissed ? 'workspace.diffFiles.notFalsePositive' : 'workspace.diffFiles.falsePositive') : t(note.dismissed ? 'workspace.diffFiles.keep' : 'workspace.diffFiles.dismiss')}
         </button>
       )}
     </details>

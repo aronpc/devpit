@@ -1,6 +1,7 @@
 import { useState } from 'react'
 
 import { abandoned, committed } from './typing'
+import { t } from '../i18n'
 
 /* One dialog for anything that needs a name before it can happen. Shaped like
    `Confirm`, because the two are the same act with and without a text field,
@@ -49,11 +50,11 @@ export function AskName({
           }}
         />
         {ready && !usable && (
-          <p className="ask__d">A name cannot contain a slash — it would leave this folder.</p>
+          <p className="ask__d">{t('workspace.askName.slash')}</p>
         )}
         <div className="ask__row">
           <button className="btn" onClick={onClose}>
-            Cancel
+            {t('workspace.askName.cancel')}
           </button>
           <button className="btn btn--go" disabled={!usable} onClick={() => onName(name.trim())}>
             {action}

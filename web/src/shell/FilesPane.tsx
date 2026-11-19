@@ -7,6 +7,7 @@ import { useWorkspaceFolder } from './useWorkspace'
 import { WorkspaceFile } from './WorkspaceFile'
 import { committed } from './typing'
 import { crumbs, fullPath, matching, meta, moved, parentOf, sorted, type Order } from './wsbrowse'
+import { t } from '../i18n'
 
 /*
  * The devpit workspace, browsed.
@@ -24,9 +25,9 @@ import { crumbs, fullPath, matching, meta, moved, parentOf, sorted, type Order }
  */
 
 const SORTS: readonly (readonly [Order, string])[] = [
-  ['name', 'Name'],
-  ['size', 'Size'],
-  ['modified', 'Changed'],
+  ['name', 'workspace.files.sortName'],
+  ['size', 'workspace.files.sortSize'],
+  ['modified', 'workspace.files.sortChanged'],
 ]
 
 export function FilesPane(): React.JSX.Element {
@@ -77,7 +78,7 @@ export function FilesPane(): React.JSX.Element {
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" /></svg>
         </span>
         <span className="pane__t">
-          <b>Files</b>
+          <b>{t('workspace.files.title')}</b>
           {project ? ` · ${project.name}` : ''}
         </span>
         <span className="drag"></span>
@@ -85,15 +86,15 @@ export function FilesPane(): React.JSX.Element {
           className="sq26"
           onClick={() => void ask(() => commands.pathReveal(fullPath(root, here)))}
           disabled={!root}
-          aria-label="Show this folder in the finder"
-          title="Show this folder in the finder"
+          aria-label={t('workspace.files.reveal')}
+          title={t('workspace.files.reveal')}
         >
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /></svg>
         </button>
-        <button className="sq26" onClick={folder.reload} aria-label="Refresh" title="Refresh">
+        <button className="sq26" onClick={folder.reload} aria-label={t('workspace.files.refresh')} title={t('workspace.files.refresh')}>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 0 1-15.5 6.2M3 12a9 9 0 0 1 15.5-6.2M3 20v-5h5M21 4v5h-5" /></svg>
         </button>
-        <button className="sq26" onClick={() => close('files')} aria-label="Close Files" title="Close Files">
+        <button className="sq26" onClick={() => close('files')} aria-label={t('workspace.files.close')} title={t('workspace.files.close')}>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
         </button>
       </div>
@@ -101,13 +102,13 @@ export function FilesPane(): React.JSX.Element {
       <div className="fb" data-preview={String(picked !== null)}>
         <div className="fb__main">
           <div className="fb__head">
-            <nav className="fb__crumbs" aria-label="Folder">
+            <nav className="fb__crumbs" aria-label={t('workspace.files.folder')}>
               <button
                 className="sq26"
                 onClick={() => up !== null && folder.go(up)}
                 disabled={up === null}
-                aria-label="Up one folder"
-                title="Up one folder"
+                aria-label={t('workspace.files.up')}
+                title={t('workspace.files.up')}
               >
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19V5M5 12l7-7 7 7" /></svg>
               </button>
@@ -143,12 +144,12 @@ export function FilesPane(): React.JSX.Element {
             <div className="fb__tools">
               <input
                 className="fb__find"
-                placeholder="Filter by name…"
+                placeholder={t('workspace.files.filterPlaceholder')}
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                aria-label="Filter files"
+                aria-label={t('workspace.files.filter')}
               />
-              <div className="seg seg--tight" role="tablist" aria-label="Sort by">
+              <div className="seg seg--tight" role="tablist" aria-label={t('workspace.files.sortBy')}>
                 {SORTS.map(([key, label]) => (
                   <button
                     className="segb"
@@ -157,7 +158,7 @@ export function FilesPane(): React.JSX.Element {
                     aria-selected={order === key}
                     onClick={() => setOrder(key)}
                   >
-                    {label}
+                    {t(label)}
                   </button>
                 ))}
               </div>
@@ -193,12 +194,12 @@ export function FilesPane(): React.JSX.Element {
             {!folder.error && !folder.loading && rows.length === 0 && (
               <div className="exempty">
                 <span className="exempty__t">
-                  {query ? 'Nothing here matches that.' : 'This folder is empty.'}
+                  {query ? t('workspace.files.noMatch') : t('workspace.files.empty')}
                 </span>
                 <span className="exempty__d">
                   {query
-                    ? 'Clear the filter to see everything in this folder.'
-                    : 'devpit writes here as you work — sessions, worktrees and agents.'}
+                    ? t('workspace.files.clearFilter')
+                    : t('workspace.files.writesHere')}
                 </span>
               </div>
             )}
@@ -233,8 +234,8 @@ export function FilesPane(): React.JSX.Element {
           <div className="fb__foot">
             <span className="fb__count">
               {rows.length === 0
-                ? 'Nothing here'
-                : `${folders} folder${folders === 1 ? '' : 's'}, ${rows.length - folders} file${rows.length - folders === 1 ? '' : 's'}`}
+                ? t('workspace.files.nothing')
+                : t('workspace.files.tally', { folders: t('workspace.files.folders', { count: folders }), files: t('workspace.files.files', { count: rows.length - folders }) })}
             </span>
             <span className="fb__where">
               {/* Isolated: the box runs right-to-left so the ellipsis eats the

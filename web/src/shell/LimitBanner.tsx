@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 
 import type { Limit } from '../gen/bindings'
+import { t } from '../i18n'
 import { clock } from './chat'
 
 const TITLES: Readonly<Record<Limit['kind'], string>> = {
-  rate_limit: 'Usage limit reached',
-  outage: 'The provider is not answering',
+  rate_limit: 'workspace.limit.rate',
+  outage: 'workspace.limit.outage',
 }
 
 /* A turn the provider refused, under the thread: sent again now, or by itself
@@ -25,24 +26,24 @@ export function LimitBanner({ limit, onRetry }: { limit: Limit; onRetry: () => v
   }, [waiting, resets])
 
   return (
-    <section className="limitb" aria-label={TITLES[limit.kind]}>
+    <section className="limitb" aria-label={t(TITLES[limit.kind])}>
       <div className="limitb__t">
-        <b>{TITLES[limit.kind]}</b>
-        {resets !== null && <span className="limitb__at">Resets at {clock(resets)}</span>}
+        <b>{t(TITLES[limit.kind])}</b>
+        {resets !== null && <span className="limitb__at">{t('workspace.limit.resetsAt', { time: clock(resets) })}</span>}
       </div>
       <div className="limitb__row">
         {resets !== null &&
           (waiting ? (
-            <button className="btn" onClick={() => setWaiting(false)} title="Stop waiting for the reset">
-              Resuming at {clock(resets)} · Cancel
+            <button className="btn" onClick={() => setWaiting(false)} title={t('workspace.limit.stopTitle')}>
+              {t('workspace.limit.resuming', { time: clock(resets) })}
             </button>
           ) : (
             <button className="btn" onClick={() => setWaiting(true)}>
-              Resume when it resets
+              {t('workspace.limit.resume')}
             </button>
           ))}
         <button className="btn btn--go" onClick={onRetry}>
-          Try again
+          {t('workspace.limit.retry')}
         </button>
       </div>
     </section>

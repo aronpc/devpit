@@ -1,4 +1,5 @@
 import type { PaneCost, Usage } from '../gen/bindings'
+import { t } from '../i18n'
 
 /*
  * What the terminals cost, said in words.
@@ -53,8 +54,8 @@ export const measured = (usage: Usage): boolean =>
  */
 export const counted = (usage: Usage): string =>
   usage.proportional
-    ? 'Memory shared between processes is divided among them, so the total is what is really in use.'
-    : 'Some processes could only be read as resident, so shared memory is counted more than once and this total is high.'
+    ? t('workspace.monitor.sharedDivided')
+    : t('workspace.monitor.sharedCounted')
 
 /** The panes worth a row, largest first. Zero-cost panes are a shell. */
 export const notable = (panes: readonly PaneCost[]): readonly PaneCost[] =>

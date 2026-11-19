@@ -1,6 +1,7 @@
 import { useContext, useEffect, useState } from 'react'
 
 import type { Agent, Profile, Step } from '../gen/bindings'
+import { t } from '../i18n'
 import { ask, commands } from './live'
 import { offers, onProfilesChanged } from './profiles'
 import { filled, RECIPES, type Recipe } from './recipes'
@@ -20,16 +21,12 @@ import { CONTEXT_KEYS, stepConfig, stepFields, type Fields } from './stepConfig'
  * one say what it was when they ran.
  */
 
-const KINDS = [
-  { id: 'agent', label: 'Agent', hint: 'One headless turn. Returns JSON, takes no terminal.' },
-  { id: 'session', label: 'Session', hint: 'A session you drive. Takes the terminal.' },
-  { id: 'command', label: 'Command', hint: 'A command of yours: tests, a build, a deploy.' },
-] as const
+/* Each kind's words are `step.kind.<id>` and `step.kindHint.<id>`. */
+const KINDS = [{ id: 'agent' }, { id: 'session' }, { id: 'command' }] as const
 
 type Field = {
+  /** Its words are `step.field.<key>` and `step.placeholder.<key>`. */
   key: string
-  label: string
-  placeholder: string
   /** A step without it would not run, so Create stays out of reach. */
   needed?: boolean
   /** Prose rather than a line: a prompt, or the schema of an answer. */
@@ -38,17 +35,17 @@ type Field = {
 
 const FIELDS: Readonly<Record<string, readonly Field[]>> = {
   command: [
-    { key: 'command', label: 'Command', placeholder: 'make test', needed: true },
-    { key: 'timeoutSeconds', label: 'Give up after (seconds)', placeholder: 'as long as it takes' },
+    { key: 'command', needed: true },
+    { key: 'timeoutSeconds' },
   ],
-  session: [{ key: 'model', label: 'Model', placeholder: 'whatever the account defaults to' }],
+  session: [{ key: 'model' }],
   agent: [
-    { key: 'prompt', label: 'Ask', placeholder: 'Review the change', needed: true, prose: true },
+    { key: 'prompt', needed: true, prose: true },
     // A step with no ceiling is a bill nobody agreed to, so the backend
     // refuses one. Asked for here rather than discovered on the lane.
-    { key: 'capUsd', label: 'Spending cap (USD)', placeholder: '2', needed: true },
-    { key: 'model', label: 'Model', placeholder: 'whatever the account defaults to' },
-    { key: 'expects', label: 'The answer must match (JSON Schema)', placeholder: 'any answer will do', prose: true },
+    { key: 'capUsd', needed: true },
+    { key: 'model' },
+    { key: 'expects', prose: true },
   ],
 }
 
@@ -77,8 +74,7 @@ export function StepNew({
   const [recipe, setRecipe] = useState<Recipe | null>(null)
   // Read when a recipe is picked; a form drawn outside a shell has no project.
   const shell = useContext(ShellStoreContext)
-  const chosen = KINDS.find((one) => one.id === kind)
-  const asked = FIELDS[kind] ?? []
+    const asked = FIELDS[kind] ?? []
 
   // A command runs as itself; the two kinds that spend somebody's account ask
   // which one.
@@ -123,19 +119,19 @@ export function StepNew({
 
   return (
     <div className="lstep__pop lstep__pop--wide">
-      <p className="lstep__t">{step ? 'This step' : 'A new step'}</p>
+      <p className="lstep__t">{step ? t('step.this') : t('step.aNew')}</p>
 
       {!step && (
         <>
-          <span className="fld__l">Start from</span>
+          <span className="fld__l">{t('step.startFrom')}</span>
           <div className="src__sw">
             {RECIPES.map((one) => (
               <button className="src__o" key={one.id} aria-checked={recipe?.id === one.id} onClick={() => void start(one)}>
-                {one.label}
+                {t(`step.recipe.${one.id}`)}
               </button>
             ))}
           </div>
-          {recipe && <p className="pref__d">{recipe.hint} What it runs is below, yours to change.</p>}
+          {recipe && <p className="pref__d">{t('step.recipeHint', { hint: t(`step.recipeHint.${recipe.id}`) })}</p>}
         </>
       )}
 
@@ -148,33 +144,33 @@ export function StepNew({
               aria-checked={kind === one.id}
               onClick={() => (setKind(one.id), setBase(undefined), setRecipe(null))}
             >
-              {one.label}
+              {t(`step.kind.${one.id}`)}
             </button>
           ))}
         </div>
       )}
-      <p className="pref__d">{chosen?.hint}</p>
+      <p className="pref__d">{t(`step.kindHint.${kind}`)}</p>
 
       <label className="fld">
-        <span className="fld__l">Name</span>
+        <span className="fld__l">{t('step.name')}</span>
         <input
           className="fld__b"
           autoFocus
           value={name}
-          placeholder="tests"
+          placeholder={t('step.namePlaceholder')}
           onChange={(event) => setName(event.target.value)}
         />
       </label>
 
       {kind === 'agent' && (
         <label className="fld">
-          <span className="fld__l">Agent</span>
+          <span className="fld__l">{t('step.agent')}</span>
           <input
             className="fld__b"
             list="stepnew-agents"
             value={fields.agent ?? ''}
             spellCheck={false}
-            placeholder="whichever the account defaults to"
+            placeholder={t('step.agentPlaceholder')}
             onChange={(event) => typed('agent', event.target.value)}
           />
           <datalist id="stepnew-agents">
@@ -187,13 +183,13 @@ export function StepNew({
 
       {asked.map((one) => (
         <label className="fld" key={one.key}>
-          <span className="fld__l">{one.label}</span>
+          <span className="fld__l">{t(`step.field.${one.key}`)}</span>
           {one.prose ? (
             <textarea
               className="lstep__ta"
               value={fields[one.key] ?? ''}
               spellCheck={false}
-              placeholder={one.placeholder}
+              placeholder={t(`step.placeholder.${one.key}`)}
               onChange={(event) => typed(one.key, event.target.value)}
             />
           ) : (
@@ -201,7 +197,7 @@ export function StepNew({
               className="fld__b"
               value={fields[one.key] ?? ''}
               spellCheck={false}
-              placeholder={one.placeholder}
+              placeholder={t(`step.placeholder.${one.key}`)}
               onChange={(event) => typed(one.key, event.target.value)}
             />
           )}
@@ -210,7 +206,7 @@ export function StepNew({
 
       {kind === 'agent' && (
         <label className="fld">
-          <span className="fld__l">Tell it about the card</span>
+          <span className="fld__l">{t('step.tellIt')}</span>
           {CONTEXT_KEYS.map((key) => (
             <button
               className="ask__opt"
@@ -232,14 +228,14 @@ export function StepNew({
 
       {kind !== 'command' && (
         <label className="fld">
-          <span className="fld__l">Account</span>
+          <span className="fld__l">{t('step.account')}</span>
           <div className="src__sw">
             <button
               className="src__o"
               aria-checked={!fields.profile}
               onClick={() => typed('profile', '')}
             >
-              Default
+              {t('step.default')}
             </button>
             {profiles.filter(offers(fields.profile ?? null)).map((one) => (
               <button
@@ -269,19 +265,19 @@ export function StepNew({
           </svg>
         </span>
         <span>
-          <span className="ask__ot">This step has no undo</span>
-          <span className="ask__od">It is never started by a drag alone &mdash; you confirm it.</span>
+          <span className="ask__ot">{t('step.noUndoTitle')}</span>
+          <span className="ask__od">{t('step.noUndoDetail')}</span>
         </span>
       </button>
 
       <div className="ask__row">
-        <button className="btn" onClick={onCancel}>Cancel</button>
+        <button className="btn" onClick={onCancel}>{t('step.cancel')}</button>
         <button
           className="btn btn--go"
           disabled={!name.trim() || missing}
           onClick={() => onDone(kind, name.trim(), stepConfig(kind, fields, step?.config ?? base), irreversible)}
         >
-          {step ? 'Save' : 'Create'}
+          {step ? t('step.save') : t('step.create')}
         </button>
       </div>
     </div>

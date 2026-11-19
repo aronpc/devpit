@@ -1,6 +1,7 @@
 import { writeText } from '@tauri-apps/plugin-clipboard-manager'
 import type { Terminal } from '@xterm/xterm'
 
+import { t } from '../i18n'
 import { Clipboard, Close, Columns, Copy, Plus, Rows, SelectAll } from './GitIcons'
 import { ask, commands } from './live'
 import { Menu, MenuItem, MenuRule } from './Menu'
@@ -25,11 +26,11 @@ import { useKeys } from './useShortcut'
    tell the person. */
 export async function openInTmux(projectId: string, paneId: string): Promise<string> {
   const opened = await ask(() => commands.paneOpenInTmux(projectId, paneId))
-  if (!opened.data) return opened.error ?? 'the pane could not be opened in tmux'
+  if (!opened.data) return opened.error ?? t('workspace.terminal.tmuxFailed')
   const line = opened.data.attach
   return writeText(line).then(
-    () => `Copied: ${line}`,
-    () => `Run: ${line}`,
+    () => t('workspace.terminal.copiedLine', { line }),
+    () => t('workspace.terminal.runLine', { line }),
   )
 }
 
@@ -66,32 +67,32 @@ export function TerminalMenu({
   }
 
   return (
-    <Menu at={at} label="Terminal actions" onClose={onClose}>
-      <MenuItem label="Copy" glyph={<Copy />} keys={keys('copy')} disabled={!terminal.hasSelection()} onPick={run(() => copySelection(terminal))} />
-      <MenuItem label="Select all" glyph={<SelectAll />} onPick={run(() => terminal.selectAll())} />
-      <MenuItem label="Paste" glyph={<Clipboard />} keys={keys('paste')} onPick={run(() => pasteClipboard(terminal, projectId).then(onFailed))} />
+    <Menu at={at} label={t('workspace.terminal.actions')} onClose={onClose}>
+      <MenuItem label={t('workspace.terminal.copy')} glyph={<Copy />} keys={keys('copy')} disabled={!terminal.hasSelection()} onPick={run(() => copySelection(terminal))} />
+      <MenuItem label={t('workspace.terminal.selectAll')} glyph={<SelectAll />} onPick={run(() => terminal.selectAll())} />
+      <MenuItem label={t('workspace.terminal.paste')} glyph={<Clipboard />} keys={keys('paste')} onPick={run(() => pasteClipboard(terminal, projectId).then(onFailed))} />
       {onSplit && (
         <>
           <MenuRule />
-          <MenuItem label="Split right" glyph={<Columns />} keys={keys('splitRight')} onPick={run(() => onSplit('horizontal'))} />
-          <MenuItem label="Split down" glyph={<Rows />} keys={keys('splitDown')} onPick={run(() => onSplit('vertical'))} />
+          <MenuItem label={t('workspace.terminal.splitRight')} glyph={<Columns />} keys={keys('splitRight')} onPick={run(() => onSplit('horizontal'))} />
+          <MenuItem label={t('workspace.terminal.splitDown')} glyph={<Rows />} keys={keys('splitDown')} onPick={run(() => onSplit('vertical'))} />
         </>
       )}
       {onBlocks && (
         <>
           <MenuRule />
-          <MenuItem label="Show as blocks" glyph={<Rows />} onPick={run(onBlocks)} />
+          <MenuItem label={t('workspace.terminal.showBlocks')} glyph={<Rows />} onPick={run(onBlocks)} />
         </>
       )}
       {paneId && (
         <>
           <MenuRule />
-          <MenuItem label="Open in tmux" glyph={<Copy />} onPick={run(() => openInTmux(projectId, paneId).then(onFailed))} />
+          <MenuItem label={t('workspace.terminal.openTmux')} glyph={<Copy />} onPick={run(() => openInTmux(projectId, paneId).then(onFailed))} />
         </>
       )}
       {(onClosePane || onSeparate) && <MenuRule />}
-      {onSeparate && <MenuItem label="Move to new tab" glyph={<Plus />} onPick={run(onSeparate)} />}
-      {onClosePane && <MenuItem label="Close pane" glyph={<Close />} bad onPick={run(onClosePane)} />}
+      {onSeparate && <MenuItem label={t('workspace.terminal.moveTab')} glyph={<Plus />} onPick={run(onSeparate)} />}
+      {onClosePane && <MenuItem label={t('workspace.terminal.closePane')} glyph={<Close />} bad onPick={run(onClosePane)} />}
     </Menu>
   )
 }

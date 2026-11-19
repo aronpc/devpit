@@ -13,16 +13,10 @@ export const REVIEWER_AGENTS = ['claude', 'codex', 'cursor', 'gemini'] as const
 export const PERSONAS = ['devflow-spec', 'devflow-standards', 'devflow-security'] as const
 export const SEVERITIES = ['critical', 'high', 'medium', 'low', 'info'] as const
 export const REPORTS = ['junit', 'vitest', 'jest', 'cargo', 'go', 'sarif', 'none'] as const
-export const CONSOLIDATIONS = ['jev', 'agent', 'none'] as const
+/** The file's name, which is its title wherever the screen shows it: an identifier, not a sentence. */
+export const YAML_FILE = 'devflow.yaml' // ui-text: ok identifier
 
-export const STAGE_SAYS: Readonly<Record<string, string>> = {
-  briefing: 'The goal, for whom and what success is, written as an epic card.',
-  context: 'The code, glossary and decisions the work stands on, gathered before planning.',
-  plan: "The epic's cards, each with criteria and the cards it waits on.",
-  execution: "A card's change, proved by the checks devpit runs for its evidence.",
-  review: "The change read by the reviewers below, findings merged into one list.",
-  completion: 'The gate: a card is done when its evidence says so.',
-}
+export const CONSOLIDATIONS = ['jev', 'agent', 'none'] as const
 
 /** A check as devflow.yaml takes it. */
 export const checkOf = (one: DevflowCheck): Record<string, unknown> => ({

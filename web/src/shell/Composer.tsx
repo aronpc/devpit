@@ -33,6 +33,7 @@ import { useSlash } from './useSlash'
 import { useStop } from './useStop'
 import { useShellPick } from './shellStore'
 import { followUpOf, sendKeyOf, useViewPrefs } from './viewPrefs'
+import { t } from '../i18n'
 
 /* What the conversation above may do to what is being written. */
 /** `put` replaces what is typed; `add` goes after it. */
@@ -155,8 +156,8 @@ export const Composer = memo(function Composer({
           <OwnCommand slash={slash} from={tab.id} projectId={project?.id ?? null} profileId={chat.profileId} orchestrator={project?.orchestrator ?? null} onClose={() => (slash.closeOwn(), field.current?.focus())} />
           <textarea
             className="composer__ph"
-            aria-label="Message to the agent"
-            placeholder={!prompt && keptStash(tab.id) ? `A draft is put aside: ${keysLabel('stashDraft')} brings it back` : 'Do anything… @ for a file, / for a command'}
+            aria-label={t('workspace.composer.label')}
+            placeholder={!prompt && keptStash(tab.id) ? t('workspace.composer.stashed', { keys: keysLabel('stashDraft') }) : t('workspace.composer.placeholder')}
             ref={field}
             value={prompt}
             onChange={(event) => setPrompt(event.target.value)}

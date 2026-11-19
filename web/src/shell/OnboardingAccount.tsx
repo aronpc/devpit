@@ -1,3 +1,5 @@
+import { t } from '../i18n'
+import { useLocale } from '../i18n/LocaleRoot'
 import { useShell } from './useShell'
 
 /*
@@ -16,19 +18,20 @@ import { useShell } from './useShell'
 export function OnboardingAccount({ onSkip }: { onSkip: () => void }): React.JSX.Element {
   const { signIn, membership } = useShell()
   const { signingIn, failed } = membership
+  /* Hears the locale, so the offer re-says itself when it changes. */
+  useLocale()
 
   if (signingIn) {
     return (
       <>
-        <h1 className="onb__t">Approve this code</h1>
+        <h1 className="onb__t">{t('onboarding.approveCode')}</h1>
         <p className="onb__d">
-          Your browser is open at <b>{host(membership.origin)}</b>. Check that it shows this code,
-          then approve it there — this screen moves on by itself.
+          {t('onboarding.browserAt')}<b>{host(membership.origin)}</b>{t('onboarding.browserCheck')}
         </p>
         <div className="onb__code">{signingIn.userCode}</div>
         <p className="onb__wait" role="status">
           <span className="onb__pulse" aria-hidden="true" />
-          Waiting for you to approve&hellip;
+          {t('onboarding.waiting')}
         </p>
         <button
           className="onb__skip"
@@ -37,7 +40,7 @@ export function OnboardingAccount({ onSkip }: { onSkip: () => void }): React.JSX
             onSkip()
           }}
         >
-          Not now
+          {t('onboarding.notNow')}
         </button>
       </>
     )
@@ -45,11 +48,9 @@ export function OnboardingAccount({ onSkip }: { onSkip: () => void }): React.JSX
 
   return (
     <>
-      <h1 className="onb__t">Sign in, if you want to</h1>
+      <h1 className="onb__t">{t('onboarding.signInTitle')}</h1>
       <p className="onb__d">
-        Free, and optional. It signs you in; sync between your computers is off until you turn it
-        on, and carries only preferences and project settings, sealed so devpit.app cannot read
-        them. <b>Your projects, conversations and files stay on this computer</b> either way.
+        {t('onboarding.freeSaid')}<b>{t('onboarding.stays')}</b>{t('onboarding.eitherWay')}
       </p>
       {/* A refusal used to leave with the screen. It stays now, and the button
           says what it would be doing this time. */}
@@ -59,10 +60,10 @@ export function OnboardingAccount({ onSkip }: { onSkip: () => void }): React.JSX
         </p>
       )}
       <button className="onb__go" onClick={() => signIn()}>
-        {failed ? 'Try again' : 'Sign in'}
+        {failed ? t('onboarding.tryAgain') : t('onboarding.signIn')}
       </button>
       <button className="onb__skip" onClick={onSkip}>
-        Not now
+        {t('onboarding.notNow')}
       </button>
     </>
   )

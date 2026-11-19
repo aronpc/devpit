@@ -4,6 +4,7 @@ import type { Held } from '../gen/bindings'
 import { bytes } from './disk'
 import { ask, commands } from './live'
 import { useShell } from './useShell'
+import { t } from '../i18n'
 
 /*
  * What the workspace is holding, measured now.
@@ -35,7 +36,7 @@ export function WorkspacePane(): React.JSX.Element {
     <>
       <div className="pane__bar">
         <span className="pane__t">
-          <b>Workspace</b>
+          <b>{t('workspace.workspacePane.title')}</b>
           {room ? ` · ${room}` : ''}
         </span>
         <span className="drag"></span>
@@ -44,7 +45,7 @@ export function WorkspacePane(): React.JSX.Element {
           onClick={() => void ask(() => commands.pathReveal(directory))}
           disabled={!directory}
         >
-          Reveal
+          {t('workspace.workspacePane.reveal')}
         </button>
       </div>
 
@@ -63,10 +64,10 @@ export function WorkspacePane(): React.JSX.Element {
               <span className="wsrow__n">{row.name}</span>
               <span className="wsrow__w">
                 {row.exists
-                  ? [bytes(row.bytes), row.count !== null ? `${row.count} item(s)` : null]
+                  ? [bytes(row.bytes), row.count !== null ? t('workspace.workspacePane.items', { count: row.count }) : null]
                       .filter(Boolean)
-                      .join(' · ') || 'empty'
-                  : 'not made yet'}
+                      .join(' · ') || t('workspace.workspacePane.empty')
+                  : t('workspace.workspacePane.notMade')}
               </span>
             </button>
           ))}

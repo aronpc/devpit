@@ -14,6 +14,7 @@ import { useShellPick } from './shellStore'
 import { useStream } from './Streamed'
 import { useViewPrefs } from './viewPrefs'
 import { Zoomable } from './Zoom'
+import { t } from '../i18n'
 
 /*
  * Markdown, drawn from parsed blocks.
@@ -93,7 +94,7 @@ function Piece({ block, path }: { block: Block; path: string }): React.JSX.Eleme
             </code>
           </pre>
           {/* The block's text as parsed: what is between the fences, never them. */}
-          <CopyButton className="md__copy" text={block.text} label="Copy code" />
+          <CopyButton className="md__copy" text={block.text} label={t('workspace.markdown.copyCode')} />
         </div>
       )
     case 'list': {

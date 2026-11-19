@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 
+import { t } from '../i18n'
+import { useLocale } from '../i18n/LocaleRoot'
 import { CommunityFoot } from './Community'
 import { matching } from './prefsNav'
 import type { PrefsPane } from './shape'
@@ -40,6 +42,8 @@ export function PrefsSide({
   onSelect: (pane: PrefsPane) => void
 }): React.JSX.Element {
   const [query, setQuery] = useState('')
+  /* Hears the locale, so the column re-says itself when it changes. */
+  useLocale()
   const groups = matching(query)
 
   useEffect(() => {
@@ -59,7 +63,7 @@ export function PrefsSide({
     <aside className="prefs__side">
       <button className="prefs__back" onClick={onBack}>
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
-        Back
+        {t('prefs.back')}
       </button>
 
       <label className="prefs__find">
@@ -67,9 +71,9 @@ export function PrefsSide({
         <input
           className="prefs__q"
           value={query}
-          placeholder="Search settings"
+          placeholder={t('prefs.search')}
           spellCheck={false}
-          aria-label="Search settings"
+          aria-label={t('prefs.search')}
           onChange={(event) => setQuery(event.target.value)}
         />
       </label>
@@ -96,7 +100,7 @@ export function PrefsSide({
           </div>
         ))}
         {groups.length === 0 && (
-          <p className="prefs__none">Nothing here matches &ldquo;{query.trim()}&rdquo;.</p>
+          <p className="prefs__none">{t('prefs.none', { query: query.trim() })}</p>
         )}
       </nav>
 

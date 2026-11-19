@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 
+import { t } from '../i18n'
 import { FocusSummary } from './FocusSummary'
 import { minutesIn } from './headsDown'
 import { useKeys, useShortcut } from './useShortcut'
@@ -126,26 +127,26 @@ export function HeadsDown({
            a pomodoro picks 25. */
         <select
           className="hdown__box"
-          aria-label="Focus length"
+          aria-label={t('workspace.focus.length')}
           value={String(minutes)}
           onChange={(event) => setMinutes(Number(event.target.value))}
         >
-          <option value="0">No end</option>
-          <option value="25">25 min</option>
-          <option value="50">50 min</option>
-          <option value="90">90 min</option>
+          <option value="0">{t('workspace.focus.noEnd')}</option>
+          <option value="25">{t('workspace.focus.minutes', { count: 25 })}</option>
+          <option value="50">{t('workspace.focus.minutes', { count: 50 })}</option>
+          <option value="90">{t('workspace.focus.minutes', { count: 90 })}</option>
         </select>
       )}
       <button
       className="hdown"
       data-on={String(on)}
       onClick={toggle}
-      title={`Focus (${keys})`}
+      title={t('workspace.focus.focusKeys', { keys })}
       aria-pressed={on}
     >
       {focus
-        ? `Focus · ${minutesIn(focus, now)} min${waiting > 0 ? ` · ${waiting} outside` : ''}`
-        : 'Focus'}
+        ? t(waiting > 0 ? 'workspace.focus.runningOutside' : 'workspace.focus.running', { minutes: minutesIn(focus, now), waiting })
+        : t('workspace.focus.focus')}
       </button>
     </>
   )

@@ -9,6 +9,7 @@ import type { PaneName } from './paneList'
 import { useOpeners } from './useOpeners'
 import { usePlugins } from './usePlugins'
 import { useShellPick } from './shellStore'
+import { t } from '../i18n'
 
 /*
  * The files pinned to a card.
@@ -49,16 +50,16 @@ export function Attachments({
   return (
     <section className="pins">
       <div className="prefs__hrow">
-        <h2 className="cardp__h">Files</h2>
+        <h2 className="cardp__h">{t('workspace.attachments.files')}</h2>
         <button className="btn" onClick={() => void add()}>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14" /></svg>
-          Pin a file
+          {t('workspace.attachments.pin')}
         </button>
       </div>
 
       {pinned.length === 0 && (
         <p className="pref__d">
-          Nothing pinned. A pin points at a file where it already is &mdash; nothing is copied.
+          {t('workspace.attachments.none')}
         </p>
       )}
 
@@ -74,24 +75,24 @@ export function Attachments({
               <span className="pin__p" title={one.path}>{one.path}</span>
             </span>
             <span className="pin__n">
-              {one.exists ? (bytes(one.bytes) ?? '') : 'not where it was'}
+              {one.exists ? (bytes(one.bytes) ?? '') : t('workspace.attachments.gone')}
             </span>
             <span className="pin__acts">
               {drawing !== null && (
                 <button className="btn" onClick={() => show('drawing', drawingTab(drawing))}>
-                  Open
+                  {t('workspace.attachments.open')}
                 </button>
               )}
               {one.exists && drawing === null && (
                 <>
                   <button className="btn" onClick={() => void ask(() => commands.pathReveal(one.path))}>
-                    Reveal
+                    {t('workspace.attachments.reveal')}
                   </button>
                   <OpenIn apps={openers} path={one.path} />
                 </>
               )}
               <button className="btn" data-danger onClick={() => onUnpin(one.id)}>
-                Unpin
+                {t('workspace.attachments.unpin')}
               </button>
             </span>
           </div>

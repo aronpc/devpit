@@ -11,6 +11,7 @@ import { short, twice, type Clicked, type Tab } from './strip'
 import { modelName, runningIn } from './subagents'
 import { unreadIn } from './unread'
 import { useShell } from './useShell'
+import { t } from '../i18n'
 
 /*
  * The sessions that are open, and only those.
@@ -48,7 +49,7 @@ export function SessionRows(): React.JSX.Element {
   const branches = useBranches(sessions.flatMap((tab) => (tab.kind === 'chat' && project ? [thread(tab)?.cwd ?? project.rootPath] : [])))
 
   const row = (tab: Tab): React.JSX.Element => {
-    const name = tab.title ?? (tab.kind === 'term' ? 'Terminal' : 'Chat')
+    const name = tab.title ?? (tab.kind === 'term' ? t('sessions.rows.terminalName') : t('sessions.rows.chat'))
     const talk = thread(tab)
     const profile = talk ? profiles.find((one) => one.id === talk.profile) : undefined
     /* What the pane actually has in front of it, when that is not the
@@ -61,7 +62,7 @@ export function SessionRows(): React.JSX.Element {
     const marked = unreadIn(unread, tab) || Boolean(talk?.marks?.unread)
     const says = tab.kind === 'chat' ? (chatDoing[tab.id] ?? (marked ? 'done' : null)) : doingIn(running, doing, tab)
     const unseen = says === 'done' && marked
-    const who = here?.label ?? profile?.label ?? 'Chat'
+    const who = here?.label ?? profile?.label ?? t('sessions.rows.chat')
     /* Where it runs and when it was last spoken in: the facts a row is told apart by. */
     const facts = [talk && branches[talk.cwd ?? project?.rootPath ?? ''], project?.name, talk?.lastAt ? since(talk.lastAt, now * 1000) : null].filter(Boolean).join(' · ')
     const children = here?.agent ? runningIn(subagents, tab.panes) : []
@@ -70,7 +71,7 @@ export function SessionRows(): React.JSX.Element {
         {children.map((child) => (
           <span className="card__sub" key={child.id}>
             <i className="card__dot" />
-            <span className="card__subname">{child.name ?? child.kind ?? 'subagent'}</span>
+            <span className="card__subname">{child.name ?? child.kind ?? t('sessions.rows.subagent')}</span>
             {child.model && <span className="card__model">{modelName(child.model)}</span>}
           </span>
         ))}
@@ -100,10 +101,10 @@ export function SessionRows(): React.JSX.Element {
             ) : (
               <i className="card__dot" />
             )}
-            {says === 'waiting' ? `${who} · waiting on you` : unseen ? `${who} · finished` : here ? here.label : `${who} · working`}
+            {says === 'waiting' ? t('sessions.rows.waiting', { who }) : unseen ? t('sessions.rows.finished', { who }) : here ? here.label : t('sessions.rows.working', { who })}
           </span>
         ) : (
-          <span className="card__loose">{tab.kind === 'term' ? 'terminal' : (profile?.label ?? 'chat')}</span>
+          <span className="card__loose">{tab.kind === 'term' ? t('sessions.rows.terminal') : (profile?.label ?? t('sessions.rows.chatLower'))}</span>
         )}
       </span>
     )
@@ -160,7 +161,7 @@ export function SessionRows(): React.JSX.Element {
         <span className="card__l1">
           <span className="card__t">{short(name, 30)}</span>
           {talk?.marks?.pinned && (
-            <svg className="card__pin" aria-label="Pinned" width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M15 3l6 6-3 1-4 4 1 5-2 2-4-4-5 5-1-1 5-5-4-4 2-2 5 1 4-4z" /></svg>
+            <svg className="card__pin" aria-label={t('sessions.rows.pinned')} width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M15 3l6 6-3 1-4 4 1 5-2 2-4-4-5 5-1-1 5-5-4-4 2-2 5 1 4-4z" /></svg>
           )}
         </span>
         {below}
@@ -173,13 +174,13 @@ export function SessionRows(): React.JSX.Element {
   return (
     <>
       <div className="heading">
-        In progress <span className="heading__n">{progress.length}</span>
+        {t('sessions.rows.inProgress')} <span className="heading__n">{progress.length}</span>
       </div>
-      {progress.length === 0 && <div className="sessions__none">Nothing running.</div>}
+      {progress.length === 0 && <div className="sessions__none">{t('sessions.rows.none')}</div>}
       {progress.map(row)}
       {settled.length > 0 && (
         <div className="heading">
-          Settled <span className="heading__n">{settled.length}</span>
+          {t('sessions.rows.settled')} <span className="heading__n">{settled.length}</span>
         </div>
       )}
       {settled.map(row)}

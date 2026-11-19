@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react'
 import type { Source } from '../gen/bindings'
 import { ask, commands } from './live'
 import { useShell } from './useShell'
+import { t } from '../i18n'
 
 /*
  * Which kinds of checkout the lists are about.
@@ -45,9 +46,9 @@ export function Sources(): React.JSX.Element {
   return (
     <section className="src">
       <div className="src__head">
-        <span className="pref__t">Sources</span>
+        <span className="pref__t">{t('workspace.sources.title')}</span>
         <span className="pref__d">
-          Which checkouts devpit lists for this project. Hiding one leaves it exactly where it is.
+          {t('workspace.sources.hint')}
         </span>
       </div>
 
@@ -65,7 +66,7 @@ export function Sources(): React.JSX.Element {
               aria-checked={row.shown}
               onClick={() => show(row.id, true)}
             >
-              Show
+              {t('workspace.sources.show')}
             </button>
             <button
               className="src__o"
@@ -73,7 +74,7 @@ export function Sources(): React.JSX.Element {
               aria-checked={!row.shown}
               onClick={() => show(row.id, false)}
             >
-              Hide
+              {t('workspace.sources.hide')}
             </button>
           </span>
         </div>

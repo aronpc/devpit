@@ -5,6 +5,7 @@ import { ask, commands } from './live'
 import { profileFor } from './outside'
 import { pieces } from './snippet'
 import { useShell } from './useShell'
+import { t } from '../i18n'
 
 /*
  * Finding a conversation of this project by something said in it.
@@ -63,7 +64,7 @@ export async function openHit(hit: SessionHit, open: (projectId: string, convers
     (installed.data ?? []) as readonly Installation[],
     (known.data ?? []) as readonly Profile[],
   )
-  if (!profile) return 'No profile runs against the installation that holds this session.'
+  if (!profile) return t('sessions.resume.noProfile')
   const adopted = await ask(() => commands.chatAdopt(hit.projectId, hit.sessionId, profile.id, null, null))
   if (!adopted.data) return adopted.error
   open(hit.projectId, adopted.data)
@@ -86,17 +87,17 @@ export function SessionSearch(): React.JSX.Element | null {
     <div className="ssearch">
       <input
         className="fb__find"
-        placeholder="Search what was said…"
+        placeholder={t('sessions.search.placeholder')}
         value={query}
         onChange={(event) => {
           setQuery(event.target.value)
           setFailed(null)
         }}
-        aria-label="Search conversations"
+        aria-label={t('sessions.search.label')}
       />
-      {looking && <div className="sessions__none">Reading transcripts…</div>}
+      {looking && <div className="sessions__none">{t('sessions.search.reading')}</div>}
       {error && <div className="sessions__none">{error}</div>}
-      {!looking && query.trim() && hits.length === 0 && !error && <div className="sessions__none">Nothing said matches.</div>}
+      {!looking && query.trim() && hits.length === 0 && !error && <div className="sessions__none">{t('sessions.search.none')}</div>}
       {hits.map((hit, at) => (
         <button className="card" key={`${hit.sessionId}-${at}`} onClick={() => void open(hit)}>
           <span className="card__l2">

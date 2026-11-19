@@ -3,10 +3,11 @@ import { useContext, useState } from 'react'
 import type { LiveSession } from '../gen/bindings'
 
 import type { Part } from '../gen/bindings'
-import { STATE_WORDS, stateOf, useLiveSessions } from './liveStatus'
+import { stateWord, stateOf, useLiveSessions } from './liveStatus'
 import { AppsScopeContext } from './mcpApps'
 import { SessionTerminal } from './SessionTerminal'
 import { useShell } from './useShell'
+import { t } from '../i18n'
 
 interface Sent {
   id: string
@@ -80,10 +81,10 @@ function Failed({ to, summary, why }: { to: string; summary: string; why: string
     <div className="deleg__card" data-state="failed">
       <div className="deleg__h">
         <span className="deleg__to">→ {to}</span>
-        <span className="deleg__what">{summary || 'a message'}</span>
+        <span className="deleg__what">{summary || t('sessions.deleg.aMessage')}</span>
         <span className="deleg__state">
           <i className="deleg__dot" />
-          not sent
+          {t('sessions.deleg.notSent')}
         </span>
       </div>
       <p className="deleg__msg">{why}</p>
@@ -91,7 +92,7 @@ function Failed({ to, summary, why }: { to: string; summary: string; why: string
   )
 }
 
-function Delegation({ to, summary, message, state, session, profileId }: { to: string; summary: string; message: string; state: keyof typeof STATE_WORDS; session: LiveSession | null; profileId: string | null }): React.JSX.Element {
+function Delegation({ to, summary, message, state, session, profileId }: { to: string; summary: string; message: string; state: Parameters<typeof stateWord>[0]; session: LiveSession | null; profileId: string | null }): React.JSX.Element {
   const [open, setOpen] = useState(false)
   const [terminal, setTerminal] = useState(false)
   const { setProject, openPane } = useShell()
@@ -99,16 +100,16 @@ function Delegation({ to, summary, message, state, session, profileId }: { to: s
     <div className="deleg__card" data-state={state}>
       <button className="deleg__h" aria-expanded={open} onClick={() => setOpen((was) => !was)}>
         <span className="deleg__to">→ {to}</span>
-        <span className="deleg__what">{summary || 'a message'}</span>
+        <span className="deleg__what">{summary || t('sessions.deleg.aMessage')}</span>
         <span className="deleg__state">
           <i className="deleg__dot" />
-          {STATE_WORDS[state]}
+          {stateWord(state)}
         </span>
       </button>
       {open && <p className="deleg__msg">{message}</p>}
       {open && session?.pane && (
         <div className="deleg__acts">
-          <button className="btn" onClick={() => setTerminal(true)}>Open its terminal</button>
+          <button className="btn" onClick={() => setTerminal(true)}>{t('sessions.deleg.openTerminal')}</button>
         </div>
       )}
       {terminal && session && (

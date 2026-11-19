@@ -5,6 +5,8 @@ import { allowKey, alwaysOffered, grantsOf, questionsOf, subjectOf, useFocused, 
 import { Choosing } from './Choosing'
 import { Markdown } from './MarkdownView'
 import { committed, composing } from './typing'
+import { t } from '../i18n'
+import { tRich } from '../i18n/rich'
 
 /*
  * What the agent is waiting to be allowed to do, or waiting to be told.
@@ -17,10 +19,10 @@ import { committed, composing } from './typing'
 /** What "always" will cover, said before it is pressed. */
 const alwaysMeans = (tool: string): string =>
   ['Edit', 'MultiEdit', 'Write', 'NotebookEdit'].includes(tool)
-    ? 'Allow every file edit for the rest of this chat'
+    ? t('workspace.asked.alwaysEdit')
     : tool === 'Bash'
-      ? 'Allow this exact command again for the rest of this chat'
-      : `Allow ${tool} for the rest of this chat`
+      ? t('workspace.asked.alwaysCommand')
+      : t('workspace.asked.alwaysTool', { tool })
 
 /** What a question can be answered with: once either way, or always in this chat. */
 export type Said = 'allow' | 'deny' | 'always'
@@ -69,7 +71,7 @@ function Allowing({ question, onAnswer }: { question: Question; onAnswer: (said:
       className="asking"
       ref={card}
       tabIndex={-1}
-      aria-label={plan ? 'Plan' : undefined}
+      aria-label={plan ? t('workspace.asked.plan') : undefined}
       onKeyDown={(event) => {
         if (composing(event)) return
         const said = allowKey(event.key, event.target === event.currentTarget)
@@ -81,18 +83,18 @@ function Allowing({ question, onAnswer }: { question: Question; onAnswer: (said:
       <div className="asking__t">
         {plan ? (
           <>
-            <b>Plan</b> — approve it to start?
+            {tRich('workspace.asked.planAsk', { plan: <b>{t('workspace.asked.plan')}</b> })}
           </>
         ) : (
           <>
             <b>{question.tool}</b>
-            {lines > 1 && <span className="asking__lines">{` ${lines} lines`}</span>}
-            {what ? <code className="asking__what">{` ${what}`}</code> : ' — allow this?'}
+            {lines > 1 && <span className="asking__lines">{` ${t('workspace.asked.lines', { count: lines })}`}</span>}
+            {what ? <code className="asking__what">{` ${what}`}</code> : t('workspace.asked.allowThis')}
           </>
         )}
       </div>
       {grants.length > 0 && (
-        <ul className="asking__grants" aria-label="It also asks for">
+        <ul className="asking__grants" aria-label={t('workspace.asked.alsoAsks')}>
           {grants.map((one) => (
             <li key={one}>{one}</li>
           ))}
@@ -104,18 +106,18 @@ function Allowing({ question, onAnswer }: { question: Question; onAnswer: (said:
             <Markdown source={plan} />
           </div>
         ) : (
-          <textarea className="asking__edit" aria-label="The plan, as the agent will follow it" value={editing} onChange={(event) => setEditing(event.target.value)} />
+          <textarea className="asking__edit" aria-label={t('workspace.asked.planEdit')} value={editing} onChange={(event) => setEditing(event.target.value)} />
         ))}
       <details className="asking__more">
-        <summary>Details</summary>
+        <summary>{t('workspace.asked.details')}</summary>
         <pre className="asking__in">{question.input}</pre>
       </details>
       <div className="asking__row">
         <input
           className="asking__why"
           value={why}
-          placeholder={plan ? 'What to change — told to the agent' : 'Why not? — told to the agent'}
-          aria-label="Reason for refusing, told to the agent"
+          placeholder={plan ? t('workspace.asked.changePlaceholder') : t('workspace.asked.whyPlaceholder')}
+          aria-label={t('workspace.asked.reasonLabel')}
           onChange={(event) => setWhy(event.target.value)}
           onKeyDown={(event) => {
             if (!committed(event) || !why.trim()) return
@@ -124,20 +126,20 @@ function Allowing({ question, onAnswer }: { question: Question; onAnswer: (said:
           }}
         />
         <button className="btn" onClick={() => onAnswer('deny', why)}>
-          Refuse
+          {t('workspace.asked.refuse')}
         </button>
         {plan && editing === null && (
           <button className="btn" onClick={() => setEditing(plan)}>
-            Edit
+            {t('workspace.asked.edit')}
           </button>
         )}
         {!plan && grants.length === 0 && alwaysOffered(question.input) && (
           <button className="btn" onClick={() => onAnswer('always')} title={alwaysMeans(question.tool)}>
-            Always in this chat
+            {t('workspace.asked.always')}
           </button>
         )}
         <button className="btn btn--go" onClick={() => onAnswer('allow', undefined, edited)}>
-          {plan ? 'Approve' : 'Allow'}
+          {plan ? t('workspace.asked.approve') : t('workspace.asked.allow')}
         </button>
       </div>
     </section>

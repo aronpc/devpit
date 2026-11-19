@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react'
 
 import type { Checkout, Run } from '../gen/bindings'
+import { t } from '../i18n'
 import { AgentMark } from './AgentMark'
 import { ask, commands } from './live'
 import { OpenIn } from './OpenIn'
@@ -45,7 +46,7 @@ export function CardWork({
   const [problem, setProblem] = useState<string | null>(null)
 
   const make = async (): Promise<void> => {
-    setBusy('Making a checkout…')
+    setBusy(t('card.makingCheckout'))
     const answer = await ask(() => commands.cardCheckout(cardId))
     setBusy(null)
     setProblem(answer.error)
@@ -57,7 +58,7 @@ export function CardWork({
      this way, and a second way in would be a second thing to keep right. */
   const openTerminalFor = useCallback(async (agentId?: string): Promise<void> => {
     if (!project) return
-    setBusy('Opening a terminal…')
+    setBusy(t('card.openingTerminal'))
     const refused = await openCardTerminal(project.id, cardId, title, show, agentId, open)
     setBusy(null)
     setProblem(refused)
@@ -68,7 +69,7 @@ export function CardWork({
   /* A conversation about this card, in its checkout, with the card in it. */
   const chat = async (): Promise<void> => {
     if (!project) return
-    setBusy('Opening a chat…')
+    setBusy(t('card.openingChat'))
     const refused = await openCardChat(project.id, cardId, show)
     setBusy(null)
     setProblem(refused)
@@ -76,26 +77,26 @@ export function CardWork({
 
   return (
     <section className="cwork">
-      <h2 className="cardp__h">Work</h2>
+      <h2 className="cardp__h">{t('card.work')}</h2>
 
       {worktree ? (
         <div className="cwork__wt" data-gone={!worktree.exists}>
           <span className="cwork__b">
             <span className="cwork__t">
-              {worktree.branch ?? 'a checkout'}
+              {worktree.branch ?? t('card.aCheckout')}
               {worktree.dirtyFiles !== null && worktree.dirtyFiles > 0 && (
                 <span className="cwork__dirty">
-                  {worktree.dirtyFiles} uncommitted
+                  {t('card.uncommitted', { count: worktree.dirtyFiles })}
                 </span>
               )}
             </span>
             <span className="cwork__p" title={worktree.path}>{worktree.path}</span>
           </span>
-          {!worktree.exists && <span className="oapp__no">not on disk any more</span>}
+          {!worktree.exists && <span className="oapp__no">{t('card.notOnDisk')}</span>}
           {worktree.exists && (
             <span className="pin__acts">
               <button className="btn" onClick={() => void ask(() => commands.pathReveal(worktree.path))}>
-                Reveal
+                {t('card.reveal')}
               </button>
               <OpenIn apps={openers} path={worktree.path} />
             </span>
@@ -103,21 +104,21 @@ export function CardWork({
         </div>
       ) : (
         <p className="pref__d">
-          No checkout yet. One is made on its own branch the first time this card needs it.
+          {t('card.noCheckout')}
         </p>
       )}
 
       <div className="cwork__go">
         {!worktree?.exists && (
           <button className="btn" disabled={Boolean(busy)} onClick={() => void make()}>
-            Make a checkout
+            {t('card.makeCheckout')}
           </button>
         )}
         <button className="btn" disabled={Boolean(busy)} onClick={() => void openTerminalFor()}>
-          Open a terminal
+          {t('card.openTerminal')}
         </button>
         <button className="btn" disabled={Boolean(busy)} onClick={() => void chat()}>
-          Chat about this card
+          {t('card.chatAbout')}
         </button>
         {/* Only the agents this machine actually has. One it cannot run is a
             button that fails, and the list already knows which those are. */}
@@ -141,7 +142,7 @@ export function CardWork({
 
       {runs.length > 0 && (
         <>
-          <h2 className="cardp__h">Runs</h2>
+          <h2 className="cardp__h">{t('card.runs')}</h2>
           {runs.map((run) => (
             <div className="crun" key={run.id} data-state={run.state}>
               <span className="crun__b">
@@ -160,7 +161,7 @@ export function CardWork({
                   data-danger
                   onClick={() => void ask(() => commands.runCancel(cardId, run.id)).then(onChanged)}
                 >
-                  Stop
+                  {t('card.stop')}
                 </button>
               )}
             </div>

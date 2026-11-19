@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
+import { t } from '../i18n'
 import { Onboarding } from './Onboarding'
 
 afterEach(cleanup)
@@ -44,8 +45,11 @@ describe('what the settings screen promises', () => {
   const settings = readFileSync(resolve(process.cwd(), 'src/shell/Settings.tsx'), 'utf8')
 
   it('says what stays on this computer, and what sync carries and keeps back', () => {
-    expect(settings).toMatch(/Projects, boards, conversations, terminal history and files stay on this computer/)
-    const sync = readFileSync(resolve(process.cwd(), 'src/shell/SyncSettings.tsx'), 'utf8')
+    /* The sentence moved to the catalog with the window's other words; the
+       promise is still pinned, where it is said now. */
+    const words = readFileSync(resolve(process.cwd(), 'src/i18n/en/settings.json'), 'utf8')
+    expect(words).toMatch(/Projects, boards, conversations, terminal history and files stay on this computer/)
+    const sync = t('workspace.sync.said')
     expect(sync).toMatch(/Preferences and project settings follow you/)
     expect(sync).toMatch(/a key devpit\.app never sees/)
     expect(sync).toMatch(/vault/)
@@ -56,13 +60,13 @@ describe('what the settings screen promises', () => {
   it('does not promise, on the sign-in button, a sync that is not turned on', () => {
     const sidebar = readFileSync(resolve(process.cwd(), 'src/shell/Sidebar.tsx'), 'utf8')
     expect(sidebar).not.toMatch(/Save your workspace/i)
-    expect(sidebar).toMatch(/nothing syncs unless you turn it on/)
+    expect(t('workspace.sidebar.signInSaid')).toMatch(/nothing syncs unless you turn it on/)
   })
 
   /* The sign-in dialog is the last thing read before the account exists, and
      it said the account saves the workspace around the projects. */
   it('does not promise, in the sign-in dialog, a workspace that is saved', () => {
-    const dialog = readFileSync(resolve(process.cwd(), 'src/shell/SignIn.tsx'), 'utf8')
+    const dialog = t('workspace.signIn.free')
     expect(dialog).not.toMatch(/saves the workspace/i)
     expect(dialog).toMatch(/boards stay where they are/)
   })

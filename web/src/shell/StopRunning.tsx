@@ -1,6 +1,7 @@
 import { useId, useState } from 'react'
 
 import type { Closing } from './useShell'
+import { t } from '../i18n'
 
 /*
  * Closing a terminal that is still doing something.
@@ -43,14 +44,14 @@ export function StopRunning({
     >
       <div className="ask__box" role="dialog" aria-modal="true">
         <h2 className="ask__t">
-          {unsaved ? 'Close without saving?' : agent ? 'Stop this agent?' : 'Stop running command?'}
+          {unsaved ? t('workspace.stopRunning.unsavedTitle') : agent ? t('workspace.stopRunning.agentTitle') : t('workspace.stopRunning.commandTitle')}
         </h2>
         <p className="ask__d">
           {unsaved
-            ? 'This file has changes that are not on disk. Closing it throws them away.'
+            ? t('workspace.stopRunning.unsavedBody')
             : agent
-              ? "Closing this terminal will stop the agent's current work."
-              : 'Closing this terminal will stop the command running inside it.'}
+              ? t('workspace.stopRunning.agentBody')
+              : t('workspace.stopRunning.commandBody')}
         </p>
         <p className="ask__subj">
           {unsaved ? closing.stops.label : `${closing.tab} · ${closing.stops.label}`}
@@ -63,15 +64,15 @@ export function StopRunning({
               checked={dontAskAgain}
               onChange={(event) => setDontAskAgain(event.target.checked)}
             />
-            Don&rsquo;t ask again for running terminals
+            {t('workspace.stopRunning.dontAsk')}
           </label>
         )}
         <div className="ask__row">
           <button className="btn" onClick={onCancel}>
-            Cancel
+            {t('workspace.stopRunning.cancel')}
           </button>
           <button className="btn btn--danger" autoFocus onClick={() => onConfirm(dontAskAgain)}>
-            {unsaved ? 'Discard Changes' : agent ? 'Stop Agent' : 'Stop and Close'}
+            {unsaved ? t('workspace.stopRunning.discard') : agent ? t('workspace.stopRunning.stopAgent') : t('workspace.stopRunning.stopClose')}
           </button>
         </div>
       </div>

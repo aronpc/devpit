@@ -3,6 +3,7 @@ import { useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
 import type { Step } from '../gen/bindings'
+import { t } from '../i18n'
 import { Confirm } from './Confirm'
 import { StepNew } from './StepNew'
 import { useAway } from './away'
@@ -63,23 +64,23 @@ export function LaneStep({
       <button
         className="lstep__b"
         aria-expanded={open}
-        title={step ? `Runs ${step.name}` : 'This lane runs nothing'}
+        title={step ? t('step.runs', { name: step.name }) : t('step.runsNothing')}
         onClick={() => setOpen((was) => !was)}
       >
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
           <path d="M12 3v3M5.6 5.6l2.1 2.1M3 12h3M18 12h3M16.3 7.7l2.1-2.1" />
           <rect x="7" y="12" width="10" height="9" rx="2" />
         </svg>
-        {step?.name ?? 'no step'}
+        {step?.name ?? t('step.noStep')}
         {/* Said on the lane, not hidden in its menu: a lane that moves cards
             without being asked should look different from one that does not. */}
-        {step && autonomy === 'auto' && <span className="lstep__auto">auto</span>}
-        {unreadable && <span className="lstep__warn">cannot be read</span>}
+        {step && autonomy === 'auto' && <span className="lstep__auto">{t('step.auto')}</span>}
+        {unreadable && <span className="lstep__warn">{t('step.cannotBeRead')}</span>}
       </button>
 
       {open && !making && !editing && (
         <div className="lstep__pop" role="menu">
-          <p className="lstep__t">Runs when a card lands here</p>
+          <p className="lstep__t">{t('step.runsWhen')}</p>
           <button
             className="apps__opt"
             role="menuitem"
@@ -89,7 +90,7 @@ export function LaneStep({
               setOpen(false)
             }}
           >
-            Nothing
+            {t('step.nothing')}
           </button>
           {steps.map((one) => (
             <button
@@ -103,12 +104,12 @@ export function LaneStep({
               }}
             >
               <span>{one.name}</span>
-              {one.irreversible && <span className="lstep__warn">no undo</span>}
+              {one.irreversible && <span className="lstep__warn">{t('step.noUndo')}</span>}
             </button>
           ))}
           <div className="newmenu__rule" />
           <button className="apps__opt" role="menuitem" onClick={() => setMaking(true)}>
-            New step&hellip;
+            {t('step.newStep')}
           </button>
 
           {/* Only once the lane runs something. Where a pass goes and how much
@@ -117,24 +118,24 @@ export function LaneStep({
           {step && (
             <>
               <div className="newmenu__rule" />
-              {unreadable && <p className="lstep__t">Its settings cannot be read</p>}
+              {unreadable && <p className="lstep__t">{t('step.settingsUnreadable')}</p>}
               <button className="apps__opt" role="menuitem" onClick={() => setEditing(true)}>
-                Edit {step.name}&hellip;
+                {t('step.edit', { name: step.name })}
               </button>
               <button className="apps__opt" role="menuitem" onClick={() => setRemoving(true)}>
-                <span>Delete {step.name}</span>
-                <span className="lstep__warn">no undo</span>
+                <span>{t('step.delete', { name: step.name })}</span>
+                <span className="lstep__warn">{t('step.noUndo')}</span>
               </button>
 
               <div className="newmenu__rule" />
-              <p className="lstep__t">When it passes</p>
+              <p className="lstep__t">{t('step.whenPasses')}</p>
               <button
                 className="apps__opt"
                 role="menuitem"
                 aria-checked={!onPass}
                 onClick={() => onFlow(null, 'manual')}
               >
-                Stay here
+                {t('step.stayHere')}
               </button>
               {lanes.map((one) => (
                 <button
@@ -144,21 +145,21 @@ export function LaneStep({
                   aria-checked={onPass === one.id}
                   onClick={() => onFlow(one.id, autonomy === 'manual' ? 'ask' : autonomy)}
                 >
-                  Move to {one.name}
+                  {t('step.moveTo', { name: one.name })}
                 </button>
               ))}
 
               {onPass && (
                 <>
                   <div className="newmenu__rule" />
-                  <p className="lstep__t">And moves it</p>
+                  <p className="lstep__t">{t('step.andMoves')}</p>
                   <button
                     className="apps__opt"
                     role="menuitem"
                     aria-checked={autonomy === 'ask'}
                     onClick={() => onFlow(onPass, 'ask')}
                   >
-                    <span>When you say so</span>
+                    <span>{t('step.whenYouSay')}</span>
                   </button>
                   <button
                     className="apps__opt"
@@ -166,8 +167,8 @@ export function LaneStep({
                     aria-checked={autonomy === 'auto'}
                     onClick={() => onFlow(onPass, 'auto')}
                   >
-                    <span>On its own</span>
-                    <span className="lstep__warn">no prompt</span>
+                    <span>{t('step.onItsOwn')}</span>
+                    <span className="lstep__warn">{t('step.noPrompt')}</span>
                   </button>
                 </>
               )}
@@ -206,8 +207,8 @@ export function LaneStep({
         createPortal(
           <div onPointerDown={stay} onKeyDown={stay}>
             <Confirm
-              title={`Delete “${step.name}”?`}
-              body="Every lane that runs it goes back to running nothing. A step that has already run on a card cannot be deleted — its runs are that card's history."
+              title={t('step.deleteAsk', { name: step.name })}
+              body={t('step.deleteBody')}
               onClose={() => setRemoving(false)}
               onConfirm={() => {
                 onRemove(step.id)

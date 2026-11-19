@@ -1,5 +1,8 @@
 import { useState } from 'react'
 
+import { t } from '../i18n'
+import { useLocale } from '../i18n/LocaleRoot'
+import { tRich } from '../i18n/rich'
 import type { RemoteDevice, RemotePairing, RemoteView } from '../gen/bindings'
 import { ask, commands } from './live'
 import { PrefSwitch } from './PrefSwitch'
@@ -12,10 +15,13 @@ import { useCopied } from './useCopied'
  * off, or forgetting a client, cuts it off at once.
  */
 
-const LIMIT =
-  'claude.ai and the Claude app cannot connect to it directly: they would have to hold the key that ends the encryption, so they stay out until a way keeps it end to end. Use an MCP client on a computer, such as Claude Code, through devpit there.'
+/* The protocol's page, which both Remote panes point at. */
+export const RELAY_DOC = 'docs/remote-relay.md'
+const MCP_COMMAND = 'devpit mcp --remote'
+const MCP_EXAMPLE = 'claude mcp add devpit-remote -- devpit mcp --remote'
 
 export function RemoteMcp({ view, onView }: { view: RemoteView; onView: (view: RemoteView) => void }): React.JSX.Element {
+  useLocale()
   const [busy, setBusy] = useState(false)
   const [pairing, setPairing] = useState<RemotePairing | null>(null)
   const [said, setSaid] = useState<string | null>(null)
@@ -42,17 +48,17 @@ export function RemoteMcp({ view, onView }: { view: RemoteView; onView: (view: R
       on={view.mcp}
       disabled={busy}
       onFlip={flip}
-      title="Allow remote MCP (read-only)"
-      said="An MCP client on another computer reads devpit here — the board, the sessions, what waits on you — through devpit.app, encrypted end to end. It changes nothing."
-      moreLabel="How to set it up"
+      title={t('remoteMcp.title')}
+      said={t('remoteMcp.said')}
+      moreLabel={t('remote.howTo')}
       more={<McpSteps />}
     >
-      <span className="pref__d">{LIMIT}</span>
+      <span className="pref__d">{t('remoteMcp.limit')}</span>
       {said && <span className="pref__d voice__bad">{said}</span>}
       {view.mcp && view.relay.online && !pairing && (
         <span className="voice__row">
           <button className="btn" onClick={pair}>
-            Pair an MCP client
+            {t('remoteMcp.pair')}
           </button>
         </span>
       )}
@@ -68,20 +74,17 @@ function McpSteps(): React.JSX.Element {
   return (
     <>
       <ol className="prefhow">
-        <li>On the other computer, install devpit and sign in to the same devpit account — or let the pairing command sign it in.</li>
+        <li>{t('remoteMcp.step1')}</li>
+        <li>{tRich('remoteMcp.step2', { pair: <b>{t('remoteMcp.pair')}</b> })}</li>
         <li>
-          <b>Pair an MCP client</b> here and run the command it shows there. The link in it is good once, for ten minutes; the key it makes stays in that computer&rsquo;s devpit folder, readable by its user alone.
+          {tRich('remoteMcp.step3', {
+            command: <code>{MCP_COMMAND}</code>,
+            example: <code>{MCP_EXAMPLE}</code>,
+          })}
         </li>
-        <li>
-          Add <code>devpit mcp --remote</code> to the MCP client there, for example <code>claude mcp add devpit-remote -- devpit mcp --remote</code>.
-        </li>
-        <li>
-          <b>Forget</b> a client here, or turn this off, and it is cut off at once.
-        </li>
+        <li>{tRich('remoteMcp.step4', { forget: <b>{t('remote.forget')}</b> })}</li>
       </ol>
-      <p>
-        It answers reads alone: the projects, their boards and cards, the sessions running and what waits on you. Allowing a tool, answering a session or moving a card stays on this computer or in the Remote. The protocol is in <code>docs/remote-relay.md</code>.
-      </p>
+      <p>{tRich('remoteMcp.note', { doc: <code>{RELAY_DOC}</code> })}</p>
     </>
   )
 }
@@ -94,17 +97,17 @@ function McpPairing({ pairing, onDone }: { pairing: RemotePairing; onDone: () =>
   const copy = (): void => copyText(command)
   return (
     <span className="remote__code">
-      <span className="pref__d">Run this on the other computer:</span>
+      <span className="pref__d">{t('remoteMcp.runThis')}</span>
       <code className="remote__addr">{command}</code>
       <span className="voice__row">
         <button className="btn" onClick={copy}>
-          {copied ? 'Copied' : 'Copy the command'}
+          {copied ? t('remote.copied') : t('remoteMcp.copyCommand')}
         </button>
         <button className="btn" onClick={onDone}>
-          Done
+          {t('remote.done')}
         </button>
       </span>
-      <span className="pref__d">Good once, for ten minutes.</span>
+      <span className="pref__d">{t('remoteMcp.goodOnce')}</span>
     </span>
   )
 }
@@ -112,15 +115,15 @@ function McpPairing({ pairing, onDone }: { pairing: RemotePairing; onDone: () =>
 function ClientRow({ client, onView }: { client: RemoteDevice; onView: (view: RemoteView) => void }): React.JSX.Element {
   return (
     <span className="remote__dev">
-      <span className="remote__name" title="An MCP client, paired through devpit.app and known by its key">
+      <span className="remote__name" title={t('remoteMcp.clientTip')}>
         <i className="remote__dot" data-on={client.connected ? 'true' : undefined} />
         {client.name}
       </span>
-      <span className="remote__chip" data-on="true" title="An MCP client only reads">
-        read-only MCP
+      <span className="remote__chip" data-on="true" title={t('remoteMcp.readOnlyTip')}>
+        {t('remoteMcp.readOnly')}
       </span>
       <button className="btn" onClick={() => void ask(() => commands.remoteForget(client.id)).then((answer) => answer.data && onView(answer.data))}>
-        Forget
+        {t('remote.forget')}
       </button>
     </span>
   )

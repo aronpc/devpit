@@ -1,5 +1,6 @@
 import { useState } from 'react'
 
+import { t } from '../i18n'
 import { ACTIVITIES, activityOf, keepActivity, labelOf, type Activity } from './activity'
 import { ControlMenu } from './ControlMenu'
 
@@ -8,7 +9,7 @@ export function ActivityPick({ value, onPick }: { value: Activity; onPick: (acti
   return (
     <ControlMenu
       label={labelOf(value)}
-      title="Activity"
+      title={t('workspace.activity.title')}
       opens="down"
       choices={ACTIVITIES.map((one) => ({ id: one.id, label: one.label, what: one.what, selected: one.id === value }))}
       onPick={(id) => {
@@ -25,10 +26,10 @@ export function ActivityDefault(): React.JSX.Element {
   return (
     <div className="pref">
       <span className="pref__body">
-        <span className="pref__t">Chat activity</span>
-        <span className="pref__d">How much of the agent&rsquo;s work a conversation shows until you pick for that one. Find shows everything while it is open.</span>
+        <span className="pref__t">{t('workspace.activity.chat')}</span>
+        <span className="pref__d">{t('workspace.activity.chatWhat')}</span>
       </span>
-      <div className="seg seg--tight" role="radiogroup" aria-label="Chat activity">
+      <div className="seg seg--tight" role="radiogroup" aria-label={t('workspace.activity.chat')}>
         {ACTIVITIES.map((one) => (
           <button
             key={one.id}

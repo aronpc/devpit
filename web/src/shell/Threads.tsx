@@ -7,6 +7,8 @@ import { SessionSearch } from './SessionSearch'
 import { ask, commands } from './live'
 import { short } from './strip'
 import { useShell } from './useShell'
+import { t } from '../i18n'
+import { formatDate } from '../i18n/format'
 
 /*
  * The conversations this project has had.
@@ -49,7 +51,7 @@ export function Threads(): React.JSX.Element {
         aria-expanded={showing}
         onClick={() => setShowing((was) => !was)}
       >
-        Earlier
+        {t('sessions.threads.earlier')}
         <svg
           className="heading__v"
           width="10"
@@ -68,7 +70,7 @@ export function Threads(): React.JSX.Element {
 
       {showing && error && <div className="sessions__none">{error}</div>}
       {showing && !error && shown.length === 0 && (
-        <div className="sessions__none">Nothing earlier.</div>
+        <div className="sessions__none">{t('sessions.threads.none')}</div>
       )}
 
       {showing &&
@@ -101,8 +103,5 @@ export function Threads(): React.JSX.Element {
 /* Against the reader's own clock, in the reader's own locale. */
 function when(seconds: number | null): string {
   if (!seconds) return ''
-  return new Date(seconds * 1000).toLocaleDateString(undefined, {
-    month: 'short',
-    day: 'numeric',
-  })
+  return formatDate(seconds * 1000, { month: 'short', day: 'numeric' })
 }

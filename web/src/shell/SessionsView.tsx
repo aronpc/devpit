@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import type { AgentThread, LiveSession, Project } from '../gen/bindings'
+import { formatDate, formatRelative } from '../i18n/format'
+import { t } from '../i18n'
 import { ask, commands } from './live'
-import { refreshSessions, STATE_WORDS, useLiveSessions } from './liveStatus'
+import { refreshSessions, stateWord, useLiveSessions } from './liveStatus'
 import { LINKS_CHANGED } from './projectProposal'
 import { panelGroups, stateOfOne, useCardTitles } from './sessionsPanel'
 import { ReplyDrafts } from './ReplyDrafts'
@@ -33,21 +35,21 @@ const HISTORY = 4
 
 const when = (at: string): string => {
   const date = new Date(at)
-  return Number.isNaN(date.getTime()) ? '' : date.toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' })
+  return Number.isNaN(date.getTime()) ? '' : formatDate(date, { dateStyle: 'short', timeStyle: 'short' })
 }
 
 /** How long it has been in its state, in words. */
 export function since(ms: number | null, now: number): string | null {
   if (ms === null) return null
   const minutes = Math.max(0, Math.round((now - ms) / 60000))
-  if (minutes < 1) return 'just now'
-  if (minutes < 60) return `${minutes} min`
+  if (minutes < 1) return t('sessions.justNow')
+  if (minutes < 60) return formatRelative(-minutes, 'minute')
   const hours = Math.round(minutes / 60)
-  return hours < 24 ? `${hours} h` : `${Math.round(hours / 24)} d`
+  return hours < 24 ? formatRelative(-hours, 'hour') : formatRelative(-Math.round(hours / 24), 'day')
 }
 
 /** Whether a stop was refused because it would lose work, and asks again. */
-export const wouldLose = (error: string | null): boolean => Boolean(error?.endsWith('stop it anyway?'))
+export const wouldLose = (error: string | null): boolean => Boolean(error?.endsWith('stop it anyway?')) // ui-text: ok the core's own English sentence, matched not shown
 
 /** A row's own key: a name started twice is two sessions, and keyed by name
  *  they opened and closed as one. */
@@ -208,25 +210,25 @@ export function SessionsView({ shown }: { shown: boolean }): React.JSX.Element {
   return (
     <div className="sess">
       <PanelHead
-        title="Sessions"
+        title={t('sessions.title')}
         meta={
           sessions.length > 0 && (
             <span className="sess__sum">
-              {waiting > 0 && <b className="sess__wait">{waiting} waiting</b>}
-              {busy > 0 && <span>{busy} working</span>}
-              <span>{sessions.length} running</span>
+              {waiting > 0 && <b className="sess__wait">{t('sessions.sum.waiting', { count: waiting })}</b>}
+              {busy > 0 && <span>{t('sessions.sum.working', { count: busy })}</span>}
+              <span>{t('sessions.sum.running', { count: sessions.length })}</span>
             </span>
           )
         }
       >
         <PanelAct
-          label={showEmpty ? 'Hide projects with nothing running' : 'Show linked projects with nothing running'}
+          label={showEmpty ? t('sessions.hideEmpty') : t('sessions.showEmpty')}
           active={showEmpty}
           onClick={() => setShowEmpty((was) => (keepEmpty(!was), !was))}
         >
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7h18M3 12h18M3 17h10" /></svg>
         </PanelAct>
-        <PanelAct label="Read again" onClick={() => (profileId && refreshSessions(profileId), readHistory())}>
+        <PanelAct label={t('sessions.readAgain')} onClick={() => (profileId && refreshSessions(profileId), readHistory())}>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8M21 3v5h-5" /></svg>
         </PanelAct>
       </PanelHead>
@@ -234,47 +236,47 @@ export function SessionsView({ shown }: { shown: boolean }): React.JSX.Element {
       {profileId && <ReplyDrafts profileId={profileId} sessions={sessions} onDone={() => refreshSessions(profileId)} />}
 
       {sessions.length > 3 && (
-        <input className="sess__find" type="search" value={query} placeholder="Find a session, project or card" aria-label="Find a session" onChange={(event) => setQuery(event.target.value)} />
+        <input className="sess__find" type="search" value={query} placeholder={t('sessions.find.placeholder')} aria-label={t('sessions.find.label')} onChange={(event) => setQuery(event.target.value)} />
       )}
       {said && <p className="sess__note sess__said">{said}</p>}
 
       {sessions.length === 0 && (
         <PanelEmpty
-          title="No session running"
+          title={t('sessions.none.title')}
           hint={
             groups.length > 0
-              ? 'Start one from a project below — a terminal or a chat — or ask the orchestrator to start one on a card.'
-              : 'Ask the orchestrator to start one on a card, or open Claude Code in a project’s terminal.'
+              ? t('sessions.none.hintGroups')
+              : t('sessions.none.hint')
           }
         />
       )}
 
-      {sessions.length > 0 && groups.length === 0 && <p className="sess__note">No session matches “{query}”.</p>}
+      {sessions.length > 0 && groups.length === 0 && <p className="sess__note">{t('sessions.noMatch', { query })}</p>}
 
       {groups.map(({ project: where, members, linked: reached }) => (
         <section className="sess__group" key={where?.id ?? 'outside'}>
           <div className="sess__gh">
-            <h3 className="sess__g">{where?.name ?? members[0]?.projectName ?? 'Outside devpit'}</h3>
+            <h3 className="sess__g">{where?.name ?? members[0]?.projectName ?? t('sessions.outside')}</h3>
             {where && !reached && (
-              <button className="sess__link" onClick={() => link(where.id)} title={`Link ${where.name} to this orchestrator: its tools reach only linked projects`}>
-                Link
+              <button className="sess__link" onClick={() => link(where.id)} title={t('sessions.link.title', { name: where.name })}>
+                {t('sessions.link')}
               </button>
             )}
             {where && (
               <>
-                <button className="sess__icon" onClick={() => newTerminal(where)} title={`New terminal in ${where.name}, opened here`} aria-label={`New terminal in ${where.name}`}>
+                <button className="sess__icon" onClick={() => newTerminal(where)} title={t('sessions.newTerminal.title', { name: where.name })} aria-label={t('sessions.newTerminal', { name: where.name })}>
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m5 8 4 4-4 4M12 16h7" /></svg>
                 </button>
-                <button className="sess__icon" onClick={() => newChat(where)} title={`New chat in ${where.name}`} aria-label={`New chat in ${where.name}`}>
+                <button className="sess__icon" onClick={() => newChat(where)} title={t('sessions.newChat', { name: where.name })} aria-label={t('sessions.newChat', { name: where.name })}>
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9.9 9.9 0 0 1-4.2-.9L3 20.5l1.6-4.4A8.4 8.4 0 0 1 3.6 11.5 8.4 8.4 0 0 1 12 3.1a8.4 8.4 0 0 1 9 8.4Z" /></svg>
                 </button>
               </>
             )}
           </div>
-          {members.length === 0 && <p className="sess__none">Nothing running here.</p>}
+          {members.length === 0 && <p className="sess__none">{t('sessions.nothingHere')}</p>}
           {members.map((one) => {
             const state = stateOfOne(one)
-            const card = one.cardId ? cardTitles.get(one.cardId) ?? 'a card' : null
+            const card = one.cardId ? cardTitles.get(one.cardId) ?? t('sessions.aCard') : null
             const history = historyOf(one.name)
             const last = history?.events[history.events.length - 1]
             const expanded = open === rowOf(one)
@@ -284,7 +286,7 @@ export function SessionsView({ shown }: { shown: boolean }): React.JSX.Element {
                   <button className="sess__main" aria-expanded={expanded} onClick={() => setOpen(expanded ? null : rowOf(one))} title={one.cwd}>
                     <i className="deleg__dot" data-state={state} />
                     <span className="sess__name">{one.name}</span>
-                    <span className="sess__state">{STATE_WORDS[state]}</span>
+                    <span className="sess__state">{stateWord(state)}</span>
                     <span className="sess__meta">
                       {[card, since(one.since, now)].filter(Boolean).join(' · ')}
                       {/* What it is on right now beats what it last said: a
@@ -297,31 +299,31 @@ export function SessionsView({ shown }: { shown: boolean }): React.JSX.Element {
                   <SessionCost sessionId={one.sessionId} />
                   <RemoteControlMark remote={one.remote} name={one.name} />
                   {one.pane && (
-                    <button className="sess__icon" onClick={() => setTerminal(one)} title="Open its terminal here" aria-label={`Open ${one.name}'s terminal here`}>
+                    <button className="sess__icon" onClick={() => setTerminal(one)} title={t('sessions.openTerminal.title')} aria-label={t('sessions.openTerminal', { name: one.name })}>
                       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="m7 10 3 2-3 2M13 14h4" /></svg>
                     </button>
                   )}
                   {one.projectId && (
-                    <button className="sess__icon" onClick={() => go(one)} title="Go to it: its project and tab" aria-label={`Go to ${one.name}`}>
+                    <button className="sess__icon" onClick={() => go(one)} title={t('sessions.go.title')} aria-label={t('sessions.go', { name: one.name })}>
                       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17 17 7M8 7h9v9" /></svg>
                     </button>
                   )}
-                  <button className="sess__icon sess__icon--stop" onClick={() => setStopping(rowOf(one))} title="Stop it" aria-label={`Stop ${one.name}`}>
+                  <button className="sess__icon sess__icon--stop" onClick={() => setStopping(rowOf(one))} title={t('sessions.stop.title')} aria-label={t('sessions.stop', { name: one.name })}>
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="6" y="6" width="12" height="12" rx="2" /></svg>
                   </button>
                 </div>
                 {stopping === rowOf(one) && (
                   <div className="sess__acts sess__stopask">
-                    <span className="sess__warn">Stop {one.name} and close its terminal? Work in flight is lost.</span>
-                    <button className="sess__btn" onClick={() => setStopping(null)}>Keep it</button>
-                    <button className="sess__btn sess__btn--bad" onClick={() => stop(one)}>Stop</button>
+                    <span className="sess__warn">{t('sessions.stop.ask', { name: one.name })}</span>
+                    <button className="sess__btn" onClick={() => setStopping(null)}>{t('sessions.keep')}</button>
+                    <button className="sess__btn sess__btn--bad" onClick={() => stop(one)}>{t('sessions.stopNow')}</button>
                   </div>
                 )}
                 {losing?.row === rowOf(one) && (
                   <div className="sess__acts sess__stopask">
                     <span className="sess__warn">{losing.why}</span>
-                    <button className="sess__btn" onClick={() => setLosing(null)}>Keep it</button>
-                    <button className="sess__btn sess__btn--bad" onClick={() => stop(one, true)}>Stop anyway</button>
+                    <button className="sess__btn" onClick={() => setLosing(null)}>{t('sessions.keep')}</button>
+                    <button className="sess__btn sess__btn--bad" onClick={() => stop(one, true)}>{t('sessions.stopAnyway')}</button>
                   </div>
                 )}
                 {expanded && (
@@ -343,7 +345,7 @@ export function SessionsView({ shown }: { shown: boolean }): React.JSX.Element {
 
       {earlier.length > 0 && (
         <section className="sess__group">
-          <h3 className="sess__g">Earlier · not running</h3>
+          <h3 className="sess__g">{t('sessions.earlier')}</h3>
           {earlier.map((thread) => (
             <div className="sess__one" key={thread.name} data-state="gone" data-open={open === thread.name ? 'true' : undefined}>
               <div className="sess__row">
@@ -413,7 +415,7 @@ function Details({
     const text = reply.trim()
     if (!text || !profileId) return
     void ask(() => commands.orchestratorReply(profileId, session.name, text, 'the Sessions panel')).then((sent) => {
-      setSaid(sent.error ?? 'Sent, as you.')
+      setSaid(sent.error ?? t('sessions.sentAsYou'))
       if (sent.error) return
       setReply('')
       refreshSessions(profileId)
@@ -425,7 +427,7 @@ function Details({
   const command = (line: string): void => {
     if (!profileId) return
     void ask(() => commands.orchestratorReply(profileId, session.name, line, 'the Sessions panel')).then((sent) => {
-      setSaid(sent.error ?? (line === REMOTE_CONTROL ? `Typed ${REMOTE_CONTROL} — its terminal shows the link, or that it disconnected.` : `Typed ${line}, as you.`))
+      setSaid(sent.error ?? (line === REMOTE_CONTROL ? t('sessions.typedRemote', { command: REMOTE_CONTROL }) : t('sessions.typedAsYou', { command: line })))
       if (!sent.error && line === REMOTE_CONTROL) onTerminal?.()
     })
   }
@@ -434,47 +436,47 @@ function Details({
     <div className="sess__more">
       {session.waiting && (
         <p className="sess__q">
-          <b>Waiting on you:</b> {session.waiting.question}
+          <b>{t('sessions.waitingOnYou')}</b> {session.waiting.question}
         </p>
       )}
       {session.inDevpit ? (
         <form className="sess__reply" onSubmit={(event) => (event.preventDefault(), send())}>
-          <input value={reply} maxLength={4000} placeholder={`Reply in ${session.name}'s terminal, as you`} aria-label={`Reply to ${session.name}`} onChange={(event) => setReply(event.target.value)} />
+          <input value={reply} maxLength={4000} placeholder={t('sessions.reply.placeholder', { name: session.name })} aria-label={t('sessions.reply.label', { name: session.name })} onChange={(event) => setReply(event.target.value)} />
         </form>
       ) : onWatch ? (
         <p className="sess__note">
-          Runs in the background, where nothing shows it.{' '}
+          {t('sessions.background')}{' '}
           <button className="sess__more-btn" onClick={onWatch}>
-            Watch it in a terminal
+            {t('sessions.watch')}
           </button>
         </p>
       ) : (
-        <p className="sess__note">Opened outside devpit: it can be messaged, not typed into from here.</p>
+        <p className="sess__note">{t('sessions.outsideNote')}</p>
       )}
       {said && <p className="sess__note">{said}</p>}
       <div className="sess__acts">
         {stopping ? (
           <>
-            <span className="sess__warn">Stop it and close its terminal? Work in flight is lost.</span>
-            <button className="sess__btn" onClick={() => setStopping(false)}>Keep it</button>
-            <button className="sess__btn sess__btn--bad" onClick={() => stop()}>Stop</button>
+            <span className="sess__warn">{t('sessions.stop.askHere')}</span>
+            <button className="sess__btn" onClick={() => setStopping(false)}>{t('sessions.keep')}</button>
+            <button className="sess__btn sess__btn--bad" onClick={() => stop()}>{t('sessions.stopNow')}</button>
           </>
         ) : losing ? (
           <>
             <span className="sess__warn">{losing}</span>
-            <button className="sess__btn" onClick={() => setLosing(null)}>Keep it</button>
-            <button className="sess__btn sess__btn--bad" onClick={() => stop(true)}>Stop anyway</button>
+            <button className="sess__btn" onClick={() => setLosing(null)}>{t('sessions.keep')}</button>
+            <button className="sess__btn sess__btn--bad" onClick={() => stop(true)}>{t('sessions.stopAnyway')}</button>
           </>
         ) : (
           <>
             {session.pane && !session.waiting && <SessionCommand name={session.name} onSend={command} />}
-            <button className="sess__btn" onClick={() => setStopping(true)} aria-label={`Stop ${session.name}`}>
-              Stop session…
+            <button className="sess__btn" onClick={() => setStopping(true)} aria-label={t('sessions.stop', { name: session.name })}>
+              {t('sessions.stopSession')}
             </button>
           </>
         )}
       </div>
-      {history ? <History thread={history} /> : <p className="sess__note">Nothing has passed between this chat and it yet.</p>}
+      {history ? <History thread={history} /> : <p className="sess__note">{t('sessions.noHistory')}</p>}
     </div>
   )
 }
@@ -486,7 +488,7 @@ function History({ thread }: { thread: AgentThread }): React.JSX.Element {
     <div className="sess__hist">
       {thread.events.length > HISTORY && !all && (
         <button className="sess__more-btn" onClick={() => setAll(true)}>
-          Show all {thread.events.length}
+          {t('sessions.showAll', { count: thread.events.length })}
         </button>
       )}
       <ol>
@@ -496,7 +498,7 @@ function History({ thread }: { thread: AgentThread }): React.JSX.Element {
               {ARROW[event.kind as keyof typeof ARROW] ?? '·'} {when(event.at)}
             </span>
             {event.summary && <strong>{event.summary}</strong>}
-            <span className="sess__text">{event.kind === 'idle' ? `Finished a turn. ${event.text}` : event.text}</span>
+            <span className="sess__text">{event.kind === 'idle' ? t('sessions.finishedTurn', { text: event.text }) : event.text}</span>
           </li>
         ))}
       </ol>

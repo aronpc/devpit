@@ -1,6 +1,7 @@
 import { useState } from 'react'
 
 import type { DevflowCheck } from '../gen/bindings'
+import { t } from '../i18n'
 import { checkOf, REPORTS, type Edit } from './devflowEdit'
 
 /*
@@ -18,12 +19,12 @@ function CheckRow({ check, onSave, onRemove }: { check: DevflowCheck; onSave: (n
   }
   return (
     <div className="dfcheck">
-      <input className="dfinput" aria-label="Check name" value={name} onChange={(event) => setName(event.target.value)} onBlur={leave} />
+      <input className="dfinput" aria-label={t('devflow.checks.nameLabel')} value={name} onChange={(event) => setName(event.target.value)} onBlur={leave} />
       <span className="dfcheck__run">
-        <input className="dfinput dfinput--mono" aria-label={`${check.name} command`} value={run} onChange={(event) => setRun(event.target.value)} onBlur={leave} />
-        {check.source && <span className="dfcheck__from">found in {check.source}</span>}
+        <input className="dfinput dfinput--mono" aria-label={t('devflow.checks.commandOf', { name: check.name })} value={run} onChange={(event) => setRun(event.target.value)} onBlur={leave} />
+        {check.source && <span className="dfcheck__from">{t('devflow.checks.foundIn', { source: check.source })}</span>}
       </span>
-      <select aria-label={`${check.name} report`} value={check.report} onChange={(event) => onSave({ ...check, report: event.target.value })}>
+      <select aria-label={t('devflow.checks.reportOf', { name: check.name })} value={check.report} onChange={(event) => onSave({ ...check, report: event.target.value })}>
           {REPORTS.map((report) => (
             <option key={report} value={report}>
               {report}
@@ -31,15 +32,16 @@ function CheckRow({ check, onSave, onRemove }: { check: DevflowCheck; onSave: (n
           ))}
       </select>
       <button className="btn btn--quiet btn--sm" data-danger onClick={onRemove}>
-        Remove
+        {t('devflow.remove')}
       </button>
     </div>
   )
 }
 
+/* The catalog key of what an empty list says, by list. */
 const EMPTY = {
-  checks: 'No checks: nothing proves a card done until one is added.',
-  release: 'No release checks: a long suite, such as E2E, runs here once for a release, not for each card.',
+  checks: 'devflow.checks.empty',
+  release: 'devflow.checks.emptyRelease',
 }
 
 export function DevflowChecks({
@@ -53,7 +55,7 @@ export function DevflowChecks({
 }): React.JSX.Element {
   const [name, setName] = useState('')
   const [run, setRun] = useState('')
-  const noun = list === 'release' ? 'New release check' : 'New check'
+  const release = list === 'release'
   const save = (next: readonly DevflowCheck[]): void => edit(`stages.execution.${list}`, next.map(checkOf))
   const add = (): void => {
     save([...checks, { name: name.trim(), run: run.trim(), report: 'none', evidence: [], source: null }])
@@ -63,12 +65,12 @@ export function DevflowChecks({
   return (
     <div className="dfchecks">
       <div className="dfcheck dfcheck--head" aria-hidden>
-        <span>Name</span>
-        <span>Command</span>
-        <span>Report</span>
+        <span>{t('devflow.checks.headName')}</span>
+        <span>{t('devflow.checks.headCommand')}</span>
+        <span>{t('devflow.checks.headReport')}</span>
         <span />
       </div>
-      {checks.length === 0 && <span className="dfempty">{EMPTY[list]}</span>}
+      {checks.length === 0 && <span className="dfempty">{t(EMPTY[list])}</span>}
       {checks.map((check, at) => (
         <CheckRow
           key={`${check.name}\u0000${check.run}\u0000${check.report}`}
@@ -78,11 +80,11 @@ export function DevflowChecks({
         />
       ))}
       <div className="dfcheck dfcheck--new">
-        <input className="dfinput" aria-label={`${noun} name`} placeholder="name" value={name} onChange={(event) => setName(event.target.value)} />
-        <input className="dfinput dfinput--mono" aria-label={`${noun} command`} placeholder="command, run from the project's root" value={run} onChange={(event) => setRun(event.target.value)} />
+        <input className="dfinput" aria-label={t(release ? 'devflow.checks.newNameRelease' : 'devflow.checks.newName')} placeholder={t('devflow.checks.namePlaceholder')} value={name} onChange={(event) => setName(event.target.value)} />
+        <input className="dfinput dfinput--mono" aria-label={t(release ? 'devflow.checks.newCommandRelease' : 'devflow.checks.newCommand')} placeholder={t('devflow.checks.commandPlaceholder')} value={run} onChange={(event) => setRun(event.target.value)} />
         <span />
         <button className="btn btn--sm" disabled={!name.trim() || !run.trim()} onClick={add}>
-          {list === 'release' ? 'Add release check' : 'Add check'}
+          {t(release ? 'devflow.checks.addRelease' : 'devflow.checks.add')}
         </button>
       </div>
     </div>

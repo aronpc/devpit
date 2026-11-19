@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 
+import { t } from '../i18n'
 import { useGroups } from './paletteGroups'
 import { TALK } from './paletteIcons'
 import { openHit, useHits } from './SessionSearch'
@@ -67,7 +68,7 @@ export function Palette({ onClose }: { onClose: () => void }): React.JSX.Element
 
   return (
     <div className="cmd" data-open="true" onClick={(event) => event.target === event.currentTarget && onClose()}>
-      <div className="cmd__box" role="dialog" aria-label="Search">
+      <div className="cmd__box" role="dialog" aria-label={t('workspace.palette.search')}>
         <div className="cmd__q">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="11" cy="11" r="8" />
@@ -79,7 +80,7 @@ export function Palette({ onClose }: { onClose: () => void }): React.JSX.Element
             type="text"
             autoComplete="off"
             spellCheck={false}
-            placeholder="Search tabs, files, cards, agents, conversations…"
+            placeholder={t('workspace.palette.placeholder')}
             value={query}
             onChange={(event) => {
               setQuery(event.target.value)

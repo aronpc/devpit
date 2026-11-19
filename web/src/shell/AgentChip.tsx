@@ -4,6 +4,7 @@ import type { AgentHealth } from '../gen/bindings'
 import { useAway } from './away'
 import { ask, commands } from './live'
 import { onAgentHealth } from './window'
+import { t } from '../i18n'
 
 /*
  * devpit's own MCP — the door its tools post to — beside the account's
@@ -13,8 +14,8 @@ import { onAgentHealth } from './window'
 
 /** What the chip says: the answer's time, or that there was none. */
 export function agentWord(health: AgentHealth): string {
-  if (!health.answering) return 'no answer'
-  return health.latencyMs === null ? 'ok' : `${Math.round(health.latencyMs)} ms`
+  if (!health.answering) return t('workspace.agentChip.noAnswer')
+  return health.latencyMs === null ? t('workspace.agentChip.ok') : `${Math.round(health.latencyMs)} ms`
 }
 
 export function AgentChip(): React.JSX.Element | null {
@@ -46,23 +47,23 @@ export function AgentChip(): React.JSX.Element | null {
   const bad = Boolean(error) || (health !== null && !health.answering)
   return (
     <div className="mcpchip" ref={box}>
-      <button className="strip__go" data-state={bad ? 'bad' : undefined} aria-expanded={open} onClick={() => setOpen((was) => !was)} title="devpit's own MCP">
-        <span>devpit</span>
+      <button className="strip__go" data-state={bad ? 'bad' : undefined} aria-expanded={open} onClick={() => setOpen((was) => !was)} title={t('workspace.agentChip.title')}>
+        <span>devpit</span> {/* // ui-text: ok the product's name */}
         <span className="strip__n">{health ? agentWord(health) : '?'}</span>
       </button>
       {open && (
-        <div className="mcpchip__pop" role="dialog" aria-label="devpit's MCP">
+        <div className="mcpchip__pop" role="dialog" aria-label={t('workspace.agentChip.label')}>
           <div className="mcpchip__h">
-            <span>devpit&rsquo;s MCP</span>
-            <button className="mcpchip__again" disabled={busy} onClick={restart} title="Opens its tools again; the window, chats and terminals stay">
-              {busy ? 'Restarting…' : 'Restart MCP'}
+            <span>{t('workspace.agentChip.label')}</span>
+            <button className="mcpchip__again" disabled={busy} onClick={restart} title={t('workspace.agentChip.restartTitle')}>
+              {busy ? t('workspace.agentChip.restarting') : t('workspace.agentChip.restart')}
             </button>
           </div>
           {error && <p className="mcpchip__why">{error}</p>}
           {health && (
             <p className="agentchip__said">
-              {health.answering ? `Answering, in ${agentWord(health)}.` : `Not answering: ${health.failures} check${health.failures === 1 ? '' : 's'} in a row.`}
-              {health.restarts > 0 && ` Restarted ${health.restarts} time${health.restarts === 1 ? '' : 's'}.`}
+              {health.answering ? t('workspace.agentChip.answering', { word: agentWord(health) }) : t('workspace.agentChip.notAnswering', { count: health.failures })}
+              {health.restarts > 0 && ` ${t('workspace.agentChip.restarted', { count: health.restarts })}`}
               {health.detail && <span className="mcpchip__why">{health.detail}</span>}
             </p>
           )}

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 
 import { ask, commands } from './live'
+import { t } from '../i18n'
 
 /*
  * A PDF, drawn page by page.
@@ -65,25 +66,25 @@ export function PdfView({ dataUrl, fullPath, name }: { dataUrl: string; fullPath
 
   const outside = (
     <button className="btn" onClick={() => void ask(() => commands.pathOpen(fullPath))}>
-      Open in the system viewer
+      {t('workspace.pdf.openOutside')}
     </button>
   )
 
   if (failed) {
     return (
       <div className="exempty">
-        <span className="exempty__t">This window could not draw {name}.</span>
+        <span className="exempty__t">{t('workspace.pdf.cannotDraw', { name })}</span>
         {outside}
       </div>
     )
   }
-  if (!loaded) return <div className="exempty__t">Reading…</div>
+  if (!loaded) return <div className="exempty__t">{t('workspace.pdf.reading')}</div>
 
   return (
     <div className="pdf">
       <div className="pdf__bar">
         <span>
-          {loaded.pages} {loaded.pages === 1 ? 'page' : 'pages'}
+          {t('workspace.pdf.pages', { count: loaded.pages })}
         </span>
         {outside}
       </div>
@@ -92,7 +93,7 @@ export function PdfView({ dataUrl, fullPath, name }: { dataUrl: string; fullPath
       ))}
       {loaded.pages > shown && (
         <button className="btn pdf__more" onClick={() => setShown((was) => was + PAGES_AT_ONCE)}>
-          Show {Math.min(PAGES_AT_ONCE, loaded.pages - shown)} more
+          {t('workspace.pdf.more', { count: Math.min(PAGES_AT_ONCE, loaded.pages - shown) })}
         </button>
       )}
     </div>
@@ -107,5 +108,5 @@ function Page({ number, doc }: { number: number; doc: Loaded }): React.JSX.Eleme
     const width = Math.min(into.parentElement?.clientWidth ?? 800, 1100) - 32
     void doc.draw(number, into, Math.max(200, width)).catch(() => undefined)
   }, [number, doc])
-  return <canvas ref={canvas} className="pdf__page" aria-label={`Page ${number}`} />
+  return <canvas ref={canvas} className="pdf__page" aria-label={t('workspace.pdf.page', { number })} />
 }

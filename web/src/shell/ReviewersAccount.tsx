@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 
 import type { DevflowProfile, DevflowProfileFrom } from '../gen/bindings'
 import { ask, commands } from './live'
+import { t } from '../i18n'
 
 /*
  * The account the project's Claude Code reviewers run as: the profile the
@@ -9,11 +10,7 @@ import { ask, commands } from './live'
  * machine's default. A session on another account still reviews as its own.
  */
 
-const FROM: Record<DevflowProfileFrom, string> = {
-  project: 'named by this project',
-  orchestrator: 'the account of the orchestrators linked to this project',
-  default: "this machine's default account",
-}
+const from = (source: DevflowProfileFrom): string => t(`workspace.reviewers.from.${source}`)
 
 export function ReviewersAccount({ projectId }: { projectId: string }): React.JSX.Element | null {
   const [profile, setProfile] = useState<DevflowProfile | null>(null)
@@ -34,9 +31,9 @@ export function ReviewersAccount({ projectId }: { projectId: string }): React.JS
   return (
     <div className="dfblock">
       <label className="dffield">
-        <span className="dffield__l">Claude reviewers run as</span>
-        <select aria-label="Account the reviewers run as" value={profile.named ?? ''} onChange={(event) => choose(event.target.value)}>
-          <option value="">{profile.named ? 'Not named here' : (profile.runsAs ?? 'Default account')}</option>
+        <span className="dffield__l">{t('workspace.reviewers.runAs')}</span>
+        <select aria-label={t('workspace.reviewers.accountLabel')} value={profile.named ?? ''} onChange={(event) => choose(event.target.value)}>
+          <option value="">{profile.named ? t('workspace.reviewers.notNamed') : (profile.runsAs ?? t('workspace.reviewers.defaultAccount'))}</option>
           {profile.choices.map((one) => (
             <option key={one.id} value={one.id}>
               {one.label}
@@ -45,8 +42,8 @@ export function ReviewersAccount({ projectId }: { projectId: string }): React.JS
         </select>
       </label>
       <span className="dfblock__d">
-        {profile.runsAs ?? 'Default account'}: {FROM[profile.from]}.
-        {profile.from !== 'project' && ' A session on another declared profile reviews as that profile.'}
+        {t('workspace.reviewers.runsFrom', { account: profile.runsAs ?? t('workspace.reviewers.defaultAccount'), from: from(profile.from) })}
+        {profile.from !== 'project' && ` ${t('workspace.reviewers.otherProfile')}`}
       </span>
       {problem && <span className="dfblock__d">{problem}</span>}
     </div>

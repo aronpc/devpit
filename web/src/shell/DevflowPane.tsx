@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import type { DevflowAsk, DevflowChange, DevflowError, DevflowScreen } from '../gen/bindings'
+import { t } from '../i18n'
 import { onCameBack } from './cameBack'
 import { devflowQuestion } from './DevflowAsks'
-import { type Edit } from './devflowEdit'
+import { YAML_FILE, type Edit } from './devflowEdit'
 import { DevflowJev } from './DevflowJev'
 import { DevflowReviewers } from './DevflowReviewers'
 import { DevflowSetup } from './DevflowSetup'
@@ -33,11 +34,12 @@ export const LOOK_EVERY_MS = 4000
 /** Where the file is refused and why, as the MCP's status says it. */
 export function errorSaid(error: DevflowError | null): string {
   if (!error) return ''
-  const at = [error.line != null ? `Line ${error.line}` : null, error.field ? `\`${error.field}\`` : null].filter(Boolean).join(', ')
+  const at = [error.line != null ? t('devflow.pane.errorLine', { line: error.line }) : null, error.field ? `\`${error.field}\`` : null].filter(Boolean).join(', ')
   return at ? `${at}: ${error.message}` : error.message
 }
 
-export const OUTSIDE = 'devflow.yaml changed outside this screen — read again.'
+/** Said when the file changed somewhere else. A function, not a constant: it is said in the language of the moment. */
+export const outsideSaid = (): string => t('devflow.pane.outside')
 
 function Waiting({ asks, onAnswer }: { asks: readonly DevflowAsk[]; onAnswer: (id: string, yes: boolean) => void }): React.JSX.Element | null {
   if (asks.length === 0) return null
@@ -52,7 +54,7 @@ function Waiting({ asks, onAnswer }: { asks: readonly DevflowAsk[]; onAnswer: (i
               <span className="pref__d">{said.why}</span>
             </span>
             <button className="btn" onClick={() => onAnswer(one.id, false)}>
-              Not now
+              {t('devflow.notNow')}
             </button>
             <button className="btn btn--go" onClick={() => onAnswer(one.id, true)}>
               {said.yes}
@@ -90,7 +92,7 @@ export function DevflowPane(): React.JSX.Element {
         const outside = known.current !== undefined && answer.data.yaml !== known.current
         known.current = answer.data.yaml
         setScreen(answer.data)
-        if (outside) setNote(OUTSIDE)
+        if (outside) setNote(outsideSaid())
       }
       setProblem(answer.error)
     })
@@ -146,7 +148,7 @@ export function DevflowPane(): React.JSX.Element {
       look()
     })
   const openFile = (): void => {
-    if (screen) show('file', { id: `file:${screen.file}`, path: screen.file, title: 'devflow.yaml' })
+    if (screen) show('file', { id: `file:${screen.file}`, path: screen.file, title: YAML_FILE })
   }
 
   const body = (): React.JSX.Element | null => {
@@ -160,12 +162,12 @@ export function DevflowPane(): React.JSX.Element {
             <div className="pref dfstate" data-tone="bad" role="alert">
               <span className="dfstate__dot" aria-hidden />
               <span className="pref__body">
-                <span className="pref__t">devflow.yaml does not read</span>
+                <span className="pref__t">{t('devflow.pane.invalidTitle')}</span>
                 <span className="pref__d voice__bad">{errorSaid(screen.error)}</span>
-                <span className="pref__d">The Devflow tools are off in this project until it reads again; its agents keep only the three that set it up, to fix it.</span>
+                <span className="pref__d">{t('devflow.pane.invalidBody')}</span>
               </span>
               <button className="btn" onClick={openFile}>
-                Open in the editor
+                {t('devflow.openInEditor')}
               </button>
             </div>
             {screen.yaml && <pre className="errprev__body">{screen.yaml}</pre>}
@@ -177,22 +179,22 @@ export function DevflowPane(): React.JSX.Element {
             <div className="pref dfstate" data-tone="off">
               <span className="dfstate__dot" aria-hidden />
               <span className="pref__body">
-                <span className="pref__t">Set up, and off</span>
-                <span className="pref__d">Its agents do not get the Devflow tools until you activate it: the click writes enabled: true.</span>
+                <span className="pref__t">{t('devflow.pane.disabledTitle')}</span>
+                <span className="pref__d">{t('devflow.pane.disabledBody')}</span>
               </span>
               <button className="btn" onClick={openFile}>
-                Open in the editor
+                {t('devflow.openInEditor')}
               </button>
               {/* Gone while the confirmation it would raise is already here. */}
               {!screen.waiting.some((one) => one.change === 'enable') && (
                 <button className="btn btn--go" onClick={() => askFor('enable')}>
-                  Activate
+                  {t('devflow.pane.activate')}
                 </button>
               )}
             </div>
             <Waiting asks={screen.waiting} onAnswer={answer} />
             {screen.config && <DevflowTeams projectId={screen.projectId} config={screen.config} onScreen={took} />}
-            {screen.yaml && <pre className="errprev__body" aria-label="devflow.yaml">{screen.yaml}</pre>}
+            {screen.yaml && <pre className="errprev__body" aria-label={YAML_FILE}>{screen.yaml}</pre>}
           </>
         )
       case 'active': {
@@ -203,24 +205,24 @@ export function DevflowPane(): React.JSX.Element {
             <div className="pref dfstate" data-tone="on">
               <span className="dfstate__dot" aria-hidden />
               <span className="pref__body">
-                <span className="pref__t">On here</span>
-                <span className="pref__d">Each change below is written to devflow.yaml at once; devpit never commits it.</span>
+                <span className="pref__t">{t('devflow.pane.activeTitle')}</span>
+                <span className="pref__d">{t('devflow.pane.activeBody')}</span>
               </span>
               <button className="btn" onClick={openFile}>
-                Open in the editor
+                {t('devflow.openInEditor')}
               </button>
               <button className="btn" onClick={() => edit('enabled', false)}>
-                Deactivate
+                {t('devflow.pane.deactivate')}
               </button>
             </div>
             <Waiting asks={screen.waiting} onAnswer={answer} />
             <DevflowTeams projectId={screen.projectId} config={config} onScreen={took} />
-            <div className="acc__sub">Stages</div>
+            <div className="acc__sub">{t('devflow.pane.stages')}</div>
             <DevflowStages config={config} edit={edit} projectId={screen.projectId} arrange />
-            <div className="acc__sub">Review</div>
+            <div className="acc__sub">{t('devflow.pane.review')}</div>
             <DevflowReviewers config={config} edit={edit} />
             <ReviewersAccount projectId={screen.projectId} />
-            <div className="acc__sub">Jev</div>
+            <div className="acc__sub">{t('devflow.pane.jev')}</div>
             <DevflowJev config={config} edit={edit} projectId={screen.projectId} onEnforce={() => askFor('enforce')} />
           </>
         )
@@ -232,17 +234,17 @@ export function DevflowPane(): React.JSX.Element {
     <div className="scroll">
       <div className="prefs__in dfscreen">
         <h1 className="prefs__h">
-          Devflow{project && <span className="dfscreen__project">{project.name}</span>}
+          {t('devflow.name')}{project && <span className="dfscreen__project">{project.name}</span>}
         </h1>
-        {!project && <p className="acc__note">Open a project to see its Devflow.</p>}
+        {!project && <p className="acc__note">{t('devflow.pane.noProject')}</p>}
         {screen && !screen.globallyOn && (
           <div className="pref">
             <span className="pref__body">
-              <span className="pref__t">Switched off for every project</span>
-              <span className="pref__d">No agent gets a Devflow tool while it is off in Settings.</span>
+              <span className="pref__t">{t('devflow.pane.offEverywhereTitle')}</span>
+              <span className="pref__d">{t('devflow.pane.offEverywhereBody')}</span>
             </span>
             <button className="btn" onClick={() => openPrefs('devflow')}>
-              Settings
+              {t('devflow.pane.settings')}
             </button>
           </div>
         )}
@@ -255,7 +257,7 @@ export function DevflowPane(): React.JSX.Element {
         {body()}
         {screen && (
           <>
-            <div className="acc__sub">devflow outside devpit</div>
+            <div className="acc__sub">{t('devflow.pane.outsideDevpit')}</div>
             <DevflowPluginRow projectId={screen.projectId} devpitOn={screen.state === 'active'} onDeactivate={() => edit('enabled', false)} />
             <DevflowBinaryRow />
             <DevflowMcpRow />

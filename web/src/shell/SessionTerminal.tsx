@@ -3,12 +3,15 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
 import type { LiveSession } from '../gen/bindings'
+import { stateWord } from './liveStatus'
 import { Leaf, PANE_FREED } from './Leaf'
 import { ask, commands } from './live'
 import { branchWords, SessionChangesPanel } from './SessionChangesPanel'
 import { SessionName } from './SessionName'
 import { useSessionChanges } from './useSessionChanges'
 import { useShell } from './useShell'
+import { formatRelative } from '../i18n/format'
+import { t } from '../i18n'
 
 /*
  * A session's own terminal, opened over the orchestrator's chat: the same
@@ -66,7 +69,11 @@ const EDGES: readonly Edge[] = [
 const since = (at: number | null): string | null => {
   if (!at) return null
   const minutes = Math.round((Date.now() - at) / 60_000)
-  return minutes < 1 ? 'now' : minutes < 60 ? `${minutes}m` : `${Math.round(minutes / 60)}h`
+  return minutes < 1
+    ? t('sessions.justNow')
+    : minutes < 60
+      ? formatRelative(-minutes, 'minute', { style: 'narrow' })
+      : formatRelative(-Math.round(minutes / 60), 'hour', { style: 'narrow' })
 }
 
 const sideKept = (): boolean => {
@@ -180,12 +187,12 @@ export function SessionTerminal({
 
   return createPortal(
     <div className="ask sterm__scrim" data-open="true" onClick={(event) => event.target === event.currentTarget && onClose()}>
-      <div className="sterm" role="dialog" aria-modal="true" aria-label={`${session.name}'s terminal`} data-dragging={dragging ? 'true' : undefined} style={{ width: size.width, height: size.height }}>
+      <div className="sterm" role="dialog" aria-modal="true" aria-label={t('sessions.term.label', { name: session.name })} data-dragging={dragging ? 'true' : undefined} style={{ width: size.width, height: size.height }}>
         <header className="sterm__bar">
           <i className="deleg__dot" data-state={session.waiting ? 'waiting' : session.status === 'busy' ? 'busy' : 'idle'} />
           <SessionName profileId={profileId} name={name} onRenamed={setName} />
           <span className="sterm__where" title={session.cwd}>
-            {[session.waiting ? 'waiting' : session.status, since(session.since), session.projectName].filter(Boolean).join(' · ')}
+            {[stateWord(session.waiting ? 'waiting' : session.status === 'busy' ? 'busy' : 'idle'), since(session.since), session.projectName].filter(Boolean).join(' · ')}
             {changes && <span className="sterm__branch">{branchWords(changes)}</span>}
           </span>
           <span className="sterm__size" aria-hidden="true">
@@ -193,35 +200,35 @@ export function SessionTerminal({
           </span>
           {ending ? (
             <>
-              <span className="sterm__warn">{refused ?? 'Close this terminal and whatever runs in it?'}</span>
+              <span className="sterm__warn">{refused ?? t('sessions.term.closeAsk')}</span>
               <button className="sterm__btn" onClick={() => (setEnding(false), setRefused(null))}>
-                Keep it
+                {t('sessions.keep')}
               </button>
               <button className="sterm__btn sterm__btn--bad" onClick={end}>
-                Close terminal
+                {t('sessions.term.closeNow')}
               </button>
             </>
           ) : (
-            <button className="sterm__btn" onClick={() => setEnding(true)} title="Close the terminal itself, and whatever runs in it">
-              Close terminal…
+            <button className="sterm__btn" onClick={() => setEnding(true)} title={t('sessions.term.closeTitle')}>
+              {t('sessions.term.close')}
             </button>
           )}
           {session.cardId && (
-            <button className="sterm__btn" onClick={() => (onClose(), show('board'), openCard(session.cardId!))} title="Open the card it works on">
-              Card
+            <button className="sterm__btn" onClick={() => (onClose(), show('board'), openCard(session.cardId!))} title={t('sessions.term.cardTitle')}>
+              {t('sessions.term.card')}
             </button>
           )}
-          <button className="sterm__btn" onClick={() => void writeText(name).catch(() => undefined)} title="Copy the name other sessions message it by">
-            Copy name
+          <button className="sterm__btn" onClick={() => void writeText(name).catch(() => undefined)} title={t('sessions.term.copyTitle')}>
+            {t('sessions.term.copy')}
           </button>
-          <button className="sterm__btn" data-on={side ? 'true' : undefined} onClick={toggleSide} title="What it has changed">
-            Changes{changes && changes.changes.length > 0 ? ` ${changes.changes.length}` : ''}
+          <button className="sterm__btn" data-on={side ? 'true' : undefined} onClick={toggleSide} title={t('sessions.term.changesTitle')}>
+            {t('sessions.changes.title')}{changes && changes.changes.length > 0 ? ` ${changes.changes.length}` : ''}
           </button>
-          <button className="sterm__btn" onClick={onGo} title="Open its project and tab">
-            Go there
+          <button className="sterm__btn" onClick={onGo} title={t('sessions.term.goTitle')}>
+            {t('sessions.term.go')}
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17 17 7M8 7h9v9" /></svg>
           </button>
-          <button className="sterm__x" onClick={onClose} aria-label="Hide the terminal" title="Hide — it keeps running">
+          <button className="sterm__x" onClick={onClose} aria-label={t('sessions.term.hide')} title={t('sessions.term.hideTitle')}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
           </button>
         </header>

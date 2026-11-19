@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 
 import type { IdleCompact as Rule, IdleWhen } from '../gen/bindings'
+import { t } from '../i18n'
 import { ask, commands } from './live'
 import { PrefRow } from './PrefRow'
 
@@ -10,9 +11,9 @@ import { PrefRow } from './PrefRow'
  */
 
 const WHEN: readonly (readonly [IdleWhen, string])[] = [
-  ['return', 'When you return'],
-  ['expiry', 'Just before expiry'],
-  ['never', 'Never'],
+  ['return', 'workspace.idle.return'],
+  ['expiry', 'workspace.idle.expiry'],
+  ['never', 'workspace.idle.never'],
 ]
 
 const NEVER: Rule = { when: 'never', tokens: 200000 }
@@ -29,13 +30,13 @@ export function IdleCompact({ profileId }: { profileId: string }): React.JSX.Ele
   const now = rule ?? NEVER
   return (
     <PrefRow
-      title="Compact idle conversations"
-      said="Past this many tokens, so the turn after the prompt cache expires does not read the whole conversation again: when you come back after it expired, or just before it does."
+      title={t('workspace.idle.title')}
+      said={t('workspace.idle.said')}
     >
       <span className="seg seg--tight">
         {WHEN.map(([when, label]) => (
           <button key={when} className="segb" aria-selected={now.when === when} disabled={!rule} onClick={() => save({ ...now, when })}>
-            {label}
+            {t(label)}
           </button>
         ))}
       </span>
@@ -46,7 +47,7 @@ export function IdleCompact({ profileId }: { profileId: string }): React.JSX.Ele
           type="number"
           min="1000"
           step="1000"
-          aria-label="Compact past this many tokens"
+          aria-label={t('workspace.idle.tokensLabel')}
           defaultValue={now.tokens}
           disabled={!rule}
           onBlur={(event) => {
@@ -54,7 +55,7 @@ export function IdleCompact({ profileId }: { profileId: string }): React.JSX.Ele
             if (tokens >= 1000 && tokens !== now.tokens) save({ ...now, tokens })
           }}
         />
-        <span className="voice__l">tokens</span>
+        <span className="voice__l">{t('workspace.idle.tokens')}</span>
       </label>
     </PrefRow>
   )

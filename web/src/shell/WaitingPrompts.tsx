@@ -2,6 +2,7 @@ import { useState } from 'react'
 
 import type { LiveSession, PendingPrompt } from '../gen/bindings'
 import { ask, commands } from './live'
+import { t } from '../i18n'
 
 /*
  * The questions this account's sessions are stopped on, answered from here.
@@ -54,8 +55,8 @@ export function WaitingPrompts({
   }
 
   return (
-    <section className="wprompt" aria-label="Waiting on you">
-      <p className="wprompt__t">Waiting on you</p>
+    <section className="wprompt" aria-label={t('workspace.waitingPrompts.title')}>
+      <p className="wprompt__t">{t('workspace.waitingPrompts.title')}</p>
       {waiting.map((one) => {
         const busy = sending.has(one.name)
         const told = said[one.name]?.to === asked(one.waiting) ? said[one.name]!.text : ''
@@ -64,7 +65,7 @@ export function WaitingPrompts({
           <div className="wprompt__i" key={one.name}>
             <p className="wprompt__who">
               <span className="osess__name">{one.name}</span>
-              <span className="osess__where">{one.projectName ?? 'outside devpit'}</span>
+              <span className="osess__where">{one.projectName ?? t('workspace.waitingPrompts.outside')}</span>
             </p>
             <p className="wprompt__q">{one.waiting.question}</p>
             <div className="wprompt__opts">
@@ -74,12 +75,12 @@ export function WaitingPrompts({
                   {option.label}
                 </button>
               ))}
-              <button className="wprompt__o wprompt__esc" disabled={busy} onClick={() => answer(one, null)} title="Dismiss the question (Esc)">
-                Esc
+              <button className="wprompt__o wprompt__esc" disabled={busy} onClick={() => answer(one, null)} title={t('workspace.waitingPrompts.dismiss')}>
+                {t('workspace.waitingPrompts.esc')}
               </button>
               {onOpen && one.pane && (
-                <button className="wprompt__o wprompt__esc" onClick={() => onOpen(one)} title="Open its terminal here and answer in it">
-                  Open terminal
+                <button className="wprompt__o wprompt__esc" onClick={() => onOpen(one)} title={t('workspace.waitingPrompts.openTitle')}>
+                  {t('workspace.waitingPrompts.open')}
                 </button>
               )}
             </div>

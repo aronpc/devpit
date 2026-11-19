@@ -2,6 +2,7 @@ import { useState, useSyncExternalStore } from 'react'
 
 import { Menu, MenuItem } from './Menu'
 import { menuPoint } from './menuRules'
+import { t } from '../i18n'
 
 /*
  * Which details a conversation's header and its "where" line show, chosen
@@ -9,12 +10,12 @@ import { menuPoint } from './menuRules'
  */
 
 export const DETAILS = [
-  { id: 'card', label: 'Card' },
-  { id: 'context', label: 'Context' },
-  { id: 'cost', label: 'Cost' },
-  { id: 'project', label: 'Project' },
-  { id: 'machine', label: 'Machine' },
-  { id: 'branch', label: 'Branch' },
+  { id: 'card', label: 'sessions.details.card' },
+  { id: 'context', label: 'sessions.details.context' },
+  { id: 'cost', label: 'sessions.details.cost' },
+  { id: 'project', label: 'sessions.details.project' },
+  { id: 'machine', label: 'sessions.details.machine' },
+  { id: 'branch', label: 'sessions.details.branch' },
 ] as const
 
 export type Detail = (typeof DETAILS)[number]['id']
@@ -79,9 +80,9 @@ export function useDetailsMenu(): { open: (event: React.MouseEvent) => void; men
     setAt(menuPoint(event))
   }
   const menu = at && (
-    <Menu at={at} label="Details shown" onClose={() => setAt(null)}>
+    <Menu at={at} label={t('sessions.details.shown')} onClose={() => setAt(null)}>
       {DETAILS.map((one) => (
-        <MenuItem key={one.id} label={one.label} glyph={shows(one.id) ? TICK : undefined} onPick={() => toggleDetail(one.id)} />
+        <MenuItem key={one.id} label={t(one.label)} glyph={shows(one.id) ? TICK : undefined} onPick={() => toggleDetail(one.id)} />
       ))}
     </Menu>
   )

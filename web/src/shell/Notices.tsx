@@ -1,6 +1,7 @@
 import { useRef } from 'react'
 
 import type { Notice } from '../gen/bindings'
+import { t } from '../i18n'
 import { useAway } from './away'
 import { since } from './projects'
 import { nextThatNeedsYou } from './headsDown'
@@ -76,7 +77,7 @@ export function Notices({
     <div className="bell" ref={box}>
       <button
         className="bell__b"
-        aria-label={bell.unread > 0 ? `${bell.unread} unread` : 'Notifications'}
+        aria-label={bell.unread > 0 ? t('workspace.notices.unread', { count: bell.unread }) : t('workspace.notices.title')}
         aria-expanded={open}
         onClick={() => setOpen((was) => !was)}
       >
@@ -91,16 +92,16 @@ export function Notices({
       {open && (
         <div className="bell__pop" role="menu">
           <div className="bell__top">
-            <span className="bell__t">Notifications</span>
+            <span className="bell__t">{t('workspace.notices.title')}</span>
             {bell.unread > 0 && (
               <button className="conv__act" onClick={bell.markAllRead}>
-                Mark all read
+                {t('workspace.notices.markAll')}
               </button>
             )}
           </div>
 
           {bell.notices.length === 0 && bell.waiting.length === 0 && (
-            <p className="bell__none">Nothing yet.</p>
+            <p className="bell__none">{t('workspace.notices.none')}</p>
           )}
 
           <div className="bell__list">
@@ -130,7 +131,7 @@ export function Notices({
               marked read by being seen. */}
           {bell.waiting.length > 0 && (
             <div className="bell__held">
-              <span className="bell__t">Waiting for the end of the focus</span>
+              <span className="bell__t">{t('workspace.notices.held')}</span>
               {bell.waiting.map((one) => (
                 <span className="bell__one" key={one.id} data-kind={one.kind}>
                   <svg className="bell__ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">

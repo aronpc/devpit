@@ -1,6 +1,8 @@
 import { wantLine } from './revealLine'
 import type { SearchFile } from '../gen/bindings'
 import { looksLikeDotfile, type FindFlags, type FindHit } from './find'
+import { formatNumber } from '../i18n/format'
+import { t } from '../i18n'
 
 /* A one-character query against a 40,000-file index can match nearly all of
    it — enough DOM nodes, built synchronously on a keystroke, to stall a
@@ -34,13 +36,13 @@ export function SearchResults({
   if (hits.length === 0) {
     return (
       <div className="exempty">
-        <span className="exempty__t">Nothing by that name.</span>
+        <span className="exempty__t">{t('workspace.search.nothing')}</span>
         {/* The index drops every dotfile but `.github`; the tree does not,
             so this is where that gap would otherwise read as "not there". */}
         {looksLikeDotfile(query) && (
-          <span className="exempty__d">Dotfiles are not in the search index yet — look in the tree.</span>
+          <span className="exempty__d">{t('workspace.search.dotfiles')}</span>
         )}
-        {partial && <span className="exempty__d">This project is too large to list whole.</span>}
+        {partial && <span className="exempty__d">{t('workspace.search.tooLarge')}</span>}
       </div>
     )
   }
@@ -61,10 +63,10 @@ export function SearchResults({
       ))}
       {hidden > 0 && (
         <div className="results__partial">
-          Showing {shown.length.toLocaleString()} of {hits.length.toLocaleString()} matches.
+          {t('workspace.search.showing', { shown: formatNumber(shown.length), total: formatNumber(hits.length) })}
         </div>
       )}
-      {partial && <div className="results__partial">This project is too large to list whole.</div>}
+      {partial && <div className="results__partial">{t('workspace.search.tooLarge')}</div>}
     </div>
   )
 }
@@ -136,12 +138,12 @@ export function ContentResults({
   if (files.length === 0) {
     return (
       <div className="exempty">
-        <span className="exempty__t">No matches.</span>
+        <span className="exempty__t">{t('workspace.search.noMatches')}</span>
         {/* `git grep --untracked` never reaches a gitignored file, and the
             tree draws those regardless — a permanent property of this
             command, not something that varies call to call, so it is stated
             here rather than carried as a field that is always true. */}
-        <span className="exempty__d">Files listed in .gitignore are not searched.</span>
+        <span className="exempty__d">{t('workspace.search.gitignored')}</span>
       </div>
     )
   }
@@ -173,7 +175,7 @@ export function ContentResults({
       ))}
       {truncated && (
         <div className="results__partial">
-          Showing {included.toLocaleString()} of {matched.toLocaleString()} matches.
+          {t('workspace.search.showing', { shown: formatNumber(included), total: formatNumber(matched) })}
         </div>
       )}
     </div>

@@ -1,4 +1,6 @@
 import type { Secret } from '../gen/bindings'
+import { t } from '../i18n'
+import { formatDate } from '../i18n/format'
 
 /** The intervals a secret's rotation is offered at, in days. */
 export const ROTATION_DAYS = [30, 90, 180, 365] as const
@@ -20,8 +22,8 @@ export function rotationDay(at: number): string {
 /** What a secret's row says about its rotation, or nothing when it has none. */
 export function rotationSaid(secret: Secret, now: number): string | null {
   if (secret.rotateAt == null) return null
-  const day = new Date(secret.rotateAt * 1000).toLocaleDateString()
-  return secret.rotateAt <= now ? `rotation due since ${day}` : `rotate by ${day}`
+  const date = formatDate(secret.rotateAt * 1000)
+  return t(secret.rotateAt <= now ? 'secrets.dueSince' : 'secrets.rotateBy', { date })
 }
 
 /** The rotation picker's value: an interval, a date alone, or none. */

@@ -5,6 +5,7 @@ import type { Commit, CommitRef } from '../gen/bindings'
 import { ask, commands } from './live'
 import { Menu, MenuItem, MenuRule } from './Menu'
 import { went } from './problems'
+import { t } from '../i18n'
 
 /*
  * Right-click on a commit in History: open it, copy what identifies it, and
@@ -45,18 +46,18 @@ export function CommitMenu({
     onClose()
     act()
   }
-  const copy = (text: string): void => void writeText(text).catch(() => went({ error: 'the text could not be copied' }))
+  const copy = (text: string): void => void writeText(text).catch(() => went({ error: t('workspace.commitMenu.copyFailed') }))
   const host = link?.url ? new URL(link.url).hostname.replace(/^www\./, '') : null
 
   return (
-    <Menu at={at} label="Commit actions" onClose={onClose}>
-      <MenuItem label="Open commit" onPick={then(() => onOpen(at.commit))} />
-      {link?.url && <MenuItem label={`Open on ${host}`} onPick={then(() => void ask(() => commands.urlOpen(link.url ?? '')).then(went))} />}
+    <Menu at={at} label={t('workspace.commitMenu.label')} onClose={onClose}>
+      <MenuItem label={t('workspace.commitMenu.open')} onPick={then(() => onOpen(at.commit))} />
+      {link?.url && <MenuItem label={t('workspace.commitMenu.openOn', { host: host ?? '' })} onPick={then(() => void ask(() => commands.urlOpen(link.url ?? '')).then(went))} />}
       <MenuRule />
-      <MenuItem label="Copy commit hash" onPick={then(() => copy(link?.full ?? at.commit.sha))} />
-      <MenuItem label="Copy short hash" onPick={then(() => copy(at.commit.sha))} />
-      <MenuItem label="Copy message" onPick={then(() => copy(at.commit.subject))} />
-      {link?.url && <MenuItem label="Copy link" onPick={then(() => copy(link.url ?? ''))} />}
+      <MenuItem label={t('workspace.commitMenu.copyHash')} onPick={then(() => copy(link?.full ?? at.commit.sha))} />
+      <MenuItem label={t('workspace.commitMenu.copyShort')} onPick={then(() => copy(at.commit.sha))} />
+      <MenuItem label={t('workspace.commitMenu.copyMessage')} onPick={then(() => copy(at.commit.subject))} />
+      {link?.url && <MenuItem label={t('workspace.commitMenu.copyLink')} onPick={then(() => copy(link.url ?? ''))} />}
     </Menu>
   )
 }

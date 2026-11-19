@@ -19,6 +19,7 @@ import { Rename } from './Rename'
 import { SessionCost } from './SessionCost'
 import { COPIED_MS } from './useCopied'
 import type { ChatCard } from './useChat'
+import { t } from '../i18n'
 
 /*
  * A thin bar over the conversation: its name, renamed where it is, and what
@@ -79,7 +80,7 @@ export const ChatHead = memo(function ChatHead({
             }}
           />
         ) : (
-          <button className="chead__t" title="Rename this conversation" onClick={() => setRenaming(true)}>
+          <button className="chead__t" title={t('sessions.chat.rename')} onClick={() => setRenaming(true)}>
             {title}
           </button>
         )}
@@ -120,8 +121,8 @@ function ChatExport({ onExport }: { onExport: (what: Exported) => Promise<string
     <>
       <button
         className="sq26"
-        aria-label={copied ? 'Copied as markdown' : 'Export as markdown'}
-        title="Export as markdown"
+        aria-label={copied ? t('sessions.chat.copied') : t('sessions.chat.export')}
+        title={t('sessions.chat.export')}
         aria-haspopup="menu"
         onClick={(event) => {
           const box = event.currentTarget.getBoundingClientRect()
@@ -135,9 +136,9 @@ function ChatExport({ onExport }: { onExport: (what: Exported) => Promise<string
         )}
       </button>
       {at && (
-        <Menu at={at} label="Export as markdown" onClose={() => setAt(null)}>
-          <MenuItem label="Copy as markdown" onPick={() => pick('messages')} />
-          <MenuItem label="Copy as markdown, with tools" onPick={() => pick('tools')} />
+        <Menu at={at} label={t('sessions.chat.export')} onClose={() => setAt(null)}>
+          <MenuItem label={t('sessions.chat.copyMd')} onPick={() => pick('messages')} />
+          <MenuItem label={t('sessions.chat.copyMdTools')} onPick={() => pick('tools')} />
         </Menu>
       )}
     </>

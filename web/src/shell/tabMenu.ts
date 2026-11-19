@@ -1,3 +1,4 @@
+import { t } from '../i18n'
 import type { Entry } from './fileMenu'
 import type { Sweep, Tab } from './strip'
 
@@ -30,14 +31,14 @@ export const tabMenu = (hands: TabHands, into: readonly Tab[] = []): readonly Ta
   /* No key announced: this window has no close binding, and `shortcuts.test`
      is what caught the one written here from memory. A menu that promises a
      key nothing listens for is worse than a menu that promises none. */
-  { label: 'Close', run: hands.close },
-  { label: 'Close others', run: (id) => hands.sweep(id, 'others') },
+  { label: t('workspace.menu.tab.close'), run: hands.close },
+  { label: t('workspace.menu.tab.others'), run: (id) => hands.sweep(id, 'others') },
   { rule: true },
-  { label: 'Close to the right', run: (id) => hands.sweep(id, 'right') },
-  { label: 'Close to the left', run: (id) => hands.sweep(id, 'left') },
+  { label: t('workspace.menu.tab.right'), run: (id) => hands.sweep(id, 'right') },
+  { label: t('workspace.menu.tab.left'), run: (id) => hands.sweep(id, 'left') },
   { rule: true },
   ...joins(hands, into),
-  { label: 'Close all', bad: true, run: (id) => hands.sweep(id, 'all') },
+  { label: t('workspace.menu.tab.all'), bad: true, run: (id) => hands.sweep(id, 'all') },
 ]
 
 const joins = (hands: TabHands, into: readonly Tab[]): TabEntry[] =>
@@ -45,7 +46,7 @@ const joins = (hands: TabHands, into: readonly Tab[]): TabEntry[] =>
     ? []
     : [
         ...into.map((tab) => ({
-          label: `Move into split with ${tab.title ?? 'Terminal'}`,
+          label: t('workspace.menu.tab.join', { name: tab.title ?? t('workspace.menu.tab.terminal') }),
           run: (id: string) => hands.join(id, tab.id),
         })),
         { rule: true },

@@ -1,4 +1,5 @@
 import type { Usage } from '../gen/bindings'
+import { t } from '../i18n'
 import { AgentGlyph } from './AgentGlyph'
 import { counted, cpu, notable, size } from './watching'
 
@@ -26,22 +27,22 @@ export function Monitor({
   const rows = notable(usage.panes)
 
   return (
-    <div className="hud" role="dialog" aria-modal="false" aria-label="What the terminals cost">
+    <div className="hud" role="dialog" aria-modal="false" aria-label={t('workspace.monitor.label')}>
       <div className="hud__top">
-        <span className="hud__t">Terminals</span>
+        <span className="hud__t">{t('workspace.monitor.terminals')}</span>
         <span className="hud__sum" title={counted(usage)}>
           {cpu(usage.cpuTenths)} · {size(usage.memoryKb)}
           {/* The total says how it was counted rather than hoping nobody
               asks: resident memory overstates a process tree by half. */}
           {!usage.proportional && <span className="hud__warn">≈</span>}
         </span>
-        <button className="sq26" onClick={onClose} aria-label="Close" title="Close">
+        <button className="sq26" onClick={onClose} aria-label={t('workspace.monitor.close')} title={t('workspace.monitor.close')}>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
         </button>
       </div>
 
       {rows.length === 0 && (
-        <p className="acc__note">Nothing is running in this project&rsquo;s terminals.</p>
+        <p className="acc__note">{t('workspace.monitor.nothing')}</p>
       )}
 
       {rows.map((pane) => (
@@ -54,7 +55,7 @@ export function Monitor({
             {/* How many processes, because an agent with fifteen of them is
                 worth knowing about even when the memory looks ordinary. */}
             <span className="hudrow__d">
-              {pane.processes} process{pane.processes === 1 ? '' : 'es'}
+              {t('workspace.monitor.processes', { count: pane.processes })}
             </span>
           </span>
           <span className="hudrow__cpu">{cpu(pane.cpuTenths)}</span>

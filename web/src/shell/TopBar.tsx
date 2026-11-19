@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 
 import mark from '../assets/brand/mark.png'
+import { t } from '../i18n'
 import { BranchPicker } from './BranchPicker'
 import { HeadsDown } from './HeadsDownControl'
 import { ask, commands } from './live'
@@ -51,11 +52,15 @@ export function TopBar({ onAddProject, maximized }: { onAddProject: () => void; 
     <header className="top" data-tauri-drag-region>
       <div className="top__lead">
         <span className="logo">
-          <img className="mark" alt="devpit" src={mark} />
+          <img
+            className="mark"
+            alt="devpit" // ui-text: ok the product's name
+            src={mark}
+          />
         </span>
         {dev && (
-          <span className="top__dev" title="A development build, on its own home — not your installed devpit">
-            dev
+          <span className="top__dev" title={t('workspace.top.dev')}>
+            dev {/* // ui-text: ok the badge a development build wears */}
           </span>
         )}
         <ProjectPicker onAdd={onAddProject} />
@@ -64,8 +69,8 @@ export function TopBar({ onAddProject, maximized }: { onAddProject: () => void; 
             that does not have one. */}
         <button
           className="sq26 tip"
-          data-tip="Manager — every project's board"
-          aria-label="Manager"
+          data-tip={t('workspace.top.managerTip')}
+          aria-label={t('workspace.top.manager')}
           aria-pressed={managing}
           onClick={openManager}
         >
@@ -110,8 +115,8 @@ export function TopBar({ onAddProject, maximized }: { onAddProject: () => void; 
 
       <button
         className="sq26 tip"
-        data-tip={`${side ? 'Hide' : 'Show'} the sidebar`}
-        aria-label={`${side ? 'Hide' : 'Show'} the sidebar`}
+        data-tip={t(side ? 'workspace.top.hideSide' : 'workspace.top.showSide')}
+        aria-label={t(side ? 'workspace.top.hideSide' : 'workspace.top.showSide')}
         onClick={toggleSide}
       >
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
@@ -121,8 +126,8 @@ export function TopBar({ onAddProject, maximized }: { onAddProject: () => void; 
       </button>
       <button
         className="sq26 tip"
-        data-tip={`${files ? 'Hide' : 'Show'} the files panel`}
-        aria-label={`${files ? 'Hide' : 'Show'} the files panel`}
+        data-tip={t(files ? 'workspace.top.hideFiles' : 'workspace.top.showFiles')}
+        aria-label={t(files ? 'workspace.top.hideFiles' : 'workspace.top.showFiles')}
         onClick={toggleFiles}
       >
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">

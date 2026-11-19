@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { t } from '../i18n'
 
 /* A selection as a quote for the next message: each line marked, a blank line after. */
 export const quoted = (text: string): string => `${text.split('\n').map((line) => `> ${line}`).join('\n')}\n\n`
@@ -50,7 +51,7 @@ export function Quoting({ box, onQuote }: { box: React.RefObject<HTMLDivElement 
         window.getSelection()?.removeAllRanges()
       }}
     >
-      Quote
+      {t('workspace.quoting.quote')}
     </button>,
     document.body,
   )

@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 
 import mark from '../assets/brand/mark.png'
+import { t } from '../i18n'
+import { useLocale } from '../i18n/LocaleRoot'
 import { OnboardingAccount } from './OnboardingAccount'
 import { useShell } from './useShell'
 
@@ -24,6 +26,8 @@ export function Onboarding({
   onDone: () => void
 }): React.JSX.Element {
   const { signedIn, theme, setTheme } = useShell()
+  /* Hears the locale, so the steps re-say themselves when it changes. */
+  useLocale()
   const [step, setStep] = useState(signedIn ? 1 : 0)
 
   /* The approval happens in the browser and lands here, so the step it lands
@@ -34,19 +38,23 @@ export function Onboarding({
     if (signedIn) setStep((now) => (now === 0 ? 1 : now))
   }, [signedIn])
 
-  const steps = ['Account', 'Theme', 'Project'] as const
+  const steps = ['account', 'theme', 'project'] as const
 
   return (
     <div className="onb" data-tauri-drag-region>
       <div className="onb__box">
         <span className="onb__mark">
-          <img className="mark" alt="" src={mark} />
+          <img
+            className="mark"
+            alt="" // ui-text: ok an empty literal — the walk misreads it as the rest of the line
+            src={mark}
+          />
         </span>
 
-        <ol className="onb__rail" aria-label="Setup">
+        <ol className="onb__rail" aria-label={t('onboarding.setup')}>
           {steps.map((name, index) => (
             <li key={name} className="onb__dot" data-state={index === step ? 'now' : index < step ? 'done' : 'next'}>
-              <span>{name}</span>
+              <span>{t(`onboarding.step.${name}`)}</span>
             </li>
           ))}
         </ol>
@@ -55,9 +63,9 @@ export function Onboarding({
 
         {step === 1 && (
           <>
-            <h1 className="onb__t">Pick a theme</h1>
-            <p className="onb__d">You can change it later in Settings.</p>
-            <div className="thm" role="radiogroup" aria-label="Theme">
+            <h1 className="onb__t">{t('onboarding.pickTheme')}</h1>
+            <p className="onb__d">{t('onboarding.changeLater')}</p>
+            <div className="thm" role="radiogroup" aria-label={t('theme.title')}>
               {(['system', 'light', 'dark'] as const).map((name) => (
                 <button
                   key={name}
@@ -97,27 +105,23 @@ export function Onboarding({
                       </>
                     )}
                   </span>
-                  <span className="thm__l">
-                    {name === 'system' ? 'System' : name === 'light' ? 'Light' : 'Dark'}
-                  </span>
+                  <span className="thm__l">{t(`theme.${name}`)}</span>
                 </button>
               ))}
             </div>
             <button className="onb__go" onClick={() => setStep(2)}>
-              Continue
+              {t('onboarding.continue')}
             </button>
             <button className="onb__skip" onClick={() => setStep(0)}>
-              Back
+              {t('onboarding.back')}
             </button>
           </>
         )}
 
         {step === 2 && (
           <>
-            <h1 className="onb__t">Open a project</h1>
-            <p className="onb__d">
-              A folder with a git repository in it. devpit reads it where it is and never moves it.
-            </p>
+            <h1 className="onb__t">{t('onboarding.openProject')}</h1>
+            <p className="onb__d">{t('onboarding.projectSaid')}</p>
             <button
               className="onb__go"
               onClick={() => {
@@ -125,10 +129,10 @@ export function Onboarding({
                 onAddProject()
               }}
             >
-              Add a project
+              {t('onboarding.addProject')}
             </button>
             <button className="onb__skip" onClick={() => setStep(1)}>
-              Back
+              {t('onboarding.back')}
             </button>
           </>
         )}

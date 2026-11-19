@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 
 import type { InstallKind, UpdateStatus, UpdateWork } from '../gen/bindings'
+import { t } from '../i18n'
+import { useLocale } from '../i18n/LocaleRoot'
 import { ask, commands } from './live'
 import { useFocusIsOn } from './useHeadsDown'
 import { onCarried } from './window'
@@ -21,8 +23,11 @@ import { onCarried } from './window'
 
 /** "2 runs and 1 turn", for the sentence a waiting update says. */
 function inFlight(runs: number, turns: number): string {
-  const counted = (n: number, word: string): string | null => (n > 0 ? `${n} ${word}${n === 1 ? '' : 's'}` : null)
-  return [counted(runs, 'run'), counted(turns, 'turn')].filter(Boolean).join(' and ') || 'the work in progress'
+  const said = [runs > 0 ? t('update.runs', { count: runs }) : null, turns > 0 ? t('update.turns', { count: turns }) : null].filter(
+    (one): one is string => one !== null,
+  )
+  if (said.length === 2) return t('update.both', { runs: said[0]!, turns: said[1]! })
+  return said[0] ?? t('update.workInProgress')
 }
 
 /** Where the files are for a build devpit does not install over. */
@@ -31,9 +36,9 @@ export const RELEASE_PAGE = 'https://github.com/jholhewres/devpit/releases/lates
 /** "for 3 min", for how long an update has been waiting. */
 export function waitingFor(since: number | null, now: number): string {
   const minutes = Math.floor(Math.max(0, now - (since ?? now)) / 60)
-  if (minutes < 1) return 'for less than a minute'
-  if (minutes < 60) return `for ${minutes} min`
-  return `for ${Math.floor(minutes / 60)} h ${minutes % 60} min`
+  if (minutes < 1) return t('update.forLess')
+  if (minutes < 60) return t('update.forMinutes', { minutes })
+  return t('update.forHours', { hours: Math.floor(minutes / 60), minutes: minutes % 60 })
 }
 
 /** Whether the card has a clock to keep.
@@ -57,7 +62,7 @@ const A_TICK = 30_000
  * Kept everywhere but Windows, where the installer ends the psmux inside the
  * install to replace it (`update::terminals_survive`). */
 export function terminalsAfter(kind: InstallKind | null): string {
-  return kind === 'nsis' ? 'Your terminals close: the installer ends them.' : 'Your terminals keep running.'
+  return t(kind === 'nsis' ? 'update.terminalsClose' : 'update.terminalsKeep')
 }
 
 /** What the card says about each state, and what its one button does. */
@@ -74,45 +79,45 @@ function offer(
   switch (status.type) {
     case 'available':
       return {
-        title: 'Update available',
-        said: `devpit ${status.version} is ready.`,
+        title: t('update.available.title'),
+        said: t('update.available.said', { version: status.version }),
         calm: terminalsAfter(status.kind),
-        action: 'Update',
+        action: t('update.available.action'),
       }
     case 'downloading':
-      return { title: 'Downloading the update', said: '', calm: null, action: null }
+      return { title: t('update.downloading.title'), said: '', calm: null, action: null }
     case 'ready':
       return {
-        title: 'Update ready',
-        said: `devpit ${status.version} is ready to install.`,
+        title: t('update.ready.title'),
+        said: t('update.ready.said', { version: status.version }),
         calm: terminalsAfter(kind),
-        action: 'Restart now',
+        action: t('update.ready.action'),
       }
     case 'waiting':
       return {
-        title: 'Update waiting',
-        said: `It goes in once ${inFlight(status.runs, status.turns)} are done. Waiting ${waitingFor(status.since, now)}.`,
-        calm: `Nothing new starts meanwhile. ${terminalsAfter(kind)}`,
-        action: 'Cancel',
+        title: t('update.waiting.title'),
+        said: t('update.waiting.said', { work: inFlight(status.runs, status.turns), for: waitingFor(status.since, now) }),
+        calm: t('update.waiting.calm', { terminals: terminalsAfter(kind) }),
+        action: t('update.waiting.action'),
       }
     case 'manualInstall':
       return {
-        title: 'Install the update',
+        title: t('update.manual.title'),
         said: status.path,
         /* devpit still does not ask for root. `pkexec` hands the job to
            polkit, which puts up the system's own dialog and takes the
            password itself. */
-        calm: 'Your system will ask for your password, and devpit restarts into the new version once it is in.',
-        action: 'Install',
+        calm: t('update.manual.calm'),
+        action: t('update.manual.action'),
       }
     case 'failed':
       return {
-        title: 'The update did not go through',
+        title: t('update.failed.title'),
         said: status.message,
         calm: null,
         /* Recoverable means nothing was committed, so asking again is all it
            takes. Without a button here the only way back was Settings. */
-        action: status.recoverable ? 'Check again' : null,
+        action: status.recoverable ? t('update.failed.action') : null,
       }
     default:
       return null
@@ -120,6 +125,7 @@ function offer(
 }
 
 export function UpdateCard(): React.JSX.Element | null {
+  useLocale()
   const [status, setStatus] = useState<UpdateStatus | null>(null)
   const [later, setLater] = useState(false)
   const [copied, setCopied] = useState<string | null>(null)
@@ -276,13 +282,13 @@ export function UpdateCard(): React.JSX.Element | null {
           : installPackage
 
   return (
-    <div className="upd" role="status" aria-label="Update">
+    <div className="upd" role="status" aria-label={t('update.label')}>
       <div className="upd__hd">
         <span className="upd__t">
           {said.title}
-          {fromATestFeed && <span className="upd__tag">test feed</span>}
+          {fromATestFeed && <span className="upd__tag">{t('update.testFeed')}</span>}
         </span>
-        <button className="upd__x" aria-label="Close" title="Close" onClick={close}>
+        <button className="upd__x" aria-label={t('update.close')} title={t('update.close')} onClick={close}>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
             <path d="M6 6l12 12M18 6 6 18" />
           </svg>
@@ -301,49 +307,46 @@ export function UpdateCard(): React.JSX.Element | null {
       {manual && (
         <>
           <code className="upd__cmd">{copied ?? manual.command}</code>
-          {copyRefused && <span className="upd__d">The clipboard refused it — select the command above to copy it.</span>}
-          <span className="upd__d">
-            devpit checked this file against the release&rsquo;s signature when it downloaded it,
-            and again just now. What the command does after that is your package manager&rsquo;s.
-          </span>
+          {copyRefused && <span className="upd__d">{t('update.clipboardRefused')}</span>}
+          <span className="upd__d">{t('update.signed')}</span>
         </>
       )}
 
       {release && (
         <button className="upd__notes" onClick={() => setNotes((was) => !was)}>
-          Release notes
+          {t('update.notes')}
         </button>
       )}
       {notes && release && <span className="upd__d">{release}</span>}
 
       {work && (
         <span className="upd__d">
-          {[...work.runs, ...work.turns].map((one) => one.title).join(', ')} still going.
+          {t('update.stillGoing', { titles: [...work.runs, ...work.turns].map((one) => one.title).join(', ') })}
         </span>
       )}
       {work && work.keeps.length > 0 && (
-        <span className="upd__d">Keeps running: {work.keeps.map((one) => one.title).join(', ')}.</span>
+        <span className="upd__d">{t('update.keeps', { titles: work.keeps.map((one) => one.title).join(', ') })}</span>
       )}
 
       {work ? (
         <div className="upd__row">
           <button className="btn" onClick={() => choose('later')}>
-            Not now
+            {t('update.notNow')}
           </button>
           <button className="btn" onClick={() => choose('whenItIsDone')}>
-            When it is done
+            {t('update.whenDone')}
           </button>
           <button className="btn btn--go" onClick={() => choose('stopIt')}>
-            Stop it and restart
+            {t('update.stopRestart')}
           </button>
         </div>
       ) : status.type === 'waiting' ? (
         <div className="upd__row">
           <button className="btn" onClick={() => choose('later')}>
-            Cancel
+            {t('update.cancel')}
           </button>
           <button className="btn btn--go" onClick={() => choose('stopIt')}>
-            Stop them and update now
+            {t('update.stopUpdate')}
           </button>
         </div>
       ) : unmanaged ? (
@@ -358,7 +361,7 @@ export function UpdateCard(): React.JSX.Element | null {
             void ask(() => commands.urlOpen(RELEASE_PAGE))
           }}
         >
-          Release page
+          {t('update.releasePage')}
         </a>
       ) : (
         said.action && (

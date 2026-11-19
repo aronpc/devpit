@@ -4,6 +4,7 @@ import type { Diagnostics } from '../gen/bindings'
 import { bytes } from './disk'
 import { ask, commands } from './live'
 import { PrefRow } from './PrefRow'
+import { t } from '../i18n'
 
 /*
  * Settings → Diagnostics: what devpit itself is running and costing, the
@@ -38,12 +39,12 @@ export function DiagnosticsPane(): React.JSX.Element {
   const processes = shown?.processes ?? []
   const cpu = processes.reduce((sum, one) => sum + one.cpuTenths, 0)
   const memory = processes.reduce((sum, one) => sum + (one.memoryBytes ?? 0), 0)
-  const totals = shown ? `${processes.length} processes, ${percent(cpu)} of a core, ${bytes(memory) ?? '0 B'} of memory.` : 'Looking…'
+  const totals = shown ? t('workspace.diagnostics.totals', { count: processes.length, cpu: percent(cpu), memory: bytes(memory) ?? '0 B' }) : t('workspace.diagnostics.looking')
   return (
     <>
-      <PrefRow title="Processes" said={totals}>
+      <PrefRow title={t('workspace.diagnostics.processes')} said={totals}>
         <button className="btn" disabled={busy} onClick={look}>
-          {busy ? 'Looking…' : 'Look again'}
+          {busy ? t('workspace.diagnostics.looking') : t('workspace.diagnostics.lookAgain')}
         </button>
       </PrefRow>
       {error && <p className="pref__d">{error}</p>}
@@ -51,10 +52,10 @@ export function DiagnosticsPane(): React.JSX.Element {
         <table className="diag__t">
           <thead>
             <tr>
-              <th>Process</th>
-              <th>PID</th>
-              <th>CPU</th>
-              <th>Memory</th>
+              <th>{t('workspace.diagnostics.process')}</th>
+              <th>{t('workspace.diagnostics.pid')}</th>
+              <th>{t('workspace.diagnostics.cpu')}</th>
+              <th>{t('workspace.diagnostics.memory')}</th>
             </tr>
           </thead>
           <tbody>
@@ -70,7 +71,7 @@ export function DiagnosticsPane(): React.JSX.Element {
         </table>
       )}
 
-      <div className="acc__sub">Checks</div>
+      <div className="acc__sub">{t('workspace.diagnostics.checks')}</div>
       {shown?.checks.map((check) => (
         <div className="pref" key={check.name}>
           <span className="pref__body">
@@ -79,15 +80,15 @@ export function DiagnosticsPane(): React.JSX.Element {
             </span>
             <span className="pref__d">
               {check.detail}
-              {!check.ok && check.fix ? ` — fix: ${check.fix}` : ''}
+              {!check.ok && check.fix ? t('workspace.diagnostics.fix', { fix: check.fix }) : ''}
             </span>
           </span>
         </div>
       ))}
 
-      <div className="acc__sub">Error log</div>
+      <div className="acc__sub">{t('workspace.diagnostics.errorLog')}</div>
       <p className="pref__d">{shown?.logPath}</p>
-      <pre className="diag__log">{shown && shown.log.length > 0 ? shown.log.join('\n') : 'Nothing logged. Error reports keep this log while they are on.'}</pre>
+      <pre className="diag__log">{shown && shown.log.length > 0 ? shown.log.join('\n') : t('workspace.diagnostics.nothingLogged')}</pre>
     </>
   )
 }

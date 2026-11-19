@@ -7,6 +7,7 @@ import { mergeInto, toChange, type Merged, type Sides } from './mergeEditor'
 import { reason } from './reason'
 import { matches } from './shortcuts'
 import { viewPrefs } from './viewPrefs'
+import { t } from '../i18n'
 
 /*
  * One file's change against HEAD, the whole file lined up.
@@ -61,7 +62,7 @@ export function FileDiff({
       /* No file on disk is a deletion: the right side is empty and there is
          nothing to edit. A file that is there but not text says why. */
       if (disk.data && disk.data.text === null) {
-        return setError(disk.data.notShown ?? 'This file is not text, so there is nothing to line up.')
+        return setError(disk.data.notShown ?? t('workspace.fileDiff.notText'))
       }
       readAt.current = disk.data?.readAt ?? 0
       saved.current = disk.data?.text ?? ''
@@ -111,25 +112,25 @@ export function FileDiff({
     <>
       {bar(
         <>
-          <button className="dbtn" onClick={go(false)} title="Previous change" aria-label="Previous change">
+          <button className="dbtn" onClick={go(false)} title={t('workspace.fileDiff.previous')} aria-label={t('workspace.fileDiff.previous')}>
             <ChevronUp />
           </button>
-          <button className="dbtn" onClick={go(true)} title="Next change" aria-label="Next change">
+          <button className="dbtn" onClick={go(true)} title={t('workspace.fileDiff.next')} aria-label={t('workspace.fileDiff.next')}>
             <ChevronDown />
           </button>
           <span className="dbar__sep" />
-          <button className="dbtn" aria-pressed={split} onClick={() => setSplit((was) => !was)} title={split ? 'Inline' : 'Side by side'}>
+          <button className="dbtn" aria-pressed={split} onClick={() => setSplit((was) => !was)} title={split ? t('workspace.fileDiff.inline') : t('workspace.fileDiff.sideBySide')}>
             {split ? <Rows /> : <Columns />}
           </button>
-          <button className="dbtn" aria-pressed={!folded} onClick={() => setFolded((was) => !was)} title={folded ? 'Show the whole file' : 'Fold unchanged lines'}>
+          <button className="dbtn" aria-pressed={!folded} onClick={() => setFolded((was) => !was)} title={folded ? t('workspace.fileDiff.showWhole') : t('workspace.fileDiff.fold')}>
             <Fold />
           </button>
-          <button className="dbtn" aria-pressed={wrap} onClick={() => setWrap((was) => !was)} title="Wrap long lines">
+          <button className="dbtn" aria-pressed={wrap} onClick={() => setWrap((was) => !was)} title={t('workspace.fileDiff.wrap')}>
             <Wrap />
           </button>
           {dirty && (
             <button className="dbtn dbtn--go" disabled={saving} onClick={save}>
-              {saving ? 'Saving…' : 'Save'}
+              {saving ? t('workspace.fileDiff.saving') : t('workspace.fileDiff.save')}
             </button>
           )}
         </>,

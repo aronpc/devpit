@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 
+import { t } from '../i18n'
 import { commands } from './live'
 import { onCarried } from './window'
 
@@ -13,9 +14,9 @@ export function RemoteBadge(): React.JSX.Element | null {
   useEffect(() => onCarried<number>('remote:viewers', setWatching), [])
   if (watching === 0) return null
   return (
-    <button className="strip__remote" onClick={() => commands.remoteDrop()} title="Another device is connected to this machine — click to drop it">
+    <button className="strip__remote" onClick={() => commands.remoteDrop()} title={t('workspace.remoteBadge.title')}>
       <i className="strip__remote-dot" />
-      Watched by {watching} {watching === 1 ? 'device' : 'devices'}
+      {t('workspace.remoteBadge.watched', { count: watching })}
     </button>
   )
 }

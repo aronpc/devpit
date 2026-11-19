@@ -2,6 +2,7 @@ import { useState } from 'react'
 
 import type { LiveSession } from '../gen/bindings'
 import { ask, commands } from './live'
+import { t } from '../i18n'
 
 /*
  * Replies the orchestrator drafted, for the person to send as theirs.
@@ -66,12 +67,12 @@ export function ReplyDrafts({
   }
 
   return (
-    <section className="wprompt rdraft" aria-label="Drafted for you to send">
-      <p className="wprompt__t">Drafted for you to send</p>
+    <section className="wprompt rdraft" aria-label={t('workspace.replyDrafts.title')}>
+      <p className="wprompt__t">{t('workspace.replyDrafts.title')}</p>
       {sendable.length > 1 && (
         <div className="wprompt__opts">
           <button className="wprompt__o" disabled={sending !== null} onClick={sendAll}>
-            Send all {sendable.length} as you
+            {t('workspace.replyDrafts.sendAll', { count: sendable.length })}
           </button>
         </div>
       )}
@@ -83,11 +84,11 @@ export function ReplyDrafts({
           <div className="wprompt__i" key={one.name}>
             <p className="wprompt__who">
               <span className="osess__name">{one.name}</span>
-              <span className="osess__where">{one.projectName ?? 'outside devpit'}</span>
+              <span className="osess__where">{one.projectName ?? t('workspace.replyDrafts.outside')}</span>
             </p>
             <textarea
               className="rdraft__text"
-              aria-label={`Reply to ${one.name}, as you`}
+              aria-label={t('workspace.replyDrafts.replyTo', { name: one.name })}
               value={text}
               rows={Math.min(6, text.split('\n').length + 1)}
               onChange={(event) => setEdited((was) => ({ ...was, [one.name]: event.target.value }))}
@@ -96,16 +97,16 @@ export function ReplyDrafts({
               <button
                 className="wprompt__o"
                 disabled={sending !== null || onAQuestion || !one.pane || text.trim() === ''}
-                title={onAQuestion ? 'It is stopped on a question: answer that first' : one.pane ? 'Types it into its terminal as you' : 'Not in a devpit terminal'}
+                title={onAQuestion ? t('workspace.replyDrafts.stoppedFirst') : one.pane ? t('workspace.replyDrafts.typesIt') : t('workspace.replyDrafts.notTerminal')}
                 onClick={() => send(one)}
               >
-                Send as you
+                {t('workspace.replyDrafts.sendOne')}
               </button>
               <button className="wprompt__o wprompt__esc" disabled={sending === one.name} onClick={() => drop(one)}>
-                Drop
+                {t('workspace.replyDrafts.drop')}
               </button>
             </div>
-            {onAQuestion && <p className="osess__said">It is stopped on a question — answer that first.</p>}
+            {onAQuestion && <p className="osess__said">{t('workspace.replyDrafts.stopped')}</p>}
             {refused[one.name] && <p className="osess__said">{refused[one.name]}</p>}
           </div>
         )

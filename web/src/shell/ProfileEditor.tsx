@@ -1,6 +1,8 @@
 import { useState } from 'react'
 
 import type { KnownAgent } from '../gen/bindings'
+import { t } from '../i18n'
+import { useLocale } from '../i18n/LocaleRoot'
 import { AccountFields } from './AccountFields'
 import type { Draft } from './profiles'
 import {
@@ -49,6 +51,7 @@ export function ProfileEditor({
   /* By name and not by row. Indexed by position, removing a row above a
      revealed one slid the reveal onto whatever took its place — a different
      token on screen that nobody asked to see. */
+  useLocale()
   const [shown, setShown] = useState<string | null>(null)
   const base = agents.find((one) => one.id === draft.base)
   /* What the person types to start it, and what reading it found. Two fields
@@ -69,9 +72,9 @@ export function ProfileEditor({
     const own = agents.find((one) => one.launch === command)
     if (own) {
       set({ base: own.id, command: '' })
-      return setRead({ kind: 'plain', say: `Runs ${own.label} as it is.` })
+      return setRead({ kind: 'plain', say: t('profile.runsAsIs', { agent: own.label }) })
     }
-    setRead({ kind: 'reading', say: `Reading what ${command} does…` })
+    setRead({ kind: 'reading', say: t('profile.reading', { command }) })
     void ask(() => commands.agentProfileRead(command)).then((answer) => {
       if (answer.error) {
         set({ command })
@@ -81,14 +84,18 @@ export function ProfileEditor({
       const found = answer.data
       if (!found) {
         set({ command })
-        return setRead({ kind: 'plain', say: `${command} starts no agent devpit knows, so it will be run as a program.` })
+        return setRead({ kind: 'plain', say: t('profile.plainProgram', { command }) })
       }
       const agent = agents.find((one) => one.id === found.base)
       set({ base: found.base, command: '', args: found.args, env: found.env })
       const names = found.env.map((one) => one.name)
       setRead({
         kind: 'read',
-        say: `Runs ${agent?.label ?? found.base}${found.args.length ? ` ${found.args.join(' ')}` : ''}${names.length ? ` with ${names.join(', ')}` : ''}. It works in the chat and on the board too, not only in a terminal.`,
+        say: t('profile.read', {
+          agent: agent?.label ?? found.base,
+          args: found.args.length ? ` ${found.args.join(' ')}` : '',
+          vars: names.length ? t('profile.readWith', { names: names.join(', ') }) : '',
+        }),
       })
     })
   }
@@ -96,26 +103,26 @@ export function ProfileEditor({
   return (
     <div className="oapp oapp--new">
       <label className="fld">
-        <span className="fld__l">Name</span>
+        <span className="fld__l">{t('profile.name')}</span>
         <input
           className="fld__b"
           autoFocus
           value={draft.label}
-          placeholder="GLM"
-          aria-label="Name"
+          placeholder={t('profile.placeholder.name')}
+          aria-label={t('profile.name')}
           onChange={(event) => set({ label: event.target.value })}
           onKeyDown={(event) => committed(event) && ready(draft) && onSave()}
         />
       </label>
 
       <label className="fld">
-        <span className="fld__l">Command</span>
+        <span className="fld__l">{t('profile.command')}</span>
         <input
           className="fld__b"
           value={typed}
           spellCheck={false}
-          aria-label="Command"
-          placeholder="claude-work"
+          aria-label={t('profile.command')}
+          placeholder={t('profile.placeholder.command')}
           onChange={(event) => {
             setTyped(event.target.value)
             setRead(null)
@@ -125,22 +132,21 @@ export function ProfileEditor({
         />
       </label>
       <p className="pref__d" data-read={read?.kind}>
-        {read?.say ??
-          'What you type in a terminal to start it — an agent such as claude, or a function of your own such as claude-work. devpit reads what it sets.'}
+        {read?.say ?? t('profile.commandSaid')}
       </p>
 
       <button className="pdet" aria-expanded={details} onClick={() => setDetails(!details)}>
-        {details ? '▾' : '▸'} Details — agent, program, arguments and variables
+        {details ? '▾' : '▸'} {t('profile.details')}
       </button>
 
       {details && (
       <>
       <label className="fld">
-        <span className="fld__l">Agent</span>
+        <span className="fld__l">{t('profile.agent')}</span>
         <select
           className="fld__b"
           value={draft.base}
-          aria-label="Agent"
+          aria-label={t('profile.agent')}
           onChange={(event) => set({ base: event.target.value })}
         >
           {agents.map((one) => (
@@ -150,25 +156,25 @@ export function ProfileEditor({
       </label>
 
       <label className="fld">
-        <span className="fld__l">Program</span>
+        <span className="fld__l">{t('profile.program')}</span>
         <input
           className="fld__b"
           value={draft.command}
           spellCheck={false}
-          aria-label="Program"
+          aria-label={t('profile.program')}
           placeholder={base?.launch ?? ''}
           onChange={(event) => set({ command: event.target.value })}
         />
       </label>
 
       <label className="fld">
-        <span className="fld__l">Arguments</span>
+        <span className="fld__l">{t('profile.arguments')}</span>
         <input
           className="fld__b"
           value={argsText(draft.args)}
           spellCheck={false}
-          aria-label="Arguments"
-          placeholder="--permission-mode bypassPermissions"
+          aria-label={t('profile.arguments')}
+          placeholder={t('profile.placeholder.args')}
           onChange={(event) => set({ args: argsOf(event.target.value) })}
         />
       </label>
@@ -177,15 +183,15 @@ export function ProfileEditor({
 
       {/* The account fields' variables are theirs; listing them here too
           would be two places to edit one value. */}
-      <span className="fld__l">{hasAccountFields(draft.base) ? 'Other variables' : 'Environment'}</span>
+      <span className="fld__l">{hasAccountFields(draft.base) ? t('profile.otherVariables') : t('profile.environment')}</span>
       {others(draft.env, hasAccountFields(draft.base) ? ACCOUNT_VARS : []).map(({ one, at }) => (
         <div className="oapp" key={at}>
           <input
             className="fld__b"
             value={one.name}
             spellCheck={false}
-            aria-label="Variable"
-            placeholder="ANTHROPIC_BASE_URL"
+            aria-label={t('profile.variable')}
+            placeholder={t('profile.placeholder.variable')}
             onChange={(event) =>
               set({ env: withVar(draft.env, at, { ...one, name: event.target.value }) })
             }
@@ -195,7 +201,7 @@ export function ProfileEditor({
           {secret(one.name) && shown !== one.name ? (
             <button
               className="fld__b"
-              aria-label={`Show ${one.name}`}
+              aria-label={t('profile.show', { name: one.name })}
               onClick={() => setShown(one.name)}
             >
               {masked(one.value)}
@@ -205,7 +211,7 @@ export function ProfileEditor({
               className="fld__b"
               value={one.value}
               spellCheck={false}
-              aria-label={one.name || 'Value'}
+              aria-label={one.name || t('profile.value')}
               onChange={(event) =>
                 set({ env: withVar(draft.env, at, { ...one, value: event.target.value }) })
               }
@@ -214,10 +220,10 @@ export function ProfileEditor({
           <button
             className="btn"
             data-danger
-            aria-label={`Remove ${one.name || 'variable'}`}
+            aria-label={t('profile.removeNamed', { name: one.name || t('profile.variableLower') })}
             onClick={() => set({ env: withVar(draft.env, at, null) })}
           >
-            Remove
+            {t('profile.remove')}
           </button>
         </div>
       ))}
@@ -225,7 +231,7 @@ export function ProfileEditor({
         className="btn"
         onClick={() => set({ env: [...draft.env, { name: '', value: '' }] })}
       >
-        Add variable
+        {t('profile.addVariable')}
       </button>
       </>
       )}
@@ -233,17 +239,16 @@ export function ProfileEditor({
       <div className="ask__row">
         {onRemove && (
           <button className="btn btn--danger" onClick={onRemove}>
-            Remove
+            {t('profile.remove')}
           </button>
         )}
-        <button className="btn" onClick={onCancel}>Cancel</button>
+        <button className="btn" onClick={onCancel}>{t('profile.cancel')}</button>
         <button className="btn btn--go" disabled={!ready(draft) || read?.kind === 'reading'} onClick={onSave}>
-          Save
+          {t('profile.save')}
         </button>
       </div>
       <p className="pref__d">
-        The program runs with these variables set and these arguments added. Leave Program empty
-        to use {base?.launch ?? 'the agent'}&rsquo;s own.
+        {base?.launch ? t('profile.footnote', { launch: base.launch }) : t('profile.footnoteAgent')}
       </p>
     </div>
   )

@@ -49,7 +49,8 @@ describe("a card's session history", () => {
 
   it('says how each stands, and what it left uncommitted', () => {
     expect(sessionWords(running)).toMatch(/^running since /)
-    expect(sessionWords(ended)).toMatch(/^stopped by you .+ · 2 file\(s\) not committed$/)
+    expect(sessionWords(ended)).toMatch(/^stopped by you .+ · 2 files not committed$/)
+    expect(sessionWords({ ...ended, dirty: 1 })).toMatch(/ · 1 file not committed$/)
   })
 
   it('resumes an ended one as the same conversation, and goes to a running one', async () => {

@@ -2,13 +2,13 @@ import { useCallback, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
 import type { ColumnDeleted } from '../gen/bindings'
+import { t } from '../i18n'
 import { useAway } from './away'
 import { Confirm } from './Confirm'
 import { laneMenu } from './laneMenu'
 
 /** What the dialog says when a lane still holds cards: the backend's count, and a choice. */
-export const moveTitle = (inTheWay: number, lane: string): string =>
-  `Move ${inTheWay} card${inTheWay === 1 ? '' : 's'} out of “${lane}” first`
+export const moveTitle = (inTheWay: number, lane: string): string => t('lane.moveOut', { count: inTheWay, lane })
 
 /* Presses inside stay here: the head around this is the lane's drag handle. */
 const stay = (event: React.SyntheticEvent): void => event.stopPropagation()
@@ -59,7 +59,7 @@ export function LaneMenu({
 
   return (
     <div className="ctl" ref={box} onPointerDown={stay}>
-      <button className="sq26" aria-label={`${name} actions`} title={`${name} actions`} aria-expanded={open} onClick={() => onOpen(!open)}>
+      <button className="sq26" aria-label={t('lane.actions', { name })} title={t('lane.actions', { name })} aria-expanded={open} onClick={() => onOpen(!open)}>
         <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none">
           <circle cx="5" cy="12" r="1.8" />
           <circle cx="12" cy="12" r="1.8" />
@@ -67,7 +67,7 @@ export function LaneMenu({
         </svg>
       </button>
       {open && (
-        <div className="ctlmenu ctlmenu--down" role="menu" aria-label={`${name} actions`}>
+        <div className="ctlmenu ctlmenu--down" role="menu" aria-label={t('lane.actions', { name })}>
           {entries.map((entry, index) =>
             entry.rule ? (
               <div key={index} className="newmenu__rule" />
@@ -97,8 +97,8 @@ export function LaneMenu({
         createPortal(
           <div onPointerDown={stay} onKeyDown={stay}>
             <Confirm
-              title={`Delete “${name}”?`}
-              body="The lane goes. Cards in it are never deleted with it — if there are any, you choose where they move."
+              title={t('lane.deleteAsk', { name })}
+              body={t('lane.deleteBody')}
               onClose={() => setAsking(null)}
               onConfirm={() => {
                 /* Asked without a destination first: the backend counts what is
@@ -121,11 +121,11 @@ export function LaneMenu({
             onKeyDown={stay}
             onClick={(event) => event.target === event.currentTarget && setAsking(null)}
           >
-            <div className="ask__box" role="dialog" aria-modal="true" aria-label={`Delete ${name}`}>
+            <div className="ask__box" role="dialog" aria-modal="true" aria-label={t('lane.deleteLabel', { name })}>
               <h2 className="ask__t">{moveTitle(asking.inTheWay, name)}</h2>
               {others.length > 0 ? (
                 <label className="fld">
-                  <span className="fld__l">Move them to</span>
+                  <span className="fld__l">{t('lane.moveThemTo')}</span>
                   <select className="fld__b" value={target} onChange={(event) => setTo(event.target.value)}>
                     {others.map((other) => (
                       <option key={other.id} value={other.id}>
@@ -135,18 +135,18 @@ export function LaneMenu({
                   </select>
                 </label>
               ) : (
-                <p className="ask__d">It is the only lane, so its cards have nowhere to go.</p>
+                <p className="ask__d">{t('lane.onlyLane')}</p>
               )}
               <div className="ask__row">
                 <button className="btn" onClick={() => setAsking(null)}>
-                  Cancel
+                  {t('lane.cancel')}
                 </button>
                 <button
                   className="btn btn--danger"
                   disabled={!target}
                   onClick={() => void onDelete(target).then(() => setAsking(null))}
                 >
-                  Move and delete
+                  {t('lane.moveAndDelete')}
                 </button>
               </div>
             </div>

@@ -7,6 +7,8 @@ import { Checked } from './CheckedView'
 import { ask, commands } from './live'
 import { asQuery, emptyBecause, STATES, type RunFilters } from './runs'
 import { abandoned } from './typing'
+import { t } from '../i18n'
+import { formatDate } from '../i18n/format'
 
 /*
  * Every run on the board, newest first.
@@ -74,19 +76,19 @@ export function RunsPane({
 
   return (
     <div className="cardp" data-open="true" onClick={(event) => event.target === event.currentTarget && onClose()}>
-      <div className="cardp__box runsp" role="dialog" aria-modal="true" aria-label="Runs">
+      <div className="cardp__box runsp" role="dialog" aria-modal="true" aria-label={t('sessions.runs.title')}>
         <header className="runsp__top">
-          <h2 className="runsp__t">Runs</h2>
-          <button className="sq26" onClick={onClose} aria-label="Close runs" title="Close runs">
+          <h2 className="runsp__t">{t('sessions.runs.title')}</h2>
+          <button className="sq26" onClick={onClose} aria-label={t('sessions.runs.close')} title={t('sessions.runs.close')}>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
           </button>
         </header>
 
         <div className="runsp__filters">
           <label>
-            Lane
+            {t('sessions.runs.lane')}
             <select value={filters.stepId ?? ''} onChange={(event) => setFilters({ ...filters, stepId: event.target.value || null })}>
-              <option value="">Every lane</option>
+              <option value="">{t('sessions.runs.everyLane')}</option>
               {stepped.map((lane) => (
                 <option key={lane.column.id} value={lane.column.step?.id}>
                   {lane.column.name}
@@ -95,12 +97,12 @@ export function RunsPane({
             </select>
           </label>
           <label>
-            State
+            {t('sessions.runs.state')}
             <select
               value={filters.state ?? ''}
               onChange={(event) => setFilters({ ...filters, state: STATES.find((one) => one === event.target.value) ?? null })}
             >
-              <option value="">Any state</option>
+              <option value="">{t('sessions.runs.anyState')}</option>
               {STATES.map((state) => (
                 <option key={state} value={state}>
                   {state}
@@ -109,11 +111,11 @@ export function RunsPane({
             </select>
           </label>
           <label>
-            From
+            {t('sessions.runs.from')}
             <input type="date" value={filters.from} onChange={(event) => setFilters({ ...filters, from: event.target.value })} />
           </label>
           <label>
-            To
+            {t('sessions.runs.to')}
             <input type="date" value={filters.to} onChange={(event) => setFilters({ ...filters, to: event.target.value })} />
           </label>
         </div>
@@ -121,14 +123,13 @@ export function RunsPane({
         {error && <p className="wtb__no">{error}</p>}
         {empty === 'noChecks' && (
           <p className="runsp__none">
-            No checks configured. A lane with a command step is what runs your tests, your build
-            or your deploy — add one to the board and its runs land here.
+            {t('sessions.runs.noChecks')}
           </p>
         )}
         {empty === 'nothingRan' && (
-          <p className="runsp__none">Nothing has run yet. Move a card into a lane that runs something.</p>
+          <p className="runsp__none">{t('sessions.runs.nothingRan')}</p>
         )}
-        {empty === 'noneMatch' && <p className="runsp__none">No runs match.</p>}
+        {empty === 'noneMatch' && <p className="runsp__none">{t('sessions.runs.noneMatch')}</p>}
         {runs.map(({ run, cardId, cardTitle }) => (
           <div className="crun" key={run.id} data-state={run.state}>
             <span className="crun__b">
@@ -137,7 +138,7 @@ export function RunsPane({
               </button>
               <span className="crun__t">
                 {run.stepName}
-                {run.startedAt !== null && ` · ${new Date(run.startedAt * 1000).toLocaleString()}`}
+                {run.startedAt !== null && ` · ${formatDate(run.startedAt * 1000, { dateStyle: 'medium', timeStyle: 'short' })}`}
               </span>
               {run.output && <span className="crun__o">{run.output}</span>}
               {opened === run.id && (
@@ -156,7 +157,7 @@ export function RunsPane({
         ))}
         {next && (
           <button className="btn runsp__more" disabled={loading} onClick={() => load(next)}>
-            Load more
+            {t('sessions.runs.more')}
           </button>
         )}
       </div>

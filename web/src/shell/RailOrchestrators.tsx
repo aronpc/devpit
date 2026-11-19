@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 
 import type { Project, Thread } from '../gen/bindings'
 import { ChevronDown, Folder, Pencil, Plus, Trash } from './GitIcons'
+import { t } from '../i18n'
 import { ask, commands } from './live'
 import { OrchestratorDialog } from './OrchestratorDialog'
 import { ProjectMark } from './ProjectMark'
@@ -101,23 +102,23 @@ export function RailOrchestrators({
   }
 
   const menu = (one: Project): readonly RailItem[] => [
-    { label: 'Edit…', glyph: <Pencil />, act: () => onEdit(one) },
-    { label: 'Runs as…', glyph: <Pencil />, act: () => setAccount(one) },
-    { label: 'Reveal folder', glyph: <Folder />, act: () => void ask(() => commands.pathReveal(one.rootPath)) },
+    { label: t('workspace.railMenu.edit'), glyph: <Pencil />, act: () => onEdit(one) },
+    { label: t('workspace.railMenu.runsAs'), glyph: <Pencil />, act: () => setAccount(one) },
+    { label: t('workspace.railMenu.reveal'), glyph: <Folder />, act: () => void ask(() => commands.pathReveal(one.rootPath)) },
     'rule',
-    { label: 'Remove…', glyph: <Trash />, act: () => onRemove(one.id), bad: true },
+    { label: t('workspace.railMenu.remove'), glyph: <Trash />, act: () => onRemove(one.id), bad: true },
   ]
 
   return (
-    <div className="rail__sect rail__orch" role="group" aria-label="Orchestrators" data-folded={folded ? 'true' : undefined}>
+    <div className="rail__sect rail__orch" role="group" aria-label={t('workspace.railOrchestrators.title')} data-folded={folded ? 'true' : undefined}>
       <div className="rail__orchhead">
         <button className="rail__group" aria-expanded={!folded} onClick={fold}>
-          <span className="rail__gname">Orchestrators</span>
+          <span className="rail__gname">{t('workspace.railOrchestrators.title')}</span>
           <span className="rail__gchev" data-open={!folded}>
             <ChevronDown size={12} />
           </span>
         </button>
-        <button className="rail__orchadd" onClick={() => setMaking(true)} title="New orchestrator" aria-label="New orchestrator">
+        <button className="rail__orchadd" onClick={() => setMaking(true)} title={t('workspace.railOrchestrators.new')} aria-label={t('workspace.railOrchestrators.new')}>
           <Plus size={12} />
         </button>
       </div>
@@ -147,12 +148,12 @@ export function RailOrchestrators({
             </span>
             <span className="rail__text">
               <span className="rail__n">{one.name}</span>
-              <span className="rail__s">orchestrator</span>
+              <span className="rail__s">{t('workspace.railOrchestrators.one')}</span>
             </span>
           </button>
         ))}
       {!folded && (
-        <button className="rail__i rail__orchnew" data-first={mine.length === 0 ? 'true' : undefined} onClick={() => setMaking(true)} title="New orchestrator">
+        <button className="rail__i rail__orchnew" data-first={mine.length === 0 ? 'true' : undefined} onClick={() => setMaking(true)} title={t('workspace.railOrchestrators.new')}>
           <span className="rail__pill" />
           <span className="rail__ico">
             <span className="pmark pmark--orch pmark--orchnew">
@@ -160,7 +161,7 @@ export function RailOrchestrators({
             </span>
           </span>
           <span className="rail__text">
-            <span className="rail__n">New orchestrator</span>
+            <span className="rail__n">{t('workspace.railOrchestrators.new')}</span>
           </span>
         </button>
       )}

@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 
 import type { Profile, Project } from '../gen/bindings'
+import { t } from '../i18n'
+import { tRich } from '../i18n/rich'
 import { FieldSelect } from './FieldSelect'
 import { ask, commands } from './live'
 import { PROFILES_CHANGED } from './profiles'
@@ -71,51 +73,51 @@ export function OrchestratorDialog({
     <div className="ask" data-open="true" onClick={(event) => event.target === event.currentTarget && onClose()} onKeyDown={(event) => abandoned(event) && onClose()}>
       <div className="addpj__box pdlg" role="dialog" aria-modal="true" aria-labelledby="orchT">
         <div>
-          <h2 className="addpj__t" id="orchT">{editing ? `${editing.name} runs as` : 'New orchestrator'}</h2>
+          <h2 className="addpj__t" id="orchT">{editing ? t('workspace.orchestratorDialog.runsAs', { name: editing.name }) : t('workspace.orchestratorDialog.title')}</h2>
           <p className="addpj__d">
             {editing
-              ? 'Its next conversation starts under this account, on its CLI, handed over from its notes. Its folder and linked projects stay; conversations so far stay with the one they began with.'
-              : 'A chat that sees every project and the sessions of its account, on any CLI that holds a chat.'}
+              ? t('workspace.orchestratorDialog.editSaid')
+              : t('workspace.orchestratorDialog.newSaid')}
           </p>
         </div>
         {!editing && (
           <label className="pdlg__f">
-            <span>Name</span>
-            <input autoFocus value={name} placeholder="Work" maxLength={60} onChange={(event) => setName(event.target.value)} onKeyDown={(event) => committed(event) && save()} />
+            <span>{t('workspace.orchestratorDialog.name')}</span>
+            <input autoFocus value={name} placeholder={t('workspace.orchestratorDialog.nameHint')} maxLength={60} onChange={(event) => setName(event.target.value)} onKeyDown={(event) => committed(event) && save()} />
           </label>
         )}
         <div className="pdlg__f">
-          <span>Runs as</span>
+          <span>{t('workspace.orchestratorDialog.runsAsLabel')}</span>
           {accounts.length === 0 ? (
-            <p className="addpj__d">No account that holds a chat is configured. Add one in Settings → Providers.</p>
+            <p className="addpj__d">{t('workspace.orchestratorDialog.noAccount')}</p>
           ) : (
             <FieldSelect
-              label="Runs as"
+              label={t('workspace.orchestratorDialog.runsAsLabel')}
               value={picked}
               options={[
                 ...accounts.map((one) => ({
                   id: one.id,
                   label: one.label,
-                  hint: needsReading(one) ? `${one.command} · set up in Providers first` : one.command,
+                  hint: needsReading(one) ? t('workspace.orchestratorDialog.setUpFirst', { command: one.command }) : one.command,
                 })),
-                { id: NEW_PROFILE, label: 'New profile…', hint: 'another command of your own' },
+                { id: NEW_PROFILE, label: t('workspace.orchestratorDialog.newProfile'), hint: t('workspace.orchestratorDialog.ownCommand') },
               ]}
               onPick={(id) => (id === NEW_PROFILE ? (onClose(), openPrefs('providers')) : setPicked(id))}
             />
           )}
           {chosen && needsReading(chosen) && (
             <p className="acc__note">
-              devpit has not read what <code>{chosen.command}</code> runs yet.{' '}
+              {tRich('workspace.orchestratorDialog.notRead', { command: <code>{chosen.command}</code> })}{' '}
               <button className="btn" onClick={() => (onClose(), openPrefs('providers'))}>
-                Open it in Settings → Providers
+                {t('workspace.orchestratorDialog.openProviders')}
               </button>
             </p>
           )}
         </div>
         {error && <p className="acc__note">{error}</p>}
         <div className="pdlg__acts">
-          <button className="btn" onClick={onClose}>Cancel</button>
-          <button className="btn btn--go" disabled={!ready} onClick={save}>{editing ? 'Save' : 'Create'}</button>
+          <button className="btn" onClick={onClose}>{t('workspace.orchestratorDialog.cancel')}</button>
+          <button className="btn btn--go" disabled={!ready} onClick={save}>{editing ? t('workspace.orchestratorDialog.save') : t('workspace.orchestratorDialog.create')}</button>
         </div>
       </div>
     </div>,

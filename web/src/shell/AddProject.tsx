@@ -2,6 +2,7 @@ import { useState } from 'react'
 
 import { open as pickFolder } from '@tauri-apps/plugin-dialog'
 
+import { t } from '../i18n'
 import { ask, commands } from './live'
 import { useShell } from './useShell'
 import { committed } from './typing'
@@ -48,10 +49,10 @@ export function AddProject({ onClose }: { onClose: () => void }): React.JSX.Elem
   return (
     <div className="ask" data-open="true" onClick={(event) => event.target === event.currentTarget && onClose()}>
       <div className="addpj__box" role="dialog" aria-modal="true" aria-labelledby="addpjT">
-        <button className="auth__x" aria-label="Close" title="Close" onClick={onClose}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18M6 6l12 12" /></svg></button>
-        <h2 className="addpj__t" id="addpjT">{cloning ? 'Clone a repository' : 'Add a project'}</h2>
+        <button className="auth__x" aria-label={t('workspace.addProject.close')} title={t('workspace.addProject.close')} onClick={onClose}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18M6 6l12 12" /></svg></button>
+        <h2 className="addpj__t" id="addpjT">{cloning ? t('workspace.addProject.cloneTitle') : t('workspace.addProject.addTitle')}</h2>
         <p className="addpj__d">
-          {cloning ? 'It lands where you say, and joins the list.' : 'Either way it joins your project list.'}
+          {cloning ? t('workspace.addProject.cloneSaid') : t('workspace.addProject.addSaid')}
         </p>
 
         {!cloning && (
@@ -61,9 +62,9 @@ export function AddProject({ onClose }: { onClose: () => void }): React.JSX.Elem
                 <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" />
               </svg>
               <span>
-                <span className="addpj__ot">Open a folder</span>
+                <span className="addpj__ot">{t('workspace.addProject.openFolder')}</span>
                 <span className="addpj__od">
-                  A repository already on this computer. devpit reads it where it is and never moves it.
+                  {t('workspace.addProject.openFolderSaid')}
                 </span>
               </span>
             </button>
@@ -74,8 +75,8 @@ export function AddProject({ onClose }: { onClose: () => void }): React.JSX.Elem
                 <path d="M4 19h16" />
               </svg>
               <span>
-                <span className="addpj__ot">Clone a repository</span>
-                <span className="addpj__od">Fetch it from a remote first, then choose where it lands.</span>
+                <span className="addpj__ot">{t('workspace.addProject.clone')}</span>
+                <span className="addpj__od">{t('workspace.addProject.cloneFirst')}</span>
               </span>
             </button>
           </>
@@ -84,11 +85,11 @@ export function AddProject({ onClose }: { onClose: () => void }): React.JSX.Elem
         {cloning && (
           <>
             <label className="fld">
-              <span className="fld__l">Repository</span>
+              <span className="fld__l">{t('workspace.addProject.repository')}</span>
               <input
                 className="fld__b"
                 autoFocus
-                placeholder="https://github.com/owner/name.git"
+                placeholder={t('workspace.addProject.urlHint')}
                 value={url}
                 onChange={(event) => setUrl(event.target.value)}
                 onKeyDown={(event) => committed(event) && void clone()}
@@ -98,7 +99,7 @@ export function AddProject({ onClose }: { onClose: () => void }): React.JSX.Elem
             {/* Where it lands is shown before it runs. Someone deciding
                 whether to clone should not be stopped to answer where. */}
             <label className="fld" style={{ marginTop: 10 }}>
-              <span className="fld__l">Into</span>
+              <span className="fld__l">{t('workspace.addProject.into')}</span>
               <button className="fld__b" onClick={() => void pickInto()}>
                 {into ?? '~/.devpit/repos'}
               </button>
@@ -107,9 +108,9 @@ export function AddProject({ onClose }: { onClose: () => void }): React.JSX.Elem
             {error && <p className="addpj__d" style={{ marginTop: 12 }}>{error}</p>}
 
             <div className="ask__row">
-              <button className="btn" onClick={() => setCloning(false)}>Back</button>
+              <button className="btn" onClick={() => setCloning(false)}>{t('workspace.addProject.back')}</button>
               <button className="btn btn--go" disabled={busy || !url.trim()} onClick={() => void clone()}>
-                {busy ? 'Cloning…' : 'Clone'}
+                {busy ? t('workspace.addProject.cloning') : t('workspace.addProject.cloneGo')}
               </button>
             </div>
           </>
