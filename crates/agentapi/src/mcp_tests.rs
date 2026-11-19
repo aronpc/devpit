@@ -579,3 +579,187 @@ fn the_language_comes_from_the_sessions_own_environment() {
     assert_eq!(locale_of(Some("fr")), "en");
     assert_eq!(locale_of(Some("pt-BR")), "pt-BR");
 }
+
+/// The offer and seat that list every tool of devpit's own and Devflow's:
+/// every stage on, and a seat an app too old to describe cannot refuse.
+fn everything() -> (Offer, Seat) {
+    (
+        Offer::Active(
+            [
+                "briefing",
+                "context",
+                "plan",
+                "execution",
+                "review",
+                "completion",
+            ]
+            .iter()
+            .map(|stage| stage.to_string())
+            .collect(),
+        ),
+        Seat::default(),
+    )
+}
+
+/// Every description a schema carries, in the order they are met.
+fn descriptions(of: &Value) -> Vec<&str> {
+    fn walk<'a>(value: &'a Value, said: &mut Vec<&'a str>) {
+        match value {
+            Value::Object(fields) => {
+                for (key, field) in fields {
+                    if key == "description" {
+                        if let Some(text) = field.as_str() {
+                            said.push(text);
+                        }
+                    }
+                    walk(field, said);
+                }
+            }
+            Value::Array(items) => items.iter().for_each(|item| walk(item, said)),
+            _ => {}
+        }
+    }
+    let mut said = Vec::new();
+    walk(of, &mut said);
+    said
+}
+
+/// The descriptions lean adds to a schema, which no tool's base wrote: they
+/// are translated apart, and a pt-BR listing may carry them in English yet.
+fn leans() -> Vec<String> {
+    let mut of_a_shaped = json!({ "type": "object", "properties": {} });
+    crate::lean::offered("devpit_card", &mut of_a_shaped);
+    let mut of_the_skill = json!({ "type": "object", "properties": {} });
+    crate::lean::offered(crate::skills::TOOL, &mut of_the_skill);
+    descriptions(&of_a_shaped)
+        .into_iter()
+        .chain(descriptions(&of_the_skill))
+        .map(str::to_owned)
+        .collect()
+}
+
+/// A listing with every description taken out of it: what is left is the
+/// shape — the names, the keys, the types, the `required`.
+fn undescribed(value: &Value) -> Value {
+    match value {
+        Value::Object(fields) => Value::Object(
+            fields
+                .iter()
+                .filter(|(key, _)| key.as_str() != "description")
+                .map(|(key, field)| (key.clone(), undescribed(field)))
+                .collect(),
+        ),
+        Value::Array(items) => Value::Array(items.iter().map(undescribed).collect()),
+        one => one.clone(),
+    }
+}
+
+/// A session in pt-BR is offered the list in Portuguese: every tool and
+/// parameter description of devpit's own and Devflow's says what the
+/// catalog says, and no word of the English base survives in a schema that
+/// was translated.
+#[test]
+fn in_pt_br_the_list_says_it_all_in_portuguese() {
+    let (offer, seat) = everything();
+    let said = tools_said(&offer, &seat, "pt-BR");
+    assert_eq!(
+        said.len(),
+        TOOLS.len() + SETUP_TOOLS.len() + STAGED.len(),
+        "every tool of devpit's own and Devflow's"
+    );
+    let base = tools_said(&offer, &seat, "en");
+    for (said, base) in said.iter().zip(&base) {
+        let name = said["name"].as_str().expect("name");
+        let entry = crate::mcp_pt_br::said(name)
+            .or_else(|| crate::devflow_pt_br::said(name))
+            .unwrap_or_else(|| panic!("{name} has no pt-BR words"));
+        assert_eq!(said["description"], entry.description, "{name}");
+        let words = descriptions(&said["inputSchema"]);
+        for (_, text) in entry.params {
+            assert!(
+                words.contains(text),
+                "{name}: `{text}` did not reach the list"
+            );
+        }
+        // As much is said as the base says, and none of the base survives —
+        // but what lean adds to a schema, whose words are not the tool's
+        // own, may still be English.
+        let english = descriptions(&base["inputSchema"]);
+        assert_eq!(words.len(), english.len(), "{name}");
+        let lean = leans();
+        for word in &english {
+            assert!(
+                lean.iter().any(|lean| lean == word) || !words.contains(word),
+                "{name}: `{word}` survived in English"
+            );
+        }
+    }
+    // And it is Portuguese it says, not only something else.
+    let board = said
+        .iter()
+        .find(|tool| tool["name"] == "devpit_board")
+        .expect("devpit_board");
+    assert!(board["description"]
+        .as_str()
+        .unwrap_or_default()
+        .contains("quadro"));
+}
+
+/// English is the base and the default: the list says each tool with the
+/// words of the base itself, byte for byte what it said before a language
+/// could be asked for.
+#[test]
+fn in_english_the_list_keeps_the_base_words() {
+    let (offer, seat) = everything();
+    let said = tools_said(&offer, &seat, "en");
+    let sources = TOOLS
+        .iter()
+        .chain(&SETUP_TOOLS)
+        .chain(STAGED.iter().map(|(_, tool)| tool));
+    for (tool, said) in sources.zip(&said) {
+        assert_eq!(said["name"], tool.name);
+        assert_eq!(said["description"], tool.description, "{}", tool.name);
+    }
+    // The schema, too, passes through untouched: a tool lean does not shape
+    // is listed with the input its base wrote, whole.
+    let sessions = TOOLS
+        .iter()
+        .find(|tool| tool.name == "devpit_sessions")
+        .expect("devpit_sessions");
+    let listed = said
+        .iter()
+        .find(|tool| tool["name"] == "devpit_sessions")
+        .expect("listed");
+    assert_eq!(listed["inputSchema"], (sessions.input)());
+}
+
+/// The two languages offer the same tools, each with the same parameters:
+/// same names in the same order, same keys, same types, same `required` —
+/// only the descriptions differ.
+#[test]
+fn both_languages_list_the_same_tools_with_the_same_shapes() {
+    let (offer, seat) = everything();
+    let en = tools_said(&offer, &seat, "en");
+    let pt = tools_said(&offer, &seat, "pt-BR");
+    let names =
+        |tools: &[Value]| -> Vec<Value> { tools.iter().map(|tool| tool["name"].clone()).collect() };
+    assert_eq!(names(&en), names(&pt));
+    for (en, pt) in en.iter().zip(&pt) {
+        assert_eq!(undescribed(en), undescribed(pt), "{}", en["name"]);
+    }
+}
+
+/// The pt-BR catalog holds an entry for every tool `TOOLS` lists, and for
+/// every Devflow tool beside them: a tool without words is a tool half
+/// translated.
+#[test]
+fn every_tool_has_its_pt_br_words() {
+    let of = |name: &str| crate::mcp_pt_br::said(name).or_else(|| crate::devflow_pt_br::said(name));
+    for tool in TOOLS
+        .iter()
+        .chain(&SETUP_TOOLS)
+        .chain(STAGED.iter().map(|(_, tool)| tool))
+    {
+        assert!(of(tool.name).is_some(), "{} has no pt-BR words", tool.name);
+    }
+}
