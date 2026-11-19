@@ -17,6 +17,17 @@ fn running(pid: i32, started: Option<String>) -> Running {
     }
 }
 
+/// `running`, in a devpit terminal.
+fn in_terminal(pid: i32, started: Option<String>) -> Running {
+    Running {
+        pane: Some(devpit_rpc::LivePane {
+            project_id: "p".to_owned(),
+            pane_id: "leaf_gone".to_owned(),
+        }),
+        ..running(pid, started)
+    }
+}
+
 /// When `pid` started, as a listing writes it.
 #[cfg(target_os = "linux")]
 fn started_of(pid: i32) -> Option<String> {
@@ -36,13 +47,19 @@ fn sleeping() -> (i32, std::thread::JoinHandle<()>) {
     (pid, std::thread::spawn(move || drop(child.wait())))
 }
 
-/// Whether `pid` is gone within a few seconds: one reaped by init, not by
-/// this test, takes a moment.
+/// Whether `pid` has ended within a few seconds: one reaped by init, not by
+/// this test, takes a moment, and an ended one nobody reaps is a zombie.
 #[cfg(target_os = "linux")]
 fn gone_soon(pid: i32) -> bool {
+    let zombie = || {
+        std::fs::read_to_string(format!("/proc/{pid}/stat"))
+            .ok()
+            .and_then(|stat| Some(stat.rsplit_once(')')?.1.trim_start().starts_with('Z')))
+            .unwrap_or(false)
+    };
     (0..100).any(|_| {
         std::thread::sleep(Duration::from_millis(50));
-        !devpit_pty::process::alive(pid)
+        !devpit_pty::process::alive(pid) || zombie()
     })
 }
 
@@ -55,7 +72,7 @@ fn gone_soon(pid: i32) -> bool {
 fn a_process_that_outlives_the_terminal_closed_for_it_is_ended_directly() {
     let (pid, reaped) = sleeping();
 
-    let directly = made_sure("worker", &[running(pid, started_of(pid))], QUICK).expect("ended");
+    let directly = made_sure("worker", &[in_terminal(pid, started_of(pid))], QUICK).expect("ended");
 
     assert_eq!(directly, 1, "said ended with its terminal");
     assert!(!devpit_pty::process::alive(pid), "still running");
@@ -133,7 +150,7 @@ fn a_process_that_will_not_end_is_an_error_not_stopped() {
 fn a_process_devpit_cannot_tell_is_left_running_and_said() {
     let (pid, reaped) = sleeping();
 
-    let refused = made_sure("worker", &[running(pid, None)], QUICK).expect_err("said stopped");
+    let refused = made_sure("worker", &[in_terminal(pid, None)], QUICK).expect_err("said stopped");
 
     assert!(
         refused.message.contains(&format!("process {pid} outlived")),
@@ -194,4 +211,54 @@ fn a_stop_says_what_it_stopped_and_what_it_ended_itself() {
         said("w", 3, true, 2),
         "3 sessions called w were stopped; 2 processes still ran after that, and were ended directly"
     );
+}
+
+/// A background job is its CLI's to stop: its supervisor starts a killed one
+/// again. One still running once its CLI was asked is never signalled, and
+/// the stop says it still runs.
+#[cfg(target_os = "linux")]
+#[test]
+fn a_job_still_running_after_its_cli_was_asked_is_never_signalled() {
+    let (pid, reaped) = sleeping();
+    let job = Running {
+        job: Some("bg-1".to_owned()),
+        ..running(pid, started_of(pid))
+    };
+
+    let refused = made_sure("worker", &[job], QUICK).expect_err("said stopped");
+
+    assert!(
+        refused
+            .message
+            .contains(&format!("process {pid} was asked to end and still runs")),
+        "{}",
+        refused.message
+    );
+    assert!(devpit_pty::process::alive(pid), "signalled a job");
+    devpit_pty::process::terminate(pid);
+    reaped.join().expect("reaped");
+}
+
+/// What a stop answers when processes still run: why, one clause each.
+#[test]
+fn a_refused_stop_says_why_each_process_still_runs() {
+    assert_eq!(
+        refusal("w", &[(12, Left::Stuck)]),
+        "w could not be stopped: process 12 would not end"
+    );
+    assert_eq!(
+        refusal("w", &[(12, Left::Asked), (34, Left::Untold)]),
+        "w could not be stopped: process 12 was asked to end and still runs; process 34 outlived its terminal, and devpit cannot tell it is still that session's, so it was left running"
+    );
+}
+
+/// Never init's group, which `kill` reads as every process there is, nor
+/// devpit's own.
+#[cfg(unix)]
+#[test]
+fn no_group_is_signalled_for_init_or_devpit_itself() {
+    assert_eq!(group_of(&running(1, None)), None);
+    // SAFETY: getpgid only reads the process table.
+    let ours = unsafe { libc::getpgid(0) };
+    assert_eq!(group_of(&running(ours, None)), None);
 }
