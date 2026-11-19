@@ -5,6 +5,7 @@
 //! a session that stopped on you, failed, or finished a turn it was working
 //! on. Working itself never notifies — that is the island's to show.
 
+use devpit_core::i18n::t;
 use devpit_rpc::{Doing, HeadsDown, IslandSession};
 use tauri::Manager as _;
 use tauri_plugin_notification::NotificationExt as _;
@@ -44,17 +45,17 @@ pub(crate) fn words(session: &IslandSession, tell: Tell) -> (String, String) {
         .card
         .clone()
         .or_else(|| session.project.clone())
-        .unwrap_or_else(|| "An agent".to_owned());
+        .unwrap_or_else(|| t("notify.anAgent", &[]));
     let body = match tell {
-        Tell::Waiting => "Waiting on you".to_owned(),
+        Tell::Waiting => t("notify.waiting", &[]),
         Tell::Failed => session.said.as_deref().map_or_else(
-            || "Stopped on an error".to_owned(),
-            |said| format!("Stopped: {said}"),
+            || t("notify.stoppedOnError", &[]),
+            |said| t("notify.stopped", &[("said", said)]),
         ),
         Tell::Done => session
             .said
             .clone()
-            .unwrap_or_else(|| "Finished its turn".to_owned()),
+            .unwrap_or_else(|| t("notify.finishedTurn", &[])),
     };
     (who, body)
 }
@@ -95,12 +96,14 @@ pub(crate) fn changed(app: &tauri::AppHandle, session: &IslandSession, was: Opti
             Tell::Done => devpit_rpc::ChannelEvent::SessionDone,
         },
         line: format!("{title}: {body}"),
-        bare: match tell {
-            Tell::Waiting => "A session is waiting on you.",
-            Tell::Failed => "A session stopped on an error.",
-            Tell::Done => "A session finished its turn.",
-        }
-        .to_owned(),
+        bare: t(
+            match tell {
+                Tell::Waiting => "notify.bareWaiting",
+                Tell::Failed => "notify.bareFailed",
+                Tell::Done => "notify.bareDone",
+            },
+            &[],
+        ),
         actions: Vec::new(),
         asking: match (tell, &session.project_id, &session.pane_id) {
             (Tell::Waiting, Some(project), Some(pane)) => {
@@ -134,8 +137,8 @@ pub(crate) fn asked(app: &tauri::AppHandle, tool: &str, input: &str) {
         .map_or_else(|| tool.to_owned(), |target| format!("{tool} {target}"));
     crate::channels::emit(crate::channels::Told {
         event: devpit_rpc::ChannelEvent::SessionWaiting,
-        line: format!("An agent asks to {what}"),
-        bare: "An agent is asking for a permission.".to_owned(),
+        line: t("notify.asks", &[("what", &what)]),
+        bare: t("notify.asksBare", &[]),
         actions: Vec::new(),
         asking: None,
         // Held two minutes at most; the session's own waiting notice moves on.
@@ -144,7 +147,7 @@ pub(crate) fn asked(app: &tauri::AppHandle, tool: &str, input: &str) {
     let app = app.clone();
     std::thread::spawn(move || {
         if !in_front(&app) {
-            show(&app, "An agent asks to", &what, true);
+            show(&app, &t("notify.asksTitle", &[]), &what, true);
         }
     });
 }

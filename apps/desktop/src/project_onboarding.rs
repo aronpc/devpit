@@ -482,6 +482,7 @@ fn read_one(app: &AppHandle, project_id: &str) -> Result<usize, String> {
         root: Path::new(&project.root_path),
         name: &project.name,
         mcp_config: mcp.as_deref(),
+        locale: crate::session_locale::SessionLocale::capture(),
     };
     let agents = app.state::<Agents>();
     // Never in the middle of an answer: the person or a session asked first.

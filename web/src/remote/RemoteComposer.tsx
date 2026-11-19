@@ -4,6 +4,7 @@ import type { Attachment, RemoteIn, RemoteOut } from '../gen/bindings'
 import { withFiles, withHeard } from '../shell/frames'
 import { RemoteMic } from './RemoteMic'
 import { photoRefused, pieces, said, shrunk, uploadId, voiceRefused, type Talking } from './talk'
+import { t } from '../i18n'
 
 /*
  * What the person writes from the phone: typed, dictated or with a photo.
@@ -58,14 +59,14 @@ export function RemoteComposer({
       if (heard.t === 'attached') return setFiles((was) => [...was, heard.attachment])
       const words = heard.transcript.text
       if (words) setText((was) => withHeard(was, words))
-      else setNote(heard.transcript.note ?? 'nothing was heard in it')
+      else setNote(heard.transcript.note ?? t('remote.composer.nothingHeard'))
     }
     return () => {
       hears.current = () => {}
     }
   }, [hears])
 
-  if (!typing) return <p className="rm__said">This device may only watch. Allow it to type on the machine to write from here.</p>
+  if (!typing) return <p className="rm__said">{t('remote.composer.watchOnly')}</p>
 
   // A photo is kept in the project the session or the chat is in.
   const project = talking.project
@@ -81,7 +82,7 @@ export function RemoteComposer({
   const photo = async (file: File): Promise<void> => {
     const small = await shrunk(file)
     const refused = photoRefused(small)
-    if (refused || !project) return setNote(refused ?? 'this session is in no project here')
+    if (refused || !project) return setNote(refused ?? t('remote.composer.noProject'))
     await upload(small, 'photo', (id) => ({ t: 'photo', upload: id, project, mime: small.type }))
   }
 
@@ -104,7 +105,7 @@ export function RemoteComposer({
     <div className="rm__compose">
       {sending && (
         <p className="rm__dim" role="status">
-          {sending.what === 'photo' ? 'Sending the photo…' : 'The machine is listening to it…'}
+          {sending.what === 'photo' ? t('remote.composer.sendingPhoto') : t('remote.composer.listening')}
         </p>
       )}
       {note && (
@@ -115,13 +116,13 @@ export function RemoteComposer({
       {files.length > 0 && (
         <div className="rm__files">
           {files.map((file) => (
-            <button key={file.path} className="rm__file" title="Leave it out" onClick={() => setFiles((was) => was.filter((one) => one.path !== file.path))}>
+            <button key={file.path} className="rm__file" title={t('remote.composer.leaveOut')} onClick={() => setFiles((was) => was.filter((one) => one.path !== file.path))}>
               {file.name} ×
             </button>
           ))}
         </div>
       )}
-      <textarea className="rm__write" aria-label="Message" placeholder={`Write to ${talking.title}`} rows={3} value={text} onChange={(event) => setText(event.target.value)} />
+      <textarea className="rm__write" aria-label={t('remote.composer.message')} placeholder={t('remote.composer.writeTo', { title: talking.title })} rows={3} value={text} onChange={(event) => setText(event.target.value)} />
       <div className="rm__line">
         {project && (
           <>
@@ -137,13 +138,13 @@ export function RemoteComposer({
               }}
             />
             <button className="rm__btn" disabled={sending !== null} onClick={() => picker.current?.click()}>
-              Photo
+              {t('remote.composer.photo')}
             </button>
           </>
         )}
         <RemoteMic machine={voice} onRecorded={recorded} onHeard={(words) => setText((was) => withHeard(was, words))} onRefused={setNote} />
         <button className="rm__btn rm__btn--go rm__send" disabled={busy || sending !== null || !message} onClick={go}>
-          {busy ? 'Answering…' : 'Send'}
+          {busy ? t('remote.composer.answering') : t('remote.composer.send')}
         </button>
       </div>
     </div>

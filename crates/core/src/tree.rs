@@ -8,21 +8,7 @@
 
 use std::path::{Path, PathBuf};
 
-#[derive(Debug, thiserror::Error)]
-pub enum TreeError {
-    #[error("{path} is outside the project")]
-    Outside { path: PathBuf },
-
-    #[error("could not read {path}: {source}")]
-    Unreadable {
-        path: PathBuf,
-        #[source]
-        source: std::io::Error,
-    },
-
-    #[error("{path} already exists")]
-    AlreadyExists { path: PathBuf },
-}
+pub use crate::tree_error::TreeError;
 
 /// One entry, before the contract dresses it.
 pub struct Entry {

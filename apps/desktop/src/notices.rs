@@ -10,6 +10,7 @@
 //! The one exception is deadlines, which are not an event at all — nothing
 //! *happens* when a date passes, so something has to look.
 
+use devpit_core::i18n::t;
 use devpit_core::Store;
 use devpit_rpc::{Notice, Notices, RpcError};
 use tauri::Emitter;
@@ -131,18 +132,21 @@ pub fn run_ended(app: &tauri::AppHandle, store: &Store, card_id: &str, step: &st
         .ok()
         .flatten()
         .map(|row| row.title)
-        .unwrap_or_else(|| "a card".to_owned());
+        .unwrap_or_else(|| t("notice.aCard", &[]));
     let project = store.project_id_of_card(card_id).ok().flatten();
-    let said = if ok {
-        format!("{step} finished on “{title}”")
-    } else {
-        format!("{step} failed on “{title}”")
-    };
+    let said = t(
+        if ok {
+            "notice.stepFinished"
+        } else {
+            "notice.stepFailed"
+        },
+        &[("step", step), ("title", &title)],
+    );
     if !ok {
         crate::channels::emit(crate::channels::Told {
             event: devpit_rpc::ChannelEvent::StepFailed,
             line: said.clone(),
-            bare: "A step failed.".to_owned(),
+            bare: t("notice.stepFailedBare", &[]),
             actions: Vec::new(),
             asking: None,
             about: None,
@@ -244,7 +248,7 @@ pub(crate) fn notices_sweep_due_now(app: tauri::AppHandle) -> Result<Notices, Rp
         store.add_notice(
             Some(&project_id),
             kind::DUE,
-            &format!("“{title}” is past its date"),
+            &t("notice.pastDate", &[("title", &title)]),
             None,
             Some(&card_id),
         )?;

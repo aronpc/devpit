@@ -4,6 +4,7 @@
 //! Pure, so a test can ask what the menu lists for a given state; `tray`
 //! gathers that state and draws the answer.
 
+use devpit_core::i18n::t;
 use serde::{Deserialize, Serialize};
 
 /// The most the menu lists of what waits; the rest are a click away in devpit.
@@ -169,29 +170,32 @@ pub(crate) fn said(waiting: &[Waiting], recent: &[Recent], paused: bool) -> Said
         Look::Plain
     };
     let tooltip = match (paused, count) {
-        (true, _) => "devpit — paused".to_owned(),
+        (true, _) => t("tray.tooltipPaused", &[]),
         (false, 0) => "devpit".to_owned(),
-        (false, count) => format!("devpit — {count} waiting on you"),
+        (false, count) => t("tray.tooltipWaiting", &[("count", &count.to_string())]),
     };
 
     let mut entries = Vec::new();
     if count > 0 {
-        entries.push(Entry::Heading(format!("Waiting on you ({count})")));
+        entries.push(Entry::Heading(t(
+            "tray.waitingHeading",
+            &[("count", &count.to_string())],
+        )));
         entries.extend(waiting.iter().take(MOST).map(|one| Entry::Go {
             label: cut(&label(one)),
             go: go(one),
         }));
         if count > MOST {
             entries.push(Entry::Act {
-                label: format!("{} more in devpit", count - MOST),
+                label: t("tray.more", &[("count", &(count - MOST).to_string())]),
                 act: Act::Open,
             });
         }
         entries.push(Entry::Line);
     }
-    entries.push(act("Open devpit", Act::Open));
+    entries.push(act(&t("tray.open", &[]), Act::Open));
     if !recent.is_empty() {
-        entries.push(act("New terminal", Act::Terminal));
+        entries.push(act(&t("tray.newTerminal", &[]), Act::Terminal));
         entries.push(Entry::Projects(
             recent
                 .iter()
@@ -209,14 +213,14 @@ pub(crate) fn said(waiting: &[Waiting], recent: &[Recent], paused: bool) -> Said
     }
     entries.push(Entry::Line);
     entries.push(if paused {
-        act("Resume", Act::Resume)
+        act(&t("tray.resume", &[]), Act::Resume)
     } else {
-        act("Pause for an hour", Act::Pause)
+        act(&t("tray.pause", &[]), Act::Pause)
     });
-    entries.push(act("Settings…", Act::Settings));
-    entries.push(act("Open in browser", Act::Browser));
+    entries.push(act(&t("tray.settings", &[]), Act::Settings));
+    entries.push(act(&t("tray.browser", &[]), Act::Browser));
     entries.push(Entry::Line);
-    entries.push(act("Quit devpit", Act::Quit));
+    entries.push(act(&t("tray.quit", &[]), Act::Quit));
 
     Said {
         look,
@@ -236,8 +240,8 @@ fn act(label: &str, act: Act) -> Entry {
 fn label(waiting: &Waiting) -> String {
     match waiting {
         Waiting::Session { who, .. } => who.clone(),
-        Waiting::Draft { session, .. } => format!("Send the draft for {session}"),
-        Waiting::Due { title, .. } => format!("Due: {title}"),
+        Waiting::Draft { session, .. } => t("tray.draft", &[("session", session)]),
+        Waiting::Due { title, .. } => t("tray.due", &[("title", title)]),
     }
 }
 

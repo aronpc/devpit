@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 
 import type { IslandSession } from '../gen/bindings'
+import { t } from '../i18n'
 import { ask, commands } from '../shell/live'
 import { abandoned, committed } from '../shell/typing'
 
@@ -28,7 +29,7 @@ export function Reply({ session }: { session: IslandSession }): React.JSX.Elemen
     setSending(true)
     void ask(() => commands.islandDraftSend(session.sessionId)).then((answer) => {
       setSending(false)
-      setSaid(answer.error ?? 'Draft sent, as you.')
+      setSaid(answer.error ?? t('island.reply.draftSent'))
       if (!answer.error) setDraft(null)
     })
   }
@@ -39,7 +40,7 @@ export function Reply({ session }: { session: IslandSession }): React.JSX.Elemen
     setSending(true)
     void ask(() => commands.islandReply(session.sessionId, words)).then((answer) => {
       setSending(false)
-      setSaid(answer.error ?? 'Sent, as you.')
+      setSaid(answer.error ?? t('island.reply.sent'))
       if (!answer.error) setText('')
     })
   }
@@ -48,9 +49,9 @@ export function Reply({ session }: { session: IslandSession }): React.JSX.Elemen
     <>
       {draft && (
         <div className="isl-draft">
-          <span className="isl-draft__t">Drafted for you: {draft}</span>
+          <span className="isl-draft__t">{t('island.reply.drafted', { draft })}</span>
           <button className="isl-draft__go" disabled={sending} onClick={sendDraft}>
-            Send
+            {t('island.reply.send')}
           </button>
         </div>
       )}
@@ -59,8 +60,8 @@ export function Reply({ session }: { session: IslandSession }): React.JSX.Elemen
           className="isl-reply__in"
           value={text}
           maxLength={4000}
-          placeholder="Reply, as you"
-          aria-label="Reply to this session, as you"
+          placeholder={t('island.reply.placeholder')}
+          aria-label={t('island.reply.label')}
           disabled={sending}
           onChange={(event) => setText(event.target.value)}
           onFocus={() => void ask(() => commands.islandTyping(true))}

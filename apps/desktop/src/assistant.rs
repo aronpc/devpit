@@ -139,7 +139,10 @@ pub(crate) fn respond(
                 .unwrap_or(24);
             let since = crate::ended_sessions::now_secs() - hours.clamp(1, 24 * 14) as i64 * 3600;
             Ok(serde_json::json!(crate::briefing::briefing(
-                here, projects, since
+                SessionLocale::capture(),
+                here,
+                projects,
+                since
             )))
         }
         "telegram_send" => crate::assistant_watch::telegram(params),

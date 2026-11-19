@@ -123,17 +123,7 @@ pub(crate) fn serve(
     let watch = app
         .state::<crate::chat_relay::Relay>()
         .watch(talk.watching(out.clone()));
-    send(
-        &mut wire,
-        &RemoteOut::Welcome {
-            device: device.name.clone(),
-            host: machine_name(),
-            typing: device.typing,
-            answering: device.answering,
-            binary: true,
-            stops: true,
-        },
-    );
+    send(&mut wire, &welcome(&device));
     converse(
         &mut wire,
         id,
@@ -151,6 +141,21 @@ pub(crate) fn serve(
     crate::remote_hub::leave(&app, id);
     crate::remote::note(&root, &device, "disconnected");
     wire.end();
+}
+
+/// What the host says first: who the device is, what it may do, and the
+/// language the host speaks now. A change of language at the host reaches the
+/// viewer with the next welcome, which is the next connection.
+fn welcome(device: &Device) -> RemoteOut {
+    RemoteOut::Welcome {
+        device: device.name.clone(),
+        host: machine_name(),
+        typing: device.typing,
+        answering: device.answering,
+        binary: true,
+        stops: true,
+        locale: devpit_core::locale::Locale::current().tag().to_owned(),
+    }
 }
 
 /// What one message from the viewer was.

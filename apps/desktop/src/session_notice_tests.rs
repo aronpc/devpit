@@ -1,3 +1,4 @@
+use devpit_core::locale::Locale;
 use devpit_rpc::{LiveSession, PendingPrompt};
 use serde_json::json;
 
@@ -23,6 +24,7 @@ fn session(name: &str, status: &str, since: f64, waiting: bool) -> LiveSession {
 
 #[test]
 fn the_first_turn_says_nothing_and_a_quiet_one_nothing_new() {
+    let _turn = crate::locale_turn::settled(Locale::En);
     let now = [session("api", "busy", 10.0, false)];
     assert_eq!(notice(None, &now), None);
     assert_eq!(notice(Some(&Seen::of(&now, 20.0)), &now), None);
@@ -30,6 +32,7 @@ fn the_first_turn_says_nothing_and_a_quiet_one_nothing_new() {
 
 #[test]
 fn what_finished_asks_or_ended_since_the_last_turn_is_said() {
+    let _turn = crate::locale_turn::settled(Locale::En);
     let before = Seen::of(
         &[
             session("api", "busy", 10.0, false),
@@ -47,5 +50,23 @@ fn what_finished_asks_or_ended_since_the_last_turn_is_said() {
     assert_eq!(
         notice(Some(&before), &now).as_deref(),
         Some("[devpit, not the person] Since your last message: api finished its turn; web is waiting on a question; quick finished its turn; old ended.")
+    );
+}
+
+/// The line the orchestrator reads is in the person's language too.
+#[test]
+fn the_notice_is_said_in_portuguese_when_the_person_speaks_it() {
+    let _turn = crate::locale_turn::settled(Locale::PtBr);
+    let before = Seen::of(
+        &[
+            session("api", "busy", 10.0, false),
+            session("old", "idle", 5.0, false),
+        ],
+        20.0,
+    );
+    let now = [session("api", "idle", 30.0, false)];
+    assert_eq!(
+        notice(Some(&before), &now).as_deref(),
+        Some("[devpit, não a pessoa] Desde a sua última mensagem: api terminou o turno; old terminou.")
     );
 }

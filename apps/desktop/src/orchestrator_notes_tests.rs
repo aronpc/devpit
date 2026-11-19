@@ -282,12 +282,67 @@ fn a_session_gets_its_own_projects_rules_and_no_one_elses() {
 /// A session on a CLI without SendMessage is told devpit's own tool instead.
 #[test]
 fn a_session_without_send_message_reports_through_devpit() {
-    let claude = super::report_line("orchestrator-work", true);
+    let claude = super::report_line(en(), "orchestrator-work", true);
     assert!(
         claude.contains("SendMessage to that name to report back"),
         "{claude}"
     );
-    let other = super::report_line("orchestrator-work", false);
+    let other = super::report_line(en(), "orchestrator-work", false);
     assert!(other.contains("`orchestrator-work`: message it with devpit_session_message, `to` left out, to report back"), "{other}");
     assert!(!other.contains("SendMessage"), "{other}");
+}
+
+fn pt() -> crate::session_locale::SessionLocale {
+    crate::session_locale::SessionLocale::of(devpit_core::locale::Locale::PtBr)
+}
+
+/// The brief is the session's, not the process's: the global locale says
+/// English here and the session was born in Portuguese.
+#[test]
+fn a_portuguese_session_is_briefed_in_portuguese_whatever_the_process_says() {
+    let _turn = crate::locale_turn::settled(devpit_core::locale::Locale::En);
+    let folder = std::path::Path::new("/home/someone/.devpit/orchestrator/claude/workspace");
+    let brief = super::briefed(pt(), folder, "Ship it.", None, false);
+    assert!(
+        brief.starts_with("Ship it.\n\n## Reportar de volta\n\n"),
+        "{brief}"
+    );
+    assert!(brief.contains("`orchestrator-workspace`"));
+    assert!(brief.contains("SendMessage"));
+    assert!(!brief.contains("Reporting back"));
+    let bus = super::report_line(pt(), "orchestrator-work", false);
+    assert!(bus.contains("devpit_session_message"), "{bus}");
+    assert!(!bus.contains("report back"), "{bus}");
+}
+
+/// The heading the parser reads is the same in every language, and a long
+/// Portuguese brief keeps the address and the rules whole inside the ceiling.
+#[test]
+fn a_long_portuguese_brief_keeps_the_address_and_the_rules_whole() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let folder = dir.path().join("orchestrator/claude/workspace");
+    std::fs::create_dir_all(folder.join("context")).expect("dirs");
+    let rule = "- Nunca envie direto para a main sem revisão.\n";
+    let rules: String = rule.repeat(3_000 / rule.chars().count());
+    std::fs::write(
+        folder.join("context/preferences.md"),
+        format!("## Rules for sessions\n\n{rules}"),
+    )
+    .expect("write");
+    let prompt = "Corrija o total da fatura. ".repeat(150);
+    let brief = super::briefed(pt(), &folder, &prompt, None, false);
+    assert!(
+        brief.chars().count() <= super::LONGEST_BRIEF,
+        "{}",
+        brief.chars().count()
+    );
+    assert!(brief.contains("`orchestrator-workspace`"));
+    assert!(brief.contains("\n\n## Rules for sessions\n\n"));
+    assert!(brief.ends_with(rules.trim()), "the rules were cut");
+
+    // Past the ceiling the rules are cut, never the address before them.
+    let huge = "x".repeat(7_500);
+    let tight = super::briefed(pt(), &folder, &huge, None, false);
+    assert!(tight.chars().count() <= super::LONGEST_BRIEF);
+    assert!(tight.contains("`orchestrator-workspace`"));
 }

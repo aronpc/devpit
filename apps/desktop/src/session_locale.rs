@@ -31,8 +31,14 @@ impl SessionLocale {
     /// A locale held outright: a session already born in it, as the tests
     /// start theirs.
     #[cfg(test)]
-    pub(crate) fn of(locale: Locale) -> Self {
+    pub(crate) const fn of(locale: Locale) -> Self {
         Self(locale)
+    }
+
+    /// The held locale, for the catalog's `t_for`: a session's words are said
+    /// in it, never in the process's own.
+    pub(crate) fn locale(self) -> Locale {
+        self.0
     }
 
     /// The locale's BCP 47 tag, as the variable carries it.

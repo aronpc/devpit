@@ -16,8 +16,10 @@ use crate::Finding;
 /// without bound is a translation that quietly stopped happening.
 const UNTRANSLATED_CEILING: usize = 20;
 
-/// Where catalogs live. The core's (`crates/core/src/i18n`) is T15's to
-/// fill; until then an absent folder is nothing to compare.
+/// Where catalogs live. The web's are one pair per area
+/// (`en/<area>.json` beside `pt-BR/<area>.json`); the core's is one flat
+/// pair (`en.json` beside `pt-BR.json`). An absent folder is nothing to
+/// compare.
 const CATALOG_ROOTS: [&str; 2] = ["web/src/i18n", "crates/core/src/i18n"];
 
 pub fn every_catalog_keeps_up_with_english(root: &Path) -> Vec<Finding> {
@@ -57,10 +59,20 @@ fn against_the_tree(dir: &Path, base: &str) -> Vec<Finding> {
 }
 
 /// One area's pair of catalogs, `en/<area>.json` beside `pt-BR/<area>.json`.
+/// The core's single pair has the empty name: `en.json` beside `pt-BR.json`.
 pub struct Area {
     pub name: String,
     pub english: BTreeMap<String, serde_json::Value>,
     pub portuguese: BTreeMap<String, serde_json::Value>,
+}
+
+/// Where one side of an area lives, as it reads in a finding.
+fn shown_path(base: &str, side: &str, name: &str) -> String {
+    if name.is_empty() {
+        format!("{base}/{side}.json")
+    } else {
+        format!("{base}/{side}/{name}.json")
+    }
 }
 
 /// Every area either side names, read as a pair. A side with no file is an
@@ -69,6 +81,9 @@ pub struct Area {
 fn areas_in(dir: &Path, base: &str) -> (Vec<Area>, Vec<Finding>) {
     let mut names = BTreeSet::new();
     for side in ["en", "pt-BR"] {
+        if dir.join(format!("{side}.json")).is_file() {
+            names.insert(String::new());
+        }
         let Ok(entries) = std::fs::read_dir(dir.join(side)) else {
             continue;
         };
@@ -85,19 +100,9 @@ fn areas_in(dir: &Path, base: &str) -> (Vec<Area>, Vec<Finding>) {
     let mut areas = Vec::new();
     let mut unread = Vec::new();
     for name in names {
-        let (english, broken) = read_catalog(
-            &dir.join("en").join(format!("{name}.json")),
-            base,
-            "en",
-            &name,
-        );
+        let (english, broken) = read_catalog(dir, base, "en", &name);
         unread.extend(broken);
-        let (portuguese, broken) = read_catalog(
-            &dir.join("pt-BR").join(format!("{name}.json")),
-            base,
-            "pt-BR",
-            &name,
-        );
+        let (portuguese, broken) = read_catalog(dir, base, "pt-BR", &name);
         unread.extend(broken);
         areas.push(Area {
             name,
@@ -112,12 +117,17 @@ fn areas_in(dir: &Path, base: &str) -> (Vec<Area>, Vec<Finding>) {
 /// what that means); present but unreadable is refused — a catalog nobody
 /// can read is a broken build, not an empty translation.
 fn read_catalog(
-    path: &Path,
+    dir: &Path,
     base: &str,
     side: &str,
     name: &str,
 ) -> (BTreeMap<String, serde_json::Value>, Option<Finding>) {
-    let shown = format!("{base}/{side}/{name}.json");
+    let shown = shown_path(base, side, name);
+    let path = if name.is_empty() {
+        dir.join(format!("{side}.json"))
+    } else {
+        dir.join(side).join(format!("{name}.json"))
+    };
     let Ok(text) = std::fs::read_to_string(path) else {
         return (BTreeMap::new(), None);
     };
@@ -140,8 +150,8 @@ fn read_catalog(
 
 /// What one area's pair disagrees about.
 fn disagreements(area: &Area, allowed: &[String], base: &str) -> Vec<Finding> {
-    let english_file = format!("{base}/en/{}.json", area.name);
-    let portuguese_file = format!("{base}/pt-BR/{}.json", area.name);
+    let english_file = shown_path(base, "en", &area.name);
+    let portuguese_file = shown_path(base, "pt-BR", &area.name);
     let mut said = Vec::new();
 
     for (key, english) in &area.english {
