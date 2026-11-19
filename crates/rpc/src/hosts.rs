@@ -65,3 +65,20 @@ pub struct HostCheckRow {
 pub struct HostCheck {
     pub rows: Vec<HostCheckRow>,
 }
+
+/// Where a project is on one host, with the host's name and environment.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct HostLink {
+    pub host_id: String,
+    pub host_name: String,
+    pub environment: HostEnvironment,
+    pub path: String,
+}
+
+/// A project's links to hosts.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct HostLinks {
+    pub links: Vec<HostLink>,
+}

@@ -248,8 +248,10 @@ fn a_row_written_before_a_migration_survives_it() {
         .expect("undo 031");
     store
         .conn()
-        .execute_batch("ALTER TABLE card DROP COLUMN branch; DROP TABLE host;")
-        .expect("undo 033 and 034");
+        .execute_batch(
+            "ALTER TABLE card DROP COLUMN branch; DROP TABLE project_host; DROP TABLE host;",
+        )
+        .expect("undo 033 to 035");
     store
         .conn()
         .execute_batch("PRAGMA user_version = 16;")

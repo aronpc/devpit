@@ -203,6 +203,18 @@ pub(crate) fn run(
     })
 }
 
+/// What ssh exits with when it, not the command, failed.
+pub(crate) const SSH_FAILED: i32 = 255;
+
+/// The last line said, which is where ssh and a shell put their reason.
+pub(crate) fn last_line(bytes: &[u8]) -> Option<String> {
+    String::from_utf8_lossy(bytes)
+        .lines()
+        .map(str::trim)
+        .rfind(|one| !one.is_empty())
+        .map(str::to_owned)
+}
+
 /// Ends the child and the group it leads.
 fn end_group(child: &mut std::process::Child) {
     #[cfg(unix)]

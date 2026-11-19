@@ -143,6 +143,8 @@ mod draft_sending;
 mod ended_sessions;
 mod error_reports;
 mod error_sender;
+#[cfg(test)]
+mod fake_host;
 mod files;
 mod filetree;
 mod folder_trust;
@@ -154,6 +156,7 @@ mod happening;
 mod heads_down;
 mod history;
 mod host_check;
+mod host_links;
 mod host_ssh;
 mod hosts;
 mod hub;

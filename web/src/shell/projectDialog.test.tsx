@@ -15,6 +15,8 @@ vi.mock('./live', () => ({
     },
     projectWorktreeSetup: () => ({ data: { copy: [], link: [], run: [], share: [] }, error: null }),
     projectWorktreeSetupSet: () => ({ data: null, error: null }),
+    hostsList: () => ({ data: { hosts: [] }, error: null }),
+    projectHosts: () => ({ data: { links: [] }, error: null }),
     projectSecrets: () => ({ data: { secrets: [], file: '/p/.env' }, error: null }),
     projectSecretSet: (...args: unknown[]) => {
       kept(...args)

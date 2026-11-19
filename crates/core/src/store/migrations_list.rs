@@ -851,4 +851,19 @@ CREATE TABLE host (
 );
 "#,
     },
+    // Migration 035 — where a project is on each host it is linked to.
+    Migration {
+        version: 35,
+        sql: r#"
+-- The path is the person's, never made by devpit. A link goes with its host
+-- or its project.
+CREATE TABLE project_host (
+    project_id TEXT NOT NULL REFERENCES project(id) ON DELETE CASCADE,
+    host_id    TEXT NOT NULL REFERENCES host(id) ON DELETE CASCADE,
+    path       TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
+    PRIMARY KEY (project_id, host_id)
+);
+"#,
+    },
 ];

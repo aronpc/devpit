@@ -118,7 +118,7 @@ fn dates_past_before_the_upgrade_do_not_remind() {
              ALTER TABLE board_column DROP COLUMN role; DROP TABLE finding_dismissal; DROP TABLE seen_session; DROP TABLE decision; \
              DROP TABLE card_parent; DROP TABLE card_blocker; DROP TABLE devflow_plan; \
              DROP INDEX card_number; ALTER TABLE card DROP COLUMN number; DROP TABLE card_superseded; \
-             ALTER TABLE card DROP COLUMN branch; DROP TABLE host; PRAGMA user_version = 22;",
+             ALTER TABLE card DROP COLUMN branch; DROP TABLE project_host; DROP TABLE host; PRAGMA user_version = 22;",
         )
         .expect("back to 22");
     drop(store);

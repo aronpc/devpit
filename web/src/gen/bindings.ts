@@ -721,6 +721,15 @@ export const commands = {
 	hostRemove: (id: string) => typedError<Hosts, RpcError>(__TAURI_INVOKE("host_remove", { id })),
 	/**  `host.check` — the host's check, over its own connection. */
 	hostCheck: (id: string) => typedError<HostCheck, RpcError>(__TAURI_INVOKE("host_check", { id })),
+	/**  `project.hosts` — the project's links to hosts. */
+	projectHosts: (projectId: string) => typedError<HostLinks, RpcError>(__TAURI_INVOKE("project_hosts", { projectId })),
+	/**
+	 *  `project.host_link` — links the project to a folder on a host, checked
+	 *  there first.
+	 */
+	projectHostLink: (projectId: string, hostId: string, path: string) => typedError<HostLinks, RpcError>(__TAURI_INVOKE("project_host_link", { projectId, hostId, path })),
+	/**  `project.host_unlink` — forgets the link; nothing on the host changes. */
+	projectHostUnlink: (projectId: string, hostId: string) => typedError<HostLinks, RpcError>(__TAURI_INVOKE("project_host_unlink", { projectId, hostId })),
 	/**  `assistant.mode` — whether this orchestrator's Assistant mode is on. */
 	assistantMode: (projectId: string) => typedError<AssistantMode, RpcError>(__TAURI_INVOKE("assistant_mode", { projectId })),
 	/**
@@ -4078,6 +4087,19 @@ export type HostDraft = {
 
 /**  What a host is for. Production is marked wherever a host shows. */
 export type HostEnvironment = "dev" | "staging" | "production";
+
+/**  Where a project is on one host, with the host's name and environment. */
+export type HostLink = {
+	hostId: string,
+	hostName: string,
+	environment: HostEnvironment,
+	path: string,
+};
+
+/**  A project's links to hosts. */
+export type HostLinks = {
+	links: HostLink[],
+};
 
 /**  A list, so tomorrow's field has somewhere to go. */
 export type Hosts = {

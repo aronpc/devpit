@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom'
 import type { Project, WorktreeSetup } from '../gen/bindings'
 import { GroupPicker } from './GroupPicker'
 import { ask, commands } from './live'
+import { ProjectHosts } from './ProjectHosts'
 import { COLOURS, ICONS, iconName, ProjectMark } from './ProjectMark'
 import { abandoned, committed } from './typing'
 import { SecretFields } from './SecretFields'
@@ -131,6 +132,7 @@ export function ProjectDialog({ project, onClose }: { project: Project; onClose:
         )}
 
         {!project.orchestrator && <SecretFields projectId={project.id} />}
+        {!project.orchestrator && <ProjectHosts projectId={project.id} />}
 
         {error && <p className="acc__note">{error}</p>}
         <div className="pdlg__acts">

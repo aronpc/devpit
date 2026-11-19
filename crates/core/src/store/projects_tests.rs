@@ -208,7 +208,7 @@ fn an_older_hash_is_recomputed_when_the_store_opens() {
             .execute_batch(
                 "UPDATE project SET origin_hash = 'old', \
                  origin_url = 'https://jhol:tok@github.com:443/o/r.git'; \
-                 ALTER TABLE card DROP COLUMN branch; DROP TABLE host; PRAGMA user_version = 31;",
+                 ALTER TABLE card DROP COLUMN branch; DROP TABLE project_host; DROP TABLE host; PRAGMA user_version = 31;",
             )
             .expect("age it");
     }

@@ -38,14 +38,15 @@ pub(crate) fn refusal(draft: &HostDraft) -> Option<String> {
             return Some("the identity file is the path of a key on this computer, starting with / or ~/; devpit never reads it".to_owned());
         }
     }
-    let root = draft.work_root.trim();
-    if !path(root, true) || root.chars().any(|ch| SHELL.contains(ch)) {
-        return Some(
-            "the work root is a folder on the host, starting with / or ~, with no shell characters"
-                .to_owned(),
-        );
-    }
-    None
+    folder_refusal(draft.work_root.trim(), "the work root")
+}
+
+/// Why `folder`, named `what`, cannot be a folder on a host: it starts at
+/// `/` or `~` and holds nothing a shell would read as more than a path.
+pub(crate) fn folder_refusal(folder: &str, what: &str) -> Option<String> {
+    (!path(folder, true) || folder.chars().any(|ch| SHELL.contains(ch))).then(|| {
+        format!("{what} is a folder on the host, starting with / or ~, with no shell characters")
+    })
 }
 
 /// What a remote shell would read as more than a path.
@@ -72,7 +73,7 @@ fn kept(value: Option<String>) -> Option<String> {
         .filter(|one| !one.is_empty())
 }
 
-fn environment_of(word: &str) -> HostEnvironment {
+pub(crate) fn environment_of(word: &str) -> HostEnvironment {
     match word {
         "production" => HostEnvironment::Production,
         "staging" => HostEnvironment::Staging,
