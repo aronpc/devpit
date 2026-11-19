@@ -218,13 +218,17 @@ fn end(
     }
     let mut terminal = Value::Null;
     for one in found {
+        // A job is its CLI's to stop, whatever terminal it was last seen in.
+        if let Some(job) = &one.job {
+            stop_job(profile_id, job)
+                .map_err(|why| RpcError::new(ErrorCode::Conflict, format!("{name}: {why}")))?;
+        }
         match (&one.pane, &one.job) {
             (Some(pane), _) => {
                 let tab_id = close_pane(app, &pane.project_id, &pane.pane_id)?;
                 terminal = json!({ "projectId": pane.project_id, "tabId": tab_id });
             }
-            (None, Some(job)) => stop_job(profile_id, job)
-                .map_err(|why| RpcError::new(ErrorCode::Conflict, format!("{name}: {why}")))?,
+            (None, Some(_)) => {}
             // Outside devpit's terminals and not a job: only the process.
             (None, None) => {
                 if crate::live_sessions::still_running(one.pid, one.started.as_deref()) {
@@ -270,7 +274,7 @@ pub(crate) enum Left {
     /// It was asked to end — a job through its CLI, a process by a signal —
     /// and still runs.
     Asked,
-    /// Ended directly, it would not end.
+    /// Its group was killed, and it still runs.
     Stuck,
 }
 
@@ -292,10 +296,10 @@ pub(crate) fn refusal(name: &str, left: &[(i32, Left)]) -> String {
 /// Waits once, for all of `found`, to see each process gone. One that
 /// outlived its terminal — the listing named one it did not run in — is
 /// ended directly, when devpit can tell it is still that session's process:
-/// asked first, then its group killed, as a closed terminal's is. A job is
-/// never signalled: its supervisor starts a killed one again. Answers how
-/// many were ended directly. A stop is never said done while one runs: one
-/// that still does is an error naming it.
+/// its group asked, then killed if any of it is left, as a closed terminal's
+/// is. A job is never signalled: its supervisor starts a killed one again.
+/// Answers how many were ended directly. A stop is never said done while
+/// one runs: one that still does is an error naming it.
 pub(crate) fn made_sure(
     name: &str,
     found: &[crate::live_sessions::Running],
@@ -305,24 +309,39 @@ pub(crate) fn made_sure(
     let mut sure = Vec::new();
     for one in still_after(found.iter().collect(), grace) {
         match (&one.pane, &one.job) {
-            (None, Some(_)) => left.push((one.pid, Left::Asked)),
+            (_, Some(_)) => left.push((one.pid, Left::Asked)),
             _ if identified(one) => sure.push(one),
-            (Some(_), _) => left.push((one.pid, Left::Untold)),
+            (Some(_), None) => left.push((one.pid, Left::Untold)),
             (None, None) => left.push((one.pid, Left::Asked)),
         }
     }
-    for one in &sure {
-        signal(one, false);
+    // Taken before any of it ends: a group is found by its leader.
+    let groups: Vec<Option<i32>> = sure.iter().map(|one| group_of(one)).collect();
+    for (one, group) in sure.iter().zip(&groups) {
+        signal(one, *group, false);
     }
-    let survivors = still_after(sure.clone(), grace);
-    for one in &survivors {
-        signal(one, true);
+    let lingering = |at: &std::time::Instant| {
+        let leaders = still_after(sure.clone(), Duration::ZERO);
+        let members = groups.iter().flatten().any(|group| group_alive(*group));
+        (leaders.is_empty() && !members) || std::time::Instant::now() >= *at
+    };
+    let until = std::time::Instant::now() + grace;
+    while !lingering(&until) {
+        std::thread::sleep(Duration::from_millis(50));
     }
-    left.extend(
-        still_after(survivors, KILLED)
-            .into_iter()
-            .map(|one| (one.pid, Left::Stuck)),
-    );
+    for (one, group) in sure.iter().zip(&groups) {
+        if group.is_some_and(group_alive) {
+            signal(one, *group, true);
+        }
+    }
+    for one in still_after(sure.clone(), KILLED) {
+        let why = match group_of(one) {
+            Some(_) => Left::Stuck,
+            // A lone process is only ever asked.
+            None => Left::Asked,
+        };
+        left.push((one.pid, why));
+    }
     match left.is_empty() {
         true => Ok(sure.len()),
         false => Err(RpcError::new(ErrorCode::Conflict, refusal(name, &left))),
@@ -331,7 +350,8 @@ pub(crate) fn made_sure(
 
 /// Whether devpit can tell `one`'s pid is still the process the listing
 /// named: only Linux keeps a process's start, and only a listing that says
-/// its own is checked against it. A pid devpit cannot tell is never signalled.
+/// its own is checked against it. A stop never ends directly a pid it cannot
+/// tell; a process outside devpit's terminals is asked to end, as it always was.
 fn identified(one: &crate::live_sessions::Running) -> bool {
     cfg!(target_os = "linux") && one.started.is_some()
 }
@@ -345,21 +365,40 @@ pub(crate) fn group_of(one: &crate::live_sessions::Running) -> Option<i32> {
     (one.pid > 1 && theirs == one.pid && theirs != ours).then_some(theirs)
 }
 
-/// Asks `one`'s process to end, or with `kill` makes it. An agent leads its
-/// own group and runs its tools in it, so the group is signalled, as a
-/// closed terminal's is; a lone process is only ever asked.
-fn signal(one: &crate::live_sessions::Running, kill: bool) {
-    if !crate::live_sessions::still_running(one.pid, one.started.as_deref()) {
-        return;
-    }
+#[cfg(not(unix))]
+pub(crate) fn group_of(_one: &crate::live_sessions::Running) -> Option<i32> {
+    None
+}
+
+/// Whether any process is left in `group`. A group's id is not reused while
+/// one of its members lives.
+#[cfg(unix)]
+fn group_alive(group: i32) -> bool {
+    // SAFETY: signal 0 checks for the group without sending anything.
+    group > 1
+        && (unsafe { libc::kill(-group, 0) } == 0
+            || std::io::Error::last_os_error().raw_os_error() == Some(libc::EPERM))
+}
+
+#[cfg(not(unix))]
+fn group_alive(_group: i32) -> bool {
+    false
+}
+
+/// Asks `one`'s process to end, or with `kill` makes it: its `group` when it
+/// leads one, since an agent runs its tools in it; a lone process is only
+/// ever asked.
+fn signal(one: &crate::live_sessions::Running, group: Option<i32>, kill: bool) {
     #[cfg(unix)]
-    if let Some(group) = group_of(one) {
+    if let Some(group) = group {
         let signal = if kill { libc::SIGKILL } else { libc::SIGTERM };
-        // SAFETY: a signal to a group checked above; kill has no other effect.
+        // SAFETY: a group group_of checked; kill has no other effect.
         unsafe { libc::kill(-group, signal) };
         return;
     }
-    if !kill {
+    #[cfg(not(unix))]
+    let _ = group;
+    if !kill && crate::live_sessions::still_running(one.pid, one.started.as_deref()) {
         devpit_pty::process::terminate(one.pid);
     }
 }

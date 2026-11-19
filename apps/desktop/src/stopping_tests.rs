@@ -135,7 +135,7 @@ fn a_process_that_will_not_end_is_an_error_not_stopped() {
     assert!(
         refused
             .message
-            .contains(&format!("process {pid} would not end")),
+            .contains(&format!("process {pid} was asked to end and still runs")),
         "{}",
         refused.message
     );
@@ -261,4 +261,55 @@ fn no_group_is_signalled_for_init_or_devpit_itself() {
     // SAFETY: getpgid only reads the process table.
     let ours = unsafe { libc::getpgid(0) };
     assert_eq!(group_of(&running(ours, None)), None);
+}
+
+/// An agent whose group ignores the request to end — its tools too — has
+/// the group killed, as a closed terminal's would be: nothing of it is left.
+#[cfg(target_os = "linux")]
+#[test]
+fn an_agent_that_ignores_the_request_to_end_has_its_group_killed() {
+    use std::io::BufRead;
+    use std::os::unix::process::CommandExt;
+    let mut agent = std::process::Command::new("sh")
+        .args(["-c", "trap '' TERM; sleep 30 & echo $!; wait"])
+        .process_group(0)
+        .stdout(std::process::Stdio::piped())
+        .spawn()
+        .expect("sh");
+    let pid = agent.id() as i32;
+    let mut line = String::new();
+    std::io::BufReader::new(agent.stdout.take().expect("stdout"))
+        .read_line(&mut line)
+        .expect("its tool's pid");
+    let tool: i32 = line.trim().parse().expect("a pid");
+    let reaped = std::thread::spawn(move || drop(agent.wait()));
+
+    let directly = made_sure("worker", &[in_terminal(pid, started_of(pid))], QUICK).expect("ended");
+
+    assert_eq!(directly, 1);
+    reaped.join().expect("reaped");
+    assert!(gone_soon(tool), "its tool still runs");
+}
+
+/// A job last seen in a devpit terminal is still its CLI's to stop: never
+/// signalled for having a pane.
+#[cfg(target_os = "linux")]
+#[test]
+fn a_job_seen_in_a_terminal_is_never_signalled_either() {
+    let (pid, reaped) = sleeping();
+    let job = Running {
+        job: Some("bg-1".to_owned()),
+        ..in_terminal(pid, started_of(pid))
+    };
+
+    let refused = made_sure("worker", &[job], QUICK).expect_err("said stopped");
+
+    assert!(
+        refused.message.contains("was asked to end and still runs"),
+        "{}",
+        refused.message
+    );
+    assert!(devpit_pty::process::alive(pid), "signalled a job");
+    devpit_pty::process::terminate(pid);
+    reaped.join().expect("reaped");
 }
