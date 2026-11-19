@@ -40,6 +40,38 @@ export function ordered(projects: readonly Project[], order: readonly string[]):
   return [...placed, ...loose]
 }
 
+/* The orchestrators keep an order of their own, apart from the projects': the
+ * two lists are drawn apart, so one drag must not reshuffle the other. A drag
+ * among them goes through `placed`, like a project's. */
+const ORCHESTRATORS_KEY = 'devpit.rail.orchestrators'
+
+export function savedOrchestrators(): readonly string[] {
+  try {
+    const raw: unknown = JSON.parse(localStorage.getItem(ORCHESTRATORS_KEY) ?? '[]')
+    return Array.isArray(raw) ? raw.filter((id): id is string => typeof id === 'string') : []
+  } catch {
+    return []
+  }
+}
+
+export function saveOrchestrators(order: readonly string[]): void {
+  try {
+    localStorage.setItem(ORCHESTRATORS_KEY, JSON.stringify(order))
+  } catch {
+    /* The order still applies for as long as the window is open. */
+  }
+}
+
+/** The orchestrators in the person's order; the ones not placed yet after,
+ *  oldest first — the id is a ULID, so it sorts by when each was made. A saved
+ *  id that is gone is skipped and moves nobody. */
+export function orchestratorsInOrder(list: readonly Project[], order: readonly string[]): readonly Project[] {
+  const at = new Map(order.map((id, index) => [id, index]))
+  const kept = list.filter((one) => at.has(one.id)).sort((a, b) => at.get(a.id)! - at.get(b.id)!)
+  const fresh = list.filter((one) => !at.has(one.id)).sort((a, b) => a.id.localeCompare(b.id))
+  return [...kept, ...fresh]
+}
+
 /** `id` put just before or just after `to` — which side is the pointer's:
  *  the upper half of a row is before it, the lower half after. */
 export function placed(order: readonly string[], id: string, to: string, after: boolean): readonly string[] {

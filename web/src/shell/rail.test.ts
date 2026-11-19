@@ -1,7 +1,19 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 
 import type { Project } from '../gen/bindings'
-import { hueOf, initials, moved, ordered, placed, sections, shown } from './rail'
+import {
+  hueOf,
+  initials,
+  moved,
+  orchestratorsInOrder,
+  ordered,
+  placed,
+  savedOrchestrators,
+  savedOrder,
+  saveOrchestrators,
+  sections,
+  shown,
+} from './rail'
 
 const project = (id: string, name = id, group: string | null = null): Project =>
   ({ id, name, group, rootPath: `/w/${name}` }) as unknown as Project
@@ -85,5 +97,37 @@ describe('a drop beside a row', () => {
     expect(placed(['a', 'b', 'c', 'd'], 'a', 'c', true)).toEqual(['b', 'c', 'a', 'd'])
     expect(placed(['a', 'b', 'c', 'd'], 'd', 'a', false)).toEqual(['d', 'a', 'b', 'c'])
     expect(placed(['a', 'b'], 'a', 'a', true)).toEqual(['a', 'b'])
+  })
+})
+
+describe('the order of orchestrators', () => {
+  afterEach(() => localStorage.clear())
+
+  const ids = (list: readonly Project[]): readonly string[] => list.map((one) => one.id)
+
+  it('orchestrators order: keeps the saved order whatever was opened last', () => {
+    const lastOpenedFirst = [project('prj_01M3C'), project('prj_01M3A'), project('prj_01M3B')]
+    const order = ['prj_01M3B', 'prj_01M3C', 'prj_01M3A']
+    expect(ids(orchestratorsInOrder(lastOpenedFirst, order))).toEqual(order)
+    expect(ids(orchestratorsInOrder([...lastOpenedFirst].reverse(), order))).toEqual(order)
+  })
+
+  it('orchestrators order: puts a new one at the end by age, not by name', () => {
+    const list = [project('prj_01M3Z', 'alpha'), project('prj_01M3P'), project('prj_01M3Y', 'zeta')]
+    expect(ids(orchestratorsInOrder(list, ['prj_01M3P']))).toEqual(['prj_01M3P', 'prj_01M3Y', 'prj_01M3Z'])
+  })
+
+  it('orchestrators order: ignores a saved id that is gone', () => {
+    const list = [project('prj_01M3A'), project('prj_01M3C')]
+    const order = ['prj_01M3C', 'prj_01M3GONE', 'prj_01M3A']
+    expect(ids(orchestratorsInOrder(list, order))).toEqual(['prj_01M3C', 'prj_01M3A'])
+  })
+
+  it('orchestrators order: round-trips through its own storage key', () => {
+    saveOrchestrators(['prj_01M3B', 'prj_01M3A'])
+    expect(savedOrchestrators()).toEqual(['prj_01M3B', 'prj_01M3A'])
+    expect(JSON.parse(localStorage.getItem('devpit.rail.orchestrators')!)).toEqual(['prj_01M3B', 'prj_01M3A'])
+    expect(localStorage.getItem('devpit.rail.order')).toBeNull()
+    expect(savedOrder()).toEqual([])
   })
 })
