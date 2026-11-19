@@ -19,7 +19,6 @@ web/src/remote/RemoteSecret.tsx 7
 web/src/remote/RemoteTalk.tsx 7
 web/src/remote/RemoteTerminal.tsx 4
 web/src/remote/RemoteWaiting.tsx 16
-web/src/shell/AboutSettings.tsx 2
 web/src/shell/AccountFields.tsx 14
 web/src/shell/AccountsSettings.tsx 11
 web/src/shell/ActivityPick.tsx 4
@@ -28,7 +27,6 @@ web/src/shell/AddProject.tsx 10
 web/src/shell/AgentBar.tsx 3
 web/src/shell/AgentChip.tsx 5
 web/src/shell/AgentRow.tsx 2
-web/src/shell/ArchiveSettings.tsx 4
 web/src/shell/ArtifactsView.tsx 8
 web/src/shell/AskName.tsx 2
 web/src/shell/AskPane.tsx 13
@@ -149,8 +147,6 @@ web/src/shell/MentionMenu.tsx 1
 web/src/shell/ModelPicker.tsx 8
 web/src/shell/Monitor.tsx 6
 web/src/shell/Notices.tsx 4
-web/src/shell/Onboarding.tsx 11
-web/src/shell/OnboardingAccount.tsx 10
 web/src/shell/OpenApps.tsx 14
 web/src/shell/OpenIn.tsx 2
 web/src/shell/OrchestratorAnswer.tsx 13
@@ -162,8 +158,6 @@ web/src/shell/Palette.tsx 2
 web/src/shell/PaletteList.tsx 7
 web/src/shell/PaneCorner.tsx 6
 web/src/shell/PatchView.tsx 5
-web/src/shell/PauseControl.tsx 6
-web/src/shell/PauseSettings.tsx 4
 web/src/shell/PdfView.tsx 5
 web/src/shell/Picture.tsx 1
 web/src/shell/PlanReview.tsx 13
@@ -171,7 +165,6 @@ web/src/shell/PluginChip.tsx 7
 web/src/shell/PluginsPane.tsx 12
 web/src/shell/PlusLine.tsx 1
 web/src/shell/PlusLink.tsx 2
-web/src/shell/PrefsSide.tsx 4
 web/src/shell/Problem.tsx 1
 web/src/shell/ProfileEditor.tsx 23
 web/src/shell/ProfileModels.tsx 7
@@ -221,7 +214,6 @@ web/src/shell/SessionRowsView.tsx 4
 web/src/shell/SessionSearch.tsx 4
 web/src/shell/SessionTerminal.tsx 14
 web/src/shell/SessionsView.tsx 33
-web/src/shell/Settings.tsx 26
 web/src/shell/SideAnswer.tsx 6
 web/src/shell/Sidebar.tsx 17
 web/src/shell/SignIn.tsx 13

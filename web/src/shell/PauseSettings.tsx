@@ -1,3 +1,6 @@
+import { t } from '../i18n'
+import { formatDate } from '../i18n/format'
+import { useLocale } from '../i18n/LocaleRoot'
 import { PrefMore } from './PrefRow'
 import { pauseOptions, usePause } from './usePause'
 
@@ -8,24 +11,26 @@ import { pauseOptions, usePause } from './usePause'
  */
 export function PauseSettings(): React.JSX.Element {
   const { paused, pauseFor, resume } = usePause()
-  const until = paused.until === null ? 'until you resume' : `until ${new Date(paused.until * 1000).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}`
+  /* Hears the locale, so the row re-says itself when it changes. */
+  useLocale()
+  const until = paused.until === null
+    ? t('pause.untilResumed')
+    : t('pause.untilTime', { time: formatDate(paused.until * 1000, { hour: '2-digit', minute: '2-digit' }) })
   return (
     <div className="pref pref--stack">
       <div className="pref__body">
-        <span className="pref__t">Pause{paused.on && ` — paused ${until}`}</span>
-        <span className="pref__d">Quiet for a meeting or a stretch of thought. Agents keep working.</span>
-        <PrefMore>
-          No notifications, the island neither opens nor sounds, and a terminal&rsquo;s permission question goes straight to that terminal. Agents&rsquo; news is still heard and reminders still go off. Also in the status strip and the tray.
-        </PrefMore>
+        <span className="pref__t">{paused.on ? t('pause.pausedTitle', { until }) : t('pause.title')}</span>
+        <span className="pref__d">{t('pause.said')}</span>
+        <PrefMore>{t('pause.more')}</PrefMore>
         <span className="voice__row">
           {paused.on ? (
             <button className="btn" onClick={resume}>
-              Resume
+              {t('pause.resume')}
             </button>
           ) : (
             pauseOptions(Date.now() / 1000).map((option) => (
-              <button key={option.label} className="btn" onClick={() => pauseFor(option.until)}>
-                {option.label}
+              <button key={option.id} className="btn" onClick={() => pauseFor(option.until)}>
+                {t(`pause.option.${option.id}`)}
               </button>
             ))
           )}

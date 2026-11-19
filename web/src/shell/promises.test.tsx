@@ -44,7 +44,10 @@ describe('what the settings screen promises', () => {
   const settings = readFileSync(resolve(process.cwd(), 'src/shell/Settings.tsx'), 'utf8')
 
   it('says what stays on this computer, and what sync carries and keeps back', () => {
-    expect(settings).toMatch(/Projects, boards, conversations, terminal history and files stay on this computer/)
+    /* The sentence moved to the catalog with the window's other words; the
+       promise is still pinned, where it is said now. */
+    const words = readFileSync(resolve(process.cwd(), 'src/i18n/en/settings.json'), 'utf8')
+    expect(words).toMatch(/Projects, boards, conversations, terminal history and files stay on this computer/)
     const sync = readFileSync(resolve(process.cwd(), 'src/shell/SyncSettings.tsx'), 'utf8')
     expect(sync).toMatch(/Preferences and project settings follow you/)
     expect(sync).toMatch(/a key devpit\.app never sees/)
