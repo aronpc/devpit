@@ -35,7 +35,7 @@ button.ecard__p:hover { color: var(--text); text-decoration: underline; }
 .pcorner .sq26[data-armed='true'] { color: var(--danger); background: var(--overlay-strong); }
 .hostterm { position: relative; display: inline-flex; }
 .hostterm__menu { position: absolute; top: 28px; right: 0; z-index: 40; display: grid; min-width: 220px; padding: 4px; border: 1px solid var(--border-strong); border-radius: var(--radius-md); background: var(--surface); }
-.hostterm__menu button { display: flex; gap: 6px; justify-content: space-between; padding: 6px 8px; border-radius: 6px; text-align: left; color: var(--text); font-size: 12px; }
+.hostterm__menu button { display: flex; gap: 6px; justify-content: space-between; padding: 6px 8px; border-radius: var(--radius-sm); text-align: left; color: var(--text); font-size: var(--fs-sm); }
 .hostterm__menu button:hover { background: var(--overlay-strong); }
 .pcorner__card { max-width: 220px; padding: 0 6px; overflow: hidden; font-size: var(--fs-xs); color: var(--text-3); text-overflow: ellipsis; white-space: nowrap; }
 button.pcorner__card:hover { color: var(--text); background: var(--overlay-strong); border-radius: var(--radius-sm); }
