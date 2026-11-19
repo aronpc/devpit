@@ -72,3 +72,32 @@ fn a_pid_another_process_now_holds_is_left_alone() {
     devpit_pty::process::terminate(pid);
     reaped.join().expect("reaped");
 }
+
+/// One that will not end is never called stopped: the stop answers that it
+/// could not be, naming the process still running. Waits on /proc, so
+/// Linux only.
+#[cfg(target_os = "linux")]
+#[test]
+fn a_process_that_will_not_end_is_an_error_not_stopped() {
+    let mut child = std::process::Command::new("sh")
+        .args(["-c", "trap '' TERM; exec sleep 30"])
+        .spawn()
+        .expect("sh");
+    let pid = child.id() as i32;
+    // The shell has set the trap once it is sleep.
+    while std::fs::read_to_string(format!("/proc/{pid}/comm")).is_ok_and(|comm| comm.trim() == "sh")
+    {
+        std::thread::sleep(Duration::from_millis(10));
+    }
+
+    let refused = outlived("worker", &running(pid, None), QUICK).expect_err("said stopped");
+
+    assert_eq!(refused.code, ErrorCode::Conflict);
+    assert!(
+        refused.message.contains(&pid.to_string()),
+        "{}",
+        refused.message
+    );
+    child.kill().expect("killed");
+    child.wait().expect("reaped");
+}
