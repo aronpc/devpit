@@ -1,5 +1,7 @@
-import en from './en/common.json'
-import ptBr from './pt-BR/common.json'
+import enCommon from './en/common.json'
+import enSettings from './en/settings.json'
+import ptBrCommon from './pt-BR/common.json'
+import ptBrSettings from './pt-BR/settings.json'
 
 /* One entry is a sentence, or the two plural forms of one. Flat keys —
    `board.emptyLane` — because the guard that compares catalogs (T7) reads
@@ -8,7 +10,10 @@ type Entry = string | { one: string; other: string; [form: string]: string }
 type Catalog = Record<string, Entry>
 
 /* English is the base: every key is born in its catalog (AGENTS.md). */
-const catalogs: Record<string, Catalog> = { en, 'pt-BR': ptBr }
+const catalogs: Record<string, Catalog> = {
+  en: { ...enCommon, ...enSettings },
+  'pt-BR': { ...ptBrCommon, ...ptBrSettings },
+}
 
 export interface TranslateArgs {
   count?: number

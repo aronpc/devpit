@@ -1,0 +1,17 @@
+{
+  "display.title": "Display",
+  "display.on": "On {name}.",
+  "display.why.asked": "DEVPIT_GDK_BACKEND chose it for this start.",
+  "display.why.inherited": "GDK_BACKEND was set by whatever started devpit.",
+  "display.why.noWayland": "This session has no Wayland compositor.",
+  "display.why.knownCrash": "This desktop's GTK settings crash devpit on Wayland, so it is on X11.",
+  "display.why.failedBefore": "A Wayland start of this version never loaded its window, so it stays on X11.",
+  "display.why.chosen": "Chosen here.",
+  "display.why.default": "Wayland where the desktop has it, X11 where it does not.",
+  "display.nextStart": "A change applies at the next start.",
+  "display.automatic": "Automatic",
+  "display.more": "DEVPIT_GDK_BACKEND=wayland or x11 overrides this for one start. A Wayland start that never loads its window keeps that version on X11 until a choice is made here.",
+  "language.title": "Language",
+  "language.system": "System",
+  "language.said": "devpit's own words follow this choice, without a restart."
+}

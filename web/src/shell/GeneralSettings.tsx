@@ -4,7 +4,7 @@ import { ArchiveSettings } from './ArchiveSettings'
 import { CalendarSettings } from './CalendarSettings'
 import { DeskSettings } from './DeskSettings'
 import { DiagnosticsPane } from './DiagnosticsPane'
-import { DisplaySettings } from './DisplaySettings'
+import { DisplaySettings, LanguageSettings } from './DisplaySettings'
 import { ErrorReportsPreview } from './ErrorReportsPreview'
 import { IslandSettings } from './IslandSettings'
 import { MaintenanceSettings } from './MaintenanceSettings'
@@ -44,6 +44,8 @@ export function GeneralPanes({
         <div className="pref">
           <span className="pref__body"><span className="pref__t">Local by default</span><span className="pref__d">Projects, conversations and settings are kept on this computer.</span></span>
         </div>
+
+        <LanguageSettings />
 
         <div className="acc__sub">On this desktop</div>
         <DeskSettings />

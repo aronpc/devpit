@@ -1,0 +1,17 @@
+{
+  "display.title": "Tela",
+  "display.on": "Em {name}.",
+  "display.why.asked": "A DEVPIT_GDK_BACKEND escolheu para esta inicialização.",
+  "display.why.inherited": "A GDK_BACKEND veio definida por quem iniciou o devpit.",
+  "display.why.noWayland": "Esta sessão não tem compositor Wayland.",
+  "display.why.knownCrash": "As configurações de GTK deste desktop travam o devpit no Wayland, por isso ele fica no X11.",
+  "display.why.failedBefore": "Uma inicialização Wayland desta versão nunca carregou a janela, então ela fica no X11.",
+  "display.why.chosen": "Escolhida aqui.",
+  "display.why.default": "Wayland onde o desktop tem, X11 onde não tem.",
+  "display.nextStart": "A mudança vale a partir da próxima inicialização.",
+  "display.automatic": "Automático",
+  "display.more": "DEVPIT_GDK_BACKEND=wayland ou x11 substitui isto por uma inicialização. Uma inicialização Wayland que não carrega a janela mantém essa versão no X11 até que uma escolha seja feita aqui.",
+  "language.title": "Idioma",
+  "language.system": "Sistema",
+  "language.said": "As palavras do próprio devpit seguem esta escolha, sem reiniciar."
+}
