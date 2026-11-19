@@ -10,9 +10,14 @@ a structural change.
 ## Language
 
 **Everything versioned is in English** — code, comments, test names, commit
-messages, docs, workflows. No exceptions.
+messages, docs, workflows. English is the base and the default: every key is
+born in the English catalog, and the other languages live beside it.
 
-`.project/` is the only place that is not, and it is gitignored.
+The exception is the pt-BR translation catalogs, and only them:
+`web/src/i18n/pt-BR/`, `crates/core/src/i18n/pt-BR.json`, the `*_pt_br.md` and
+`*_pt_br.rs` agent-text variants, `docs/pt-BR/` and `README.pt-BR.md`.
+
+`.project/` is gitignored — not versioned at all, so outside this rule.
 
 ## Commands
 
