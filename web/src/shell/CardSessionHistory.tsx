@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import type { LivePane, SessionOnCard } from '../gen/bindings'
+import { t } from '../i18n'
 import { endedHow } from './EndedSessions'
 import { ask, commands } from './live'
 import { RemoteControlMark } from './RemoteControlMark'
@@ -14,8 +15,8 @@ const when = (ms: number | null): string => (ms === null ? '' : new Date(ms).toL
 
 /** What a row says: how it stands, when, and what it left uncommitted. */
 export function sessionWords(one: SessionOnCard): string {
-  const how = one.endedAt === null ? `running since ${when(one.startedAt)}` : `${endedHow(one)} ${when(one.endedAt)}`
-  return one.dirty ? `${how} · ${one.dirty} file(s) not committed` : how
+  const how = one.endedAt === null ? t('card.runningSince', { when: when(one.startedAt) }) : `${endedHow(one)} ${when(one.endedAt)}`
+  return one.dirty ? `${how} · ${t('card.notCommitted', { count: one.dirty })}` : how
 }
 
 /*
@@ -36,7 +37,7 @@ export function CardSessionHistory({ cardId, running }: { cardId: string; runnin
 
   const resume = (one: SessionOnCard): void => {
     void ask(() => commands.orchestratorResume(one.profileId, one.sessionId)).then((answer) => {
-      setSaid(answer.error ?? `Resumed as ${answer.data ?? one.name}, in a new terminal.`)
+      setSaid(answer.error ?? t('card.resumed', { name: answer.data ?? one.name }))
       if (!answer.error) read()
     })
   }
@@ -48,7 +49,7 @@ export function CardSessionHistory({ cardId, running }: { cardId: string; runnin
   if (sessions.length === 0) return null
   return (
     <section>
-      <h2 className="cardp__h">Session history</h2>
+      <h2 className="cardp__h">{t('card.sessionHistory')}</h2>
       {sessions.map((one) => (
         <div className="crun" key={one.sessionId}>
           <span className="crun__b">
@@ -57,13 +58,13 @@ export function CardSessionHistory({ cardId, running }: { cardId: string; runnin
           <span className="crun__s">{sessionWords(one)}</span>
           {!resumable(one) && <RemoteControlMark remote={one.remote} name={one.name} />}
           {!resumable(one) && one.pane && (
-            <button className="btn" title="Its terminal" onClick={() => go(one.pane!)}>
-              Go to
+            <button className="btn" title={t('card.itsTerminal')} onClick={() => go(one.pane!)}>
+              {t('card.goTo')}
             </button>
           )}
           {resumable(one) && (
-            <button className="btn" title="The same conversation, in a new terminal of its project, in the folder it ran in" onClick={() => resume(one)}>
-              Resume
+            <button className="btn" title={t('card.resumeHint')} onClick={() => resume(one)}>
+              {t('card.resume')}
             </button>
           )}
         </div>

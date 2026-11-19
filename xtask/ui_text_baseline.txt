@@ -22,7 +22,6 @@ web/src/remote/RemoteWaiting.tsx 16
 web/src/shell/AccountFields.tsx 14
 web/src/shell/AccountsSettings.tsx 11
 web/src/shell/ActivityPick.tsx 4
-web/src/shell/ActsRows.tsx 4
 web/src/shell/AddProject.tsx 10
 web/src/shell/AgentBar.tsx 3
 web/src/shell/AgentChip.tsx 5
@@ -37,9 +36,6 @@ web/src/shell/Attachments.tsx 6
 web/src/shell/BlankPane.tsx 6
 web/src/shell/BlockCard.tsx 9
 web/src/shell/BlockTerm.tsx 1
-web/src/shell/BoardPane.tsx 1
-web/src/shell/BoardShelf.tsx 8
-web/src/shell/BoardToolbar.tsx 6
 web/src/shell/BranchPicker.tsx 2
 web/src/shell/BrowserFind.tsx 8
 web/src/shell/BrowserMenu.tsx 16
@@ -48,19 +44,6 @@ web/src/shell/CalendarSettings.tsx 6
 web/src/shell/CapabilityCard.tsx 4
 web/src/shell/CapabilityDialogs.tsx 19
 web/src/shell/CapabilityRows.tsx 2
-web/src/shell/CardCriteria.tsx 6
-web/src/shell/CardDescription.tsx 4
-web/src/shell/CardDevflow.tsx 7
-web/src/shell/CardDiff.tsx 2
-web/src/shell/CardElsewhere.tsx 4
-web/src/shell/CardHeader.tsx 9
-web/src/shell/CardLane.tsx 3
-web/src/shell/CardPane.tsx 9
-web/src/shell/CardPlay.tsx 5
-web/src/shell/CardSessionHistory.tsx 5
-web/src/shell/CardSessions.tsx 6
-web/src/shell/CardTies.tsx 3
-web/src/shell/CardWork.tsx 10
 web/src/shell/ChangeMenu.tsx 5
 web/src/shell/ChangesPanel.tsx 8
 web/src/shell/ChannelsPane.tsx 12
@@ -129,9 +112,6 @@ web/src/shell/InstallationPicker.tsx 2
 web/src/shell/IslandSettings.tsx 5
 web/src/shell/JumpToEnd.tsx 2
 web/src/shell/KeyboardSettings.tsx 12
-web/src/shell/Lane.tsx 6
-web/src/shell/LaneMenuView.tsx 4
-web/src/shell/LaneStep.tsx 17
 web/src/shell/LaunchHeld.tsx 6
 web/src/shell/LearnAsks.tsx 1
 web/src/shell/LessonProposals.tsx 7
@@ -215,7 +195,6 @@ web/src/shell/SkillsPane.tsx 5
 web/src/shell/SlashMenu.tsx 1
 web/src/shell/Sources.tsx 4
 web/src/shell/Split.tsx 1
-web/src/shell/StepNew.tsx 12
 web/src/shell/StopRunning.tsx 2
 web/src/shell/StopsAsked.tsx 5
 web/src/shell/Streamed.tsx 3

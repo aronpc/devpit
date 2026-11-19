@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from 'react'
 
 import type { CardDetail, DeleteRefusal } from '../gen/bindings'
+import { t } from '../i18n'
 import { useAway } from './away'
 import { Confirm } from './Confirm'
 import { anyLive, liveBody, type LiveWork } from './liveWork'
@@ -47,8 +48,8 @@ export function CardHeader({
         <div className="ctl" ref={box}>
           <button
             className="sq26"
-            aria-label="Card actions"
-            title="Card actions"
+            aria-label={t('card.actions')}
+            title={t('card.actions')}
             aria-expanded={open}
             onClick={() => setOpen((was) => !was)}
           >
@@ -59,21 +60,21 @@ export function CardHeader({
             </svg>
           </button>
           {open && (
-            <div className="ctlmenu ctlmenu--down" role="menu" aria-label="Card actions">
+            <div className="ctlmenu ctlmenu--down" role="menu" aria-label={t('card.actions')}>
               <button className="ctlmenu__i" role="menuitem" onClick={pick(onArchive)}>
                 <span className="ctlmenu__b">
-                  <span className="ctlmenu__n">Archive</span>
+                  <span className="ctlmenu__n">{t('card.archive')}</span>
                 </span>
               </button>
               <button className="ctlmenu__i" role="menuitem" data-danger onClick={pick(onDelete)}>
                 <span className="ctlmenu__b">
-                  <span className="ctlmenu__n">Delete…</span>
+                  <span className="ctlmenu__n">{t('card.deleteEllipsis')}</span>
                 </span>
               </button>
             </div>
           )}
         </div>
-        <button className="sq26" aria-label="Close" title="Close" onClick={onClose}>
+        <button className="sq26" aria-label={t('card.close')} title={t('card.close')} onClick={onClose}>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M18 6 6 18M6 6l12 12" />
           </svg>
@@ -90,12 +91,13 @@ export function deleteBody(held: {
   runs: number
   checkout: string | null
 }): string {
-  const count = (n: number, one: string): string => `${n} ${one}${n === 1 ? '' : 's'}`
-  const gone = `Its ${count(held.comments, 'comment')}, ${count(held.pinned, 'pinned file')} and ${count(held.runs, 'run')} go with it.`
-  const stays = held.checkout
-    ? ` The checkout and its branch stay at ${held.checkout}.`
-    : ' It has no checkout, so nothing on disk changes.'
-  return gone + stays
+  const gone = t('card.deleteGone', {
+    comments: t('card.nComments', { count: held.comments }),
+    pinned: t('card.nPinned', { count: held.pinned }),
+    runs: t('card.nRuns', { count: held.runs }),
+  })
+  const stays = held.checkout ? t('card.deleteStays', { path: held.checkout }) : t('card.deleteNoCheckout')
+  return `${gone} ${stays}`
 }
 
 export function CardEnding({
@@ -152,9 +154,9 @@ export function CardEnding({
   if (stopLive && anyLive(live) && !stopped && !ending.refused) {
     return (
       <Confirm
-        title={ending.what === 'archive' ? 'Archive this card?' : 'Delete this card?'}
+        title={ending.what === 'archive' ? t('card.archiveAsk') : t('card.deleteAsk')}
         body={liveBody(live)}
-        danger={ending.what === 'archive' ? 'Stop it and archive' : 'Stop it and delete'}
+        danger={ending.what === 'archive' ? t('card.stopArchive') : t('card.stopDelete')}
         onClose={() => onAsk(null)}
         onConfirm={() => {
           void stopLive().then((refused) => {
@@ -175,9 +177,9 @@ export function CardEnding({
   if (ending.what === 'archive') {
     return (
       <Confirm
-        title="Archive this card?"
-        body={ending.refused ?? 'It comes off the board. Its branch and its checkout stay exactly where they are.'}
-        danger={ending.refused ? 'Archive anyway' : 'Archive'}
+        title={t('card.archiveAsk')}
+        body={ending.refused ?? t('card.archiveBody')}
+        danger={ending.refused ? t('card.archiveAnyway') : t('card.archive')}
         onClose={() => onAsk(null)}
         onConfirm={() => archiving(Boolean(ending.refused))}
       />
@@ -186,7 +188,7 @@ export function CardEnding({
 
   return (
     <Confirm
-      title="Delete this card?"
+      title={t('card.deleteAsk')}
       body={
         ending.refused?.reason ??
         summary ??
@@ -197,7 +199,7 @@ export function CardEnding({
           checkout: detail?.worktree?.path ?? null,
         })
       }
-      danger={ending.refused ? 'Delete anyway' : 'Delete'}
+      danger={ending.refused ? t('card.deleteAnyway') : t('card.delete')}
       onClose={() => onAsk(null)}
       onConfirm={() => removing(Boolean(ending.refused))}
     />

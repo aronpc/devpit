@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 
+import { t } from '../i18n'
 import { Attachments } from './Attachments'
 import { savesBeforeRestart } from './beforeRestart'
 import { CardCriteria } from './CardCriteria'
@@ -157,7 +158,7 @@ export function CardPane({
       }}
       onClick={(event) => pressedOutside.current && event.target === event.currentTarget && close()}
     >
-      <div className="cardp__box" role="dialog" aria-modal="true" aria-label="Card">
+      <div className="cardp__box" role="dialog" aria-modal="true" aria-label={t('card.card')}>
         <CardHeader
           column={detail?.columnName}
           problem={problem}
@@ -166,7 +167,7 @@ export function CardPane({
           onClose={close}
         />
 
-        {!detail && !card.error && <p className="pref__d">Opening…</p>}
+        {!detail && !card.error && <p className="pref__d">{t('card.opening')}</p>}
         {card.error && <p className="wtb__no">{card.error}</p>}
 
         {detail && (
@@ -176,7 +177,7 @@ export function CardPane({
               <input
                 className="cardp__title"
                 value={title}
-                aria-label="Title"
+                aria-label={t('card.title')}
                 onChange={(event) => {
                   setTitle(event.target.value)
                   edited()
@@ -185,7 +186,7 @@ export function CardPane({
                 onKeyDown={(event) => committed(event) && event.currentTarget.blur()}
               />
 
-              <h2 className="cardp__h">Description</h2>
+              <h2 className="cardp__h">{t('card.description')}</h2>
               <CardDescription
                 body={body}
                 onChange={(next) => {
@@ -196,7 +197,7 @@ export function CardPane({
               />
               {saved && !dirty && (
                 <p className="cardp__saved" role="status">
-                  Saved
+                  {t('card.saved')}
                 </p>
               )}
 
@@ -255,7 +256,7 @@ export function CardPane({
 
               <div className="cardp__row">
                 <label className="cardp__due" data-near={near ?? 'none'}>
-                  <span className="fld__l">Due</span>
+                  <span className="fld__l">{t('card.due')}</span>
                   <input
                     type="date"
                     className="cardp__date"
@@ -270,7 +271,7 @@ export function CardPane({
                     <input
                       type="time"
                       className="cardp__date"
-                      aria-label="Due at"
+                      aria-label={t('card.dueAt')}
                       value={toTimeField(detail.card.dueAt, detail.card.dueTime)}
                       onChange={(event) =>
                         card.setDue(fromField(toField(detail.card.dueAt), event.target.value), event.target.value !== '')
@@ -281,11 +282,11 @@ export function CardPane({
                 </label>
                 {detail.card.dueAt !== null && (
                   <button className="conv__act" onClick={() => card.setDue(null)}>
-                    Clear
+                    {t('card.clear')}
                   </button>
                 )}
                 {money(detail.card.costUsd ?? 0) && (
-                  <span className="cardp__cost">{money(detail.card.costUsd ?? 0)} spent</span>
+                  <span className="cardp__cost">{t('card.spent', { amount: money(detail.card.costUsd ?? 0) ?? '' })}</span>
                 )}
               </div>
 
@@ -323,7 +324,7 @@ export function CardPane({
           stopLive={() =>
             project
               ? stopLiveWork(project.id, cardId, liveWork(detail?.sessions ?? []), closeNow)
-              : Promise.resolve('no project open')
+              : Promise.resolve(t('card.noProject'))
           }
           onAsk={setEnding}
           onProblem={setProblem}

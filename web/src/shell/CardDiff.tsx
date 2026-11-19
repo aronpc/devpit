@@ -1,5 +1,6 @@
 import { useState } from 'react'
 
+import { t } from '../i18n'
 import { ask, commands } from './live'
 import { DiffFiles } from './DiffFiles'
 import { notesOf, SHAPE, tally, type Note } from './diffNotes'
@@ -48,16 +49,16 @@ export function CardDiff({ cardId }: { cardId: string }): React.JSX.Element {
   return (
     <section className="cdiff">
       <div className="prefs__hrow">
-        <h2 className="cardp__h">Changes</h2>
+        <h2 className="cardp__h">{t('card.changes')}</h2>
         <button className="btn" disabled={busy} onClick={() => void look()}>
-          {raw === null ? 'Show what changed' : 'Read again'}
+          {raw === null ? t('card.showChanged') : t('card.readAgain')}
         </button>
       </div>
 
       {problem && <p className="wtb__no">{problem}</p>}
 
       {raw !== null && files.length === 0 && (
-        <p className="pref__d">Nothing has changed since this card started.</p>
+        <p className="pref__d">{t('card.nothingChanged')}</p>
       )}
 
       {raw && notes.length > 0 && <Tally notes={notes} />}
