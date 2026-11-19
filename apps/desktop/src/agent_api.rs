@@ -817,6 +817,7 @@ fn respond_in(
                     locale,
                     Path::new(&here.root_path),
                     &crate::project_agent::nudged(
+                        locale,
                         &text("prompt").unwrap_or_default(),
                         Path::new(&project.root_path),
                     ),
@@ -849,6 +850,7 @@ fn respond_in(
                     locale,
                     Path::new(&here.root_path),
                     &crate::project_agent::nudged(
+                        locale,
                         &text("prompt").unwrap_or_default(),
                         Path::new(&project.root_path),
                     ),

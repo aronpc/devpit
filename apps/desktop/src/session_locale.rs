@@ -31,7 +31,7 @@ impl SessionLocale {
     /// A locale held outright: a session already born in it, as the tests
     /// start theirs.
     #[cfg(test)]
-    pub(crate) fn of(locale: Locale) -> Self {
+    pub(crate) const fn of(locale: Locale) -> Self {
         Self(locale)
     }
 

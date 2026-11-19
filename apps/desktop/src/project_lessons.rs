@@ -289,6 +289,7 @@ fn close(app: &AppHandle, project_id: &str, card_id: &str) -> Result<(), String>
         root,
         name: &project.name,
         mcp_config: mcp.as_deref(),
+        locale: crate::session_locale::SessionLocale::capture(),
     };
     let prompt = asking(&source, &card.title, &comments, findings.as_ref());
     if propose_from(
