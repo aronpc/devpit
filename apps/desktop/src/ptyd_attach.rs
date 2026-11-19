@@ -31,7 +31,7 @@ enum Heard {
     Replay(Vec<u8>),
     Older(Vec<u8>),
     Folder(String),
-    /// The daemon refused the attach itself, and why: a pane it does not hold.
+    /// The daemon holds no such pane: the attach itself was refused.
     Refused(String),
     Ended,
 }
@@ -207,11 +207,13 @@ fn acknowledge(live: &Live, pane: u32, bytes: usize) -> std::io::Result<()> {
     )
 }
 
+/// What devpit-ptyd answers for a pane it does not hold.
+const NO_SUCH_PANE: &[u8] = b"no such pane";
+
 /// The socket's frames for `pane`, until it ends or the connection does. A
-/// refusal before anything of the pane's is the attach's own; a later one,
-/// of an input or a resize, ends it as it always did.
+/// pane the daemon does not hold is said; any other refusal, of an input or
+/// a resize, ends it quietly as it always did.
 fn drain(mut stream: UnixStream, pane: u32, heard: tokio::sync::mpsc::Sender<Heard>) {
-    let mut held = false;
     loop {
         let one = match frame::read(&mut stream) {
             Ok(Some(one)) if one.pane == pane => one,
@@ -223,16 +225,12 @@ fn drain(mut stream: UnixStream, pane: u32, heard: tokio::sync::mpsc::Sender<Hea
             Some(Kind::Replay) => Heard::Replay(one.bytes),
             Some(Kind::Older) => Heard::Older(one.bytes),
             Some(Kind::Cwd) => Heard::Folder(String::from_utf8_lossy(&one.bytes).into_owned()),
-            Some(Kind::Refused) if !held => {
+            Some(Kind::Refused) if one.bytes == NO_SUCH_PANE => {
                 Heard::Refused(String::from_utf8_lossy(&one.bytes).into_owned())
             }
             Some(Kind::Exited | Kind::Refused) => Heard::Ended,
-            _ => {
-                held = true;
-                continue;
-            }
+            _ => continue,
         };
-        held = true;
         let ended = matches!(passed, Heard::Ended | Heard::Refused(_));
         if heard.blocking_send(passed).is_err() || ended {
             return;

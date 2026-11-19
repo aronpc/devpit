@@ -36,20 +36,21 @@ fn an_attach_to_a_pane_the_daemon_does_not_hold_hears_why() {
     }
 }
 
-/// A refusal after the pane has spoken is of an input or a resize, not of
-/// the attach: it ends the attach as it always did, and is not said to be a
-/// terminal that is gone.
+/// A refusal of an input or a resize is not of the attach: it ends the
+/// attach as it always did, and is not said to be a terminal that is gone —
+/// even from a pane that has printed nothing yet.
 #[test]
-fn a_refusal_after_the_pane_has_spoken_is_a_plain_end() {
+fn a_refusal_of_an_input_is_a_plain_end() {
     let (mut daemon, window) = UnixStream::pair().expect("pair");
     let pane = 7;
     for one in [
-        Frame::new(pane, Kind::Replay, b"$ ".to_vec()),
         Frame::new(
             pane,
             Kind::Refused,
             b"the pane did not take the input".to_vec(),
         ),
+        // Heard, were the refusal let through: not an end.
+        Frame::new(pane, Kind::Output, b"$ ".to_vec()),
     ] {
         frame::write(&mut daemon, &one).expect("write");
     }
