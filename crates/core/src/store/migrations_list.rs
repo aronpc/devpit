@@ -839,7 +839,7 @@ ALTER TABLE card ADD COLUMN branch TEXT;
 -- is what marks a production host for the person and the orchestrator.
 CREATE TABLE host (
     id            TEXT PRIMARY KEY,
-    name          TEXT NOT NULL UNIQUE,
+    name          TEXT NOT NULL UNIQUE COLLATE NOCASE,
     target        TEXT NOT NULL,
     user          TEXT,
     port          INTEGER CHECK (port BETWEEN 1 AND 65535),

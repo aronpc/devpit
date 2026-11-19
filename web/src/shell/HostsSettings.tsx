@@ -25,14 +25,20 @@ const fieldsOf = (host: Host): Fields => ({
   environment: host.environment,
 })
 
-/* Empty optional fields are left out; a port that is not a number is sent as
-   zero, so the backend says what a port is. */
+/* A port that is not one, out of range included, is sent as zero: the
+   backend refuses it with what a port is. */
+const portOf = (text: string): number => {
+  const port = Number(text)
+  return Number.isInteger(port) && port >= 1 && port <= 65535 ? port : 0
+}
+
+/* Empty optional fields are left out. */
 const draftOf = (id: string | null, fields: Fields): HostDraft => ({
   id,
   name: fields.name,
   target: fields.target,
   user: fields.user.trim() || null,
-  port: fields.port.trim() ? (Number.isInteger(Number(fields.port)) ? Number(fields.port) : 0) : null,
+  port: fields.port.trim() ? portOf(fields.port) : null,
   identityFile: fields.identityFile.trim() || null,
   workRoot: fields.workRoot,
   environment: fields.environment,

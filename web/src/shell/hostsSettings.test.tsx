@@ -103,6 +103,17 @@ describe('Settings → Hosts', () => {
     expect((screen.getByLabelText('SSH target') as HTMLInputElement).value).toBe('a; b')
   })
 
+  it('sends a port out of range as one the backend refuses with its reason', async () => {
+    render(<HostsSettings />)
+    await screen.findByText('web prod')
+    type('Host name', 'odd')
+    type('SSH target', 'odd')
+    type('Port', '70000')
+    type('Work root', '/srv')
+    fireEvent.click(screen.getByRole('button', { name: 'Add host' }))
+    await waitFor(() => expect(save).toHaveBeenCalledWith(expect.objectContaining({ port: 0 })))
+  })
+
   it('edits a host in place', async () => {
     render(<HostsSettings />)
     fireEvent.click(await screen.findByRole('button', { name: 'Edit web prod' }))

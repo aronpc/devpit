@@ -119,6 +119,13 @@ fn a_target_that_is_not_an_alias_host_user_port_or_path_is_refused() {
         ),
         (
             HostDraft {
+                work_root: "/srv/$(touch x)".to_owned(),
+                ..draft()
+            },
+            "work root",
+        ),
+        (
+            HostDraft {
                 name: "  ".to_owned(),
                 ..draft()
             },
@@ -215,4 +222,30 @@ fn an_identity_file_is_kept_as_its_path_and_never_read() {
         !written.windows(marker.len()).any(|at| at == marker),
         "the key's contents reached the database"
     );
+}
+
+/// A label it cannot read is taken as the most careful one.
+#[test]
+fn an_environment_it_cannot_read_is_taken_as_production() {
+    assert_eq!(environment_of("prod"), HostEnvironment::Production);
+    assert_eq!(environment_of("dev"), HostEnvironment::Dev);
+}
+
+/// An edit names a profile that exists; it never makes one under that id.
+#[test]
+fn editing_a_profile_that_is_not_there_is_refused() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let store = store_in(&dir);
+
+    let refused = saved(
+        &store,
+        HostDraft {
+            id: Some("host_gone".to_owned()),
+            ..draft()
+        },
+    )
+    .expect_err("made one");
+
+    assert_eq!(refused.code, ErrorCode::NotFound);
+    assert!(listed(&store).expect("listed").hosts.is_empty());
 }

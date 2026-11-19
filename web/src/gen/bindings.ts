@@ -708,17 +708,17 @@ export const commands = {
 	 *  once.
 	 */
 	remindersSet: (on: boolean) => typedError<null, RpcError>(__TAURI_INVOKE("reminders_set", { on })),
+	/**
+	 *  `reminders.rearm` — the window came back to the front: a machine that
+	 *  slept may have passed a reminder, and the thread's clock slept with it.
+	 */
+	remindersRearm: () => __TAURI_INVOKE<void>("reminders_rearm"),
 	/**  `hosts.list` — the host profiles, by name. */
 	hostsList: () => typedError<Hosts, RpcError>(__TAURI_INVOKE("hosts_list")),
 	/**  `host.save` — adds a profile, or edits the one with its id. */
 	hostSave: (host: HostDraft) => typedError<Hosts, RpcError>(__TAURI_INVOKE("host_save", { host })),
 	/**  `host.remove` — forgets a profile. Nothing on the host is touched. */
 	hostRemove: (id: string) => typedError<Hosts, RpcError>(__TAURI_INVOKE("host_remove", { id })),
-	/**
-	 *  `reminders.rearm` — the window came back to the front: a machine that
-	 *  slept may have passed a reminder, and the thread's clock slept with it.
-	 */
-	remindersRearm: () => __TAURI_INVOKE<void>("reminders_rearm"),
 	/**  `assistant.mode` — whether this orchestrator's Assistant mode is on. */
 	assistantMode: (projectId: string) => typedError<AssistantMode, RpcError>(__TAURI_INVOKE("assistant_mode", { projectId })),
 	/**

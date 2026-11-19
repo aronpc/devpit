@@ -38,11 +38,18 @@ pub(crate) fn refusal(draft: &HostDraft) -> Option<String> {
             return Some("the identity file is the path of a key on this computer, starting with / or ~/; devpit never reads it".to_owned());
         }
     }
-    if !path(draft.work_root.trim(), true) {
-        return Some("the work root is a folder on the host, starting with / or ~".to_owned());
+    let root = draft.work_root.trim();
+    if !path(root, true) || root.chars().any(|ch| SHELL.contains(ch)) {
+        return Some(
+            "the work root is a folder on the host, starting with / or ~, with no shell characters"
+                .to_owned(),
+        );
     }
     None
 }
+
+/// What a remote shell would read as more than a path.
+const SHELL: &str = ";&|<>$`'\"\\(){}[]*?!#";
 
 /// A value ssh takes as one word: no flag, no shell.
 fn word(value: &str, most: usize, allowed: impl Fn(char) -> bool) -> bool {
@@ -69,7 +76,9 @@ fn environment_of(word: &str) -> HostEnvironment {
     match word {
         "production" => HostEnvironment::Production,
         "staging" => HostEnvironment::Staging,
-        _ => HostEnvironment::Dev,
+        "dev" => HostEnvironment::Dev,
+        // A label it cannot read is taken as the most careful one.
+        _ => HostEnvironment::Production,
     }
 }
 
@@ -105,8 +114,16 @@ pub(crate) fn saved(store: &Store, draft: HostDraft) -> Result<Hosts, RpcError> 
         return Err(RpcError::new(ErrorCode::Invalid, why));
     }
     let name = draft.name.trim().to_owned();
-    let taken = store
-        .hosts()?
+    let kept_now = store.hosts()?;
+    if let Some(id) = &draft.id {
+        if !kept_now.iter().any(|one| &one.id == id) {
+            return Err(RpcError::new(
+                ErrorCode::NotFound,
+                "that host is no longer there",
+            ));
+        }
+    }
+    let taken = kept_now
         .into_iter()
         .any(|one| one.name.eq_ignore_ascii_case(&name) && Some(&one.id) != draft.id.as_ref());
     if taken {
