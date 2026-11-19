@@ -3,6 +3,7 @@ import { useRef, useState } from 'react'
 import type { IslandAsked } from '../gen/bindings'
 import { keyOn, toggled, useFocused, type Chosen } from './choices'
 import { committed } from './typing'
+import { t } from '../i18n'
 
 /*
  * A question the agent put to the person, as buttons: 1-9 picks, the arrows
@@ -52,7 +53,7 @@ export function Choosing({
     <section className="asking" ref={card} tabIndex={-1} onKeyDown={onKeyDown} aria-label={one.question}>
       <div className="asking__t">
         {one.header && <span className="asking__h">{one.header}</span>}
-        {asked.length > 1 && <span className="asking__step">{`${chosen.length + 1} of ${asked.length}`}</span>}
+        {asked.length > 1 && <span className="asking__step">{t('workspace.choosing.step', { n: chosen.length + 1, total: asked.length })}</span>}
       </div>
       <p className="asking__q">{one.question}</p>
       <div className="asking__opts">
@@ -72,7 +73,7 @@ export function Choosing({
       <input
         className="asking__own"
         value={own}
-        placeholder="Or answer in your own words, then Enter"
+        placeholder={t('workspace.choosing.own')}
         onChange={(event) => setOwn(event.target.value)}
         onKeyDown={(event) => {
           if (committed(event) && own.trim()) answer([own.trim()])
@@ -80,11 +81,11 @@ export function Choosing({
       />
       <div className="asking__row">
         <button className="btn" onClick={onRefuse}>
-          Refuse
+          {t('workspace.choosing.refuse')}
         </button>
         {one.multi && (
           <button className="btn btn--go" disabled={ticked.length === 0} onClick={() => answer(ticked.map((n) => one.options[n]!))}>
-            Confirm
+            {t('workspace.choosing.confirm')}
           </button>
         )}
       </div>

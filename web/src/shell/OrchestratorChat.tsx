@@ -1,5 +1,6 @@
 import { useState } from 'react'
 
+import { t } from '../i18n'
 import type { LiveSession } from '../gen/bindings'
 import { ComebackBriefing } from './ComebackBriefing'
 import { refreshSessions, useLiveSessions } from './liveStatus'
@@ -23,9 +24,9 @@ export function SessionsChip({ profileId }: { profileId: string }): React.JSX.El
   const live = useLiveSessions(profileId)
   const waiting = live.filter((one) => one.waiting).length
   return (
-    <button className="pcorner__sess" onClick={() => window.dispatchEvent(new CustomEvent(SHOW_PANEL, { detail: 'sessions' }))} title="The sessions this orchestrator works with">
-      {live.length} {live.length === 1 ? 'session' : 'sessions'}
-      {waiting > 0 && <b> · {waiting} waiting</b>}
+    <button className="pcorner__sess" onClick={() => window.dispatchEvent(new CustomEvent(SHOW_PANEL, { detail: 'sessions' }))} title={t('workspace.orchestratorChat.sessionsTitle')}>
+      {t('workspace.orchestratorChat.sessions', { count: live.length })}
+      {waiting > 0 && <b>{t('workspace.orchestratorChat.waiting', { count: waiting })}</b>}
     </button>
   )
 }

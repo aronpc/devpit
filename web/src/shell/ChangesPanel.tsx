@@ -14,6 +14,7 @@ import { Skeleton } from './Skeleton'
 import { abandoned, composing } from './typing'
 import { useShell } from './useShell'
 import { changed, type UseTree } from './useTree'
+import { t } from '../i18n'
 
 /*
  * What has changed, and what a commit would take.
@@ -110,11 +111,11 @@ export function Changes({ tree }: { tree: UseTree }): React.JSX.Element {
         actions={
           <>
             {!staged && (
-              <button className="gitrow__act" disabled={busy} onClick={() => setDiscarding(rows)} title={group === 'untracked' ? 'Delete all' : 'Discard all'} aria-label={`Discard everything ${name}`}>
+              <button className="gitrow__act" disabled={busy} onClick={() => setDiscarding(rows)} title={group === 'untracked' ? t('workspace.changes.deleteAll') : t('workspace.changes.discardAll')} aria-label={t('workspace.changes.discardAria', { group: name })}>
                 {group === 'untracked' ? <Trash /> : <Undo />}
               </button>
             )}
-            <button className="gitrow__act" disabled={busy} onClick={() => (staged ? unstage(paths) : stage(paths))} title={staged ? 'Unstage all' : 'Stage all'} aria-label={`${staged ? 'Unstage' : 'Stage'} everything ${name}`}>
+            <button className="gitrow__act" disabled={busy} onClick={() => (staged ? unstage(paths) : stage(paths))} title={staged ? t('workspace.changes.unstageAll') : t('workspace.changes.stageAll')} aria-label={t(staged ? 'workspace.changes.unstageAria' : 'workspace.changes.stageAria', { group: name })}>
               {staged ? <Minus /> : <Plus />}
             </button>
           </>
@@ -129,28 +130,28 @@ export function Changes({ tree }: { tree: UseTree }): React.JSX.Element {
     <>
       <div className="git__head">
         <div className="git__row">
-          <span className="git__branch">{here?.branch ?? 'Changes'}</span>
+          <span className="git__branch">{here?.branch ?? t('workspace.changes.branchFallback')}</span>
           <span className="git__up">
             <span className="add">+{counted(tree.totals.added)}</span>
             <span className="del">&minus;{counted(tree.totals.removed)}</span>
           </span>
-          <button className="dbtn" aria-pressed={finding !== null} onClick={() => setFinding((was) => (was === null ? '' : null))} title="Filter files" aria-label="Filter files">
+          <button className="dbtn" aria-pressed={finding !== null} onClick={() => setFinding((was) => (was === null ? '' : null))} title={t('workspace.changes.filter')} aria-label={t('workspace.changes.filter')}>
             <Search />
           </button>
-          <button className="dbtn" onClick={() => turn(view === 'tree' ? 'list' : 'tree')} title={view === 'tree' ? 'View as list' : 'View as tree'} aria-label={view === 'tree' ? 'View as list' : 'View as tree'}>
+          <button className="dbtn" onClick={() => turn(view === 'tree' ? 'list' : 'tree')} title={t(view === 'tree' ? 'workspace.changes.viewList' : 'workspace.changes.viewTree')} aria-label={t(view === 'tree' ? 'workspace.changes.viewList' : 'workspace.changes.viewTree')}>
             {view === 'tree' ? <List /> : <Tree />}
           </button>
         </div>
         {project && <RemoteRow projectId={project.id} here={here} onDone={reloadProjects} />}
         {finding !== null && (
-          <input className="git__find" autoFocus placeholder="Filter files" value={finding} onChange={(event) => setFinding(event.target.value)} onKeyDown={(event) => abandoned(event) && setFinding(null)} aria-label="Filter files by path" />
+          <input className="git__find" autoFocus placeholder={t('workspace.changes.filter')} value={finding} onChange={(event) => setFinding(event.target.value)} onKeyDown={(event) => abandoned(event) && setFinding(null)} aria-label={t('workspace.changes.filterByPath')} />
         )}
 
         {/* At the top: the message used to sit under a list forty rows long,
             and was off the screen by the time you had read what changed. */}
         <textarea
           className="git__msg"
-          placeholder={`Message (${keysLabel('commit')} to commit)`}
+          placeholder={t('workspace.changes.messagePlaceholder', { keys: keysLabel('commit') })}
           value={message}
           onChange={(event) => setMessage(event.target.value)}
           onKeyDown={(event) => {
@@ -159,9 +160,9 @@ export function Changes({ tree }: { tree: UseTree }): React.JSX.Element {
               go()
             }
           }}
-          aria-label="Commit message"
+          aria-label={t('workspace.changes.messageLabel')}
         />
-        {!message && tree.changes.length > 0 && <button className="btn git__go" onClick={draft}>Draft a message</button>}
+        {!message && tree.changes.length > 0 && <button className="btn git__go" onClick={draft}>{t('workspace.changes.draft')}</button>}
         {/* One button, not three. What it says is decided in `primary.ts`. */}
         <button className="btn btn--go git__go" disabled={busy || act1.disabled} title={act1.why ?? undefined} onClick={go}>
           {act1.label}
@@ -174,14 +175,14 @@ export function Changes({ tree }: { tree: UseTree }): React.JSX.Element {
         {tree.loading && tree.changes.length === 0 && <Skeleton />}
         {!tree.loading && tree.changes.length === 0 && (
           <div className="exempty">
-            <span className="exempty__t">Nothing changed.</span>
+            <span className="exempty__t">{t('workspace.changes.nothingChanged')}</span>
             {said && <span className="exempty__d">{said}</span>}
           </div>
         )}
-        {wanted && shown.length === 0 && <div className="pempty"><span className="pempty__d">No changed file matches.</span></div>}
-        {section('staged', 'Staged', groups.staged)}
-        {section('changed', 'Changed', groups.changed)}
-        {section('untracked', 'Untracked', groups.untracked)}
+        {wanted && shown.length === 0 && <div className="pempty"><span className="pempty__d">{t('workspace.changes.noMatch')}</span></div>}
+        {section('staged', t('workspace.changes.staged'), groups.staged)}
+        {section('changed', t('workspace.changes.changed'), groups.changed)}
+        {section('untracked', t('workspace.changes.untracked'), groups.untracked)}
       </div>
 
       {discarding && (

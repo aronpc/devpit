@@ -5,6 +5,7 @@ import { ask, commands } from './live'
 import type { Draft } from './profiles'
 import { ACCOUNT, hasAccountFields, valueOf, withValue } from './profiles'
 import { modelsOf, modelsText } from './models'
+import { t } from '../i18n'
 
 /*
  * What makes a profile another account, another endpoint, or another set of
@@ -17,11 +18,11 @@ import { modelsOf, modelsText } from './models'
 
 /* What the directory says about signing in, asked for what is typed rather
    than what was saved. Unknown says nothing: on macOS the Keychain holds it. */
-const SAID: Record<Credentials, string> = {
-  saved: ' Signed in.',
-  missing: ' No sign-in here yet — open a terminal with this profile and run /login.',
-  expired: ' Its sign-in has expired — open a terminal with this profile and run /login.',
-  unknown: '',
+const SAID: Record<Credentials, string | null> = {
+  saved: 'workspace.accountFields.saved',
+  missing: 'workspace.accountFields.missing',
+  expired: 'workspace.accountFields.expired',
+  unknown: null,
 }
 
 function useCredentials(dir: string, asking: boolean): Credentials {
@@ -59,53 +60,53 @@ export function AccountFields({
       {hasAccountFields(draft.base) && (
         <>
           <label className="fld">
-            <span className="fld__l">Config directory</span>
+            <span className="fld__l">{t('workspace.accountFields.config')}</span>
             <input
               className="fld__b"
               value={value(ACCOUNT.config)}
               spellCheck={false}
-              aria-label="Config directory"
-              placeholder="~/.claude-work"
+              aria-label={t('workspace.accountFields.config')}
+              placeholder="~/.claude-work" // ui-text: ok an example path
               onChange={(event) => put(ACCOUNT.config, event.target.value)}
             />
             <span className="fld__h">
-              Its own sign-in, history, settings, skills and MCP servers. Empty uses ~/.claude.
-              {SAID[credentials]}
+              {t('workspace.accountFields.configHint')}
+              {SAID[credentials] && ` ${t(SAID[credentials])}`}
             </span>
           </label>
 
           <div className="fld__two">
             <label className="fld">
-              <span className="fld__l">Endpoint</span>
+              <span className="fld__l">{t('workspace.accountFields.endpoint')}</span>
               <input
                 className="fld__b"
                 value={value(ACCOUNT.url)}
                 spellCheck={false}
-                aria-label="Endpoint"
-                placeholder="https://api.anthropic.com"
+                aria-label={t('workspace.accountFields.endpoint')}
+                placeholder="https://api.anthropic.com" // ui-text: ok an example address
                 onChange={(event) => put(ACCOUNT.url, event.target.value)}
               />
             </label>
             <label className="fld">
-              <span className="fld__l">Token</span>
+              <span className="fld__l">{t('workspace.accountFields.token')}</span>
               <span className="fld__b fld__secret">
                 <input
                   type={reveal ? 'text' : 'password'}
                   value={value(ACCOUNT.token)}
                   spellCheck={false}
                   autoComplete="off"
-                  aria-label="Token"
-                  placeholder="Only for another endpoint"
+                  aria-label={t('workspace.accountFields.token')}
+                  placeholder={t('workspace.accountFields.tokenPlaceholder')}
                   onChange={(event) => put(ACCOUNT.token, event.target.value)}
                 />
                 {value(ACCOUNT.token) && (
                   <button
                     type="button"
                     className="fld__eye"
-                    aria-label={reveal ? 'Hide token' : 'Show token'}
+                    aria-label={reveal ? t('workspace.accountFields.hideToken') : t('workspace.accountFields.showToken')}
                     onClick={() => setReveal((was) => !was)}
                   >
-                    {reveal ? 'Hide' : 'Show'}
+                    {reveal ? t('workspace.accountFields.hide') : t('workspace.accountFields.show')}
                   </button>
                 )}
               </span>
@@ -115,21 +116,20 @@ export function AccountFields({
       )}
 
       <label className="fld">
-        <span className="fld__l">Models</span>
+        <span className="fld__l">{t('workspace.accountFields.models')}</span>
         <input
           className="fld__b"
           value={models}
           spellCheck={false}
-          aria-label="Models"
-          placeholder="glm-5.3[1m], glm-4.7"
+          aria-label={t('workspace.accountFields.models')}
+          placeholder="glm-5.3[1m], glm-4.7" // ui-text: ok example model names
           onChange={(event) => {
             setModels(event.target.value)
             set({ models: modelsOf(event.target.value) })
           }}
         />
         <span className="fld__h">
-          Offered in the chat instead of Opus, Sonnet and Haiku, after the account&rsquo;s default.
-          Empty keeps those.
+          {t('workspace.accountFields.modelsHint')}
         </span>
       </label>
     </>

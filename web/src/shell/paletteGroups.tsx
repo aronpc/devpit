@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 
 import type { Card } from '../gen/bindings'
+import { t } from '../i18n'
 import { CARD, DOC } from './paletteIcons'
 import { ranked } from './search'
 import type { PaneName } from './paneList'
@@ -48,7 +49,7 @@ export function useGroups({
       Cards: ranked(cards, query, (card) => card.title).map((card) => ({
         key: `card:${card.id}`,
         name: card.title,
-        meta: 'card',
+        meta: t('workspace.palette.card'),
         icon: CARD,
         go: () => show('board'),
       })),

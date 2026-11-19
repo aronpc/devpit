@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 
+import { t } from '../i18n'
 import type { Conversations, LivePane, LiveSession, RemoteDraft, RemoteIn, RemoteOut, RemoteTalks } from '../gen/bindings'
 import { RemoteTalk } from './RemoteTalk'
 import type { Talking } from './talk'
@@ -11,7 +12,7 @@ import type { Talking } from './talk'
  */
 
 const standing = (session: LiveSession): string =>
-  session.waiting ? 'waiting on you' : session.draft ? 'a draft waits' : session.status === 'busy' ? 'working' : 'idle'
+  t(session.waiting ? 'workspace.remoteChats.waiting' : session.draft ? 'workspace.remoteChats.draft' : session.status === 'busy' ? 'workspace.remoteChats.working' : 'workspace.remoteChats.idle')
 
 export function RemoteChats({
   project,
@@ -57,7 +58,7 @@ export function RemoteChats({
 
   return (
     <div className="rm__list">
-      {!talks && <p className="rm__said">Reading who there is to talk to…</p>}
+      {!talks && <p className="rm__said">{t('workspace.remoteChats.reading')}</p>}
       {talks?.orchestrators.map((one) => (
         <button
           key={one.project}
@@ -65,7 +66,7 @@ export function RemoteChats({
           onClick={() => setTalking({ kind: 'chat', project: one.project, conversation: one.conversation, title: one.name, orchestrator: one.profile })}
         >
           <span>{one.name}</span>
-          <span className="rm__dim">orchestrator</span>
+          <span className="rm__dim">{t('workspace.remoteChats.orchestrator')}</span>
         </button>
       ))}
       {talks?.sessions.map(({ profile, session }) => (
@@ -88,14 +89,14 @@ export function RemoteChats({
           <button
             key={one.id}
             className="rm__row"
-            onClick={() => setTalking({ kind: 'chat', project, conversation: one.id, title: one.title || 'Untitled', orchestrator: null })}
+            onClick={() => setTalking({ kind: 'chat', project, conversation: one.id, title: one.title || t('workspace.remoteChats.untitled'), orchestrator: null })}
           >
-            <span>{one.title || 'Untitled'}</span>
-            <span className="rm__dim">chat</span>
+            <span>{one.title || t('workspace.remoteChats.untitled')}</span>
+            <span className="rm__dim">{t('workspace.remoteChats.chat')}</span>
           </button>
         ))}
       {talks && talks.orchestrators.length === 0 && talks.sessions.length === 0 && !chats?.conversations.length && (
-        <p className="rm__said">No orchestrator, session or chat to talk to yet.</p>
+        <p className="rm__said">{t('workspace.remoteChats.nobody')}</p>
       )}
     </div>
   )

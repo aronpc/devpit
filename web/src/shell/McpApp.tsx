@@ -5,6 +5,8 @@ import { ask, commands } from './live'
 import { went } from './problems'
 import { answer, toolInput, toolResult, type Bridge, type Rpc } from './mcpAppBridge'
 import { AppsScopeContext } from './mcpApps'
+import { t } from '../i18n'
+import { tRich } from '../i18n/rich'
 
 /*
  * The page an MCP tool came with, under the answer that called it.
@@ -110,27 +112,27 @@ export function McpApp({ called, input, output, isError }: { called: string; inp
   }, [scope, page, called, input])
 
   if (failed) return <p className="mcpapp__note">{failed}</p>
-  if (!page) return <p className="mcpapp__note">Opening the page {called.split('__').pop()} came with…</p>
+  if (!page) return <p className="mcpapp__note">{t('workspace.mcpApp.opening', { tool: called.split('__').pop() })}</p>
 
   return (
     <div className="mcpapp" data-bordered={page.bordered ? 'true' : undefined}>
       <iframe
         ref={frame}
         className="mcpapp__frame"
-        title={`${called.split('__').pop()} — from ${called.split('__')[1] ?? 'an MCP server'}`}
+        title={t('workspace.mcpApp.frame', { tool: called.split('__').pop(), server: called.split('__')[1] ?? t('workspace.mcpApp.server') })}
         src={convertFileSrc(page.id, 'mcpapp')}
         sandbox="allow-scripts allow-forms"
         referrerPolicy="no-referrer"
         style={{ height }}
       />
       {asking && (
-        <div className="mcpapp__ask" role="alertdialog" aria-label="The page wants to run a tool">
+        <div className="mcpapp__ask" role="alertdialog" aria-label={t('workspace.mcpApp.askLabel')}>
           <span>
-            The page wants to run <code>{asking.name}</code>
+            {tRich('workspace.mcpApp.ask', { name: <code>{asking.name}</code> })}
           </span>
-          <button className="btn" onClick={() => asking.go(false, false)}>Deny</button>
-          <button className="btn" onClick={() => asking.go(true, false)}>Allow once</button>
-          <button className="btn btn--go" onClick={() => asking.go(true, true)}>Always here</button>
+          <button className="btn" onClick={() => asking.go(false, false)}>{t('workspace.mcpApp.deny')}</button>
+          <button className="btn" onClick={() => asking.go(true, false)}>{t('workspace.mcpApp.once')}</button>
+          <button className="btn btn--go" onClick={() => asking.go(true, true)}>{t('workspace.mcpApp.always')}</button>
         </div>
       )}
     </div>

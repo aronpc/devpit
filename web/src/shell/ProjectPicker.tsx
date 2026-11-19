@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-
+import { t } from '../i18n'
 import { useKeys, useShortcut } from './useShortcut'
 import { useShell } from './useShell'
 import { abandoned } from './typing'
@@ -66,14 +66,14 @@ export function ProjectPicker({ onAdd }: { onAdd: () => void }): React.JSX.Eleme
         className="pick"
         aria-haspopup="true"
         aria-expanded={open}
-        title={`Switch project (${keys})`}
+        title={t('workspace.projectPicker.switch', { keys })}
         onClick={(event) => {
           event.stopPropagation()
           setQuery('')
           setOpen((was) => !was)
         }}
       >
-        <span className="pick__name">{project?.name ?? 'No project'}</span>
+        <span className="pick__name">{project?.name ?? t('workspace.projectPicker.noProject')}</span>
         <span className="pick__chev">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="m8 9 4-4 4 4M8 15l4 4 4-4" />
@@ -91,13 +91,13 @@ export function ProjectPicker({ onAdd }: { onAdd: () => void }): React.JSX.Eleme
               type="text"
               autoComplete="off"
               spellCheck={false}
-              placeholder="Find a project"
+              placeholder={t('workspace.projectPicker.find')}
               value={query}
               onChange={(event) => setQuery(event.target.value)}
             />
           </div>
 
-          {listed.length > 0 && <div className="pickpop__g">Projects</div>}
+          {listed.length > 0 && <div className="pickpop__g">{t('workspace.projectPicker.projects')}</div>}
           {listed.map((row) => (
             <button
               key={row.id}
@@ -118,13 +118,13 @@ export function ProjectPicker({ onAdd }: { onAdd: () => void }): React.JSX.Eleme
                   dropping it out would read as never having been added. */}
               <span className="prow__live" data-live={row.unreadable ? 1 : row.worktrees.length}>
                 <span className="prow__dot" />
-                {row.unreadable ? 'unreadable' : `${row.worktrees.length} worktree${row.worktrees.length === 1 ? '' : 's'}`}
+                {row.unreadable ? t('workspace.projectPicker.unreadable') : t('workspace.projects.worktrees', { count: row.worktrees.length })}
               </span>
             </button>
           ))}
           {projectsError && <div className="pickpop__none">{projectsError}</div>}
           {!projectsError && listed.length === 0 && (
-            <div className="pickpop__none">No project by that name.</div>
+            <div className="pickpop__none">{t('workspace.projectPicker.noMatch')}</div>
           )}
 
           <div className="pickpop__sep" />
@@ -141,7 +141,7 @@ export function ProjectPicker({ onAdd }: { onAdd: () => void }): React.JSX.Eleme
                 <path d="M12 5v14M5 12h14" />
               </svg>
             </span>
-            <span className="newmenu__label">Add project&hellip;</span>
+            <span className="newmenu__label">{t('workspace.projectPicker.add')}</span>
           </button>
         </div>
       )}

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 
 import type { Briefing } from '../gen/bindings'
+import { t } from '../i18n'
 import { onCameBack } from './cameBack'
 import { offsetNow } from './channelRules'
 import { ask, commands } from './live'
@@ -49,14 +50,14 @@ export function ComebackBriefing({ projectId }: { projectId: string }): React.JS
 
   if (!briefing) return null
   return (
-    <div className="pref comeback" role="status" aria-label="While you were away">
+    <div className="pref comeback" role="status" aria-label={t('workspace.comeback.title')}>
       <span className="pref__body">
-        <span className="pref__t">While you were away</span>
+        <span className="pref__t">{t('workspace.comeback.title')}</span>
         {briefing.lines.map((line) => (
           <span key={line} className="pref__d">{line}</span>
         ))}
       </span>
-      <button className="btn btn--sm" onClick={() => setBriefing(null)}>Dismiss</button>
+      <button className="btn btn--sm" onClick={() => setBriefing(null)}>{t('workspace.comeback.dismiss')}</button>
     </div>
   )
 }

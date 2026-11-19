@@ -1,3 +1,4 @@
+import { t } from '../i18n'
 import type { ShortcutId } from './shortcuts'
 
 /*
@@ -35,16 +36,16 @@ export interface Entry {
 }
 
 export const FILE_MENU: readonly Entry[] = [
-  { label: 'Open', key: '↵', act: 'open' },
+  { get label() { return t('workspace.menu.file.open') }, key: '↵', act: 'open' },
   { rule: true },
-  { label: 'New file…', act: 'newFile' },
-  { label: 'New folder…', act: 'newFolder' },
+  { get label() { return t('workspace.menu.file.newFile') }, act: 'newFile' },
+  { get label() { return t('workspace.menu.file.newFolder') }, act: 'newFolder' },
   { rule: true },
-  { label: 'Copy path', act: 'copyPath' },
-  { label: 'Reveal in the finder', act: 'reveal' },
+  { get label() { return t('workspace.menu.file.copyPath') }, act: 'copyPath' },
+  { get label() { return t('workspace.menu.file.reveal') }, act: 'reveal' },
   { rule: true },
-  { label: 'Rename…', shortcut: 'rename', act: 'rename' },
-  { label: 'Delete', act: 'delete', bad: true },
+  { get label() { return t('workspace.menu.file.rename') }, shortcut: 'rename', act: 'rename' },
+  { get label() { return t('workspace.menu.file.delete') }, act: 'delete', bad: true },
 ]
 
 /** Whether every entry either draws a rule or does something. */

@@ -1,6 +1,11 @@
 import { useState } from 'react'
 
+import { t } from '../i18n'
+import { tRich } from '../i18n/rich'
 import { useShell } from './useShell'
+
+/* Where a project's devpit workspace lives; a path, so it is not translated. */
+const WORKSPACES = '~/.devpit/projects'
 
 /*
  * "Remove" and "delete" are the same word to most people, and only one of them
@@ -29,10 +34,9 @@ export function RemoveProject({
       onClick={(event) => event.target === event.currentTarget && onClose()}
     >
       <div className="ask__box" role="dialog" aria-modal="true" aria-labelledby="askT">
-        <h2 className="ask__t" id="askT">Remove &ldquo;{name}&rdquo;?</h2>
+        <h2 className="ask__t" id="askT">{t('workspace.removeProject.title', { name })}</h2>
         <p className="ask__d">
-          devpit stops listing this project. <b>The folder stays on disk</b> &mdash; your code,
-          your git history and your worktrees are not touched.
+          {tRich('workspace.removeProject.said', { stays: <b>{t('workspace.removeProject.stays')}</b> })}
         </p>
 
         <div className="ask__warn" hidden={live === 0}>
@@ -41,8 +45,7 @@ export function RemoveProject({
             <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" />
           </svg>
           <span>
-            {live} worktree{live === 1 ? '' : 's'} in it. Removing leaves{' '}
-            {live === 1 ? 'it' : 'them'} on disk.
+            {t('workspace.removeProject.live', { count: live })}
           </span>
         </div>
 
@@ -58,19 +61,17 @@ export function RemoveProject({
             </svg>
           </span>
           <span>
-            <span className="ask__ot">Also delete this project&rsquo;s devpit workspace</span>
+            <span className="ask__ot">{t('workspace.removeProject.wipe')}</span>
             <span className="ask__od">
-              The board, its cards, its notes and its saved conversations, under{' '}
-              <code>~/.devpit/projects</code>. Your code is still not touched. This cannot be
-              undone.
+              {tRich('workspace.removeProject.wipeSaid', { path: <code>{WORKSPACES}</code> })}
             </span>
           </span>
         </button>
 
         <div className="ask__row">
-          <button className="btn" onClick={onClose}>Cancel</button>
+          <button className="btn" onClick={onClose}>{t('workspace.removeProject.cancel')}</button>
           <button className="btn btn--danger" onClick={() => onConfirm(wipe)}>
-            {wipe ? 'Remove and delete' : 'Remove'}
+            {wipe ? t('workspace.removeProject.removeDelete') : t('workspace.removeProject.remove')}
           </button>
         </div>
       </div>

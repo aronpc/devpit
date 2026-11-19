@@ -8,6 +8,7 @@ import { PluginChip } from './PluginChip'
 import { abandoned, committed } from './typing'
 import { useShellPick } from './shellStore'
 import { useKeys, useShortcut } from './useShortcut'
+import { t } from '../i18n'
 
 /*
  * The strip under a terminal while an agent runs in it.
@@ -83,7 +84,7 @@ export function AgentBar({
             className="abar__field"
             value={text}
             rows={Math.min(10, Math.max(3, text.split('\n').length))}
-            placeholder={`Message ${agent} — Enter sends, Shift+Enter is a new line, Esc closes`}
+            placeholder={t('workspace.agentBar.placeholder', { agent })}
             onChange={(event) => setText(event.target.value)}
             onKeyDown={(event) => {
               if (abandoned(event)) {
@@ -118,11 +119,11 @@ export function AgentBar({
         )}
         <span className="abar__gap" />
         {agentId === 'claude' && <PluginChip />}
-        <button className="abar__b" onClick={toggleFiles} title="The project's files">
-          <Folder size={14} /> Files
+        <button className="abar__b" onClick={toggleFiles} title={t('workspace.agentBar.filesTitle')}>
+          <Folder size={14} /> {t('workspace.agentBar.files')}
         </button>
-        <button className="abar__b" data-on={composing ? 'true' : undefined} onClick={() => setComposing(!composing)} title={`Write the next message in an editor (${keys('compose')})`}>
-          <Pencil size={14} /> Compose
+        <button className="abar__b" data-on={composing ? 'true' : undefined} onClick={() => setComposing(!composing)} title={t('workspace.agentBar.composeTitle', { keys: keys('compose') })}>
+          <Pencil size={14} /> {t('workspace.agentBar.compose')}
         </button>
       </div>
     </div>

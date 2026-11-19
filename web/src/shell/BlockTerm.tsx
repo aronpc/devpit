@@ -13,6 +13,7 @@ import { useFollow } from './useFollow'
 import { usePaneBlocks } from './usePaneBlocks'
 import { useShellPick } from './shellStore'
 import { matches } from './shortcuts'
+import { t } from '../i18n'
 
 /*
  * A terminal as blocks, the way Warp draws one.
@@ -170,7 +171,7 @@ export function BlockTerm({
           empty list above a build was half the pane saying nothing. */}
       {(mode === 'idle' || (mode === 'running' && done.length > 0)) && (
         <div className="bterm__list" ref={list} tabIndex={-1}>
-          {done.length === 0 && <div className="bterm__empty">Commands you run here show up as blocks.</div>}
+          {done.length === 0 && <div className="bterm__empty">{t('workspace.blockTerm.empty')}</div>}
           {done.map((block) => (
             <BlockCard
               key={block.id}

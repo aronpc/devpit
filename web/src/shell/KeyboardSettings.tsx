@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useState } from 'react'
 
+import { t } from '../i18n'
 import { Keys } from './CheatSheet'
 import { useRebound } from './rebound'
 import {
@@ -37,9 +38,9 @@ function shortcutsMatching(query: string): readonly Shortcut[] {
    surprise worth a line, and when it acts. */
 function noteOf(one: Shortcut): string | null {
   const when = whenOf(one)
-  if (one.fixed) return ['Built in.', when].filter(Boolean).join(' ')
+  if (one.fixed) return [t('workspace.keyboard.builtIn'), when].filter(Boolean).join(' ')
   if (one.scope !== 'global') return when
-  return firesInTerminal(one) ? 'Also inside a terminal.' : 'Inside a terminal the key goes to the program.'
+  return firesInTerminal(one) ? t('workspace.keyboard.inTerminal') : t('workspace.keyboard.toProgram')
 }
 
 export function KeyboardSettings({ onGeneral }: { onGeneral: () => void }): React.JSX.Element {
@@ -78,7 +79,7 @@ export function KeyboardSettings({ onGeneral }: { onGeneral: () => void }): Reac
   return (
     <>
       <div className="prefs__hrow">
-        <h1 className="prefs__h">Keyboard</h1>
+        <h1 className="prefs__h">{t('prefs.nav.keyboard')}</h1>
         {SHORTCUT_LIST.some((one) => isRebound(one.id)) && (
           <button
             className="btn"
@@ -88,17 +89,16 @@ export function KeyboardSettings({ onGeneral }: { onGeneral: () => void }): Reac
               setRecording(null)
             }}
           >
-            Reset all
+            {t('workspace.keyboard.resetAll')}
           </button>
         )}
       </div>
       <p className="acc__note">
-        {sheet.join(' or ')} shows them all at a glance. A key you record works at once; one with no Ctrl, Alt or ⌘ never
-        fires while you type.
+        {t('workspace.keyboard.note', { keys: sheet.join(t('workspace.keyboard.or')) })}
       </p>
       <label className="kmap__find">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
-        <input className="prefs__q" value={query} placeholder="Search shortcuts or keys" spellCheck={false} aria-label="Search shortcuts" onChange={(event) => setQuery(event.target.value)} />
+        <input className="prefs__q" value={query} placeholder={t('workspace.keyboard.searchPlaceholder')} spellCheck={false} aria-label={t('workspace.keyboard.searchLabel')} onChange={(event) => setQuery(event.target.value)} />
       </label>
 
       {SCOPES.map(({ scope, title }) => {
@@ -118,7 +118,7 @@ export function KeyboardSettings({ onGeneral }: { onGeneral: () => void }): Reac
                       <span className="kmap__t">{one.does}</span>
                       {note && <span className="kmap__d" data-refused={why ? 'true' : undefined}>{note}</span>}
                     </span>
-                    {live ? <span className="kmap__wait">Press the keys — Esc to stop</span> : <Keys labels={keysLabels(one.id)} />}
+                    {live ? <span className="kmap__wait">{t('workspace.keyboard.press')}</span> : <Keys labels={keysLabels(one.id)} />}
                     {!one.fixed && (
                       <span className="prefs__acts">
                         <button
@@ -128,11 +128,11 @@ export function KeyboardSettings({ onGeneral }: { onGeneral: () => void }): Reac
                             setRecording(live ? null : one.id)
                           }}
                         >
-                          {live ? 'Stop' : 'Record'}
+                          {live ? t('workspace.keyboard.stop') : t('workspace.keyboard.record')}
                         </button>
                         {isRebound(one.id) && !live && (
                           <button className="btn" onClick={() => reset(one.id)}>
-                            Reset
+                            {t('workspace.keyboard.reset')}
                           </button>
                         )}
                       </span>
@@ -144,17 +144,17 @@ export function KeyboardSettings({ onGeneral }: { onGeneral: () => void }): Reac
           </Fragment>
         )
       })}
-      {shown.length === 0 && <p className="prefs__none">No shortcut matches &ldquo;{query.trim()}&rdquo;.</p>}
+      {shown.length === 0 && <p className="prefs__none">{t('workspace.keyboard.none', { query: query.trim() })}</p>}
 
-      <div className="acc__sub">From any app</div>
+      <div className="acc__sub">{t('workspace.keyboard.anyApp')}</div>
       <div className="pref">
         <span className="pref__body">
-          <span className="pref__t">Bring devpit forward</span>
-          <span className="pref__d">A key the whole desktop answers to, set with opening at login.</span>
+          <span className="pref__t">{t('workspace.keyboard.bring')}</span>
+          <span className="pref__d">{t('workspace.keyboard.bringSaid')}</span>
         </span>
         <span className="prefs__acts">
           <button className="btn" onClick={onGeneral}>
-            Open General
+            {t('workspace.keyboard.openGeneral')}
           </button>
         </span>
       </div>

@@ -3,6 +3,7 @@ import { useRef, useState } from 'react'
 import type { DevflowPlan, PlannedCard } from '../gen/bindings'
 import { ask, commands } from './live'
 import { abuseSaid, cut, edited, linesOf, moved } from './planEdit'
+import { t } from '../i18n'
 
 /*
  * A Devflow plan waiting on its epic: the cards an agent proposed, none of
@@ -52,11 +53,10 @@ export function PlanReview({
   }
 
   return (
-    <section className="dplan" aria-label="Plan">
-      <h2 className="cardp__h">Plan · {cards.length} cards to create</h2>
+    <section className="dplan" aria-label={t('workspace.planReview.plan')}>
+      <h2 className="cardp__h">{t('workspace.planReview.heading', { count: cards.length })}</h2>
       <p className="dplan__note">
-        {plan.edited ? 'Changed here. ' : 'Proposed by an agent. '}
-        No card exists yet: move, cut or edit them, then create them.
+        {plan.edited ? t('workspace.planReview.changedHere') : t('workspace.planReview.proposed')} {t('workspace.planReview.noCardYet')}
       </p>
       <ol className="dplan__list">
         {cards.map((card, at) => (
@@ -65,37 +65,37 @@ export function PlanReview({
               <span className="dplan__n">{at + 1}</span>
               <input
                 className="dplan__t"
-                aria-label={`Title of card ${at + 1}`}
+                aria-label={t('workspace.planReview.titleOf', { n: at + 1 })}
                 value={card.title}
                 onChange={(event) => setCards(edited(cards, card.key, { title: event.target.value }))}
                 onBlur={() => keep([...cards])}
               />
               {at > 0 && (
-                <button className="conv__act" aria-label={`Move card ${at + 1} up`} onClick={() => keep(moved(cards, at, -1), true)}>
-                  Up
+                <button className="conv__act" aria-label={t('workspace.planReview.moveUp', { n: at + 1 })} onClick={() => keep(moved(cards, at, -1), true)}>
+                  {t('workspace.planReview.up')}
                 </button>
               )}
               {at < cards.length - 1 && (
-                <button className="conv__act" aria-label={`Move card ${at + 1} down`} onClick={() => keep(moved(cards, at, 1), true)}>
-                  Down
+                <button className="conv__act" aria-label={t('workspace.planReview.moveDown', { n: at + 1 })} onClick={() => keep(moved(cards, at, 1), true)}>
+                  {t('workspace.planReview.down')}
                 </button>
               )}
               {/* The last card goes with the whole plan, below. */}
               {cards.length > 1 && (
-                <button className="conv__act" data-danger="true" aria-label={`Cut card ${at + 1}`} onClick={() => keep(cut(cards, card.key), true)}>
-                  Cut
+                <button className="conv__act" data-danger="true" aria-label={t('workspace.planReview.cutLabel', { n: at + 1 })} onClick={() => keep(cut(cards, card.key), true)}>
+                  {t('workspace.planReview.cut')}
                 </button>
               )}
             </div>
             {card.dependsOn.length > 0 && (
-              <p className="dplan__by">Blocked by {card.dependsOn.map(titleOf).join(', ')}</p>
+              <p className="dplan__by">{t('workspace.planReview.blockedBy', { titles: card.dependsOn.map(titleOf).join(', ') })}</p>
             )}
             <textarea
               className="dplan__ta"
-              aria-label={`What card ${at + 1} builds`}
+              aria-label={t('workspace.planReview.builds', { n: at + 1 })}
               rows={2}
               value={card.build}
-              placeholder="What works end to end when it lands"
+              placeholder={t('workspace.planReview.buildPlaceholder')}
               onChange={(event) => setCards(edited(cards, card.key, { build: event.target.value }))}
               onBlur={() => keep([...cards])}
             />
@@ -112,10 +112,10 @@ export function PlanReview({
       </ol>
       <div className="dplan__acts">
         <button className="btn" disabled={busy} onClick={() => finish(() => commands.devflowPlanDrop(projectId, plan.epicId))}>
-          Drop the plan
+          {t('workspace.planReview.drop')}
         </button>
         <button className="btn btn--go" disabled={busy} onClick={() => finish(() => commands.devflowPlanCreate(projectId, plan.epicId))}>
-          Create {cards.length} cards
+          {t('workspace.planReview.create', { count: cards.length })}
         </button>
       </div>
       {problem && <p className="wtb__no">{problem}</p>}
@@ -137,10 +137,10 @@ function CriteriaField({
   return (
     <textarea
       className="dplan__ta"
-      aria-label={`Acceptance criteria of card ${at + 1}, one per line`}
+      aria-label={t('workspace.planReview.criteriaLabel', { n: at + 1 })}
       rows={Math.max(2, criteria.length)}
       value={text}
-      placeholder="Acceptance criteria, one per line"
+      placeholder={t('workspace.planReview.criteriaPlaceholder')}
       onChange={(event) => setText(event.target.value)}
       onBlur={() => onDone(linesOf(text))}
     />

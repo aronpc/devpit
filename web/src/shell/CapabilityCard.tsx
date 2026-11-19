@@ -2,6 +2,7 @@ import { useId } from 'react'
 
 import type { PluginState } from '../gen/bindings'
 import { addsInWords, CapabilityGlyph, isOn } from './capabilities'
+import { t } from '../i18n'
 
 /*
  * One capability, as a card.
@@ -60,7 +61,7 @@ export function CapabilityCard({
       <p className="capcard__what" id={described}>
         {manifest.description}
       </p>
-      <ul className="capcard__adds" aria-label="What it adds">
+      <ul className="capcard__adds" aria-label={t('workspace.capCard.adds')}>
         {addsInWords(manifest).map((words) => (
           <li className="capcard__add" key={words}>
             {words}
@@ -69,23 +70,23 @@ export function CapabilityCard({
       </ul>
 
       <div className="capcard__foot">
-        <span className="capcard__state">{!installed ? 'Not installed' : on ? 'On' : 'Off'}</span>
+        <span className="capcard__state">{!installed ? t('workspace.capCard.notInstalled') : on ? t('workspace.capCard.on') : t('workspace.capCard.off')}</span>
         {installed ? (
           <>
-            <button className="capcard__uninstall" onClick={onUninstall} aria-label={`Uninstall ${manifest.name}`}>
-              Uninstall
+            <button className="capcard__uninstall" onClick={onUninstall} aria-label={t('workspace.capCard.uninstallLabel', { name: manifest.name })}>
+              {t('workspace.capCard.uninstall')}
             </button>
             {on && onOpen && (
-              <button className="capcard__open" onClick={onOpen} aria-label={`Open ${manifest.name}`}>
-                Open
+              <button className="capcard__open" onClick={onOpen} aria-label={t('workspace.capCard.openLabel', { name: manifest.name })}>
+                {t('workspace.capCard.open')}
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
               </button>
             )}
           </>
         ) : (
-          <button className="capcard__install" onClick={onInstall} aria-label={`Install ${manifest.name}`}>
+          <button className="capcard__install" onClick={onInstall} aria-label={t('workspace.capCard.installLabel', { name: manifest.name })}>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
-            Install
+            {t('workspace.capCard.install')}
           </button>
         )}
       </div>

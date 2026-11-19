@@ -5,6 +5,7 @@ import { ask, commands } from './live'
 import { installationOf } from './outside'
 import { added, removed } from './pills'
 import { useInstallations } from './useInstallations'
+import { t } from '../i18n'
 
 /*
  * The skills picked for this turn, as pills beside the attachments, and the
@@ -41,15 +42,15 @@ export function SkillPills({
   return (
     <div className="pills">
       {picked.map((skill) => (
-        <button key={skill} className="chip pills__p" onClick={() => onChange(removed(picked, skill))} title="Remove this skill">
+        <button key={skill} className="chip pills__p" onClick={() => onChange(removed(picked, skill))} title={t('workspace.skillPills.remove')}>
           /{skill} ✕
         </button>
       ))}
       <button className="chip" aria-expanded={open} onClick={() => setOpen((was) => !was)}>
-        + Skill
+        {t('workspace.skillPills.add')}
       </button>
       {open && (
-        <div className="pills__menu" role="listbox" aria-label="Skills">
+        <div className="pills__menu" role="listbox" aria-label={t('workspace.skillPills.label')}>
           {(installed?.from === directory ? installed.names : []).map((skill) => (
             <button
               key={skill}

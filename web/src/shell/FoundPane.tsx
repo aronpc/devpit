@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import type { Found } from '../gen/bindings'
 import { ask, commands } from './live'
 import { leftNoReview, placeOf, severityWord, standingWords, worstFirst } from './found'
+import { t } from '../i18n'
 
 /*
  * What a review found, under the run that found it.
@@ -35,7 +36,7 @@ export function FoundPane({ runId }: { runId: string }): React.JSX.Element | nul
   return (
     <div className="fnd">
       {found.findings.length === 0 ? (
-        <p className="chk__no">This review found nothing it was asked to look for.</p>
+        <p className="chk__no">{t('workspace.found.nothing')}</p>
       ) : (
         <ul className="fnd__l">
           {worstFirst(found).map((finding, at) => (
@@ -58,7 +59,7 @@ export function FoundPane({ runId }: { runId: string }): React.JSX.Element | nul
         <p className="chk__no">
           {/* Kept as it stood: a rubric edited afterwards would leave every
               past review looking like it answered the new one. */}
-          Asked to look for: {found.rubric}
+          {t('workspace.found.asked', { rubric: found.rubric })}
         </p>
       )}
     </div>

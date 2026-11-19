@@ -6,6 +6,7 @@ import { ask, type Asked, commands } from './live'
 import { DAYS, fromInput, localInput, repeatSaid, ROUTINES, stateSaid, whenSaid, whereSaid, zoneNow } from './schedules'
 import { useShell } from './useShell'
 import { onCarried } from './window'
+import { t } from '../i18n'
 
 /*
  * An orchestrator's Schedules: every reminder it reaches and every routine the
@@ -35,7 +36,7 @@ export function SchedulesPane(): React.JSX.Element {
     if (hereId) void ask(() => commands.orchestratorLinks(hereId)).then((answer) => setLinked(answer.data ?? []))
   }, [hereId])
 
-  if (!hereId) return <p className="acc__note">Schedules belong to an orchestrator.</p>
+  if (!hereId) return <p className="acc__note">{t('workspace.schedules.belongs')}</p>
   /* A change to a reminder's card answers the card, not the list: read the list again. */
   const then = <T,>(call: () => Promise<Asked<T>>): void => void call().then((said) => (said.error ? setProblem(said.error) : read()))
   const act = {
@@ -54,13 +55,13 @@ export function SchedulesPane(): React.JSX.Element {
   return (
     <div className="scroll">
       <div className="prefs__in sched">
-        <h1 className="prefs__h">Schedules</h1>
-        <p className="acc__note">Every reminder this orchestrator reaches and every routine you set. Only you schedule: what the orchestrator proposes waits here for your click.</p>
+        <h1 className="prefs__h">{t('workspace.schedules.title')}</h1>
+        <p className="acc__note">{t('workspace.schedules.intro')}</p>
         {problem && <p className="acc__note voice__bad" role="alert">{problem}</p>}
         {list?.proposed.map((proposal) => <Proposed key={proposal.id} proposal={proposal} onDecide={(add) => act.decide(proposal, add)} />)}
         <div className="sched__new">
-          <button className="btn btn--sm" onClick={() => setMaking(making === 'reminder' ? null : 'reminder')} aria-pressed={making === 'reminder'}>New reminder</button>
-          <button className="btn btn--sm" onClick={() => setMaking(making === 'routine' ? null : 'routine')} aria-pressed={making === 'routine'}>New routine</button>
+          <button className="btn btn--sm" onClick={() => setMaking(making === 'reminder' ? null : 'reminder')} aria-pressed={making === 'reminder'}>{t('workspace.schedules.newReminder')}</button>
+          <button className="btn btn--sm" onClick={() => setMaking(making === 'routine' ? null : 'routine')} aria-pressed={making === 'routine'}>{t('workspace.schedules.newRoutine')}</button>
         </div>
         {making === 'routine' && <RoutineForm onSave={(routine) => (act.routine(null, routine), setMaking(null))} onCancel={() => setMaking(null)} />}
         {making === 'reminder' && (
@@ -70,11 +71,11 @@ export function SchedulesPane(): React.JSX.Element {
             onCancel={() => setMaking(null)}
           />
         )}
-        {list && list.schedules.length === 0 && <p className="acc__note">Nothing scheduled yet.</p>}
+        {list && list.schedules.length === 0 && <p className="acc__note">{t('workspace.schedules.none')}</p>}
         {list && list.schedules.length > 0 && (
-          <div className="sched__list" role="table" aria-label="Schedules">
+          <div className="sched__list" role="table" aria-label={t('workspace.schedules.title')}>
             <div className="sched__row sched__row--head" role="row">
-              {['When', 'What', 'Where', 'Repeats', 'State', 'Last run'].map((head) => <span key={head} role="columnheader">{head}</span>)}
+              {(['when', 'what', 'where', 'repeats', 'state', 'lastRun'] as const).map((head) => <span key={head} role="columnheader">{t(`workspace.schedules.head.${head}`)}</span>)}
             </div>
             {list.schedules.map((row) => <Row key={row.id} row={row} act={act} />)}
           </div>
@@ -105,18 +106,18 @@ function Row({ row, act }: { row: Schedule; act: Acts }): React.JSX.Element {
         <span role="cell" className="sched__state">{stateSaid(row.state)}</span>
         <span role="cell">{row.lastRun !== null ? whenSaid(row.lastRun) : '—'}</span>
         <span role="cell" className="sched__acts">
-          {row.kind === 'routine' && <button className="btn btn--sm" onClick={() => act.pause(row, row.state !== 'paused')}>{row.state === 'paused' ? 'Resume' : 'Pause'}</button>}
-          {row.kind === 'reminder' && row.state !== 'done' && <button className="btn btn--sm" onClick={() => act.resolve(row)}>Resolve</button>}
-          <button className="btn btn--sm" onClick={() => setEditing(!editing)} aria-pressed={editing}>Edit</button>
-          <button className="btn btn--sm btn--quiet" onClick={() => act.remove(row)} aria-label={`Delete ${row.title}`}>Delete</button>
+          {row.kind === 'routine' && <button className="btn btn--sm" onClick={() => act.pause(row, row.state !== 'paused')}>{row.state === 'paused' ? t('workspace.schedules.resume') : t('workspace.schedules.pause')}</button>}
+          {row.kind === 'reminder' && row.state !== 'done' && <button className="btn btn--sm" onClick={() => act.resolve(row)}>{t('workspace.schedules.resolve')}</button>}
+          <button className="btn btn--sm" onClick={() => setEditing(!editing)} aria-pressed={editing}>{t('workspace.schedules.edit')}</button>
+          <button className="btn btn--sm btn--quiet" onClick={() => act.remove(row)} aria-label={t('workspace.schedules.delete.label', { title: row.title })}>{t('workspace.schedules.delete')}</button>
         </span>
       </div>
       {editing && row.routine && <RoutineForm routine={row.routine} onSave={(routine) => (act.routine(row.id, routine), setEditing(false))} onCancel={() => setEditing(false)} />}
       {editing && !row.routine && (
         <div className="sched__form">
-          <input type="datetime-local" aria-label={`New time for ${row.title}`} value={at} onChange={(change) => setAt(change.target.value)} />
-          <button className="btn btn--sm btn--go" onClick={() => { const next = fromInput(at); if (next !== null) act.retime(row, next); setEditing(false) }}>Save</button>
-          <button className="btn btn--sm btn--quiet" onClick={() => setEditing(false)}>Cancel</button>
+          <input type="datetime-local" aria-label={t('workspace.schedules.newTime', { title: row.title })} value={at} onChange={(change) => setAt(change.target.value)} />
+          <button className="btn btn--sm btn--go" onClick={() => { const next = fromInput(at); if (next !== null) act.retime(row, next); setEditing(false) }}>{t('workspace.schedules.save')}</button>
+          <button className="btn btn--sm btn--quiet" onClick={() => setEditing(false)}>{t('workspace.schedules.cancel')}</button>
         </div>
       )}
     </>
@@ -129,18 +130,18 @@ function RoutineForm({ routine, onSave, onCancel }: { routine?: Routine; onSave:
   const [days, setDays] = useState<number[]>(routine?.days ?? [1, 2, 3, 4, 5])
   return (
     <div className="sched__form">
-      <select aria-label="Routine" value={kind} onChange={(change) => setKind(change.target.value as RoutineKind)}>
+      <select aria-label={t('workspace.schedules.routine.label')} value={kind} onChange={(change) => setKind(change.target.value as RoutineKind)}>
         {ROUTINES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
       </select>
-      <input type="time" aria-label="At" value={time} onChange={(change) => setTime(change.target.value)} />
+      <input type="time" aria-label={t('workspace.schedules.routine.at')} value={time} onChange={(change) => setTime(change.target.value)} />
       {DAYS.map((day, at) => (
         <label key={day} className="chday">
           <input type="checkbox" checked={days.includes(at)} onChange={(change) => setDays(change.target.checked ? [...days, at] : days.filter((one) => one !== at))} />
           {day}
         </label>
       ))}
-      <button className="btn btn--sm btn--go" onClick={() => onSave({ kind, minute: minutes(time), days, zone: zoneNow(), offsetMinutes: offsetNow() })}>Save routine</button>
-      <button className="btn btn--sm btn--quiet" onClick={onCancel}>Cancel</button>
+      <button className="btn btn--sm btn--go" onClick={() => onSave({ kind, minute: minutes(time), days, zone: zoneNow(), offsetMinutes: offsetNow() })}>{t('workspace.schedules.routine.save')}</button>
+      <button className="btn btn--sm btn--quiet" onClick={onCancel}>{t('workspace.schedules.cancel')}</button>
     </div>
   )
 }
@@ -152,31 +153,31 @@ function ReminderForm({ places, onSave, onCancel }: { places: ReadonlyArray<read
   const when = fromInput(at)
   return (
     <div className="sched__form">
-      <input aria-label="Remind me of" placeholder="Remind me of…" value={title} onChange={(change) => setTitle(change.target.value)} />
-      <select aria-label="On" value={target} onChange={(change) => setTarget(change.target.value)}>
+      <input aria-label={t('workspace.schedules.reminder.of')} placeholder={t('workspace.schedules.reminder.placeholder')} value={title} onChange={(change) => setTitle(change.target.value)} />
+      <select aria-label={t('workspace.schedules.reminder.on')} value={target} onChange={(change) => setTarget(change.target.value)}>
         {places.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
       </select>
-      <input type="datetime-local" aria-label="When" value={at} onChange={(change) => setAt(change.target.value)} />
-      <button className="btn btn--sm btn--go" disabled={!title.trim() || when === null || !target} onClick={() => when !== null && onSave(target, title, when)}>Save reminder</button>
-      <button className="btn btn--sm btn--quiet" onClick={onCancel}>Cancel</button>
+      <input type="datetime-local" aria-label={t('workspace.schedules.reminder.when')} value={at} onChange={(change) => setAt(change.target.value)} />
+      <button className="btn btn--sm btn--go" disabled={!title.trim() || when === null || !target} onClick={() => when !== null && onSave(target, title, when)}>{t('workspace.schedules.reminder.save')}</button>
+      <button className="btn btn--sm btn--quiet" onClick={onCancel}>{t('workspace.schedules.cancel')}</button>
     </div>
   )
 }
 
 function Proposed({ proposal, onDecide }: { proposal: ScheduleProposal; onDecide: (add: boolean) => void }): React.JSX.Element {
   const what = proposal.routine
-    ? `${ROUTINES.find(([kind]) => kind === proposal.routine?.kind)?.[1] ?? ''} at ${clock(proposal.routine.minute)}, ${repeatSaid(proposal.routine).toLowerCase()}`
+    ? t('workspace.schedules.proposed.routine', { routine: ROUTINES.find(([kind]) => kind === proposal.routine?.kind)?.[1] ?? '', time: clock(proposal.routine.minute), repeat: repeatSaid(proposal.routine).toLowerCase() })
     : proposal.reminder
-      ? `${proposal.reminder.title}, ${whenSaid(proposal.reminder.at)}${proposal.reminder.project ? ` on ${proposal.reminder.project}` : ''}`
+      ? t(proposal.reminder.project ? 'workspace.schedules.proposed.reminderOn' : 'workspace.schedules.proposed.reminder', { title: proposal.reminder.title, when: whenSaid(proposal.reminder.at), project: proposal.reminder.project ?? '' })
       : ''
   return (
-    <div className="pref" role="group" aria-label="Proposed by the orchestrator">
+    <div className="pref" role="group" aria-label={t('workspace.schedules.proposed.label')}>
       <span className="pref__body">
-        <span className="pref__t">Proposed: {what}</span>
+        <span className="pref__t">{t('workspace.schedules.proposed.said', { what })}</span>
         <span className="pref__d">{proposal.why}</span>
       </span>
-      <button className="btn btn--sm" onClick={() => onDecide(false)}>Drop</button>
-      <button className="btn btn--sm btn--go" onClick={() => onDecide(true)}>Add</button>
+      <button className="btn btn--sm" onClick={() => onDecide(false)}>{t('workspace.schedules.drop')}</button>
+      <button className="btn btn--sm btn--go" onClick={() => onDecide(true)}>{t('workspace.schedules.add')}</button>
     </div>
   )
 }

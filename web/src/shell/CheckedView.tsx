@@ -6,6 +6,7 @@ import { CURRENT_MEANS, saidNothing, validityWords, verdictWords, whoseWords } f
 import { FoundPane } from './FoundPane'
 import { TestedPane } from './TestedPane'
 import { WouldRunCard } from './WouldRunCard'
+import { t } from '../i18n'
 
 /*
  * What one run proves, under the row that ran it.
@@ -55,7 +56,7 @@ export function Checked({
       </p>
     )
   }
-  if (!checked) return <p className="chk__no">Reading…</p>
+  if (!checked) return <p className="chk__no">{t('workspace.checked.reading')}</p>
 
   const verdict = verdictWords(checked.verdict)
   const validity = validityWords(checked.validity)
@@ -70,7 +71,7 @@ export function Checked({
         <b>{validity.word}</b>{' '}
         <span>
           {validity.why}
-          {checked.validity === 'current' && ` Current means ${CURRENT_MEANS}.`}
+          {checked.validity === 'current' && t('workspace.checked.currentMeans', { means: CURRENT_MEANS })}
         </span>
       </p>
 
@@ -84,7 +85,7 @@ export function Checked({
 
       <p className="chk__l">
         <button className="chk__again" aria-expanded={asking} onClick={() => setAsking(!asking)}>
-          What running this again would do
+          {t('workspace.checked.again')}
         </button>
       </p>
       {asking && <WouldRunCard cardId={cardId} stepId={stepId} />}
@@ -93,7 +94,7 @@ export function Checked({
         <dl className="chk__ran">
           {checked.ran.command && (
             <>
-              <dt>Ran</dt>
+              <dt>{t('workspace.checked.ran')}</dt>
               <dd>
                 <code>{checked.ran.command}</code>
               </dd>
@@ -101,25 +102,25 @@ export function Checked({
           )}
           {checked.ran.inDirectory && (
             <>
-              <dt>In</dt>
+              <dt>{t('workspace.checked.in')}</dt>
               <dd>
                 <code>{checked.ran.inDirectory}</code>
-                {checked.ran.inAWorktree === true && ' — this card’s own checkout'}
+                {checked.ran.inAWorktree === true && t('workspace.checked.ownCheckout')}
               </dd>
             </>
           )}
           {checked.ran.headRevision && (
             <>
-              <dt>At</dt>
+              <dt>{t('workspace.checked.at')}</dt>
               <dd>
                 <code>{checked.ran.headRevision.slice(0, 10)}</code>
-                {checked.ran.baseRevision && ` from ${checked.ran.baseRevision.slice(0, 10)}`}
+                {checked.ran.baseRevision && t('workspace.checked.from', { revision: checked.ran.baseRevision.slice(0, 10) })}
               </dd>
             </>
           )}
           {checked.ran.declaredEnv.length > 0 && (
             <>
-              <dt>With</dt>
+              <dt>{t('workspace.checked.with')}</dt>
               {/* Names only. What was in them is not something a run keeps. */}
               <dd>{checked.ran.declaredEnv.join(', ')}</dd>
             </>
@@ -128,8 +129,7 @@ export function Checked({
       ) : (
         saidNothing(checked) && (
           <p className="chk__no">
-            This run recorded nothing about itself. Runs from before devpit kept this cannot say
-            what they ran or against which code.
+            {t('workspace.checked.recordedNothing')}
           </p>
         )
       )}

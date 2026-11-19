@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 
 import type { CleanupRun, SweptWhy, WorktreeCleanup as Cleanup } from '../gen/bindings'
+import { t } from '../i18n'
 import { bytes } from './disk'
 import { ask, commands } from './live'
 import { PrefRow } from './PrefRow'
@@ -13,14 +14,14 @@ import { ago } from './usageFormat'
  */
 
 const KEPT: Record<SweptWhy, string> = {
-  landed: 'merged',
-  uncommitted: 'uncommitted work',
-  running: 'a session is running in it',
-  failed: 'git refused',
+  landed: 'workspace.worktreeCleanup.kept.landed',
+  uncommitted: 'workspace.worktreeCleanup.kept.uncommitted',
+  running: 'workspace.worktreeCleanup.kept.running',
+  failed: 'workspace.worktreeCleanup.kept.failed',
 }
 
 function lastRun(run: CleanupRun, nowMs: number): string {
-  return `Last run ${ago(run.at, nowMs)}: removed ${run.removed.length}, kept ${run.kept.length}, freed ${bytes(run.freedBytes) ?? '0 B'}.`
+  return t('workspace.worktreeCleanup.lastRun', { ago: ago(run.at, nowMs), removed: run.removed.length, kept: run.kept.length, freed: bytes(run.freedBytes) ?? '0 B' })
 }
 
 export function WorktreeCleanup(): React.JSX.Element {
@@ -58,18 +59,18 @@ export function WorktreeCleanup(): React.JSX.Element {
       <PrefSwitch
         on={cleanup?.deleteMerged ?? true}
         onFlip={flip}
-        title="Delete merged worktrees"
-        said="Once a card's commits are in the default branch, its worktree, build cache and local branch go. One with uncommitted work, or a session running in it, is kept."
+        title={t('workspace.worktreeCleanup.title')}
+        said={t('workspace.worktreeCleanup.said')}
       />
-      <PrefRow title="Clean up now" said={last ? lastRun(last, heardAt) : 'Not run yet.'}>
+      <PrefRow title={t('workspace.worktreeCleanup.now')} said={last ? lastRun(last, heardAt) : t('workspace.worktreeCleanup.notRun')}>
         <button className="btn" disabled={busy} onClick={now}>
-          {busy ? 'Deleting…' : 'Delete now'}
+          {busy ? t('workspace.worktreeCleanup.deleting') : t('workspace.worktreeCleanup.delete')}
         </button>
       </PrefRow>
       {error && <p className="pref__d">{error}</p>}
       {last?.kept.map((row) => (
         <p className="pref__d" key={row.cardId}>
-          Kept {row.title}: {KEPT[row.why]}
+          {t('workspace.worktreeCleanup.kept', { title: row.title, why: t(KEPT[row.why]) })}
           {row.detail ? ` (${row.detail})` : ''}
         </p>
       ))}

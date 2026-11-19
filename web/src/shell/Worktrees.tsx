@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import type { CardWorktree } from '../gen/bindings'
+import { t } from '../i18n'
+import { tRich } from '../i18n/rich'
 import { Confirm } from './Confirm'
 import { bytes } from './disk'
 import { ask, commands } from './live'
@@ -52,8 +54,8 @@ export function Worktrees(): React.JSX.Element {
   return (
     <>
       <div className="prefs__hrow">
-        <h1 className="prefs__h">Worktrees</h1>
-        {room && <span className="pref__d">{room} on disk</span>}
+        <h1 className="prefs__h">{t('workspace.worktrees.title')}</h1>
+        {room && <span className="pref__d">{t('workspace.worktrees.onDisk', { size: room })}</span>}
       </div>
 
       <WorktreeBase />
@@ -61,12 +63,12 @@ export function Worktrees(): React.JSX.Element {
       <ScopedSetting field="branchPattern" />
       <Sources />
 
-      <p className="prefs__gt">Cleanup</p>
+      <p className="prefs__gt">{t('workspace.worktrees.cleanup')}</p>
       <WorktreeCleanup />
 
       {error && <p className="pref__d">{error}</p>}
       {rows.length === 0 && !error && (
-        <p className="pref__d">No card has a checkout of its own yet.</p>
+        <p className="pref__d">{t('workspace.worktrees.none')}</p>
       )}
 
       {rows.map((row) => (
@@ -74,14 +76,14 @@ export function Worktrees(): React.JSX.Element {
           <span className="pref__body">
             <span className="pref__t">
               {row.cardTitle ?? row.folder}
-              {row.orphan && <span className="pill"> orphan</span>}
+              {row.orphan && <span className="pill">{t('workspace.worktrees.orphan')}</span>}
             </span>
             <span className="pref__d">
               {[
                 row.branch,
                 bytes(row.diskBytes),
                 row.uncommittedFiles > 0
-                  ? `${row.uncommittedFiles} uncommitted file(s), ${row.uncommittedLines} line(s)`
+                  ? `${t('workspace.worktrees.uncommitted', { count: row.uncommittedFiles })}, ${t('workspace.worktrees.lines', { count: row.uncommittedLines })}`
                   : null,
               ]
                 .filter(Boolean)
@@ -89,24 +91,26 @@ export function Worktrees(): React.JSX.Element {
             </span>
           </span>
           <button className="btn" onClick={() => setGoing(row)}>
-            Remove
+            {t('workspace.worktrees.remove')}
           </button>
         </div>
       ))}
 
       {going && (
         <Confirm
-          title={`Remove the checkout for “${going.cardTitle ?? going.folder}”?`}
-          danger="Remove"
+          title={t('workspace.worktrees.removeTitle', { name: going.cardTitle ?? going.folder })}
+          danger={t('workspace.worktrees.remove')}
           body={
             <>
-              The folder goes; <b>the branch stays</b>, with everything committed on it.
+              {tRich('workspace.worktrees.folderGoes', { stays: <b>{t('workspace.worktrees.branchStays')}</b> })}
               {going.uncommittedFiles > 0 && (
                 <>
                   {' '}
                   <b>
-                    {going.uncommittedFiles} file(s) and {going.uncommittedLines} line(s) have not
-                    been committed and would be lost.
+                    {t('workspace.worktrees.lost', {
+                      files: t('workspace.worktrees.files', { count: going.uncommittedFiles }),
+                      lines: t('workspace.worktrees.lines', { count: going.uncommittedLines }),
+                    })}
                   </b>
                 </>
               )}

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 
+import { t } from '../i18n'
 import { ask, commands } from './live'
 import { OpenIn } from './OpenIn'
 import { remote, since } from './projects'
@@ -35,7 +36,7 @@ export function ProjectRows({ onRemove }: { onRemove: (id: string) => void }): R
   const [refused, setRefused] = useState<string | null>(null)
 
   if (projectsError) return <p className="acc__note">{projectsError}</p>
-  if (projects.length === 0) return <p className="acc__note">No projects yet.</p>
+  if (projects.length === 0) return <p className="acc__note">{t('workspace.projects.none')}</p>
 
   const rename = (id: string, name: string | null): void => {
     setNaming(null)
@@ -58,7 +59,7 @@ export function ProjectRows({ onRemove }: { onRemove: (id: string) => void }): R
                   editing={naming === row.id}
                   onDone={(name) => rename(row.id, name)}
                 />
-                {here && <span className="pj__here">Open</span>}
+                {here && <span className="pj__here">{t('workspace.projects.open')}</span>}
               </span>
               <span className="pj__p">
                 <span className="pj__path" title={row.rootPath}>{row.rootPath}</span>
@@ -69,28 +70,28 @@ export function ProjectRows({ onRemove }: { onRemove: (id: string) => void }): R
             <span className="pj__meta">
               <span className="pj__when">{since(row.lastOpenedAt)}</span>
               <span className="pj__live" data-live={row.worktrees.length}>
-                {row.worktrees.length} worktree{row.worktrees.length === 1 ? '' : 's'}
+                {t('workspace.projects.worktrees', { count: row.worktrees.length })}
               </span>
             </span>
 
             <span className="pj__acts">
               {!here && (
                 <button className="btn" onClick={() => setProject(row.id)}>
-                  Open
+                  {t('workspace.projects.open')}
                 </button>
               )}
               <button className="btn" onClick={() => setNaming(row.id)}>
-                Rename
+                {t('workspace.projects.rename')}
               </button>
               {/* The folder, in whatever this desktop uses for folders. The
                   path is right there and copying it by hand is the step this
                   removes. */}
               <button className="btn" onClick={() => void ask(() => commands.pathReveal(row.rootPath))}>
-                Reveal
+                {t('workspace.projects.reveal')}
               </button>
               <OpenIn apps={openers} path={row.rootPath} />
               <button className="btn" data-danger onClick={() => onRemove(row.id)}>
-                Remove
+                {t('workspace.projects.remove')}
               </button>
             </span>
 

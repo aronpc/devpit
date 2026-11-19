@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 
 import type { Project, WorktreeSetup } from '../gen/bindings'
+import { t } from '../i18n'
 import { GroupPicker } from './GroupPicker'
 import { ask, commands } from './live'
 import { ProjectHosts } from './ProjectHosts'
@@ -63,29 +64,29 @@ export function ProjectDialog({ project, onClose }: { project: Project; onClose:
         <div className="pdlg__head">
           <ProjectMark project={preview} size={44} />
           <div>
-            <h2 className="addpj__t" id="pdlgT">Edit project</h2>
+            <h2 className="addpj__t" id="pdlgT">{t('workspace.projectDialog.title')}</h2>
             <p className="addpj__d" title={project.rootPath}>{project.rootPath}</p>
           </div>
         </div>
 
         <label className="pdlg__f">
-          <span>Name</span>
+          <span>{t('workspace.projectDialog.name')}</span>
           <input autoFocus value={name} onChange={(event) => setName(event.target.value)} onKeyDown={(event) => committed(event) && save()} />
         </label>
 
         {/* An orchestrator sits in the Orchestrators group, always. */}
         {!project.orchestrator && (
           <div className="pdlg__f">
-            <span>Group</span>
+            <span>{t('workspace.projectDialog.group')}</span>
             <GroupPicker value={group} groups={groups} onChange={setGroup} />
           </div>
         )}
 
         <div className="pdlg__f">
-          <span>Icon</span>
+          <span>{t('workspace.projectDialog.icon')}</span>
           <div className="pdlg__icons">
-            <button className="pdlg__icon" aria-pressed={icon === null} onClick={() => setIcon(null)} title="Initials">
-              Aa
+            <button className="pdlg__icon" aria-pressed={icon === null} onClick={() => setIcon(null)} title={t('workspace.projectDialog.initials')}>
+              {t('workspace.projectDialog.initialsMark')}
             </button>
             {Object.entries(ICONS).map(([key, paths]) => (
               <button key={key} className="pdlg__icon" aria-pressed={icon === `icon:${key}`} onClick={() => setIcon(`icon:${key}`)} title={key}>
@@ -100,7 +101,7 @@ export function ProjectDialog({ project, onClose }: { project: Project; onClose:
           <input
             className="pdlg__emoji"
             value={emoji}
-            placeholder="…or an emoji"
+            placeholder={t('workspace.projectDialog.emoji')}
             maxLength={8}
             onChange={(event) => {
               const typed = event.target.value.trim()
@@ -111,13 +112,13 @@ export function ProjectDialog({ project, onClose }: { project: Project; onClose:
         </div>
 
         <div className="pdlg__f">
-          <span>Colour</span>
+          <span>{t('workspace.projectDialog.colour')}</span>
           <div className="pdlg__colours">
-            <button className="pdlg__sw pdlg__sw--auto" aria-pressed={color === null} onClick={() => setColor(null)} title="Automatic" />
+            <button className="pdlg__sw pdlg__sw--auto" aria-pressed={color === null} onClick={() => setColor(null)} title={t('workspace.projectDialog.automatic')} />
             {COLOURS.map((one) => (
               <button key={one} className="pdlg__sw" style={{ background: one }} aria-pressed={color === one} onClick={() => setColor(one)} title={one} />
             ))}
-            <input type="color" className="pdlg__pick" value={color ?? '#5b9be2'} onChange={(event) => setColor(event.target.value)} title="Any colour" />
+            <input type="color" className="pdlg__pick" value={color ?? '#5b9be2'} onChange={(event) => setColor(event.target.value)} title={t('workspace.projectDialog.anyColour')} />
           </div>
         </div>
 
@@ -137,10 +138,10 @@ export function ProjectDialog({ project, onClose }: { project: Project; onClose:
         {error && <p className="acc__note">{error}</p>}
         <div className="pdlg__acts">
           <button className="btn" onClick={onClose}>
-            Cancel
+            {t('workspace.projectDialog.cancel')}
           </button>
           <button className="btn btn--go" disabled={busy || !name.trim()} onClick={save}>
-            Save
+            {t('workspace.projectDialog.save')}
           </button>
         </div>
       </div>

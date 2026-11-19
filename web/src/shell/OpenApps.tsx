@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import type { KnownApp, OpenApp } from '../gen/bindings'
+import { t } from '../i18n'
 import { useAway } from './away'
 import { ask, commands } from './live'
 import { PrefRow } from './PrefRow'
@@ -55,10 +56,10 @@ export function OpenApps(): React.JSX.Element {
 
   return (
     <section className="apps">
-      <PrefRow title="Open in" said="The apps offered when you open a project or a worktree somewhere else.">
+      <PrefRow title={t('workspace.openApps.title')} said={t('workspace.openApps.said')}>
         <div className="apps__add" ref={menu}>
           <button className="btn" onClick={() => setAdding((was) => !was)}>
-            Add app
+            {t('workspace.openApps.add')}
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
           </button>
           {adding && (
@@ -72,11 +73,11 @@ export function OpenApps(): React.JSX.Element {
                   onClick={() => add(one.label, one.command)}
                 >
                   <span>{one.label}</span>
-                  {has(one.command) && <span className="apps__had">Added</span>}
+                  {has(one.command) && <span className="apps__had">{t('workspace.openApps.added')}</span>}
                 </button>
               ))}
               <button className="apps__opt" role="menuitem" onClick={() => { setCustom(true); setAdding(false) }}>
-                Custom app&hellip;
+                {t('workspace.openApps.custom')}
               </button>
             </div>
           )}
@@ -86,7 +87,7 @@ export function OpenApps(): React.JSX.Element {
       {custom && <Custom onCancel={() => setCustom(false)} onAdd={add} />}
 
       {apps.length === 0 && !custom && (
-        <p className="acc__note">No apps yet. Add one and it appears in every project&rsquo;s menu.</p>
+        <p className="acc__note">{t('workspace.openApps.none')}</p>
       )}
 
       {apps.length > 0 && (
@@ -99,9 +100,9 @@ export function OpenApps(): React.JSX.Element {
               </span>
               {/* Measured, not assumed: the row says so rather than failing when
                   it is clicked, which is the moment it would be most confusing. */}
-              {!app.installed && <span className="oapp__no">not on this machine</span>}
+              {!app.installed && <span className="oapp__no">{t('workspace.openApps.missing')}</span>}
               <button className="btn" data-danger onClick={() => remove(app.id)}>
-                Remove
+                {t('workspace.openApps.remove')}
               </button>
             </div>
           ))}
@@ -129,36 +130,36 @@ function Custom({
   return (
     <div className="oapp oapp--new">
       <label className="fld">
-        <span className="fld__l">Name</span>
+        <span className="fld__l">{t('workspace.openApps.name')}</span>
         <input
           className="fld__b"
           autoFocus
           value={label}
-          placeholder="My editor"
+          placeholder={t('workspace.openApps.nameHint')}
           onChange={(event) => setLabel(event.target.value)}
         />
       </label>
       <label className="fld">
-        <span className="fld__l">Terminal command</span>
+        <span className="fld__l">{t('workspace.openApps.command')}</span>
         <input
           className="fld__b"
           value={command}
           spellCheck={false}
-          placeholder="code"
+          placeholder={t('workspace.openApps.commandHint')}
           onChange={(event) => setCommand(event.target.value)}
         />
       </label>
       <div className="ask__row">
-        <button className="btn" onClick={onCancel}>Cancel</button>
+        <button className="btn" onClick={onCancel}>{t('workspace.openApps.cancel')}</button>
         <button
           className="btn btn--go"
           disabled={!label.trim() || !command.trim()}
           onClick={() => onAdd(label, command)}
         >
-          Add
+          {t('workspace.openApps.confirm')}
         </button>
       </div>
-      <p className="pref__d">The command you would type in a terminal to open it. One program, no arguments.</p>
+      <p className="pref__d">{t('workspace.openApps.commandSaid')}</p>
     </div>
   )
 }

@@ -7,6 +7,7 @@ import { useStream } from './Streamed'
 import { millis } from './turnFold'
 import { foldOf, useDisclosed } from './useDisclosed'
 import { Zoomable } from './Zoom'
+import { t } from '../i18n'
 
 /* What a person said: the files as chips and pictures, then the words.
    `onResend` when it was steered into a turn that ended without taking it in.
@@ -44,26 +45,26 @@ export function Said({
         )}
         {long && (
           <button className="said__more" aria-expanded={open} onClick={() => setOpen((was) => !was)}>
-            {open ? 'Show less' : 'Show more'}
+            {open ? t('workspace.said.less') : t('workspace.said.more')}
           </button>
         )}
       </div>
       {onResend && (
         <p className="said__lost">
-          Didn't reach the agent.
-          <button onClick={onResend}>Resend</button>
+          {t('workspace.said.lost')}
+          <button onClick={onResend}>{t('workspace.said.resend')}</button>
         </p>
       )}
       <div className="hbar said__bar">
         {at !== null && <span className="tmeta">{clock(at)}</span>}
-        <CopyButton className="tfbtn" text={copiedOf(text)} label="Copy message" />
+        <CopyButton className="tfbtn" text={copiedOf(text)} label={t('workspace.said.copy')} />
         {onEdit && (
-          <button className="tfbtn" aria-label="Edit from here" title="Edit this message in a new conversation that goes back to before it" onClick={onEdit}>
+          <button className="tfbtn" aria-label={t('workspace.said.editLabel')} title={t('workspace.said.editTitle')} onClick={onEdit}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
           </button>
         )}
         {onAgain && (
-          <button className="tfbtn" aria-label="Send again" title="Send this message again" onClick={onAgain}>
+          <button className="tfbtn" aria-label={t('workspace.said.againLabel')} title={t('workspace.said.againTitle')} onClick={onAgain}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7" /><path d="M21 4v5h-5" /></svg>
           </button>
         )}
@@ -74,7 +75,7 @@ export function Said({
 
 const Chip = ({ file }: { file: SentFile }): React.JSX.Element => (
   <span className="said__chip" title={file.path}>
-    <span className="said__k">{file.kind || 'file'}</span>
+    <span className="said__k">{file.kind || t('workspace.said.file')}</span>
     {file.name}
   </span>
 )

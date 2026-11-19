@@ -9,6 +9,7 @@ import { Tree } from './TreeView'
 import type { UseFileIndex } from './useFileIndex'
 import type { UseTree } from './useTree'
 import type { Project, SearchHits } from '../gen/bindings'
+import { t } from '../i18n'
 
 const Icon = ({ d, size = 15 }: { d: string; size?: number }): React.JSX.Element => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
@@ -103,11 +104,11 @@ export function Explorer({
   return (
     <>
       <div className="ex__head">
-        <span className="ex__proj">{project?.name ?? 'No project'}</span>
-        <button className="sq26 tip" data-tip="Collapse all" aria-label="Collapse all" onClick={() => setCollapsed((was) => was + 1)}>
+        <span className="ex__proj">{project?.name ?? t('workspace.explorer.noProject')}</span>
+        <button className="sq26 tip" data-tip={t('workspace.explorer.collapseAll')} aria-label={t('workspace.explorer.collapseAll')} onClick={() => setCollapsed((was) => was + 1)}>
           <Icon d={COLLAPSE} />
         </button>
-        <button className="sq26 tip" data-tip="Refresh" aria-label="Refresh" onClick={tree.reload}>
+        <button className="sq26 tip" data-tip={t('workspace.explorer.refresh')} aria-label={t('workspace.explorer.refresh')} onClick={tree.reload}>
           <Icon d={REFRESH} />
         </button>
       </div>
@@ -119,20 +120,20 @@ export function Explorer({
         </svg>
         <input
           className="ex__q"
-          placeholder={mode === 'contents' ? 'Search in files' : 'Search'}
+          placeholder={mode === 'contents' ? t('workspace.explorer.searchInFiles') : t('workspace.explorer.search')}
           value={query}
           onChange={(event) => setQuery(event.target.value)}
         />
         <span className="ex__flags">
-          <button className="flag" aria-pressed={flags.case} title="Match case" onClick={() => setFlags((f) => ({ ...f, case: !f.case }))}>Aa</button>
-          <button className="flag" aria-pressed={flags.word} title="Whole word" onClick={() => setFlags((f) => ({ ...f, word: !f.word }))}>ab</button>
-          <button className="flag" aria-pressed={flags.regex} title="Regular expression" onClick={() => setFlags((f) => ({ ...f, regex: !f.regex }))}>.*</button>
+          <button className="flag" aria-pressed={flags.case} title={t('workspace.explorer.matchCase')} onClick={() => setFlags((f) => ({ ...f, case: !f.case }))}>{t('workspace.explorer.matchCaseFlag')}</button>
+          <button className="flag" aria-pressed={flags.word} title={t('workspace.explorer.wholeWord')} onClick={() => setFlags((f) => ({ ...f, word: !f.word }))}>{t('workspace.explorer.wholeWordFlag')}</button>
+          <button className="flag" aria-pressed={flags.regex} title={t('workspace.explorer.regex')} onClick={() => setFlags((f) => ({ ...f, regex: !f.regex }))}>.*</button>
         </span>
       </div>
 
       <div className="ex__modes">
-        <button className="exmode__tab" data-ex="names" aria-selected={mode === 'names'} onClick={() => setMode('names')}>Names</button>
-        <button className="exmode__tab" data-ex="contents" aria-selected={mode === 'contents'} onClick={() => setMode('contents')}>Contents</button>
+        <button className="exmode__tab" data-ex="names" aria-selected={mode === 'names'} onClick={() => setMode('names')}>{t('workspace.explorer.names')}</button>
+        <button className="exmode__tab" data-ex="contents" aria-selected={mode === 'contents'} onClick={() => setMode('contents')}>{t('workspace.explorer.contents')}</button>
       </div>
 
       {tree.error && <div className="exempty"><span className="exempty__t">{tree.error}</span></div>}
@@ -141,18 +142,18 @@ export function Explorer({
         <Tree projectId={project?.id ?? ''} nodes={tree.nodes} version={tree.version} query={query} current={current} collapsed={collapsed} onOpen={onOpen} />
       )}
       {!tree.error && mode === 'names' && searching && index.loading && (
-        <div className="exempty"><span className="exempty__t">Indexing…</span></div>
+        <div className="exempty"><span className="exempty__t">{t('workspace.explorer.indexing')}</span></div>
       )}
       {!tree.error && mode === 'names' && searching && !index.loading && (
         <SearchResults query={query} hits={found.hits} reason={found.reason} partial={index.partial} onOpen={onOpen} />
       )}
       {!tree.error && mode === 'contents' && !contentSearching && (
         <div className="exempty">
-          <span className="exempty__t">Type to search in files</span>
+          <span className="exempty__t">{t('workspace.explorer.typeToSearch')}</span>
         </div>
       )}
       {!tree.error && mode === 'contents' && contentSearching && contentLoading && (
-        <div className="exempty"><span className="exempty__t">Searching…</span></div>
+        <div className="exempty"><span className="exempty__t">{t('workspace.explorer.searching')}</span></div>
       )}
       {!tree.error && mode === 'contents' && contentSearching && !contentLoading && (
         <ContentResults

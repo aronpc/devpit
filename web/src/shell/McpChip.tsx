@@ -4,6 +4,7 @@ import type { McpHealth, McpServerHealth } from '../gen/bindings'
 import { useAway } from './away'
 import { ask, commands } from './live'
 import { useCheckEvery } from './checkEvery'
+import { t } from '../i18n'
 
 /*
  * The MCP servers the default account has, as its CLI finds them when it
@@ -23,15 +24,15 @@ export function summed(servers: readonly McpServerHealth[]): { up: number; all: 
 /** Active first — the ones answering — then the ones that are not. */
 export function parted(servers: readonly McpServerHealth[]): { title: string; servers: McpServerHealth[] }[] {
   return [
-    { title: 'Active', servers: servers.filter((one) => one.state === 'connected') },
-    { title: 'Inactive', servers: servers.filter((one) => one.state !== 'connected') },
+    { title: t('workspace.mcpChip.active'), servers: servers.filter((one) => one.state === 'connected') },
+    { title: t('workspace.mcpChip.inactive'), servers: servers.filter((one) => one.state !== 'connected') },
   ]
 }
 
 const WORDS: Record<McpServerHealth['state'], string> = {
-  connected: 'connected',
-  failed: 'failed',
-  needs_auth: 'needs sign-in',
+  connected: 'workspace.mcpChip.state.connected',
+  failed: 'workspace.mcpChip.state.failed',
+  needs_auth: 'workspace.mcpChip.state.needs_auth',
 }
 
 export function McpChip({ projectId }: { projectId: string | null }): React.JSX.Element | null {
@@ -69,17 +70,17 @@ export function McpChip({ projectId }: { projectId: string | null }): React.JSX.
   const { up, all, bad } = summed(health?.servers ?? [])
   return (
     <div className="mcpchip" ref={box}>
-      <button className="strip__go" data-state={bad || error ? 'bad' : undefined} aria-expanded={open} onClick={() => setOpen((was) => !was)} title="MCP servers">
-        <span>MCP</span>
+      <button className="strip__go" data-state={bad || error ? 'bad' : undefined} aria-expanded={open} onClick={() => setOpen((was) => !was)} title={t('workspace.mcpChip.title')}>
+        <span>{t('workspace.mcpChip.mcp')}</span>
         <span className="strip__n">{error && !health ? '?' : `${up}/${all}`}</span>
       </button>
       {open && (
-        <div className="mcpchip__pop" role="dialog" aria-label="MCP servers">
+        <div className="mcpchip__pop" role="dialog" aria-label={t('workspace.mcpChip.title')}>
           <div className="mcpchip__h">
-            <span>MCP servers{health ? ` · ${health.profileId}` : ''}</span>
-            <button className="mcpchip__again" disabled={asking} onClick={() => check(true)} aria-label="Check the servers again">
+            <span>{health ? t('workspace.mcpChip.head', { profile: health.profileId }) : t('workspace.mcpChip.title')}</span>
+            <button className="mcpchip__again" disabled={asking} onClick={() => check(true)} aria-label={t('workspace.mcpChip.again')}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7L21 8M21 3v5h-5" /></svg>
-              {asking ? 'Checking…' : 'Refresh'}
+              {asking ? t('workspace.mcpChip.checking') : t('workspace.mcpChip.refresh')}
             </button>
           </div>
           {error && <p className="mcpchip__why">{error}</p>}
@@ -95,7 +96,7 @@ export function McpChip({ projectId }: { projectId: string | null }): React.JSX.
                       <li key={one.name} data-state={one.state} title={one.detail ?? one.target}>
                         <i className="mcpchip__dot" />
                         <span className="mcpchip__n">{one.name}</span>
-                        <span className="mcpchip__s">{WORDS[one.state]}</span>
+                        <span className="mcpchip__s">{t(WORDS[one.state])}</span>
                         {one.detail && <span className="mcpchip__why">{one.detail}</span>}
                       </li>
                     ))}

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 
 import type { Project } from '../gen/bindings'
 import { Close, Folder, Pencil, Plus, Trash } from './GitIcons'
+import { t } from '../i18n'
 import { ask, commands } from './live'
 import { ProjectDialog } from './ProjectDialog'
 import { ProjectMark } from './ProjectMark'
@@ -136,10 +137,10 @@ export function ProjectRail({ onAddProject, onRemove }: { onAddProject: () => vo
   }
 
   const projectMenu = (one: Project): readonly RailItem[] => [
-    { label: 'Edit project…', glyph: <Pencil />, act: () => setEditing(one) },
-    { label: 'Reveal folder', glyph: <Folder />, act: () => void ask(() => commands.pathReveal(one.rootPath)) },
+    { label: t('workspace.railMenu.editProject'), glyph: <Pencil />, act: () => setEditing(one) },
+    { label: t('workspace.railMenu.reveal'), glyph: <Folder />, act: () => void ask(() => commands.pathReveal(one.rootPath)) },
     'rule',
-    { label: 'Remove…', glyph: <Trash />, act: () => onRemove(one.id), bad: true },
+    { label: t('workspace.railMenu.remove'), glyph: <Trash />, act: () => onRemove(one.id), bad: true },
   ]
 
   const filter = (group: string): void =>
@@ -152,18 +153,18 @@ export function ProjectRail({ onAddProject, onRemove }: { onAddProject: () => vo
 
   const groupMenu = (group: string): readonly RailItem[] => [
     activeOnly.has(group)
-      ? { label: 'Show all projects', glyph: <Folder />, act: () => filter(group) }
-      : { label: 'Show only active', glyph: <Folder />, act: () => filter(group) },
+      ? { label: t('workspace.railMenu.showAll'), glyph: <Folder />, act: () => filter(group) }
+      : { label: t('workspace.railMenu.showActive'), glyph: <Folder />, act: () => filter(group) },
     'rule',
-    { label: 'Rename group…', glyph: <Pencil />, act: () => setRenaming(group) },
-    { label: 'Ungroup', glyph: <Close />, act: () => renameGroup(group, '') },
+    { label: t('workspace.railMenu.renameGroup'), glyph: <Pencil />, act: () => setRenaming(group) },
+    { label: t('workspace.railMenu.ungroup'), glyph: <Close />, act: () => renameGroup(group, '') },
   ]
 
   return (
     /* Held open while something is dragged: WebKit drops `:hover` during a
        drag, and a rail that folds to icons under the pointer moves every
        target out from under it. */
-    <nav className="rail" aria-label="Projects" data-held={drag.grab || menu || editing ? 'true' : undefined}>
+    <nav className="rail" aria-label={t('workspace.projectRail.label')} data-held={drag.grab || menu || editing ? 'true' : undefined}>
       <div className="rail__panel">
         <RailOrchestrators onMenu={(at, items) => setMenu({ ...at, items })} onRemove={onRemove} onEdit={setEditing} />
         <div className="rail__list" ref={scroller}>
@@ -233,8 +234,8 @@ export function ProjectRail({ onAddProject, onRemove }: { onAddProject: () => vo
                         <span className="rail__n">{one.name}</span>
                         <span className="rail__s">
                           {branch && <span className="rail__b">{branch}</span>}
-                          {tabs > 0 && <span className="rail__t">{tabs} tab{tabs === 1 ? '' : 's'}</span>}
-                          {learned > 0 && <span className="rail__m">Agent · {learned}</span>}
+                          {tabs > 0 && <span className="rail__t">{t('workspace.projectRail.tabs', { count: tabs })}</span>}
+                          {learned > 0 && <span className="rail__m">{t('workspace.projectRail.agent', { count: learned })}</span>}
                         </span>
                       </span>
                     </button>
@@ -244,7 +245,7 @@ export function ProjectRail({ onAddProject, onRemove }: { onAddProject: () => vo
             )
           })}
         </div>
-        <button className="rail__i rail__add" onClick={onAddProject} title="Add a project">
+        <button className="rail__i rail__add" onClick={onAddProject} title={t('workspace.projectRail.addTitle')}>
           <span className="rail__pill" />
           <span className="rail__ico">
             <span className="pmark pmark--add">
@@ -252,7 +253,7 @@ export function ProjectRail({ onAddProject, onRemove }: { onAddProject: () => vo
             </span>
           </span>
           <span className="rail__text">
-            <span className="rail__n">Add project</span>
+            <span className="rail__n">{t('workspace.projectRail.add')}</span>
           </span>
         </button>
       </div>

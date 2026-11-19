@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import type { ClaudePluginInstallation } from '../gen/bindings'
 import { dismiss, dismissed, offerFor } from './claudePlugin'
 import { ask, commands } from './live'
+import { t } from '../i18n'
 
 /*
  * "Install devpit plugin", in the strip under a terminal running Claude Code.
@@ -38,7 +39,7 @@ export function PluginChip(): React.JSX.Element | null {
       if (answer.data) {
         setInstallations(answer.data)
         setStep({ kind: 'done' })
-      } else setStep({ kind: 'failed', why: answer.error ?? 'the plugin could not be installed' })
+      } else setStep({ kind: 'failed', why: answer.error ?? t('workspace.pluginChip.whyDefault') })
     })
   }
   const close = (): void => {
@@ -46,19 +47,19 @@ export function PluginChip(): React.JSX.Element | null {
     setHidden(true)
   }
 
-  const verb = offer === 'update' ? 'Update' : 'Install'
+  const update = offer === 'update'
   return (
     <span className="pchip" data-step={step.kind} title={step.kind === 'failed' ? step.why : undefined}>
       {step.kind === 'offered' && (
-        <button className="pchip__go" onClick={install} title="Gives every Claude Code session in a devpit terminal the board's tools and devpit's hooks">
-          ↓ {verb} devpit plugin
+        <button className="pchip__go" onClick={install} title={t('workspace.pluginChip.offerTitle')}>
+          {t(update ? 'workspace.pluginChip.update' : 'workspace.pluginChip.install')}
         </button>
       )}
-      {step.kind === 'working' && <span className="pchip__say">{verb === 'Update' ? 'Updating' : 'Installing'} devpit plugin…</span>}
-      {step.kind === 'done' && <span className="pchip__say">devpit plugin ready — run /reload-plugins in Claude Code</span>}
-      {step.kind === 'failed' && <span className="pchip__say">The plugin could not be installed</span>}
+      {step.kind === 'working' && <span className="pchip__say">{t(update ? 'workspace.pluginChip.updating' : 'workspace.pluginChip.installing')}</span>}
+      {step.kind === 'done' && <span className="pchip__say">{t('workspace.pluginChip.done')}</span>}
+      {step.kind === 'failed' && <span className="pchip__say">{t('workspace.pluginChip.failed')}</span>}
       {step.kind !== 'working' && (
-        <button className="pchip__x" aria-label="Dismiss" title="Dismiss" onClick={close}>
+        <button className="pchip__x" aria-label={t('workspace.pluginChip.dismiss')} title={t('workspace.pluginChip.dismiss')} onClick={close}>
           ×
         </button>
       )}

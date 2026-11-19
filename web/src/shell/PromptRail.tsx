@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 
 import type { ConversationPrompts } from '../gen/bindings'
 import { ask, commands } from './live'
+import { t } from '../i18n'
 
 /* Where a prompt sits along the rail, from the top of the conversation to its end. */
 function railAt(at: number, total: number): string {
@@ -40,7 +41,7 @@ export function PromptRail({
   /* One prompt is no way around: there is nowhere else to go. */
   if (!read || read.prompts.length < 2) return null
   return (
-    <nav className="prail" aria-label="What you asked">
+    <nav className="prail" aria-label={t('workspace.promptRail.label')}>
       {read.prompts.map((one) => (
         <button key={one.messageId} className="prail__tick" style={{ top: railAt(one.at, read.total) }} aria-label={one.text} onClick={() => void jump(one.messageId)}>
           <span className="prail__peek">{one.text}</span>

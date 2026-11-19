@@ -5,6 +5,8 @@ import { useAway } from './away'
 import { ask, commands } from './live'
 import { useCheckEvery } from './checkEvery'
 import { useShell } from './useShell'
+import { t } from '../i18n'
+import { tRich } from '../i18n/rich'
 
 /*
  * The sign-ins a session runs on, beside the MCP servers: each account's own
@@ -13,12 +15,7 @@ import { useShell } from './useShell'
  * before a session finds it halfway through a task.
  */
 
-export const ACCOUNT_WORDS: Record<Credentials, string> = {
-  saved: 'signed in',
-  expired: 'expired',
-  missing: 'signed out',
-  unknown: 'in the Keychain',
-}
+export const accountWord = (state: Credentials): string => t(`workspace.signInChip.state.${state}`)
 
 /** Those that hold out of all, and whether any needs signing in again. The
     Keychain says nothing either way, so it is not counted against. */
@@ -64,20 +61,20 @@ export function SignInChip({ projectId }: { projectId: string | null }): React.J
   const { ok, all, bad } = signIns ? tallied(signIns) : { ok: 0, all: 0, bad: true }
   return (
     <div className="mcpchip" ref={box}>
-      <button className="strip__go" data-state={bad ? 'bad' : undefined} aria-expanded={open} onClick={() => setOpen((was) => !was)} title="Sign-ins">
-        <span>Sign-ins</span>
+      <button className="strip__go" data-state={bad ? 'bad' : undefined} aria-expanded={open} onClick={() => setOpen((was) => !was)} title={t('workspace.signInChip.title')}>
+        <span>{t('workspace.signInChip.title')}</span>
         <span className="strip__n">{signIns ? `${ok}/${all}` : '?'}</span>
       </button>
       {open && (
-        <div className="mcpchip__pop" role="dialog" aria-label="Sign-ins">
+        <div className="mcpchip__pop" role="dialog" aria-label={t('workspace.signInChip.title')}>
           <div className="mcpchip__h">
-            <span>Sign-ins</span>
+            <span>{t('workspace.signInChip.title')}</span>
             <span>
               <button className="mcpchip__again" onClick={() => (setOpen(false), openPrefs('providers'))}>
-                Accounts
+                {t('workspace.signInChip.accounts')}
               </button>
-              <button className="mcpchip__again" disabled={asking} onClick={check} aria-label="Check the sign-ins again">
-                {asking ? 'Checking…' : 'Refresh'}
+              <button className="mcpchip__again" disabled={asking} onClick={check} aria-label={t('workspace.signInChip.again')}>
+                {asking ? t('workspace.signInChip.checking') : t('workspace.signInChip.refresh')}
               </button>
             </span>
           </div>
@@ -85,16 +82,16 @@ export function SignInChip({ projectId }: { projectId: string | null }): React.J
           <div className="mcpchip__list">
             {signIns && signIns.accounts.length > 0 && (
               <section>
-                <h4 className="mcpchip__g">Accounts</h4>
+                <h4 className="mcpchip__g">{t('workspace.signInChip.accounts')}</h4>
                 <ul>
                   {signIns.accounts.map((one) => (
                     <li key={one.directory} data-state={one.state} title={one.directory}>
                       <i className="mcpchip__dot" />
                       <span className="mcpchip__n">{one.label}</span>
-                      <span className="mcpchip__s">{ACCOUNT_WORDS[one.state]}</span>
+                      <span className="mcpchip__s">{accountWord(one.state)}</span>
                       {(one.state === 'expired' || one.state === 'missing') && (
                         <span className="sichip__fix">
-                          Run <code>{one.fix}</code>
+                          {tRich('workspace.signInChip.run', { fix: <code>{one.fix}</code> })}
                         </span>
                       )}
                     </li>
@@ -104,16 +101,16 @@ export function SignInChip({ projectId }: { projectId: string | null }): React.J
             )}
             {signIns && signIns.needed.length > 0 && (
               <section>
-                <h4 className="mcpchip__g">This project</h4>
+                <h4 className="mcpchip__g">{t('workspace.signInChip.thisProject')}</h4>
                 <ul>
                   {signIns.needed.map((one) => (
                     <li key={one.what} data-state={one.holds ? 'saved' : 'expired'}>
                       <i className="mcpchip__dot" />
                       <span className="mcpchip__n">{one.what}</span>
-                      <span className="mcpchip__s">{one.holds ? 'signed in' : 'expired'}</span>
+                      <span className="mcpchip__s">{one.holds ? t('workspace.signInChip.state.saved') : t('workspace.signInChip.state.expired')}</span>
                       {!one.holds && (
                         <span className="sichip__fix">
-                          Run <code>{one.fix}</code>
+                          {tRich('workspace.signInChip.run', { fix: <code>{one.fix}</code> })}
                         </span>
                       )}
                     </li>

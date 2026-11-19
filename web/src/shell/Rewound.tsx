@@ -1,5 +1,7 @@
 import type { Message } from '../gen/bindings'
 import { useShellPick } from './shellStore'
+import { t } from '../i18n'
+import { tRich } from '../i18n/rich'
 
 type RewoundPart = Extract<Message['parts'][number], { kind: 'rewound' }>
 
@@ -10,11 +12,17 @@ export function Rewound({ part }: { part: RewoundPart }): React.JSX.Element {
   const show = useShellPick((shell) => shell.show)
   return (
     <div className="rwnd">
-      Went back to turn {part.turn} of{' '}
-      <button className="rwnd__from" onClick={() => show('chat', { id: part.from_conversation })}>
-        the conversation it came from
-      </button>
-      , which still has every turn it had. The next message goes on from here.
+      {tRich(
+        'workspace.rewound.said',
+        {
+          from: (
+            <button className="rwnd__from" onClick={() => show('chat', { id: part.from_conversation })}>
+              {t('workspace.rewound.from')}
+            </button>
+          ),
+        },
+        { turn: part.turn },
+      )}
     </div>
   )
 }

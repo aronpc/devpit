@@ -2,6 +2,8 @@ import { useEffect } from 'react'
 
 import mark from '../assets/brand/mark.png'
 import { useShell } from './useShell'
+import { t } from '../i18n'
+import { tRich } from '../i18n/rich'
 
 /* Signing in.
  *
@@ -31,29 +33,30 @@ export function SignIn({ onClose }: { onClose: () => void }): React.JSX.Element 
       data-open="true"
       onClick={(event) => event.target === event.currentTarget && close()}
     >
-      <div className="auth__box" role="dialog" aria-label="Sign in to devpit">
-        <button className="auth__x" aria-label="Close" title="Close" onClick={close}>
+      <div className="auth__box" role="dialog" aria-label={t('workspace.signIn.dialog')}>
+        <button className="auth__x" aria-label={t('workspace.signIn.close')} title={t('workspace.signIn.close')} onClick={close}>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
         </button>
-        <span className="auth__mark"><img className="mark" alt="" src={mark} /></span>
+        <span className="auth__mark"><img
+            className="mark"
+            alt="" // ui-text: ok an empty literal — the walk misreads it as the rest of the line
+            src={mark}
+          /></span>
 
         {signingIn ? (
           <>
-            <h2 className="auth__t">Approve this code</h2>
+            <h2 className="auth__t">{t('workspace.signIn.approve')}</h2>
             <p className="auth__d">
-              Your browser is open at <b>{host(origin)}</b>. Check that it shows this code, then
-              approve it there.
+              {tRich('workspace.signIn.browserOpen', { host: <b>{host(origin)}</b> })}
             </p>
             <div className="auth__code">{signingIn.userCode}</div>
-            <p className="auth__fine">Waiting for you to approve&hellip;</p>
+            <p className="auth__fine">{t('workspace.signIn.waiting')}</p>
           </>
         ) : (
           <>
-            <h2 className="auth__t">Sign in to devpit</h2>
+            <h2 className="auth__t">{t('workspace.signIn.title')}</h2>
             <p className="auth__d">
-              Free. Your projects, conversations and files stay on this computer. Sync, off until
-              you turn it on, carries preferences and project settings to your other computers,
-              sealed so devpit.app cannot read them; boards stay where they are.
+              {t('workspace.signIn.free')}
             </p>
             {failed && (
               <p className="auth__failed" role="alert">
@@ -62,10 +65,10 @@ export function SignIn({ onClose }: { onClose: () => void }): React.JSX.Element 
             )}
             <button className="auth__b" onClick={() => void membership.signIn()}>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3" /></svg>
-              Continue in your browser
+              {t('workspace.signIn.continue')}
             </button>
             <p className="auth__fine">
-              Signing in creates an account the first time. devpit never sees your password.
+              {t('workspace.signIn.fine')}
             </p>
           </>
         )}

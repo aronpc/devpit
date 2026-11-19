@@ -9,6 +9,7 @@ import { ask, commands } from './live'
 import { RailMenu, type RailItem } from './RailMenu'
 import { darkNow, palette } from './terminal'
 import { menuPoint } from './menuRules'
+import { t } from '../i18n'
 
 /*
  * One command, as a block: what ran, where, how long, how it ended — and
@@ -99,15 +100,15 @@ export const BlockCard = memo(function BlockCard({
   const line = block.command ?? ''
 
   const items: RailItem[] = [
-    { label: 'Copy command', glyph: <Copy />, act: () => void writeText(line) },
-    { label: 'Copy output', glyph: <Copy />, act: () => void writeText(text) },
-    { label: 'Copy command and output', glyph: <Copy />, act: () => void writeText(`${line}\n${text}`) },
+    { label: t('workspace.blockCard.copyCommand'), glyph: <Copy />, act: () => void writeText(line) },
+    { label: t('workspace.blockCard.copyOutput'), glyph: <Copy />, act: () => void writeText(text) },
+    { label: t('workspace.blockCard.copyBoth'), glyph: <Copy />, act: () => void writeText(`${line}\n${text}`) },
     'rule',
-    { label: 'Run again', glyph: <Undo />, act: () => onRerun(line) },
-    { label: 'Edit and run', glyph: <Pencil />, act: () => onEdit(line) },
-    { label: query === null ? 'Filter output…' : 'Stop filtering', glyph: <Search />, act: () => setQuery(query === null ? '' : null) },
+    { label: t('workspace.blockCard.runAgain'), glyph: <Undo />, act: () => onRerun(line) },
+    { label: t('workspace.blockCard.editRun'), glyph: <Pencil />, act: () => onEdit(line) },
+    { label: query === null ? t('workspace.blockCard.filter') : t('workspace.blockCard.stopFilter'), glyph: <Search />, act: () => setQuery(query === null ? '' : null) },
     'rule',
-    { label: block.bookmarked ? 'Remove bookmark' : 'Bookmark this block', glyph: <Bookmark />, act: () => onBookmark(block.id, !block.bookmarked) },
+    { label: block.bookmarked ? t('workspace.blockCard.unbookmark') : t('workspace.blockCard.bookmark'), glyph: <Bookmark />, act: () => onBookmark(block.id, !block.bookmarked) },
   ]
 
   return (
@@ -122,22 +123,22 @@ export const BlockCard = memo(function BlockCard({
       >
         <span className="blk__dot" aria-label={state} />
         {block.bookmarked && (
-          <span className="blk__mark" title="Bookmarked — Alt+↑ and Alt+↓ jump between bookmarks">
+          <span className="blk__mark" title={t('workspace.blockCard.bookmarked')}>
             <Bookmark />
           </span>
         )}
         <code className="blk__cmd" title={line}>
-          {line || <span className="blk__nocmd">command</span>}
+          {line || <span className="blk__nocmd">{t('workspace.blockCard.noCommand')}</span>}
         </code>
         <span className="blk__meta">
           {block.cwd && <span className="blk__cwd" title={block.cwd}>{shortPath(block.cwd, home)}</span>}
-          {state === 'failed' && <span className="blk__code">exit {block.code}</span>}
+          {state === 'failed' && <span className="blk__code">{t('workspace.blockCard.exit', { code: block.code ?? '' })}</span>}
           <span>{took(block, Date.now())}</span>
         </span>
         <button
           className="blk__more"
-          aria-label="Block actions"
-          title="Block actions"
+          aria-label={t('workspace.blockCard.actions')}
+          title={t('workspace.blockCard.actions')}
           onClick={(event) => {
             event.stopPropagation()
             setMenu(menuPoint(event))
@@ -150,23 +151,23 @@ export const BlockCard = memo(function BlockCard({
       {open && query !== null && (
         <div className="blk__filter">
           <Search />
-          <input autoFocus value={query} placeholder="Filter this output" onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => event.key === 'Escape' && setQuery(null)} />
-          <span>{kept?.length ?? 0} lines</span>
+          <input autoFocus value={query} placeholder={t('workspace.blockCard.filterPlaceholder')} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => event.key === 'Escape' && setQuery(null)} />
+          <span>{t('workspace.blockCard.lines', { count: kept?.length ?? 0 })}</span>
         </div>
       )}
 
       {open && (
         <div className="blk__out">
           {block.interactive ? (
-            <div className="blk__note">Took the whole screen — nothing to read back here.</div>
+            <div className="blk__note">{t('workspace.blockCard.interactive')}</div>
           ) : lines === null ? (
             <div className="blk__note">…</div>
           ) : (
             <>
               {(clipped || block.truncated) && (
                 <button className="blk__all" onClick={() => setAll(true)} disabled={!clipped}>
-                  {block.truncated ? 'The start of this output was too long to keep.' : ''}
-                  {clipped ? ` Show all ${visible.length} lines` : ''}
+                  {block.truncated ? t('workspace.blockCard.truncated') : ''}
+                  {clipped ? ` ${t('workspace.blockCard.showAll', { count: visible.length })}` : ''}
                 </button>
               )}
               <pre className="blk__pre">
@@ -186,7 +187,7 @@ export const BlockCard = memo(function BlockCard({
                       >
                         {linked(run.text).map((piece, p) =>
                           piece.url ? (
-                            <a key={p} className="blk__link" href={piece.url} title={`Open ${piece.url}`} onClick={(event) => {
+                            <a key={p} className="blk__link" href={piece.url} title={t('workspace.blockCard.open', { url: piece.url })} onClick={(event) => {
                               event.preventDefault()
                               void ask(() => commands.urlOpen(piece.url!))
                             }}>
@@ -206,7 +207,7 @@ export const BlockCard = memo(function BlockCard({
         </div>
       )}
 
-      {menu && <RailMenu at={menu} items={items} label="Block actions" onClose={() => setMenu(null)} />}
+      {menu && <RailMenu at={menu} items={items} label={t('workspace.blockCard.actions')} onClose={() => setMenu(null)} />}
     </article>
   )
 })

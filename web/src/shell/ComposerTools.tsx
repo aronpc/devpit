@@ -7,6 +7,7 @@ import type { Chat } from './useChat'
 import { useShell } from './useShell'
 import { letsGo, matches } from './shortcuts'
 import { useKeys, useShortcut } from './useShortcut'
+import { t } from '../i18n'
 
 /*
  * The composer's two ways in besides typing: files, chosen from the system's
@@ -69,7 +70,7 @@ export function ComposerTools({ chat, mine, onHeard }: { chat: Chat; mine: boole
   useShortcut('talk', () => {
     if (!mine || document.activeElement?.closest('.xterm')) return false
     if (held.current || recording.current || hearing) return
-    if (!format) return setSaid('This window cannot record.')
+    if (!format) return setSaid(t('workspace.composerTools.cannotRecord'))
     const up = (event: KeyboardEvent): void => {
       if (letsGo('talk', event)) letGo()
     }
@@ -143,12 +144,12 @@ export function ComposerTools({ chat, mine, onHeard }: { chat: Chat; mine: boole
     recording.current = null
     setSince(null)
     const blob = await held.stop()
-    if (!blob) return setSaid('Nothing was recorded.')
+    if (!blob) return setSaid(t('workspace.composerTools.nothing'))
     setHearing(true)
     const kept = await ask(async () => commands.chatPaste(project.id, blob.type, await base64Of(blob)))
     if (!kept.data) {
       setHearing(false)
-      return setSaid(kept.error ?? 'The recording could not be kept.')
+      return setSaid(kept.error ?? t('workspace.composerTools.notKept'))
     }
     const recorded = kept.data
     chat.keep(recorded)
@@ -161,7 +162,7 @@ export function ComposerTools({ chat, mine, onHeard }: { chat: Chat; mine: boole
       onHeard(text)
       return
     }
-    setSaid(`Sent as a recording: ${heard.data?.note ?? heard.error ?? 'it could not be heard'}.`)
+    setSaid(t('workspace.composerTools.sentAsRecording', { why: heard.data?.note ?? heard.error ?? t('workspace.composerTools.notHeard') }))
   }
 
   const recordingNow = since !== null
@@ -170,32 +171,32 @@ export function ComposerTools({ chat, mine, onHeard }: { chat: Chat; mine: boole
       {said && (
         <span className="ctools__said" role="status">
           {said}
-          <button className="ctools__x" onClick={() => setSaid(null)} aria-label="Dismiss" title="Dismiss">
+          <button className="ctools__x" onClick={() => setSaid(null)} aria-label={t('workspace.composerTools.dismiss')} title={t('workspace.composerTools.dismiss')}>
             ✕
           </button>
         </span>
       )}
       {recordingNow ? (
-        <span className="ctools__rec" role="status" aria-label="Recording">
+        <span className="ctools__rec" role="status" aria-label={t('workspace.composerTools.recording')}>
           <i className="ctools__dot" />
           {clock(now - since)}
-          <button className="ctools__btn" onClick={cancel} title="Throw it away">
-            Cancel
+          <button className="ctools__btn" onClick={cancel} title={t('workspace.composerTools.throwAway')}>
+            {t('workspace.composerTools.cancel')}
           </button>
-          <button className="ctools__btn ctools__btn--go" onClick={() => void finish()} title="Stop, and make it words">
-            Done
+          <button className="ctools__btn ctools__btn--go" onClick={() => void finish()} title={t('workspace.composerTools.stopTitle')}>
+            {t('workspace.composerTools.done')}
           </button>
         </span>
       ) : (
         <>
-          <button className="ctools__icon" onClick={() => void pick()} title={`Attach files (${keys('attach')})`} aria-label="Attach files">
+          <button className="ctools__icon" onClick={() => void pick()} title={t('workspace.composerTools.attachTitle', { keys: keys('attach') })} aria-label={t('workspace.composerTools.attach')}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.4 11.6-9.2 9.2a6 6 0 0 1-8.5-8.5l9.2-9.2a4 4 0 0 1 5.7 5.7l-9.2 9.2a2 2 0 0 1-2.8-2.8l8.5-8.5" /></svg>
           </button>
           <button
             className="ctools__icon"
             disabled={!format || hearing}
-            title={!format ? 'This window cannot record' : hearing ? 'Making it words…' : `Record a voice message — click, or hold it or ${keys('talk')} and let go`}
-            aria-label="Record a voice message"
+            title={!format ? t('workspace.composerTools.cannotRecordTitle') : hearing ? t('workspace.composerTools.making') : t('workspace.composerTools.recordTitle', { keys: keys('talk') })}
+            aria-label={t('workspace.composerTools.record')}
             onPointerDown={() => {
               pressed.current = Date.now()
               void start()

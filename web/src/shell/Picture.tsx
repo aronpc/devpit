@@ -1,6 +1,7 @@
 import { useState } from 'react'
 
 import { bytes } from './disk'
+import { t } from '../i18n'
 
 /*
  * A picture a file read handed back, drawn inline.
@@ -20,8 +21,8 @@ export function Picture({ src, name, size }: { src: string; name: string; size: 
   if (broken) {
     return (
       <div className="exempty">
-        <span className="exempty__t">This window could not draw {name}.</span>
-        <span className="exempty__d">{bytes(size) ?? 'empty'}</span>
+        <span className="exempty__t">{t('workspace.picture.cannotDraw', { name })}</span>
+        <span className="exempty__d">{bytes(size) ?? t('workspace.picture.empty')}</span>
       </div>
     )
   }
@@ -32,7 +33,7 @@ export function Picture({ src, name, size }: { src: string; name: string; size: 
         data-actual={actual || undefined}
         src={src}
         alt={name}
-        title={actual ? 'Click to fit the pane' : 'Click for its own size'}
+        title={actual ? t('workspace.picture.fit') : t('workspace.picture.actual')}
         onClick={() => setActual((was) => !was)}
         onLoad={(event) => setDrawn({ width: event.currentTarget.naturalWidth, height: event.currentTarget.naturalHeight })}
         onError={() => setBroken(true)}

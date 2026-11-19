@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 
+import { t } from '../i18n'
 import { AgentMark } from './AgentMark'
 import { HostBadge } from './HostBadge'
 import { paneMeta } from './paneList'
@@ -129,7 +130,7 @@ export function TabStrip(): React.JSX.Element {
       <div
         className="tabs__rail"
         role="group"
-        aria-label="Panes"
+        aria-label={t('workspace.tabs.panes')}
         ref={strip}
         data-moving={dragging ? 'true' : undefined}
         onPointerMove={onMove}
@@ -201,12 +202,12 @@ export function TabStrip(): React.JSX.Element {
           {/* Something is running here and it is not an agent. The name stays
               the tab's own; the dot is the whole message. */}
           {busyIn(running, tab)?.agent === null && <i className="tab__dot" aria-hidden="true" />}
-          {unreadIn(unread, tab) && <i className="tab__new" role="img" aria-label="Finished, not seen yet" />}
+          {unreadIn(unread, tab) && <i className="tab__new" role="img" aria-label={t('workspace.tabs.unread')} />}
           <span
             className="tab__x"
             role="button"
-            aria-label="Close"
-            title="Close"
+            aria-label={t('workspace.tabs.close')}
+            title={t('workspace.tabs.close')}
             onClick={(event) => {
               event.stopPropagation()
               close(tab.id)
@@ -228,7 +229,7 @@ export function TabStrip(): React.JSX.Element {
           goes to start something, and most of the time the something is an
           agent. A plain terminal is the first row in it, and ⌘T still opens
           one without stopping to ask. */}
-      <button className="tab tab--new" title={`Open something new (${keys('palette')})`} aria-label="Open something new" onClick={openPalette}>
+      <button className="tab tab--new" title={t('workspace.tabs.newKeys', { keys: keys('palette') })} aria-label={t('workspace.tabs.new')} onClick={openPalette}>
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
           <path d="M12 5v14M5 12h14" />
         </svg>

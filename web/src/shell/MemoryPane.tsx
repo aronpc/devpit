@@ -5,6 +5,7 @@ import { ask, commands } from './live'
 import { useShellPick } from './shellStore'
 import { useShell } from './useShell'
 import { onCarried } from './window'
+import { t } from '../i18n'
 
 /*
  * The project agent's page: what its memory keeps, each entry with its day
@@ -16,21 +17,21 @@ import { onCarried } from './window'
  * and can be undone. Off for the project, it says so and turns on from here.
  */
 
-const KINDS: Record<string, string> = { 'facts.md': 'Fact', 'lessons.md': 'Lesson', 'decisions.md': 'Decision' }
+const KINDS: Record<string, string> = { 'facts.md': 'workspace.memory.kind.fact', 'lessons.md': 'workspace.memory.kind.lesson', 'decisions.md': 'workspace.memory.kind.decision' }
 
 /** What the page says of its agent's read of the project. */
 export function standing(memory: ProjectMemory): string {
-  if (!memory.on) return 'Off for this project: its agent neither learns nor answers until you turn it on.'
-  if (memory.learning) return 'Learning the project: facts that rest on its files enter the memory, the rest waits here for you.'
-  if (memory.learned) return `Learned the project on ${memory.learned}. Facts that rest on its files entered the memory; the rest waits for your approval.`
-  return 'Not learned yet: Re-learn has its agent read the project.'
+  if (!memory.on) return t('workspace.memory.standing.off')
+  if (memory.learning) return t('workspace.memory.standing.learning')
+  if (memory.learned) return t('workspace.memory.standing.learned', { day: memory.learned })
+  return t('workspace.memory.standing.not')
 }
 
 /** A proposal's kind as its label: an update or a removal of a kept entry says so. */
 export function kindOf(proposal: { file: string; text: string; replaces: string | null }): string {
-  const kind = KINDS[proposal.file] ?? 'Lesson'
+  const kind = t(KINDS[proposal.file] ?? 'workspace.memory.kind.lesson')
   if (proposal.replaces === null) return kind
-  return proposal.text ? `${kind} · update` : `${kind} · removal`
+  return t(proposal.text ? 'workspace.memory.kind.update' : 'workspace.memory.kind.removal', { kind })
 }
 
 function Sources({ files, cards }: { files: readonly string[]; cards: readonly string[] }): React.JSX.Element {
@@ -53,19 +54,19 @@ function Kept({ title, entries, onUndo }: { title: string; entries: readonly Mem
       <h3 className="pmem__h">
         {title} <span className="pmem__n">{entries.length}</span>
       </h3>
-      {entries.length === 0 && <p className="acc__note">Nothing yet.</p>}
+      {entries.length === 0 && <p className="acc__note">{t('workspace.memory.nothingYet')}</p>}
       {entries.map((one, at) => (
         <div key={`${at} ${one.source} ${one.text}`} className="pmem__one">
           <p className="pmem__text">{one.text}</p>
           <span className="pmem__meta">
             <span className="pmem__day">{one.day}</span>
             <Sources files={one.files} cards={one.cards} />
-            {one.auto && <span className="pmem__auto">accepted automatically</span>}
+            {one.auto && <span className="pmem__auto">{t('workspace.memory.auto')}</span>}
           </span>
           {one.auto && onUndo && (
             <span className="remind__acts">
               <button className="remind__btn" onClick={() => onUndo(one)}>
-                Undo
+                {t('workspace.memory.undo')}
               </button>
             </span>
           )}
@@ -95,7 +96,7 @@ export function MemoryPane(): React.JSX.Element {
     return onCarried<string>('lessons:proposed', (id) => id === hereId && reload())
   }, [hereId, reload])
 
-  if (!here) return <p className="acc__note">The project agent belongs to a project.</p>
+  if (!here) return <p className="acc__note">{t('workspace.memory.belongs')}</p>
   const shown = memory?.projectId === here.id ? memory : null
   const decide = (one: MemoryProposal, kept: string | null): void => {
     const { projectId, source, text, replaces } = one.proposal
@@ -119,11 +120,11 @@ export function MemoryPane(): React.JSX.Element {
         <p className="acc__note">{shown ? standing(shown) : ''}</p>
         {shown && !shown.on ? (
           <button className="btn btn--sm btn--go" onClick={turnOn}>
-            Learn this project
+            {t('workspace.memory.learnThis')}
           </button>
         ) : (
           <button className="btn btn--sm" disabled={!shown || shown.learning} onClick={() => void ask(() => commands.projectAgentRelearn(here.id)).then(take)}>
-            Re-learn
+            {t('workspace.memory.relearn')}
           </button>
         )}
       </div>
@@ -134,63 +135,63 @@ export function MemoryPane(): React.JSX.Element {
       )}
       {shown && (
         <>
-          <section className="pmem__part" aria-label="Proposed">
+          <section className="pmem__part" aria-label={t('workspace.memory.proposed')}>
             <h3 className="pmem__h">
-              Proposed <span className="pmem__n">{shown.proposals.length}</span>
+              {t('workspace.memory.proposed')} <span className="pmem__n">{shown.proposals.length}</span>
               {learned > 0 && (
                 <button className="btn btn--sm btn--go pmem__all" onClick={() => void ask(() => commands.projectAgentApproveLearned(here.id)).then(take)}>
-                  Approve all from onboarding ({learned})
+                  {t('workspace.memory.approveAll', { count: learned })}
                 </button>
               )}
             </h3>
-            {shown.proposals.length === 0 && <p className="acc__note">Nothing waits for you.</p>}
+            {shown.proposals.length === 0 && <p className="acc__note">{t('workspace.memory.nothingWaits')}</p>}
             {shown.proposals.map((one) => {
               const { source, text, replaces, day, summary, by } = one.proposal
               const edited = editing?.of === one ? editing : null
-              const whole = replaces !== null && !text ? `Remove: ${replaces}` : text
+              const whole = replaces !== null && !text ? t('workspace.memory.remove', { text: replaces }) : text
               return (
                 <div key={`${source} ${text} ${replaces ?? ''}`} className="pmem__one pmem__prop" role="group" aria-label={summary}>
                   <span className="pmem__head">
                     <span className="pmem__kind">{kindOf(one.proposal)}</span>
-                    <span className="pmem__by">from {by}</span>
+                    <span className="pmem__by">{t('workspace.memory.from', { by })}</span>
                     <span className="pmem__day">{day}</span>
                   </span>
                   {edited ? (
-                    <input className="remind__edit" aria-label="Proposal" value={edited.text} onChange={(event) => setEditing({ of: one, text: event.target.value })} />
+                    <input className="remind__edit" aria-label={t('workspace.memory.proposal')} value={edited.text} onChange={(event) => setEditing({ of: one, text: event.target.value })} />
                   ) : (
                     <p className="pmem__text pmem__sum">{summary}</p>
                   )}
                   {!edited && whole !== summary && (
                     <details className="pmem__details">
-                      <summary>details</summary>
+                      <summary>{t('workspace.memory.details')}</summary>
                       <p className="pmem__text">{whole}</p>
-                      {replaces !== null && text && <p className="pmem__was">was: {replaces}</p>}
+                      {replaces !== null && text && <p className="pmem__was">{t('workspace.memory.was', { text: replaces })}</p>}
                     </details>
                   )}
                   <span className="pmem__meta">
-                    <span className="pmem__label">Sources</span>
+                    <span className="pmem__label">{t('workspace.memory.sources')}</span>
                     <Sources files={one.files} cards={one.cards} />
                   </span>
                   <span className="remind__acts">
                     <button className="remind__btn" onClick={() => decide(one, null)}>
-                      Discard
+                      {t('workspace.memory.discard')}
                     </button>
                     {!edited && (
                       <button className="remind__btn" onClick={() => setEditing({ of: one, text })}>
-                        Edit
+                        {t('workspace.memory.edit')}
                       </button>
                     )}
                     <button className="remind__btn remind__btn--done" onClick={() => decide(one, edited ? edited.text : text)}>
-                      Approve
+                      {t('workspace.memory.approve')}
                     </button>
                   </span>
                 </div>
               )
             })}
           </section>
-          <Kept title="Facts" entries={shown.facts} onUndo={(one) => void ask(() => commands.projectAgentUndoAccepted(here.id, one.text)).then(take)} />
-          <Kept title="Lessons" entries={shown.lessons} />
-          <Kept title="Decisions" entries={shown.decisions} />
+          <Kept title={t('workspace.memory.facts')} entries={shown.facts} onUndo={(one) => void ask(() => commands.projectAgentUndoAccepted(here.id, one.text)).then(take)} />
+          <Kept title={t('workspace.memory.lessons')} entries={shown.lessons} />
+          <Kept title={t('workspace.memory.decisions')} entries={shown.decisions} />
         </>
       )}
     </div>

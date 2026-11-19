@@ -1,3 +1,4 @@
+import { t } from '../i18n'
 import { ControlMenu, type Choice } from './ControlMenu'
 import { effortName, MODES, modeName } from './chat'
 import { ModelPicker } from './ModelPicker'
@@ -56,7 +57,7 @@ export function Chips({
       {levels.length > 0 && (
         <ControlMenu
           label={effortName(chat.effort ?? fallback ?? efforts[0])}
-          title="Reasoning"
+          title={t('workspace.chips.reasoning')}
           choices={levels}
           onPick={(effort) => {
             chat.setEffort(effort)
@@ -67,7 +68,7 @@ export function Chips({
 
       <ControlMenu
         label={modeName(chat.permission)}
-        title="What the agent may do without asking"
+        title={t('workspace.chips.mayDo')}
         choices={modes}
         onPick={(mode) => {
           chat.setPermission(mode)

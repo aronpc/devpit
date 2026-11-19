@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 
+import { t } from '../i18n'
 import { abandoned, committed } from './typing'
 
 /*
@@ -53,7 +54,7 @@ export function Rename({
       className={`rename ${className ?? ''}`}
       value={draft}
       spellCheck={false}
-      aria-label="Name"
+      aria-label={t('workspace.rename.name')}
       onChange={(event) => setDraft(event.target.value)}
       onBlur={commit}
       onClick={(event) => event.stopPropagation()}

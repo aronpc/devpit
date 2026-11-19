@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 
+import { t } from '../i18n'
 import type { OpenApp } from '../gen/bindings'
 import { useAway } from './away'
 import { ask, commands } from './live'
@@ -37,7 +38,7 @@ export function OpenIn({
     const only = usable[0]!
     return (
       <button className="btn" onClick={() => hand(only)}>
-        Open in {only.label}
+        {t('workspace.openIn.only', { name: only.label })}
       </button>
     )
   }
@@ -45,7 +46,7 @@ export function OpenIn({
   return (
     <div className="opin" ref={box}>
       <button className="btn" aria-expanded={open} onClick={() => setOpen((was) => !was)}>
-        Open in
+        {t('workspace.openIn.title')}
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
       </button>
       {open && (

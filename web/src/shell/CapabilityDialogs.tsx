@@ -1,5 +1,8 @@
 import { useId, useState } from 'react'
 
+import { t } from '../i18n'
+import { tRich } from '../i18n/rich'
+
 /*
  * Installing and uninstalling a capability, each behind a dialog.
  *
@@ -9,21 +12,21 @@ import { useId, useState } from 'react'
 
 /** The final button names what it will do, so a ticked box cannot go unnoticed. */
 export function uninstallLabel(deleteData: boolean, files: number | null): string {
-  if (!deleteData) return 'Uninstall'
-  return files ? `Uninstall and delete ${files} file${files === 1 ? '' : 's'}` : 'Uninstall and delete its data'
+  if (!deleteData) return t('workspace.capDialog.uninstall')
+  return files ? t('workspace.capDialog.uninstallDeleteFiles', { count: files }) : t('workspace.capDialog.uninstallDeleteData')
 }
 
 /** What the pane says once it is gone, from the backend's own count of deleted files. */
 export function uninstalledInWords(name: string, deleteData: boolean, removed: number): string {
-  if (!deleteData) return `${name} uninstalled. Its files stay in this project’s folder.`
-  return `${name} uninstalled and ${removed} file${removed === 1 ? '' : 's'} deleted.`
+  if (!deleteData) return t('workspace.capDialog.uninstalledKept', { name })
+  return t('workspace.capDialog.uninstalledDeleted', { name, count: removed })
 }
 
 /** Null when the folder could not be read: a count nobody read is not zero. */
 function filesInWords(files: number | null): string {
-  if (files === null) return 'Everything it saved in this project’s folder.'
-  if (files === 0) return 'It has no files in this project’s folder yet.'
-  return `${files} file${files === 1 ? '' : 's'} in this project’s folder.`
+  if (files === null) return t('workspace.capDialog.filesUnknown')
+  if (files === 0) return t('workspace.capDialog.filesNone')
+  return t('workspace.capDialog.filesSome', { count: files })
 }
 
 function Ask({
@@ -58,11 +61,11 @@ export function InstallCapability({
   onConfirm: () => void
 }): React.JSX.Element {
   return (
-    <Ask onClose={onClose} title={(id) => <h2 className="ask__t" id={id}>Install {name}?</h2>}>
+    <Ask onClose={onClose} title={(id) => <h2 className="ask__t" id={id}>{t('workspace.capDialog.installTitle', { name })}</h2>}>
       <p className="ask__d">
-        Installs {name} in this project and turns it on. <b>Its files will live in this project&rsquo;s folder.</b>
+        {tRich('workspace.capDialog.installBody', { bold: <b>{t('workspace.capDialog.installBold')}</b> }, { name })}
       </p>
-      <ul className="capcard__adds" aria-label="What it adds">
+      <ul className="capcard__adds" aria-label={t('workspace.capDialog.adds')}>
         {adds.map((words) => (
           <li className="capcard__add" key={words}>
             {words}
@@ -71,10 +74,10 @@ export function InstallCapability({
       </ul>
       <div className="ask__row">
         <button className="btn" onClick={onClose}>
-          Cancel
+          {t('workspace.capDialog.cancel')}
         </button>
         <button className="btn btn--go" autoFocus onClick={onConfirm}>
-          Install
+          {t('workspace.capDialog.install')}
         </button>
       </div>
     </Ask>
@@ -99,9 +102,9 @@ export function UninstallCapability({
 
   const title = (id: string): React.ReactNode => (
     <>
-      <p className="ask__step">Step {step} of 2</p>
+      <p className="ask__step">{t('workspace.capDialog.step', { step })}</p>
       <h2 className="ask__t" id={id}>
-        {step === 1 ? `Uninstall ${name}?` : `${name}’s files`}
+        {step === 1 ? t('workspace.capDialog.uninstallTitle', { name }) : t('workspace.capDialog.filesTitle', { name })}
       </h2>
     </>
   )
@@ -109,20 +112,20 @@ export function UninstallCapability({
   return step === 1 ? (
     <Ask onClose={onClose} title={title}>
       <p className="ask__d">
-        {name} leaves the sidebar and <b>its open tabs close</b>. You can install it again from here.
+        {tRich('workspace.capDialog.leaves', { bold: <b>{t('workspace.capDialog.leavesBold')}</b> }, { name })}
       </p>
       <div className="ask__row">
         <button className="btn" onClick={onClose}>
-          Cancel
+          {t('workspace.capDialog.cancel')}
         </button>
         <button className="btn" onClick={() => setStep(2)}>
-          Continue
+          {t('workspace.capDialog.continue')}
         </button>
       </div>
     </Ask>
   ) : (
     <Ask onClose={onClose} title={title}>
-      <p className="ask__d">Unless you tick the box, they stay in this project&rsquo;s folder.</p>
+      <p className="ask__d">{t('workspace.capDialog.unlessTick')}</p>
       <button className="ask__opt" role="checkbox" aria-checked={deleteData} onClick={() => setDeleteData((was) => !was)}>
         <span className="box">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -130,13 +133,13 @@ export function UninstallCapability({
           </svg>
         </span>
         <span>
-          <span className="ask__ot">Also delete {name}&rsquo;s data</span>
-          <span className="ask__od">{filesInWords(files)} This cannot be undone.</span>
+          <span className="ask__ot">{t('workspace.capDialog.alsoDelete', { name })}</span>
+          <span className="ask__od">{filesInWords(files)} {t('workspace.capDialog.undone')}</span>
         </span>
       </button>
       <div className="ask__row">
         <button className="btn" onClick={onClose}>
-          Cancel
+          {t('workspace.capDialog.cancel')}
         </button>
         <button className="btn btn--danger" onClick={() => onConfirm(deleteData)}>
           {uninstallLabel(deleteData, files)}

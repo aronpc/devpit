@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 
 import type { HubStatus } from '../gen/bindings'
+import { t } from '../i18n'
+import { tRich } from '../i18n/rich'
 import { ask, commands } from './live'
 
 /*
@@ -22,23 +24,25 @@ export function HubSetup({ onChanged }: { onChanged: () => void }): React.JSX.El
   return (
     <div className="pref">
       <span className="pref__body">
-        <span className="pref__t">devpit.app — e-mail and push</span>
+        <span className="pref__t">{t('workspace.hub.title')}</span>
         <span className="pref__d">
-          devpit.app e-mails what waits on you and wakes your phone; choose which at{' '}
-          <button className="plusl" onClick={() => void ask(() => commands.urlOpen('https://devpit.app/account'))}>
-            devpit.app/account
-          </button>
-          . A button pressed there is done here, when this computer is on.
-          {!status.signedIn && ' Sign in to devpit.app on this computer first (Settings → Account).'}
+          {tRich('workspace.hub.said', {
+            account: (
+              <button className="plusl" onClick={() => void ask(() => commands.urlOpen('https://devpit.app/account'))}>
+                devpit.app/account{/* // ui-text: ok an address */}
+              </button>
+            ),
+          })}
+          {!status.signedIn && ` ${t('workspace.hub.signIn')}`}
         </span>
         <label className="voice__row">
           <input type="checkbox" disabled={!status.signedIn} checked={status.on} onChange={(event) => set(event.target.checked, status.titles)} />
-          Send notices through devpit.app
+          {t('workspace.hub.send')}
         </label>
         {status.on && (
           <label className="voice__row">
             <input type="checkbox" checked={status.titles} onChange={(event) => set(status.on, event.target.checked)} />
-            Say which session, card or project — e-mail is not end-to-end encrypted
+            {t('workspace.hub.titles')}
           </label>
         )}
       </span>

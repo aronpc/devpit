@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 
+import { t } from '../i18n'
 import { KEYS_SHEET } from './keysSheet'
 import { useRebound } from './rebound'
 import { keysLabels, SCOPES, SHORTCUT_LIST } from './shortcuts'
@@ -78,8 +79,8 @@ export function CheatSheet(): React.JSX.Element | null {
   if (!open) return null
   return (
     <div className="ask" data-open="true" onClick={(event) => event.target === event.currentTarget && setOpen(false)}>
-      <div className="ask__box ksheet" role="dialog" aria-modal="true" aria-label="Keyboard shortcuts">
-        <h2 className="ask__t">Keyboard shortcuts</h2>
+      <div className="ask__box ksheet" role="dialog" aria-modal="true" aria-label={t('workspace.cheat.title')}>
+        <h2 className="ask__t">{t('workspace.cheat.title')}</h2>
         <KeysSheet />
         <div className="ask__row">
           <button
@@ -89,10 +90,10 @@ export function CheatSheet(): React.JSX.Element | null {
               openPrefs('keyboard')
             }}
           >
-            Change them in Settings
+            {t('workspace.cheat.change')}
           </button>
           <button className="btn btn--go" autoFocus onClick={() => setOpen(false)}>
-            Close
+            {t('workspace.cheat.close')}
           </button>
         </div>
       </div>

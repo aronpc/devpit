@@ -1,3 +1,4 @@
+import { t } from '../i18n'
 import type { Row } from './paletteGroups'
 
 /* The rows, grouped. The index runs across every group, because the arrow
@@ -24,7 +25,7 @@ export function PaletteList({
     <div className="cmd__body">
       {groups.map(([title, rows]) => (
         <div key={title}>
-          <div className="cmd__g">{title}</div>
+          <div className="cmd__g">{t(`workspace.palette.group${title}`)}</div>
           {rows.map((row) => {
             index += 1
             const mine = index
@@ -47,9 +48,9 @@ export function PaletteList({
 
       {/* "Nothing found" while the index is still being built would be a
           different claim from the true one. */}
-      {total === 0 && indexing && <div className="cmd__none">Indexing…</div>}
-      {total === 0 && !indexing && <div className="cmd__none">Nothing by that name.</div>}
-      {partial && <div className="cmd__none">This project is too large to list whole.</div>}
+      {total === 0 && indexing && <div className="cmd__none">{t('workspace.palette.indexing')}</div>}
+      {total === 0 && !indexing && <div className="cmd__none">{t('workspace.palette.none')}</div>}
+      {partial && <div className="cmd__none">{t('workspace.palette.tooLarge')}</div>}
     </div>
   )
 }
@@ -61,13 +62,13 @@ export function PaletteKeys(): React.JSX.Element {
     <div className="cmd__foot">
       <span>
         <span className="kbd">&uarr;</span>
-        <span className="kbd">&darr;</span>move
+        <span className="kbd">&darr;</span>{t('workspace.palette.move')}
       </span>
       <span>
-        <span className="kbd">&crarr;</span>open
+        <span className="kbd">&crarr;</span>{t('workspace.palette.open')}
       </span>
       <span>
-        <span className="kbd">esc</span>close
+        <span className="kbd">{t('workspace.palette.esc')}</span>{t('workspace.palette.close')}
       </span>
     </div>
   )

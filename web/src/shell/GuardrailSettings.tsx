@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 
 import type { Guardrail, GuardrailMode, Guardrails } from '../gen/bindings'
+import { t } from '../i18n'
 import { ask, commands } from './live'
 import { useShell } from './useShell'
 
@@ -11,15 +12,15 @@ import { useShell } from './useShell'
  */
 
 const GUARDRAILS: Readonly<Record<Guardrail, readonly [string, string]>> = {
-  stop: ['Stop a session', 'The orchestrator ends a session and closes its terminal.'],
-  forceStop: ['Force stop, or a stop that loses work', 'The session is working, or its folder has changes not committed.'],
-  sendDraft: ['Send a drafted reply as you', 'A reply the orchestrator wrote goes to a session in your name.'],
+  stop: ['workspace.guardrail.stop', 'workspace.guardrail.stopSaid'],
+  forceStop: ['workspace.guardrail.force', 'workspace.guardrail.forceSaid'],
+  sendDraft: ['workspace.guardrail.send', 'workspace.guardrail.sendSaid'],
 }
 
 const MODES: ReadonlyArray<readonly [GuardrailMode, string]> = [
-  ['follow', 'Follow chat permission'],
-  ['always', 'Always ask'],
-  ['never', 'Never ask'],
+  ['follow', 'workspace.guardrail.follow'],
+  ['always', 'workspace.guardrail.always'],
+  ['never', 'workspace.guardrail.never'],
 ]
 
 export function GuardrailSettings(): React.JSX.Element {
@@ -48,24 +49,24 @@ export function GuardrailSettings(): React.JSX.Element {
     })
   }
 
-  if (!project) return <p className="acc__note">No orchestrator yet: its guardrails show here once you create one.</p>
+  if (!project) return <p className="acc__note">{t('workspace.guardrail.none')}</p>
   return (
     <>
-      <div className="acc__sub">Guardrails</div>
+      <div className="acc__sub">{t('workspace.guardrail.title')}</div>
       <p className="acc__note">
-        What the orchestrator waits for you to confirm. Follow chat permission asks unless its chat runs in Full access. Done without asking, it says so in its chat and in its sessions log.
+        {t('workspace.guardrail.note')}
       </p>
       {orchestrators.length > 1 && (
         <div className="pref">
-          <span className="pref__body"><span className="pref__t">Orchestrator</span></span>
-          <select aria-label="The orchestrator these guardrails are for" value={project.id} onChange={(change) => setChosen(change.target.value)}>
+          <span className="pref__body"><span className="pref__t">{t('workspace.guardrail.orchestrator')}</span></span>
+          <select aria-label={t('workspace.guardrail.orchestratorLabel')} value={project.id} onChange={(change) => setChosen(change.target.value)}>
             {orchestrators.map((one) => <option key={one.id} value={one.id}>{one.name}</option>)}
           </select>
         </div>
       )}
       {problem && <p className="acc__note voice__bad" role="alert">{problem}</p>}
       {guardrails?.rows.map((row) => {
-        const [title, what] = GUARDRAILS[row.guardrail]
+        const [title, what] = GUARDRAILS[row.guardrail].map((key) => t(key))
         return (
           <div className="pref" key={row.guardrail}>
             <span className="pref__body">
@@ -73,7 +74,7 @@ export function GuardrailSettings(): React.JSX.Element {
               <span className="pref__d">{what}</span>
             </span>
             <select aria-label={title} value={row.mode} onChange={(change) => pick(row.guardrail, change.target.value as GuardrailMode)}>
-              {MODES.map(([mode, label]) => <option key={mode} value={mode}>{label}</option>)}
+              {MODES.map(([mode, label]) => <option key={mode} value={mode}>{t(label)}</option>)}
             </select>
           </div>
         )

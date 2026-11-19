@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react'
 import { type Filters, lanesOf, NO_FILTERS, tally } from './manager'
 import { useProjectBoards } from './useProjectBoards'
 import { useShell } from './useShell'
+import { t } from '../i18n'
 
 /*
  * The Manager: every project's board at once.
@@ -42,29 +43,29 @@ export function ManagerPane(): React.JSX.Element {
           beside the other overlays in `AppShell`. */}
       <button className="mgr__back" onClick={closeManager}>
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
-        Back
+        {t('workspace.manager.back')}
       </button>
       <header className="mgr__top">
-        <h1 className="mgr__t">Manager</h1>
-        <p className="mgr__d">Every project&rsquo;s board, in one place. Opening a card goes to it.</p>
+        <h1 className="mgr__t">{t('workspace.manager.title')}</h1>
+        <p className="mgr__d">{t('workspace.manager.intro')}</p>
       </header>
 
       <div className="mgr__filters">
         <input
           className="mgr__find"
           type="search"
-          aria-label="Filter cards"
-          placeholder="Filter cards"
+          aria-label={t('workspace.manager.filter')}
+          placeholder={t('workspace.manager.filter')}
           value={filters.query}
           onChange={(event) => setFilters({ ...filters, query: event.target.value })}
         />
         <label>
-          Project
+          {t('workspace.manager.project')}
           <select
             value={filters.projectId ?? ''}
             onChange={(event) => setFilters({ ...filters, projectId: event.target.value || null })}
           >
-            <option value="">Every project</option>
+            <option value="">{t('workspace.manager.everyProject')}</option>
             {projects.map((project) => (
               <option key={project.id} value={project.id}>
                 {project.name}
@@ -73,12 +74,12 @@ export function ManagerPane(): React.JSX.Element {
           </select>
         </label>
         <label>
-          Lane
+          {t('workspace.manager.lane')}
           <select
             value={filters.lane ?? ''}
             onChange={(event) => setFilters({ ...filters, lane: event.target.value || null })}
           >
-            <option value="">Every lane</option>
+            <option value="">{t('workspace.manager.everyLane')}</option>
             {lanesOf(boards ?? [], NO_FILTERS).map((lane) => (
               <option key={lane.name} value={lane.name}>
                 {lane.name}
@@ -86,7 +87,7 @@ export function ManagerPane(): React.JSX.Element {
             ))}
           </select>
         </label>
-        <span className="mgr__n">{boards === null ? 'Reading the boards…' : tally(lanes)}</span>
+        <span className="mgr__n">{boards === null ? t('workspace.manager.reading') : tally(lanes)}</span>
       </div>
 
       {failed && (
@@ -96,7 +97,7 @@ export function ManagerPane(): React.JSX.Element {
       )}
 
       {boards !== null && projects.length === 0 && (
-        <p className="mgr__no">No projects yet. Add one and its board shows up here.</p>
+        <p className="mgr__no">{t('workspace.manager.none')}</p>
       )}
 
       <div className="mgr__board">
@@ -118,7 +119,7 @@ export function ManagerPane(): React.JSX.Element {
                   <span className="tile__t">{card.title}</span>
                   {card.comments > 0 && (
                     <span className="tile__m">
-                      <span>{card.comments} in the conversation</span>
+                      <span>{t('workspace.manager.inConversation', { count: card.comments })}</span>
                     </span>
                   )}
                 </button>

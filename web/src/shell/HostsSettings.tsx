@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 
 import type { Host, HostCheck, HostDraft, HostEnvironment, Hosts } from '../gen/bindings'
+import { t } from '../i18n'
 import { ask, commands } from './live'
 
 /*
@@ -45,12 +46,12 @@ const draftOf = (id: string | null, fields: Fields): HostDraft => ({
 })
 
 const LABELS: ReadonlyArray<readonly [keyof Omit<Fields, 'environment'>, string, string]> = [
-  ['name', 'Host name', 'web staging'],
-  ['target', 'SSH target', 'an ssh config alias, or a host name'],
-  ['user', 'User', 'from ssh config when empty'],
-  ['port', 'Port', '22'],
-  ['identityFile', 'Identity file', '~/.ssh/id_ed25519'],
-  ['workRoot', 'Work root', '/srv/apps'],
+  ['name', 'workspace.hosts.name', 'workspace.hosts.nameHint'],
+  ['target', 'workspace.hosts.target', 'workspace.hosts.targetHint'],
+  ['user', 'workspace.hosts.user', 'workspace.hosts.userHint'],
+  ['port', 'workspace.hosts.port', 'workspace.hosts.portHint'],
+  ['identityFile', 'workspace.hosts.identity', 'workspace.hosts.identityHint'],
+  ['workRoot', 'workspace.hosts.workRoot', 'workspace.hosts.workRootHint'],
 ]
 
 export function HostsSettings(): React.JSX.Element {
@@ -85,7 +86,7 @@ export function HostsSettings(): React.JSX.Element {
   const check = (host: Host): void => {
     setChecks((was) => ({ ...was, [host.id]: 'checking' }))
     void ask(() => commands.hostCheck(host.id)).then((answer) =>
-      setChecks((was) => ({ ...was, [host.id]: answer.data ?? { rows: [{ what: 'check', ok: false, said: answer.error ?? 'the check failed' }] } })),
+      setChecks((was) => ({ ...was, [host.id]: answer.data ?? { rows: [{ what: 'check', ok: false, said: answer.error ?? t('workspace.hosts.checkFailed') }] } })),
     )
   }
   const edit = (host: Host): void => {
@@ -96,10 +97,9 @@ export function HostsSettings(): React.JSX.Element {
 
   return (
     <>
-      <h1 className="prefs__h">Hosts</h1>
+      <h1 className="prefs__h">{t('workspace.hosts.title')}</h1>
       <p className="acc__note">
-        Machines a project&apos;s terminals can run on, reached with your own ssh: its config, agent and known hosts. devpit
-        keeps the target and a key&apos;s path, never a key, and creates nothing on a host.
+        {t('workspace.hosts.note')}
       </p>
 
       {hosts.map((host) => (
@@ -111,11 +111,11 @@ export function HostsSettings(): React.JSX.Element {
               <span className={`host__env host__env--${host.environment}`}>{host.environment}</span>
             </span>
             <span className="voice__row">
-              <button className="btn" aria-label={`Check ${host.name}`} disabled={checks[host.id] === 'checking'} onClick={() => check(host)}>
-                {checks[host.id] === 'checking' ? 'Checking…' : 'Check'}
+              <button className="btn" aria-label={t('workspace.hosts.checkHost', { name: host.name })} disabled={checks[host.id] === 'checking'} onClick={() => check(host)}>
+                {checks[host.id] === 'checking' ? t('workspace.hosts.checking') : t('workspace.hosts.check')}
               </button>
-              <button className="btn" aria-label={`Edit ${host.name}`} onClick={() => edit(host)}>Edit</button>
-              <button className="btn" aria-label={`Remove ${host.name}`} onClick={() => remove(host)}>Remove</button>
+              <button className="btn" aria-label={t('workspace.hosts.editHost', { name: host.name })} onClick={() => edit(host)}>{t('workspace.hosts.edit')}</button>
+              <button className="btn" aria-label={t('workspace.hosts.removeHost', { name: host.name })} onClick={() => remove(host)}>{t('workspace.hosts.remove')}</button>
             </span>
             <CheckRows check={checks[host.id]} />
           </div>
@@ -124,24 +124,24 @@ export function HostsSettings(): React.JSX.Element {
 
       <div className="pref pref--stack">
         <div className="pref__body">
-          <span className="pref__t">{editing ? 'Edit host' : 'Add a host'}</span>
-          {LABELS.map(([key, label, hint]) => (
+          <span className="pref__t">{editing ? t('workspace.hosts.editTitle') : t('workspace.hosts.addTitle')}</span>
+          {LABELS.map(([key, labelKey, hintKey]) => (
             <label className="voice__row" key={key}>
-              <span className="voice__l">{label}</span>
-              <input className="voice__in" aria-label={label} placeholder={hint} spellCheck={false} value={fields[key]} onChange={(event) => setFields({ ...fields, [key]: event.target.value })} />
+              <span className="voice__l">{t(labelKey)}</span>
+              <input className="voice__in" aria-label={t(labelKey)} placeholder={t(hintKey)} spellCheck={false} value={fields[key]} onChange={(event) => setFields({ ...fields, [key]: event.target.value })} />
             </label>
           ))}
           <label className="voice__row">
-            <span className="voice__l">Environment</span>
-            <select className="use__pick" aria-label="Environment" value={fields.environment} onChange={(event) => setFields({ ...fields, environment: event.target.value as HostEnvironment })}>
+            <span className="voice__l">{t('workspace.hosts.environment')}</span>
+            <select className="use__pick" aria-label={t('workspace.hosts.environment')} value={fields.environment} onChange={(event) => setFields({ ...fields, environment: event.target.value as HostEnvironment })}>
               {ENVIRONMENTS.map((one) => <option key={one} value={one}>{one}</option>)}
             </select>
           </label>
           <span className="voice__row">
             <button className="btn" disabled={!fields.name.trim() || !fields.target.trim() || !fields.workRoot.trim()} onClick={save}>
-              {editing ? 'Save host' : 'Add host'}
+              {editing ? t('workspace.hosts.save') : t('workspace.hosts.add')}
             </button>
-            {editing && <button className="btn" onClick={() => { setEditing(null); setFields(EMPTY); setSaid(null) }}>Cancel</button>}
+            {editing && <button className="btn" onClick={() => { setEditing(null); setFields(EMPTY); setSaid(null) }}>{t('workspace.hosts.cancel')}</button>}
           </span>
           {said && <span className="pref__d voice__bad" role="alert">{said}</span>}
         </div>

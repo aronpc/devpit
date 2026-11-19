@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import type { AccountQuota, Accounts } from '../gen/bindings'
+import { t } from '../i18n'
+import { tRich } from '../i18n/rich'
 import { accountOf, elsewhere, withDefault } from './accounts'
 import { ask, commands } from './live'
 import { useShell } from './useShell'
@@ -47,16 +49,16 @@ export function QuotaBanner(): React.JSX.Element | null {
   }
 
   return (
-    <section className="remind" role="alert" aria-label="Account quota">
+    <section className="remind" role="alert" aria-label={t('workspace.quota.label')}>
       <div className="remind__list">
         <span className="remind__one">
           <span className="remind__what">
-            <b>{current}</b> is past 90% of its 5-hour window. Sessions already open stay in it.
+            {tRich('workspace.quota.past', { name: <b>{current}</b> })}
           </span>
           {next && (
             <span className="remind__acts">
               <button className="remind__btn remind__btn--done" onClick={move}>
-                Next session in {next.name}
+                {t('workspace.quota.next', { name: next.name })}
               </button>
             </span>
           )}

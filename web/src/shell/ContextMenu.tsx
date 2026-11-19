@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 
+import { t } from '../i18n'
 import { FileDialogs } from './FileDialogs'
 import { FILE_MENU } from './fileMenu'
 import { Menu, MenuItem, MenuRule } from './Menu'
@@ -34,7 +35,7 @@ type Item = SessionEntry | TabEntry
  */
 const STATIC: Record<string, readonly Item[]> = { file: FILE_MENU }
 
-const NAMES: Record<string, string> = { file: 'File actions', session: 'Session actions', tab: 'Tab actions' }
+const names = (): Record<string, string> => ({ file: t('workspace.menu.fileActions'), session: t('workspace.menu.sessionActions'), tab: t('workspace.menu.tabActions') })
 
 interface At {
   readonly kind: string
@@ -116,7 +117,7 @@ export function ContextMenu(): React.JSX.Element {
   return (
     <>
       {at && (
-        <Menu at={at} label={NAMES[at.kind] ?? 'Actions'} onClose={() => setAt(null)}>
+        <Menu at={at} label={names()[at.kind] ?? t('workspace.menu.actions')} onClose={() => setAt(null)}>
           {menus[at.kind]?.map((item, index) =>
             item.rule ? (
               <MenuRule key={index} />

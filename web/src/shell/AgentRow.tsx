@@ -6,6 +6,7 @@ import { ProfileModels } from './ProfileModels'
 import type { Draft } from './profiles'
 import type { KnownAgent } from '../gen/bindings'
 import { ask, commands } from './live'
+import { t } from '../i18n'
 
 /*
  * One agent in the catalogue.
@@ -69,7 +70,7 @@ export function AgentRow({
             disabled={busy}
             onClick={() => onEnabled(true)}
           >
-            Enabled
+            {t('workspace.agentRow.enabled')}
           </button>
           <button
             className="segb"
@@ -77,7 +78,7 @@ export function AgentRow({
             disabled={busy}
             onClick={() => onEnabled(false)}
           >
-            Disabled
+            {t('workspace.agentRow.disabled')}
           </button>
         </span>
 
@@ -87,12 +88,12 @@ export function AgentRow({
           aria-pressed={entry.isDefault}
           title={
             entry.installed
-              ? 'What a new terminal opens'
-              : 'Not on this machine, so nothing would open'
+              ? t('workspace.agentRow.defaultTitle')
+              : t('workspace.agentRow.notInstalled')
           }
           onClick={onDefault}
         >
-          {entry.isDefault ? '✓ Default' : 'Set default'}
+          {entry.isDefault ? t('workspace.agentRow.isDefault') : t('workspace.agentRow.setDefault')}
         </button>
 
         {/* Its own documentation, rather than devpit explaining how to
@@ -107,8 +108,8 @@ export function AgentRow({
               event.preventDefault()
               void ask(() => commands.urlOpen(entry.homepage as string))
             }}
-            title={`${entry.label} documentation`}
-            aria-label={`${entry.label} documentation`}
+            title={t('workspace.agentRow.docs', { name: entry.label })}
+            aria-label={t('workspace.agentRow.docs', { name: entry.label })}
           >
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 4h6v6M20 4 10 14M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" /></svg>
           </a>
@@ -117,8 +118,8 @@ export function AgentRow({
         <button
           className="acc__act"
           aria-expanded={open}
-          aria-label={`${open ? 'Hide' : 'Show'} how ${entry.label} is started`}
-          title={`${open ? 'Hide' : 'Show'} how ${entry.label} is started`}
+          aria-label={t(open ? 'workspace.agentRow.hide' : 'workspace.agentRow.show', { name: entry.label })}
+          title={t(open ? 'workspace.agentRow.hide' : 'workspace.agentRow.show', { name: entry.label })}
           onClick={onOpen}
         >
           {open ? '⌃' : '⌄'}

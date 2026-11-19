@@ -5,6 +5,7 @@ import { ask, commands } from './live'
 import { InstallationPicker } from './InstallationPicker'
 import { SkillDoc } from './SkillDoc'
 import { useInstallations } from './useInstallations'
+import { t } from '../i18n'
 
 /*
  * The skills this machine has.
@@ -61,10 +62,10 @@ export function SkillsPane(): React.JSX.Element {
         <div className="sk__seek">
           <input
             className="sk__find"
-            placeholder="Search skills…"
+            placeholder={t('workspace.skills.searchPlaceholder')}
             value={find}
             onChange={(event) => setFind(event.target.value)}
-            aria-label="Search skills"
+            aria-label={t('workspace.skills.search')}
           />
           <button
             className="sq26"
@@ -72,8 +73,8 @@ export function SkillsPane(): React.JSX.Element {
               installations.reload()
               load()
             }}
-            aria-label="Refresh skills"
-            title="Refresh skills"
+            aria-label={t('workspace.skills.refresh')}
+            title={t('workspace.skills.refresh')}
           >
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 0 1-15.5 6.2M3 12a9 9 0 0 1 15.5-6.2M3 20v-5h5M21 4v5h-5" /></svg>
           </button>
@@ -82,7 +83,7 @@ export function SkillsPane(): React.JSX.Element {
           <InstallationPicker installations={installations} />
         </div>
         <div className="sk__h">
-          Installed <span>{wanted ? `${shown.length} of ${skills.length}` : skills.length}</span>
+          {t('workspace.skills.installed')} <span>{wanted ? t('workspace.skills.of', { shown: shown.length, all: skills.length }) : skills.length}</span>
         </div>
         <div className="sk__rows">
           {shown.map((skill) => (
@@ -102,12 +103,10 @@ export function SkillsPane(): React.JSX.Element {
           {!loading && shown.length === 0 && (
             <div className="exempty">
               <span className="exempty__t">
-                {wanted ? 'No skill matches that.' : (problem ?? 'No skills installed.')}
+                {wanted ? t('workspace.skills.noMatch') : (problem ?? t('workspace.skills.none'))}
               </span>
               <span className="exempty__d">
-                {wanted
-                  ? 'Names and descriptions are both searched.'
-                  : 'Skills arrive with the plugins you install for the agent CLI.'}
+                {wanted ? t('workspace.skills.searched') : t('workspace.skills.arrive')}
               </span>
             </div>
           )}
@@ -128,7 +127,7 @@ export function SkillsPane(): React.JSX.Element {
         ) : (
           /* Not the problem again: the list beside this is already saying
              why it is empty, and one sentence twice reads as two faults. */
-          <p className="sk__what">{loading ? 'Reading…' : 'No skill picked.'}</p>
+          <p className="sk__what">{loading ? t('workspace.skills.reading') : t('workspace.skills.nonePicked')}</p>
         )}
       </div>
     </div>

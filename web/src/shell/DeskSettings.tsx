@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 
 import type { Tray } from '../gen/bindings'
+import { t } from '../i18n'
 import { ask, commands } from './live'
 import { PrefRow } from './PrefRow'
 import { PrefSwitch } from './PrefSwitch'
@@ -73,9 +74,9 @@ export function DeskSettings(): React.JSX.Element {
       <PrefSwitch
         on={atLogin}
         onFlip={() => void ask(() => commands.atLoginSet(!atLogin)).then((answer) => setAtLogin(answer.data ?? atLogin))}
-        title="Open at login"
-        said="devpit starts with your desktop, so the island and the reminders are there from the first minute."
-        more="One copy runs at a time: opening devpit again brings this one forward."
+        title={t('workspace.desk.login')}
+        said={t('workspace.desk.loginSaid')}
+        more={t('workspace.desk.loginMore')}
       />
       {/* Only where a tray shows the icon: hidden with no way back, the
           window would be a devpit that looks gone and is not. */}
@@ -83,32 +84,32 @@ export function DeskSettings(): React.JSX.Element {
         <PrefSwitch
           on={tray.keep}
           onFlip={() => void ask(() => commands.trayKeepSet(!tray.keep)).then((answer) => answer.data && setTray(answer.data))}
-          title="Keep devpit in the tray when the window closes"
-          said="Closing the window leaves devpit running, so your agents still reach you. Quit it from the tray's menu."
-          more="The icon counts what waits on you — sessions stopped on a question, drafts to send, reminders gone off — and its menu opens each one, your recent projects, a new terminal and Settings."
+          title={t('workspace.desk.tray')}
+          said={t('workspace.desk.traySaid')}
+          more={t('workspace.desk.trayMore')}
         />
       )}
       {tray && !tray.shown && (
         <PrefRow
-          title="Keep devpit in the tray when the window closes"
-          said="This desktop shows no tray icon, so closing the window quits devpit. The terminals keep running either way."
+          title={t('workspace.desk.tray')}
+          said={t('workspace.desk.noTray')}
         />
       )}
       <PrefRow
-        title="Shortcut"
+        title={t('workspace.desk.shortcut')}
         said={
           <>
-            {recording ? 'Press the keys — Escape to stop.' : shortcut ? `${shortcut} brings devpit forward from anywhere.` : 'Keys that bring devpit forward from anywhere. None yet.'}
+            {recording ? t('workspace.desk.press') : shortcut ? t('workspace.desk.brings', { keys: shortcut }) : t('workspace.desk.none')}
             {refused && ` ${refused}`}
           </>
         }
       >
         <button className="btn" onClick={() => setRecording((was) => !was)}>
-          {recording ? 'Stop' : shortcut ? 'Change' : 'Choose'}
+          {recording ? t('workspace.desk.stop') : shortcut ? t('workspace.desk.change') : t('workspace.desk.choose')}
         </button>
         {shortcut && !recording && (
           <button className="btn" onClick={clear}>
-            Clear
+            {t('workspace.desk.clear')}
           </button>
         )}
       </PrefRow>

@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { ignoringWhitespace, parse, sides, type Hunk, type Row } from './diff'
 import { DiffText as Text } from './DiffText'
 import { useViewPrefs } from './viewPrefs'
+import { t } from '../i18n'
 
 /*
  * A patch as git printed it, hunk by hunk.
@@ -38,11 +39,11 @@ export function PatchView({
     <>
       {renamed && (
         <div className="diff__moved">
-          renamed from <code>{renamed.from}</code>
+          {t('workspace.patch.renamed')} <code>{renamed.from}</code>
         </div>
       )}
-      {binary && <div className="exempty__t">This file is binary; there is nothing to line up.</div>}
-      {!binary && hunks.length === 0 && <div className="exempty__t">{ignore && files.some((file) => file.hunks.length > 0) ? 'Only whitespace changed, and Settings → Appearance hides it.' : empty}</div>}
+      {binary && <div className="exempty__t">{t('workspace.patch.binary')}</div>}
+      {!binary && hunks.length === 0 && <div className="exempty__t">{ignore && files.some((file) => file.hunks.length > 0) ? t('workspace.patch.whitespaceOnly') : empty}</div>}
 
       {hunks.slice(0, shown).map((hunk, at) =>
         split ? <Split key={at} hunk={hunk} spaces={spaces} /> : <Unified key={at} hunk={hunk} spaces={spaces} />,
@@ -50,7 +51,7 @@ export function PatchView({
 
       {hunks.length > shown && (
         <button className="btn" onClick={() => setShown((was) => was + HUNKS_AT_ONCE)}>
-          Show {Math.min(HUNKS_AT_ONCE, hunks.length - shown)} more of {hunks.length} hunks
+          {t('workspace.patch.more', { count: Math.min(HUNKS_AT_ONCE, hunks.length - shown), total: hunks.length })}
         </button>
       )}
     </>

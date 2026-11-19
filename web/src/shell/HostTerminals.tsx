@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import type { HostLink } from '../gen/bindings'
+import { t } from '../i18n'
 import { useAway } from './away'
 import { ask, commands } from './live'
 import { went } from './problems'
@@ -40,8 +41,8 @@ export function HostTerminals(): React.JSX.Element | null {
     <span className="hostterm" ref={box}>
       <button
         className="sq26"
-        aria-label="New terminal on a host"
-        title={opening ? `Opening a terminal on ${opening}…` : 'New terminal on a host'}
+        aria-label={t('workspace.hostTerminals.label')}
+        title={opening ? t('workspace.hostTerminals.opening', { name: opening }) : t('workspace.hostTerminals.label')}
         aria-expanded={open}
         aria-busy={opening !== null}
         disabled={opening !== null}
@@ -53,7 +54,7 @@ export function HostTerminals(): React.JSX.Element | null {
         <div className="hostterm__menu" role="menu">
           {links.map((link) => (
             <button key={link.hostId} role="menuitem" onClick={() => start(link)}>
-              New terminal on {link.hostName} <span className={`host__env host__env--${link.environment}`}>{link.environment}</span>
+              {t('workspace.hostTerminals.new', { name: link.hostName })} <span className={`host__env host__env--${link.environment}`}>{link.environment}</span>
             </button>
           ))}
         </div>

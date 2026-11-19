@@ -4,6 +4,7 @@ import type { Skill } from '../gen/bindings'
 import { ask, commands } from './live'
 import { Markdown } from './MarkdownView'
 import { useCopied } from './useCopied'
+import { t } from '../i18n'
 
 /*
  * One skill, as written.
@@ -62,13 +63,13 @@ export function SkillDoc({
 
       <div className="sk__acts">
         <button className="btn" onClick={() => void ask(() => commands.pathOpen(skill.path))}>
-          Open SKILL.md
+          {t('workspace.skillDoc.open')}
         </button>
         <button className="btn" onClick={() => void ask(() => commands.pathReveal(skill.path))}>
-          Show in the finder
+          {t('workspace.skillDoc.reveal')}
         </button>
         <button className="btn" onClick={copy}>
-          {copied ? 'Copied' : 'Copy path'}
+          {copied ? t('workspace.skillDoc.copied') : t('workspace.skillDoc.copy')}
         </button>
       </div>
 

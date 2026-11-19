@@ -1,3 +1,5 @@
+import { t } from '../i18n'
+
 /*
  * A card's deadline, and how near it is.
  *
@@ -39,7 +41,7 @@ export function dueLabel(due: number | null, now = Date.now() / 1000, timed = fa
   const at = new Date(due * 1000)
   const near = nearness(due, now)
   const time = timed ? at.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }) : ''
-  if (near === 'today') return time ? `today ${time}` : 'today'
+  if (near === 'today') return time ? t('workspace.due.todayAt', { time }) : t('workspace.due.today')
 
   const thisYear = at.getFullYear() === new Date(now * 1000).getFullYear()
   const day = at.toLocaleDateString(undefined, {

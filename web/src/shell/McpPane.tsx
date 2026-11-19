@@ -6,6 +6,8 @@ import { InstallationPicker } from "./InstallationPicker";
 import { useInstallations } from "./useInstallations";
 import { useShell } from "./useShell";
 import { useCopied } from "./useCopied";
+import { t } from "../i18n";
+import { tRich } from "../i18n/rich";
 
 /*
  * The MCP servers the agent CLI has, read-only.
@@ -71,7 +73,7 @@ export function McpPane(): React.JSX.Element {
           </svg>
         </span>
         <span className="pane__t">
-          <b>MCPs</b>
+          <b>{t('workspace.mcp.title')}</b>
           {servers.length > 0 ? ` · ${servers.length}` : ""}
         </span>
         <span className="drag"></span>
@@ -81,8 +83,8 @@ export function McpPane(): React.JSX.Element {
             installations.reload();
             load();
           }}
-          aria-label="Refresh MCPs"
-          title="Refresh MCPs"
+          aria-label={t('workspace.mcp.refresh')}
+          title={t('workspace.mcp.refresh')}
         >
           <svg
             width="12"
@@ -100,8 +102,8 @@ export function McpPane(): React.JSX.Element {
         <button
           className="sq26"
           onClick={() => close("mcps")}
-          aria-label="Close MCPs"
-          title="Close MCPs"
+          aria-label={t('workspace.mcp.close')}
+          title={t('workspace.mcp.close')}
         >
           <svg
             width="12"
@@ -121,9 +123,7 @@ export function McpPane(): React.JSX.Element {
         <div className="list">
           <div className="list__in">
             <p className="list__note">
-              Read from the agent CLI&rsquo;s own config &mdash; devpit keeps no
-              second copy. Add or remove one with <code>{manage} add</code> and
-              it changes here.
+              {tRich("workspace.mcp.note", { command: <code>{manage} add</code> })}{/* // ui-text: ok a command line, not words */}
             </p>
 
             <InstallationPicker installations={installations} />
@@ -132,7 +132,7 @@ export function McpPane(): React.JSX.Element {
               <div className="exempty">
                 <span className="exempty__t">{problem}</span>
                 <span className="exempty__d">
-                  Nothing is wrong with devpit; the CLI has none configured yet.
+                  {t('workspace.mcp.fine')}
                 </span>
               </div>
             )}
@@ -144,7 +144,7 @@ export function McpPane(): React.JSX.Element {
               byScope(scope).length === 0 ? null : (
                 <section key={scope}>
                   <div className="list__h">
-                    {scope === "project" ? "This project" : "Every project"}
+                    {t(scope === "project" ? "workspace.mcp.scope.project" : "workspace.mcp.scope.user")}
                     <span>{byScope(scope).length}</span>
                   </div>
                   {byScope(scope).map((server) => (
@@ -165,7 +165,7 @@ export function McpPane(): React.JSX.Element {
               ),
             )}
 
-            <div className="list__h">Read from</div>
+            <div className="list__h">{t('workspace.mcp.readFrom')}</div>
             <p className="list__path" title={directory}>
               {directory}
             </p>
@@ -176,7 +176,7 @@ export function McpPane(): React.JSX.Element {
             ))}
 
             <button className="browse" onClick={copy}>
-              {copied ? `Copied \`${manage}\`` : `Manage with \`${manage}\``}
+              {t(copied ? "workspace.mcp.copied" : "workspace.mcp.manage", { manage })}
             </button>
           </div>
         </div>

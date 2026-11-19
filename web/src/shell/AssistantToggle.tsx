@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 
+import { t } from '../i18n'
 import { ask, commands } from './live'
 
 /*
@@ -27,12 +28,12 @@ export function AssistantToggle({ projectId }: { projectId: string }): React.JSX
   }
 
   const title = problem
-    ? `Assistant mode did not change: ${problem}`
+    ? t('workspace.assistantToggle.failed', { problem })
     : on
-      ? 'Assistant mode is on — its tools are in this chat now, its brief from the next chat. Click to turn it off'
-      : 'Assistant mode: Schedules in view and proposals for you to add. Off — click to turn it on'
+      ? t('workspace.assistantToggle.on')
+      : t('workspace.assistantToggle.off')
   return (
-    <button className="sq26 asst" data-on={on ? 'true' : undefined} disabled={busy} title={title} aria-label="Assistant mode" aria-pressed={on} onClick={flip}>
+    <button className="sq26 asst" data-on={on ? 'true' : undefined} disabled={busy} title={title} aria-label={t('workspace.assistantToggle.label')} aria-pressed={on} onClick={flip}>
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="13" r="8" /><path d="M12 9v4l2 2M5 3 2 6M22 6l-3-3" /></svg>
     </button>
   )

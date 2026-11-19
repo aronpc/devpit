@@ -1,3 +1,5 @@
+import { t } from '../i18n'
+import { tRich } from '../i18n/rich'
 import { keysLabel } from './shortcuts'
 import { setViewPref, SIZES, useViewPrefs, type ViewPref, type ViewPrefs } from './viewPrefs'
 
@@ -33,8 +35,8 @@ function Pick<K extends ViewPref>({
   )
 }
 
-const SIZE_LABELS: Record<(typeof SIZES)[number], string> = { small: 'Small', default: 'Default', large: 'Large', larger: 'Larger' }
-const SIZE_CHOICES = SIZES.map((one) => [one, SIZE_LABELS[one]] as const)
+const SIZE_LABELS: Record<(typeof SIZES)[number], string> = { small: 'workspace.view.small', default: 'workspace.view.default', large: 'workspace.view.large', larger: 'workspace.view.larger' }
+const sizeChoices = (): (readonly [(typeof SIZES)[number], string])[] => SIZES.map((one) => [one, t(SIZE_LABELS[one])] as const)
 
 export function ChatKeySettings(): React.JSX.Element {
   const other = keysLabel('steerNow')
@@ -43,20 +45,20 @@ export function ChatKeySettings(): React.JSX.Element {
     <>
       <Pick
         field="sendKey"
-        title="Send with"
-        said={`Enter sends and Shift+Enter starts a new line, or Enter starts a new line and ${other} sends.`}
+        title={t('workspace.view.sendWith')}
+        said={t('workspace.view.sendWithSaid', { other })}
         choices={[
-          ['enter', 'Enter'],
+          ['enter', t('workspace.view.enter')],
           ['modEnter', other],
         ]}
       />
       <Pick
         field="followUp"
-        title="While a turn runs"
-        said={`What a message sent during a turn does: waits for the turn to end, or goes into it now.${sendKey === 'enter' ? ` ${other} does the other.` : ''}`}
+        title={t('workspace.view.whileTurn')}
+        said={t('workspace.view.whileTurnSaid') + (sendKey === 'enter' ? ` ${t('workspace.view.whileTurnOther', { other })}` : '')}
         choices={[
-          ['queue', 'Queue'],
-          ['steer', 'Steer'],
+          ['queue', t('workspace.view.queue')],
+          ['steer', t('workspace.view.steer')],
         ]}
       />
     </>
@@ -66,64 +68,64 @@ export function ChatKeySettings(): React.JSX.Element {
 export function LookSettings(): React.JSX.Element {
   return (
     <>
-      <div className="acc__sub">Text</div>
-      <Pick field="textSize" title="Text size" said="The conversation's text and its controls." choices={SIZE_CHOICES} />
-      <Pick field="codeSize" title="Code size" said="Code blocks and code in a line, and every diff." choices={SIZE_CHOICES} />
+      <div className="acc__sub">{t('workspace.view.text')}</div>
+      <Pick field="textSize" title={t('workspace.view.textSize')} said={t('workspace.view.textSizeSaid')} choices={sizeChoices()} />
+      <Pick field="codeSize" title={t('workspace.view.codeSize')} said={t('workspace.view.codeSizeSaid')} choices={sizeChoices()} />
       <Pick
         field="contrast"
-        title="Contrast"
-        said="More draws secondary text and borders closer to the main text."
+        title={t('workspace.view.contrast')}
+        said={t('workspace.view.contrastSaid')}
         choices={[
-          ['standard', 'Standard'],
-          ['more', 'More'],
+          ['standard', t('workspace.view.standard')],
+          ['more', t('workspace.view.more')],
         ]}
       />
       <Pick
         field="latex"
-        title="LaTeX maths"
-        said={<>Draws <code>$…$</code> and <code>$$…$$</code> in answers and Markdown files as formulas. Off, a dollar sign is just a dollar sign.</>}
+        title={t('workspace.view.latex')}
+        said={tRich('workspace.view.latexSaid', { inline: <code>$…$</code>, block: <code>$$…$$</code> })}
         choices={[
-          [false, 'Off'],
-          [true, 'On'],
+          [false, t('workspace.view.off')],
+          [true, t('workspace.view.on')],
         ]}
       />
 
-      <div className="acc__sub">Diffs</div>
+      <div className="acc__sub">{t('workspace.view.diffs')}</div>
       <Pick
         field="diffLayout"
-        title="Diff layout"
-        said="How a diff opens. Each view keeps its own toggle; by default a file's diff opens side by side and a commit's stacked."
+        title={t('workspace.view.diffLayout')}
+        said={t('workspace.view.diffLayoutSaid')}
         choices={[
-          ['each', 'Default'],
-          ['split', 'Side by side'],
-          ['stacked', 'Stacked'],
+          ['each', t('workspace.view.default')],
+          ['split', t('workspace.view.split')],
+          ['stacked', t('workspace.view.stacked')],
         ]}
       />
       <Pick
         field="diffWhitespace"
-        title="Whitespace in diffs"
-        said="Hide lines whose only change is spacing, in a commit's and a card's changes."
+        title={t('workspace.view.whitespace')}
+        said={t('workspace.view.whitespaceSaid')}
         choices={[
-          ['show', 'Show'],
-          ['ignore', 'Hide'],
+          ['show', t('workspace.view.show')],
+          ['ignore', t('workspace.view.hide')],
         ]}
       />
       <Pick
         field="diffColours"
-        title="Diff colours"
-        said="Blue and orange instead of green and red, told apart with red-green colour blindness."
+        title={t('workspace.view.colours')}
+        said={t('workspace.view.coloursSaid')}
         choices={[
-          ['standard', 'Green and red'],
-          ['safe', 'Blue and orange'],
+          ['standard', t('workspace.view.greenRed')],
+          ['safe', t('workspace.view.blueOrange')],
         ]}
       />
       <Pick
         field="diffCollapsed"
-        title="Files in a diff"
-        said="Whether each file of a card's or a session's changes opens folded."
+        title={t('workspace.view.files')}
+        said={t('workspace.view.filesSaid')}
         choices={[
-          [true, 'Folded'],
-          [false, 'Open'],
+          [true, t('workspace.view.folded')],
+          [false, t('workspace.view.open')],
         ]}
       />
     </>

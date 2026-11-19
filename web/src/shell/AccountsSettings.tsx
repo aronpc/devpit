@@ -5,6 +5,7 @@ import { accountOf, SAID, withDefault, without } from './accounts'
 import { ask, commands } from './live'
 import { resetIn, n } from './usageFormat'
 import { useShell } from './useShell'
+import { t } from '../i18n'
 
 /*
  * Settings → Accounts: the Claude Code accounts devpit opens sessions in,
@@ -72,10 +73,9 @@ export function AccountsSettings(): React.JSX.Element {
 
   return (
     <>
-      <h1 className="prefs__h">Accounts</h1>
+      <h1 className="prefs__h">{t('workspace.accountsSettings.title')}</h1>
       <p className="acc__note">
-        Each account is a Claude Code config directory with its own sign-in. Sessions devpit starts open with it as
-        CLAUDE_CONFIG_DIR, talking to Anthropic directly, so Remote Control keeps working.
+        {t('workspace.accountsSettings.note')}
       </p>
 
       {accounts.accounts.map((one) => (
@@ -87,8 +87,8 @@ export function AccountsSettings(): React.JSX.Element {
             </span>
             <Quota quota={quotas.find((quota) => quota.name === one.name)} now={now} />
             <span className="voice__row">
-              <button className="btn" aria-label={`Remove ${one.name}`} onClick={() => save(without(accounts, one.name))}>
-                Remove
+              <button className="btn" aria-label={t('workspace.accountsSettings.removeLabel', { name: one.name })} onClick={() => save(without(accounts, one.name))}>
+                {t('workspace.accountsSettings.remove')}
               </button>
             </span>
           </div>
@@ -97,18 +97,25 @@ export function AccountsSettings(): React.JSX.Element {
 
       <div className="pref pref--stack">
         <div className="pref__body">
-          <span className="pref__t">Add an account</span>
+          <span className="pref__t">{t('workspace.accountsSettings.add')}</span>
           <label className="voice__row">
-            <span className="voice__l">Name</span>
-            <input className="voice__in" aria-label="Account name" value={name} onChange={(event) => setName(event.target.value)} />
+            <span className="voice__l">{t('workspace.accountsSettings.name')}</span>
+            <input className="voice__in" aria-label={t('workspace.accountsSettings.nameLabel')} value={name} onChange={(event) => setName(event.target.value)} />
           </label>
           <label className="voice__row">
-            <span className="voice__l">Config directory</span>
-            <input className="voice__in" aria-label="Account config directory" placeholder="~/.claude-work" spellCheck={false} value={dir} onChange={(event) => setDir(event.target.value)} />
+            <span className="voice__l">{t('workspace.accountsSettings.config')}</span>
+            <input
+              className="voice__in"
+              aria-label={t('workspace.accountsSettings.configLabel')}
+              placeholder="~/.claude-work" // ui-text: ok an example path
+              spellCheck={false}
+              value={dir}
+              onChange={(event) => setDir(event.target.value)}
+            />
           </label>
           <span className="voice__row">
             <button className="btn" disabled={!name.trim() || !dir.trim()} onClick={add}>
-              Add
+              {t('workspace.accountsSettings.addButton')}
             </button>
           </span>
           {said && <span className="pref__d voice__bad">{said}</span>}
@@ -117,14 +124,14 @@ export function AccountsSettings(): React.JSX.Element {
 
       {project && accounts.accounts.length > 0 && (
         <label className="voice__row">
-          <span className="voice__l">{project.name} opens in</span>
+          <span className="voice__l">{t('workspace.accountsSettings.opensIn', { name: project.name })}</span>
           <select
             className="use__pick"
-            aria-label={`Account for ${project.name}`}
+            aria-label={t('workspace.accountsSettings.accountFor', { name: project.name })}
             value={current ?? ''}
             onChange={(event) => save(withDefault(accounts, project.id, event.target.value || null))}
           >
-            <option value="">The profile&rsquo;s own</option>
+            <option value="">{t('workspace.accountsSettings.profileOwn')}</option>
             {accounts.accounts.map((one) => (
               <option key={one.name} value={one.name}>
                 {one.name}

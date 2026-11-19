@@ -1,3 +1,5 @@
+import enWorkspace from './en/workspace.json'
+import ptBrWorkspace from './pt-BR/workspace.json'
 import enCommon from './en/common.json'
 import enBoard from './en/board.json'
 import enSettings from './en/settings.json'
@@ -17,8 +19,8 @@ type Catalog = Record<string, Entry>
 
 /* English is the base: every key is born in its catalog (AGENTS.md). */
 const catalogs: Record<string, Catalog> = {
-  en: { ...enCommon, ...enSettings, ...enBoard, ...enDevflow, ...enSessions },
-  'pt-BR': { ...ptBrCommon, ...ptBrSettings, ...ptBrBoard, ...ptBrDevflow, ...ptBrSessions },
+  en: { ...enCommon, ...enSettings, ...enBoard, ...enDevflow, ...enSessions, ...enWorkspace },
+  'pt-BR': { ...ptBrCommon, ...ptBrSettings, ...ptBrBoard, ...ptBrDevflow, ...ptBrSessions, ...ptBrWorkspace },
 }
 
 export interface TranslateArgs {
