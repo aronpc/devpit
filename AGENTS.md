@@ -64,7 +64,7 @@ CI runs `setup`, `test` and `build`; the end-to-end job calls `e2e`.
 
 ## Guards that fail the build
 
-`cargo xtask check` enforces fourteen rules. Each reports file and line,
+`cargo xtask check` enforces fifteen rules. Each reports file and line,
 because "the guard failed" sends someone looking and a location sends someone
 fixing.
 
@@ -84,6 +84,7 @@ fixing.
 | `the_release_workflow_keeps_its_promises` | the tag-only release workflow keeps its pinned actions, its tag check and the key in one step |
 | `the_app_never_kills_the_tmux_server` | nothing in `apps/desktop` names `kill_server`, because the terminals outlive the window |
 | `every_catalog_keeps_up_with_english` | every key of `en/<area>.json` reaches `pt-BR/<area>.json` — translated, or listed with its reason in `untranslated.txt` (twenty keys at most); no empty value, no `{placeholder}` one side lacks, no plural without `.one` and `.other`, no key only pt-BR carries — over `web/src/i18n/` and `crates/core/src/i18n/` |
+| `uncatalogued_screen_text_never_grows` | fixed text on the screen — a JSX text child that says words, a `title`/`aria-label`/`placeholder`/`alt`/`label` literal, the first argument of `toast(`/`notify(`/`confirm(` — is counted per file over `web/src/{shell,island,remote}` and only ever goes down (`xtask/ui_text_baseline.txt`); a file not listed is allowed none at all |
 
 The ratchet only tightens: a file over its ceiling fails, and `cargo xtask
 ceilings` refuses to raise one. A ceiling *above* what a file needs does not
@@ -96,6 +97,14 @@ build. A control that cannot be wired yet gets deleted, not disabled and left
 looking clickable — the markup is in git and in the prototype when it becomes
 real. `cargo xtask controls` regenerates the file and, like the ceilings, only
 ever tightens.
+
+**The words on the screen come from the catalog.** Fixed text in a component
+renders in one language on a screen that promised another, and the diff that
+adds it says nothing. `xtask/ui_text_baseline.txt` counts the stretches of
+fixed screen text per file, and the count only ever goes down: translate a
+slice and run `cargo xtask ui-text` to take the credit — it refuses to raise a
+count or to list a new file, exactly like the ceilings. A line the walk
+misreads can say `// ui-text: ok <reason>`.
 
 ## Tests
 
