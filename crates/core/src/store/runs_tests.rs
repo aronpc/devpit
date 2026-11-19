@@ -166,7 +166,7 @@ fn rows_the_old_sweep_wrote_become_lost_and_nothing_else_moves() {
              ALTER TABLE board_column DROP COLUMN role; DROP TABLE finding_dismissal; DROP TABLE seen_session; DROP TABLE decision; \
              DROP TABLE card_parent; DROP TABLE card_blocker; DROP TABLE devflow_plan; \
              DROP INDEX card_number; ALTER TABLE card DROP COLUMN number; DROP TABLE card_superseded; \
-             ALTER TABLE card DROP COLUMN branch; \
+             ALTER TABLE card DROP COLUMN branch; DROP TABLE host; \
              CREATE TABLE drawing (id TEXT PRIMARY KEY, project_id TEXT NOT NULL, name TEXT NOT NULL, \
              scene TEXT NOT NULL, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL);",
         )

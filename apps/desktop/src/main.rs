@@ -153,6 +153,7 @@ mod handoff;
 mod happening;
 mod heads_down;
 mod history;
+mod hosts;
 mod hub;
 mod idle_compact;
 mod in_flight;

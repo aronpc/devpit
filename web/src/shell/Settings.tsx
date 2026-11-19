@@ -14,6 +14,7 @@ import { flagOn, type Flag } from './settingsFlags'
 import { AccountsSettings } from './AccountsSettings'
 import { AssistantSettings } from './AssistantSettings'
 import { GuardrailSettings } from './GuardrailSettings'
+import { HostsSettings } from './HostsSettings'
 import { ChannelsPane } from './ChannelsPane'
 import { DecisionsSettings } from './DecisionsSettings'
 import { DevflowSettings } from './DevflowSettings'
@@ -138,9 +139,8 @@ export function Settings({
               removing a project leaves its folder where it is.</p>
           </section>
 
-          <section className="prefs__in" hidden={pane !== 'worktrees'}>
-            <Worktrees />
-          </section>
+          <section className="prefs__in" hidden={pane !== 'worktrees'}><Worktrees /></section>
+          <section className="prefs__in" hidden={pane !== 'hosts'}><HostsSettings /></section>
           <section className="prefs__in" hidden={pane !== 'appearance'}>
             <h1 className="prefs__h">Appearance</h1>
             <div className="thm" role="radiogroup" aria-label="Theme">

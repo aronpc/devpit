@@ -16,6 +16,12 @@ project**, not the branch — the hard part is not producing five versions of on
 feature, it is not losing the thread when you switch projects and come back two
 days later.
 
+A project's terminals run on this computer, or on a **host**: a machine
+reached over the person's own ssh, kept as a profile in Settings → Hosts with
+its environment (dev, staging or production). A host is a preference, like an
+agent profile, not an eighth object: it says where a terminal runs, not what
+the work is.
+
 ## `terminal` — the target
 
 One tmux *window* per project. The layout is drawn by the application, not by

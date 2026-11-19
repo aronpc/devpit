@@ -132,6 +132,14 @@ export const PREFS_NAV: readonly NavGroup[] = [
         ),
       },
       {
+        id: 'hosts',
+        label: 'Hosts',
+        about: 'ssh remote machines servers staging production',
+        icon: (
+          <svg {...stroke}><rect x="3" y="4" width="18" height="7" rx="1" /><rect x="3" y="13" width="18" height="7" rx="1" /><path d="M7 7.5h.01M7 16.5h.01" /></svg>
+        ),
+      },
+      {
         id: 'storage',
         label: 'Storage',
         about: 'disk transcripts workspace directory size',

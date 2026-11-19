@@ -26,7 +26,7 @@ pub mod words;
 
 pub use bus::{Bus, Event, Severity};
 pub use store::{
-    limits, preference, AttachmentRow, CardEdges, CardRow, ColumnRow, CommentRow, NewCard,
+    limits, preference, AttachmentRow, CardEdges, CardRow, ColumnRow, CommentRow, HostRow, NewCard,
     NoticeRow, PaneLayoutWrite, PluginRow, ProjectRow, ReminderRow, RunRow, SessionLink, StepRow,
     Store, StoreError, SyncedProject, DEFAULT_COLUMNS, DEV_ROOT, RELEASE_ROOT, ROOT_NAME,
 };

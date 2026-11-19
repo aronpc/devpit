@@ -831,4 +831,24 @@ SELECT 1;
 ALTER TABLE card ADD COLUMN branch TEXT;
 "#,
     },
+    // Migration 034 — host profiles: machines a project's terminals run on.
+    Migration {
+        version: 34,
+        sql: r#"
+-- Reached over the person's own ssh: a target, never a key. The environment
+-- is what marks a production host for the person and the orchestrator.
+CREATE TABLE host (
+    id            TEXT PRIMARY KEY,
+    name          TEXT NOT NULL UNIQUE,
+    target        TEXT NOT NULL,
+    user          TEXT,
+    port          INTEGER CHECK (port BETWEEN 1 AND 65535),
+    identity_file TEXT,
+    work_root     TEXT NOT NULL,
+    environment   TEXT NOT NULL CHECK (environment IN ('dev', 'staging', 'production')),
+    created_at    INTEGER NOT NULL,
+    updated_at    INTEGER NOT NULL
+);
+"#,
+    },
 ];

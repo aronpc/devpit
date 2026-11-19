@@ -38,6 +38,7 @@ export type PrefsPane =
   | 'skills'
   | 'storage'
   | 'worktrees'
+  | 'hosts'
   | 'usage'
   | 'accounts'
   | 'decisions'

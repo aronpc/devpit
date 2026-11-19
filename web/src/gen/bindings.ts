@@ -708,6 +708,12 @@ export const commands = {
 	 *  once.
 	 */
 	remindersSet: (on: boolean) => typedError<null, RpcError>(__TAURI_INVOKE("reminders_set", { on })),
+	/**  `hosts.list` — the host profiles, by name. */
+	hostsList: () => typedError<Hosts, RpcError>(__TAURI_INVOKE("hosts_list")),
+	/**  `host.save` — adds a profile, or edits the one with its id. */
+	hostSave: (host: HostDraft) => typedError<Hosts, RpcError>(__TAURI_INVOKE("host_save", { host })),
+	/**  `host.remove` — forgets a profile. Nothing on the host is touched. */
+	hostRemove: (id: string) => typedError<Hosts, RpcError>(__TAURI_INVOKE("host_remove", { id })),
 	/**
 	 *  `reminders.rearm` — the window came back to the front: a machine that
 	 *  slept may have passed a reminder, and the thread's clock slept with it.
@@ -4025,6 +4031,40 @@ export type Held = {
 	 *  yet" is honest; a row that says 0 B is not.
 	 */
 	exists: boolean,
+};
+
+/**  One saved host profile. */
+export type Host = {
+	id: string,
+	name: string,
+	target: string,
+	user: string | null,
+	port: number | null,
+	identityFile: string | null,
+	workRoot: string,
+	environment: HostEnvironment,
+};
+
+/**  A host profile as the window edits it: no id for a new one. */
+export type HostDraft = {
+	id: string | null,
+	name: string,
+	/**  An ssh config alias or a host name. */
+	target: string,
+	user: string | null,
+	port: number | null,
+	/**  The identity file's path, never its contents. */
+	identityFile: string | null,
+	workRoot: string,
+	environment: HostEnvironment,
+};
+
+/**  What a host is for. Production is marked wherever a host shows. */
+export type HostEnvironment = "dev" | "staging" | "production";
+
+/**  A list, so tomorrow's field has somewhere to go. */
+export type Hosts = {
+	hosts: Host[],
 };
 
 /**  devpit.app as a channel: e-mail and push, set up at devpit.app/account. */
