@@ -44,6 +44,16 @@ jobs:
       - run: make setup
       - run: make test
 
+      # A machine in another locale is not an exotic one, and the relative
+      # dates and the thousands used to follow the runner's: the same test
+      # said "2 minutes ago" on one machine and "há 2 minutos" on another.
+      # The runner image ships only en_US, so pt_BR is generated before it
+      # is asked for.
+      - name: Frontend tests under a Portuguese locale
+        run: |
+          sudo locale-gen pt_BR.UTF-8
+          LC_ALL=pt_BR.UTF-8 pnpm --filter ./web test
+
       # `make test` builds in debug, so a module gated wrong for release
       # compiles there and fails only when someone ships. It did once.
       #

@@ -47,7 +47,7 @@ const SCALES: readonly (readonly [Intl.RelativeTimeFormatUnit, number])[] = [
   ['minute', 60],
 ]
 
-export function since(seconds: number | null, now = Date.now()): string {
+export function since(seconds: number | null, now = Date.now(), locale = 'en'): string {
   if (!seconds) return 'never opened'
 
   const elapsed = Math.round(now / 1000 - seconds)
@@ -55,7 +55,9 @@ export function since(seconds: number | null, now = Date.now()): string {
      "in 3 hours", so anything inside the minute is simply now. */
   if (elapsed < 60) return 'just now'
 
-  const format = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' })
+  /* A locale said out loud rather than taken from the machine, so the words
+     do not change from one runner to the next. */
+  const format = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' })
   for (const [unit, size] of SCALES) {
     if (elapsed >= size) return format.format(-Math.floor(elapsed / size), unit)
   }

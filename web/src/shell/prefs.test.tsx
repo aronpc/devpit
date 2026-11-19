@@ -135,7 +135,7 @@ describe('a project row', () => {
   it('says when it was last opened, which is what the list is ordered by', () => {
     shell.projects = [project({ lastOpenedAt: Date.now() / 1000 - 3 * 3600 })]
     render(<ProjectRows onRemove={vi.fn()} />)
-    const worded = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' }).format(-3, 'hour')
+    const worded = new Intl.RelativeTimeFormat('en', { numeric: 'auto' }).format(-3, 'hour')
     expect(screen.getByText(worded)).toBeTruthy()
   })
 

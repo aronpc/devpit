@@ -59,10 +59,10 @@ export function primary(changes: readonly Change[], message: string): Primary {
 /**
  * Thousands, so six thousand lines does not read as six hundred.
  *
- * In whatever the window's locale is: a thousand separator is one of the few
- * things a person reads without looking, and `en-US` was hardcoded here for
- * no reason but the machine it was written on.
+ * In the locale the caller names, 'en' as the standing default: a thousand
+ * separator is one of the few things a person reads without looking, and
+ * the machine the code happens to run on is no way to choose one.
  */
-export function counted(lines: number): string {
-  return lines.toLocaleString()
+export function counted(lines: number, locale = 'en'): string {
+  return lines.toLocaleString(locale)
 }
