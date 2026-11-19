@@ -102,6 +102,7 @@ pub(crate) fn settings_write_now(
     if let Some(chosen) = theme {
         store.set_preference(preference::THEME, chosen.stored())?;
     }
+    let relanguaged = language.is_some();
     if let Some(chosen) = language {
         store.set_preference(preference::LANGUAGE, chosen.stored())?;
     }
@@ -131,7 +132,13 @@ pub(crate) fn settings_write_now(
         store.set_preference(preference::TERMINAL_CONTRAST, &contrast.to_string())?;
     }
     crate::sync::nudge();
-    read(&store)
+    let settings = read(&store);
+    if relanguaged {
+        // `read` has settled the process on the new language; the tray's
+        // menu and tooltip are words, so they are drawn again in it.
+        crate::tray::relanguage();
+    }
+    settings
 }
 
 /// `settings.finish_onboarding` — the first run is done.

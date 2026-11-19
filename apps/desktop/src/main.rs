@@ -182,6 +182,8 @@ mod local_events;
 mod local_files;
 mod local_rpc;
 mod local_server;
+#[cfg(test)]
+mod locale_turn;
 mod maintenance;
 mod mcp;
 mod mcp_cache;

@@ -12,6 +12,7 @@ use std::collections::{BTreeSet, HashMap};
 use std::path::Path;
 use std::sync::{Mutex, OnceLock};
 
+use devpit_core::i18n::t;
 use devpit_rpc::{LiveSession, TurnFrom};
 
 /// How the sessions stood at a turn.
@@ -55,24 +56,19 @@ pub(crate) fn notice(before: Option<&Seen>, now: &[LiveSession]) -> Option<Strin
     for one in now {
         let new = !before.names.contains(&one.name);
         if one.waiting.is_some() && !before.waiting.contains(&one.name) {
-            said.push(format!("{} is waiting on a question", one.name));
+            said.push(t("sinceNotice.waiting", &[("name", &one.name)]));
         } else if one.status == "idle"
             && (before.busy.contains(&one.name)
                 || (new && one.since.is_some_and(|since| since > before.at)))
         {
-            said.push(format!("{} finished its turn", one.name));
+            said.push(t("sinceNotice.finished", &[("name", &one.name)]));
         }
     }
     let here: BTreeSet<&String> = now.iter().map(|one| &one.name).collect();
     for gone in before.names.iter().filter(|name| !here.contains(name)) {
-        said.push(format!("{gone} ended"));
+        said.push(t("sinceNotice.ended", &[("name", gone)]));
     }
-    (!said.is_empty()).then(|| {
-        format!(
-            "[devpit, not the person] Since your last message: {}.",
-            said.join("; ")
-        )
-    })
+    (!said.is_empty()).then(|| t("sinceNotice.line", &[("said", &said.join("; "))]))
 }
 
 /// A turn's project, its account, and where the person sent it from when

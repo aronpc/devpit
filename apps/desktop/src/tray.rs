@@ -188,6 +188,15 @@ pub(crate) fn refresh_soon() {
     });
 }
 
+/// The person changed the language: forgets what the tray last drew so the
+/// next refresh redraws every word of it, not only what waits.
+pub(crate) fn relanguage() {
+    if let Ok(mut last) = LAST.lock() {
+        *last = None;
+    }
+    refresh_soon();
+}
+
 fn refresh(app: &AppHandle) {
     let (waiting, recent) = gathered();
     let now = said(&waiting, &recent, crate::pausing::paused());
@@ -226,7 +235,7 @@ fn gathered() -> (Vec<Waiting>, Vec<Recent>) {
             who: one
                 .card
                 .or(one.project)
-                .unwrap_or_else(|| "A session".to_owned()),
+                .unwrap_or_else(|| devpit_core::i18n::t("tray.aSession", &[])),
             session_id: one.session_id,
             project_id: one.project_id,
             pane_id: one.pane_id,
@@ -285,7 +294,12 @@ fn menu(app: &AppHandle, entries: &[Entry]) -> tauri::Result<Menu<tauri::Wry>> {
                 None::<&str>,
             )?)?,
             Entry::Projects(projects) => {
-                let sub = Submenu::with_id(app, "projects", "Recent projects", true)?;
+                let sub = Submenu::with_id(
+                    app,
+                    "projects",
+                    devpit_core::i18n::t("tray.recentProjects", &[]),
+                    true,
+                )?;
                 for (name, go) in projects {
                     sub.append(&MenuItem::with_id(app, go.id(), name, true, None::<&str>)?)?;
                 }
