@@ -42,5 +42,43 @@
   "error.outsideProject": "{path} está fora do projeto",
   "error.unreadable": "não foi possível ler {path}: {reason}",
   "error.alreadyExists": "{path} já existe",
-  "error.alreadyRunning": "já há uma execução em andamento neste card"
+  "error.alreadyRunning": "já há uma execução em andamento neste card",
+  "brief.reportingBack": "Reportar de volta",
+  "brief.reportSendMessage": "O orquestrador que iniciou você é `{name}`: use SendMessage para esse nome para reportar de volta. Ele mantém o nome quando o chat dele reinicia.",
+  "brief.reportBus": "O orquestrador que iniciou você é `{name}`: mande mensagem para ele com devpit_session_message, sem `to`, para reportar de volta. Ele mantém o nome quando o chat dele reinicia.",
+  "briefing.running": {
+    "one": "{count} em andamento",
+    "other": "{count} em andamento"
+  },
+  "briefing.waitingOnYou": {
+    "one": "{count} esperando você",
+    "other": "{count} esperando você"
+  },
+  "briefing.ended": {
+    "one": "{count} encerrada",
+    "other": "{count} encerradas"
+  },
+  "briefing.sessions": "Sessões: {list}.",
+  "briefing.sessionsNone": "Sessões: nenhuma rodou.",
+  "briefing.merged": "Mesclados: {list}{more}.",
+  "briefing.mergedMore": ", e mais {count}",
+  "briefing.mergedNone": "Mesclados: nenhum pull request.",
+  "briefing.memory": {
+    "one": "{count} proposta de memória",
+    "other": "{count} propostas de memória"
+  },
+  "briefing.schedule": {
+    "one": "{count} proposta de agenda",
+    "other": "{count} propostas de agenda"
+  },
+  "briefing.draft": {
+    "one": "{count} rascunho para enviar",
+    "other": "{count} rascunhos para enviar"
+  },
+  "briefing.plan": {
+    "one": "{count} plano para aprovar",
+    "other": "{count} planos para aprovar"
+  },
+  "briefing.decisions": "Decisões esperando: {list}.",
+  "briefing.decisionsNone": "Decisões esperando: nenhuma."
 }

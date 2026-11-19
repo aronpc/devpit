@@ -7,6 +7,8 @@
 use std::io::Write as _;
 use std::path::{Path, PathBuf};
 
+use devpit_core::i18n::t_for;
+
 use crate::session_locale::SessionLocale;
 
 /// The logs an orchestrator keeps, by the name a call gives.
@@ -252,21 +254,20 @@ const LONGEST_BRIEF: usize = 8000;
 
 /// Whom a session reports to: the orchestrator's own name, which outlives a
 /// restart of its chat where the one the CLI makes up does not.
-pub(crate) fn report_to(folder: &Path, by_bus: bool) -> Option<String> {
+pub(crate) fn report_to(locale: SessionLocale, folder: &Path, by_bus: bool) -> Option<String> {
     let name = crate::orchestrator::address(folder)?;
-    Some(report_line(&name, !by_bus))
+    Some(report_line(locale, &name, !by_bus))
 }
 
 /// How a session reaches `name`: Claude Code's own SendMessage, or devpit's
-/// tool for a session on a CLI without it.
-pub(crate) fn report_line(name: &str, send_message: bool) -> String {
-    let how = match send_message {
-        true => "SendMessage to that name",
-        false => "message it with devpit_session_message, `to` left out,",
+/// tool for a session on a CLI without it. Said in the session's language,
+/// never the process's.
+pub(crate) fn report_line(locale: SessionLocale, name: &str, send_message: bool) -> String {
+    let key = match send_message {
+        true => "brief.reportSendMessage",
+        false => "brief.reportBus",
     };
-    format!(
-        "The orchestrator that started you is `{name}`: {how} to report back. It keeps the name when its chat restarts."
-    )
+    t_for(locale.locale(), key, &[("name", name)])
 }
 
 /// A session's brief, with whom to report to, the person's standing rules
@@ -282,7 +283,13 @@ pub(crate) fn briefed(
     project: Option<ProjectName>,
     by_bus: bool,
 ) -> String {
-    briefed_with(locale, folder, prompt, project, report_to(folder, by_bus))
+    briefed_with(
+        locale,
+        folder,
+        prompt,
+        project,
+        report_to(locale, folder, by_bus),
+    )
 }
 
 /// [`briefed`] for a session on a host, which nothing of devpit's reaches:
@@ -296,10 +303,11 @@ pub(crate) fn briefed_on_host(
     briefed_with(locale, folder, prompt, project, None)
 }
 
-/// `_locale` is the session's own language — held for the brief's own words,
-/// still to speak it.
+/// The address goes first, so the cut below can only ever take from the rules
+/// after it. Its heading is the session's language; "Rules for sessions" is
+/// the one the parser reads and stays as written in every language.
 fn briefed_with(
-    _locale: SessionLocale,
+    locale: SessionLocale,
     folder: &Path,
     prompt: &str,
     project: Option<ProjectName>,
@@ -313,7 +321,7 @@ fn briefed_with(
         .unwrap_or_default();
     let mut brief = prompt.trim_end().to_owned();
     let added = [
-        ("Reporting back".to_owned(), report),
+        (t_for(locale.locale(), "brief.reportingBack", &[]), report),
         ("Rules for sessions".to_owned(), rules_in(&preferences)),
         (
             format!("Rules for sessions: {}", project.map_or("", |one| one.name)),

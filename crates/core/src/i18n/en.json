@@ -42,5 +42,43 @@
   "error.outsideProject": "{path} is outside the project",
   "error.unreadable": "could not read {path}: {reason}",
   "error.alreadyExists": "{path} already exists",
-  "error.alreadyRunning": "a run is already going on this card"
+  "error.alreadyRunning": "a run is already going on this card",
+  "brief.reportingBack": "Reporting back",
+  "brief.reportSendMessage": "The orchestrator that started you is `{name}`: SendMessage to that name to report back. It keeps the name when its chat restarts.",
+  "brief.reportBus": "The orchestrator that started you is `{name}`: message it with devpit_session_message, `to` left out, to report back. It keeps the name when its chat restarts.",
+  "briefing.running": {
+    "one": "{count} running",
+    "other": "{count} running"
+  },
+  "briefing.waitingOnYou": {
+    "one": "{count} waiting on you",
+    "other": "{count} waiting on you"
+  },
+  "briefing.ended": {
+    "one": "{count} ended",
+    "other": "{count} ended"
+  },
+  "briefing.sessions": "Sessions: {list}.",
+  "briefing.sessionsNone": "Sessions: none ran.",
+  "briefing.merged": "Merged: {list}{more}.",
+  "briefing.mergedMore": ", and {count} more",
+  "briefing.mergedNone": "Merged: no pull request.",
+  "briefing.memory": {
+    "one": "{count} memory proposal",
+    "other": "{count} memory proposals"
+  },
+  "briefing.schedule": {
+    "one": "{count} schedule proposal",
+    "other": "{count} schedule proposals"
+  },
+  "briefing.draft": {
+    "one": "{count} draft to send",
+    "other": "{count} drafts to send"
+  },
+  "briefing.plan": {
+    "one": "{count} plan to approve",
+    "other": "{count} plans to approve"
+  },
+  "briefing.decisions": "Decisions waiting: {list}.",
+  "briefing.decisionsNone": "Decisions waiting: none."
 }

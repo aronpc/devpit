@@ -35,6 +35,12 @@ impl SessionLocale {
         Self(locale)
     }
 
+    /// The held locale, for the catalog's `t_for`: a session's words are said
+    /// in it, never in the process's own.
+    pub(crate) fn locale(self) -> Locale {
+        self.0
+    }
+
     /// The locale's BCP 47 tag, as the variable carries it.
     pub(crate) fn tag(self) -> &'static str {
         self.0.tag()
