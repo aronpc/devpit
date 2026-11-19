@@ -1,0 +1,4 @@
+{
+  "greet.hello": "Olá, {name} {surname}",
+  "board.cards": { "one": "{count} cartão", "other": "{count} cartões" }
+}
