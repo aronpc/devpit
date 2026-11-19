@@ -278,6 +278,7 @@ mod search;
 mod secret_scan;
 mod session_bus;
 mod session_cost;
+mod session_locale;
 mod session_notice;
 mod session_search;
 mod session_told;

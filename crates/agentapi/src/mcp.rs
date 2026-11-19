@@ -23,6 +23,28 @@ use crate::listing::Seat;
 /// The protocol revision offered when the client names none this knows.
 const PROTOCOL: &str = "2025-06-18";
 
+/// The variable a session's own process carries its language in, inherited
+/// by this server from the process that started it. A session's language is
+/// the one it was born in, whatever the app's settings have said since: the
+/// server never asks the app, only this.
+pub const LOCALE_ENV: &str = "DEVPIT_LOCALE";
+
+/// The language this server answers in, as `said` left it: `pt-BR` is
+/// Brazilian Portuguese, and anything else — nothing said included — is
+/// English, which is the base and the default.
+pub fn locale_of(said: Option<&str>) -> &'static str {
+    match said {
+        Some("pt-BR") => "pt-BR",
+        _ => "en",
+    }
+}
+
+/// [`locale_of`], of this process's own environment: the session's own
+/// answer, read once and held for the server's life. Without it, English.
+pub fn locale() -> &'static str {
+    locale_of(std::env::var(LOCALE_ENV).ok().as_deref())
+}
+
 /// One tool: its name, what it says it does, its input, and the app's method.
 pub(crate) struct Tool {
     pub(crate) name: &'static str,

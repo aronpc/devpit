@@ -619,8 +619,10 @@ pub(crate) fn waking(profile: &str) -> Result<Waking, String> {
             found.driver
         ));
     }
-    let env = devpit_agentcli::running::runner(&found).env;
-    Ok((command, env, crate::agent_reach::chat_mcp(&found)))
+    let locale = crate::session_locale::SessionLocale::capture();
+    let mut env = devpit_agentcli::running::runner(&found).env;
+    env.push(locale.var());
+    Ok((command, env, crate::agent_reach::chat_mcp(locale, &found)))
 }
 
 /// `project_agent_ask` and `project_agent_brief`, for the orchestrator whose

@@ -99,12 +99,14 @@ pub(crate) fn open(
     let name = session_name(project, wanted.name, profile_id);
     let runs_as = wanted.profile.unwrap_or(profile_id);
     let tab_id = fresh_tab();
+    // The session's language, of the moment it is opened: held for its life.
+    let locale = crate::session_locale::SessionLocale::capture();
     let pane_id = typed_in(
         app,
         &project.id,
         &tab_id,
         std::path::Path::new(&project.root_path),
-        &launched(runs_as, &project.id, &name, prompt, wanted.model)?,
+        &launched(locale, runs_as, &project.id, &name, prompt, wanted.model)?,
         Some(runs_as),
     )?;
     let kept = kept(
@@ -185,8 +187,9 @@ pub(crate) fn typeable(text: &str) -> Result<(), RpcError> {
 }
 
 /// The profile's CLI, named when it is Claude Code and briefed, as one line
-/// to type.
+/// to type, in the session's own language.
 pub(crate) fn launched(
+    locale: crate::session_locale::SessionLocale,
     profile_id: &str,
     project_id: &str,
     name: &str,
@@ -220,7 +223,7 @@ pub(crate) fn launched(
     };
     Ok(format!(
         "{}{rest}",
-        crate::shell_launch::to_start_in(profile_id, Some(project_id))?
+        crate::shell_launch::to_start_in(locale, profile_id, Some(project_id))?
     ))
 }
 
@@ -354,19 +357,39 @@ pub async fn session_watch(
 mod tests {
     use super::{launched, typeable};
 
+    use devpit_core::locale::Locale;
+
+    use crate::session_locale::SessionLocale;
+
     /// The orchestrator's choice of model goes on this session's line alone,
     /// before the brief; without one the profile's own stands.
     #[test]
     fn a_session_asked_for_in_a_model_starts_in_it() {
-        let line =
-            launched("claude", "prj_none", "fix-it", "the brief", Some("opus")).expect("line");
+        let line = launched(
+            SessionLocale::of(Locale::PtBr),
+            "claude",
+            "prj_none",
+            "fix-it",
+            "the brief",
+            Some("opus"),
+        )
+        .expect("line");
         assert!(
             line.ends_with(" --name 'fix-it' --model 'opus' 'the brief'"),
             "{line}"
         );
-        let line = launched("claude", "prj_none", "fix-it", "the brief", None).expect("line");
+        let line = launched(
+            SessionLocale::of(Locale::En),
+            "claude",
+            "prj_none",
+            "fix-it",
+            "the brief",
+            None,
+        )
+        .expect("line");
         assert!(!line.contains("--model"), "{line}");
         assert!(launched(
+            SessionLocale::of(Locale::En),
             "claude",
             "prj_none",
             "fix-it",
@@ -380,21 +403,52 @@ mod tests {
     /// is given a name; a CLI whose start nobody checked is refused.
     #[test]
     fn a_session_on_another_cli_starts_with_its_brief_as_that_cli_takes_it() {
-        let line = launched("codex", "prj_none", "fix-it", "the brief", None).expect("codex");
+        let line = launched(
+            SessionLocale::of(Locale::En),
+            "codex",
+            "prj_none",
+            "fix-it",
+            "the brief",
+            None,
+        )
+        .expect("codex");
         assert!(
-            line.starts_with("codex") && line.ends_with(" 'the brief'"),
+            line.starts_with("DEVPIT_LOCALE='en' codex") && line.ends_with(" 'the brief'"),
             "{line}"
         );
         assert!(!line.contains("--name"), "{line}");
-        let line =
-            launched("opencode", "prj_none", "fix-it", "the brief", Some("x/y")).expect("opencode");
+        let line = launched(
+            SessionLocale::of(Locale::En),
+            "opencode",
+            "prj_none",
+            "fix-it",
+            "the brief",
+            Some("x/y"),
+        )
+        .expect("opencode");
         assert!(
             line.ends_with(" --model 'x/y' --prompt 'the brief'"),
             "{line}"
         );
-        let line = launched("gemini", "prj_none", "fix-it", "the brief", None).expect("gemini");
+        let line = launched(
+            SessionLocale::of(Locale::En),
+            "gemini",
+            "prj_none",
+            "fix-it",
+            "the brief",
+            None,
+        )
+        .expect("gemini");
         assert!(line.ends_with(" -i 'the brief'"), "{line}");
-        assert!(launched("aider", "prj_none", "fix-it", "the brief", None).is_err());
+        assert!(launched(
+            SessionLocale::of(Locale::En),
+            "aider",
+            "prj_none",
+            "fix-it",
+            "the brief",
+            None,
+        )
+        .is_err());
     }
 
     /// Ctrl-C and Ctrl-U are keys at a terminal: inside a typed brief they end

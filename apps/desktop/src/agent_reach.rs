@@ -9,8 +9,17 @@
 //! The server is this binary (`devpit mcp`, `devpit-agentapi`). From an
 //! AppImage that is the AppImage file, not the mount it runs from, which moves
 //! on every start.
+//!
+//! Each session's language reaches the server with it: Claude Code hands a
+//! stdio server its own process environment, so the variable on the session's
+//! line is enough; Codex hands a server only what it is told, so the language
+//! is baked into the env on that session's own line; a chat's file is of the
+//! language too, since a file every session of the agent shared would hand
+//! each the last writer's language.
 
 use std::path::{Path, PathBuf};
+
+use crate::session_locale::SessionLocale;
 
 /// The binary an agent runs to reach devpit.
 pub(crate) fn exe() -> Option<PathBuf> {
@@ -21,9 +30,10 @@ pub(crate) fn exe() -> Option<PathBuf> {
 }
 
 /// The MCP file a chat turn under `profile` is handed.
-pub(crate) fn chat_mcp(profile: &devpit_rpc::Profile) -> Option<String> {
+pub(crate) fn chat_mcp(locale: SessionLocale, profile: &devpit_rpc::Profile) -> Option<String> {
     let agent = crate::restoring::base_or(Some(&profile.base), &profile.id);
     chat_mcp_in(
+        locale,
         &devpit_core::Store::root().ok()?,
         &exe()?,
         &profile.driver,
@@ -33,18 +43,27 @@ pub(crate) fn chat_mcp(profile: &devpit_rpc::Profile) -> Option<String> {
 
 /// Claude's own file, written with the terminal's flags so both reach the
 /// same server; for Codex and an ACP agent, a file of devpit's that their
-/// wire reads back, signed with the agent. Only ever under devpit's `root`.
-pub(crate) fn chat_mcp_in(root: &Path, exe: &Path, driver: &str, agent: &str) -> Option<String> {
+/// wire reads back, signed with the agent and of the session's language.
+/// Only ever under devpit's `root`.
+pub(crate) fn chat_mcp_in(
+    locale: SessionLocale,
+    root: &Path,
+    exe: &Path,
+    driver: &str,
+    agent: &str,
+) -> Option<String> {
     let config = match driver {
         "claude" => {
             let config = root.join("mcp.json");
-            mcp_flags(driver, exe, &config)?;
+            mcp_flags(locale, driver, exe, &config)?;
             config
         }
         "codex" | "acp" if devpit_pty::agents::known(agent).is_some() => {
-            let config = root.join(format!("mcp-{agent}.json"));
-            let file =
-                serde_json::json!({ "mcpServers": { "devpit": server(exe.to_str()?, agent) } });
+            // Named with the language: the language is a value of the
+            // session, and one file per agent would hand every session the
+            // last writer's.
+            let config = root.join(format!("mcp-{agent}-{}.json", locale.tag()));
+            let file = serde_json::json!({ "mcpServers": { "devpit": server(locale, exe.to_str()?, agent) } });
             kept(&config, &file.to_string())?;
             config
         }
@@ -53,21 +72,30 @@ pub(crate) fn chat_mcp_in(root: &Path, exe: &Path, driver: &str, agent: &str) ->
     Some(config.display().to_string())
 }
 
-/// devpit's server for an agent that waits on a tool only so long.
-pub(crate) fn server(exe: &str, agent: &str) -> serde_json::Value {
+/// devpit's server for an agent that waits on a tool only so long, speaking
+/// the session's language.
+pub(crate) fn server(locale: SessionLocale, exe: &str, agent: &str) -> serde_json::Value {
     let timeout = u64::try_from(tool_timeout().as_millis()).unwrap_or(u64::MAX);
+    let mut env = serde_json::Map::new();
+    env.insert("DEVPIT_AGENT_ID".to_owned(), serde_json::json!(agent));
+    let (name, value) = locale.var();
+    env.insert(name, serde_json::json!(value));
     serde_json::json!({
         "command": exe,
         "args": ["mcp"],
-        "env": { "DEVPIT_AGENT_ID": agent },
+        "env": env,
         "timeout": timeout,
     })
 }
 
-/// [`server`] for Gemini, which expands the pane devpit's terminal set.
-pub(crate) fn gemini_server(exe: &str) -> serde_json::Value {
-    let mut server = server(exe, "gemini");
+/// [`server`] for Gemini, which expands the pane devpit's terminal set. Its
+/// defaults file is every Gemini session's, so no session's language is baked
+/// into it: the shell fills the variable in, from the environment the
+/// session's own line set.
+pub(crate) fn gemini_server(locale: SessionLocale, exe: &str) -> serde_json::Value {
+    let mut server = server(locale, exe, "gemini");
     server["env"]["DEVPIT_PANE"] = serde_json::json!("${DEVPIT_PANE}");
+    server["env"][crate::session_locale::ENV] = serde_json::json!("${DEVPIT_LOCALE}");
     server
 }
 
@@ -80,11 +108,19 @@ fn kept(path: &Path, wanted: &str) -> Option<()> {
 }
 
 /// What to add to an agent's launch line so it has devpit's tools, or
-/// nothing for an agent with no per-session way to be given them.
+/// nothing for an agent with no per-session way to be given them. The
+/// session's language goes with them where the CLI leaves no other way.
 ///
 /// `config` is where Claude's MCP file goes; it is written here, and only
-/// when it differs.
-pub(crate) fn mcp_flags(agent: &str, exe: &Path, config: &Path) -> Option<String> {
+/// when it differs. The language never goes in it: the file is every Claude
+/// session's, and Claude hands a stdio server its own environment, which the
+/// variable on the session's line already set.
+pub(crate) fn mcp_flags(
+    locale: SessionLocale,
+    agent: &str,
+    exe: &Path,
+    config: &Path,
+) -> Option<String> {
     let exe = exe.to_str()?;
     // Windows reads forward slashes as well, and TOML reads a backslash as
     // an escape.
@@ -106,12 +142,14 @@ pub(crate) fn mcp_flags(agent: &str, exe: &Path, config: &Path) -> Option<String
         // Codex gives up on a tool at sixty seconds; a card's checks and
         // review run up to twenty minutes, and were run again on a retry.
         // It hands a server only the variables it is told to: the pane is
-        // what signs a session's message.
+        // what signs a session's message, and the language — baked here, on
+        // this session's own line — is what it speaks.
         "codex" => Some(format!(
             "-c 'mcp_servers.devpit.command=\"{exe}\"' -c 'mcp_servers.devpit.args=[\"mcp\"]' \
-             -c 'mcp_servers.devpit.env={{DEVPIT_AGENT_ID=\"codex\"}}' \
+             -c 'mcp_servers.devpit.env={{DEVPIT_AGENT_ID=\"codex\", DEVPIT_LOCALE=\"{}\"}}' \
              -c 'mcp_servers.devpit.env_vars=[\"DEVPIT_PANE\"]' \
              -c 'mcp_servers.devpit.tool_timeout_sec={}'",
+            locale.tag(),
             tool_timeout().as_secs()
         )),
         _ => None,

@@ -64,8 +64,12 @@ pub fn start(
         .clone()
         .unwrap_or_else(|| crate::agent_choice::default_id(store));
     let line = launch_line(
-        &crate::shell_launch::to_start_in(&profile, Some(&project_id))
-            .map_err(|err| err.message)?,
+        &crate::shell_launch::to_start_in(
+            crate::session_locale::SessionLocale::capture(),
+            &profile,
+            Some(&project_id),
+        )
+        .map_err(|err| err.message)?,
         &crate::handing::session_name(&title, card_id),
         session_id,
         config.model.as_deref(),

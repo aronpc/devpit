@@ -105,9 +105,10 @@ pub async fn chat_send(
         ));
     };
     // Which account this turn spends, as a terminal's line and a step's runner
-    // carry it, and the conversation its hooks name.
-    let env = crate::chat_turn::env_of(&profile, &conversation_id);
-    let mcp = crate::agent_reach::chat_mcp(&profile);
+    // carry it, and the conversation its hooks name. The language rides too.
+    let locale = crate::session_locale::SessionLocale::capture();
+    let env = crate::chat_turn::env_of(locale, &profile, &conversation_id);
+    let mcp = crate::agent_reach::chat_mcp(locale, &profile);
     let reach = crate::orchestrator::reaches(&project_id);
     let address = crate::orchestrator::address_of(&project_id);
 

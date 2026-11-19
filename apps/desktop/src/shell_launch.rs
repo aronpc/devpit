@@ -44,7 +44,10 @@ pub(crate) fn wrapped_shell() -> Result<devpit_tmux::Shell, RpcError> {
     {
         env.push(("DEVPIT_BIN".to_owned(), bin.display().to_string()));
     }
-    env.extend(typed_agents());
+    // The terminal's own language, of the moment it was opened: an agent
+    // typed by hand in it is born with it, and the MCP server that agent
+    // starts inherits it from the process.
+    env.extend(typed_agents(crate::session_locale::SessionLocale::capture()));
     Ok(devpit_tmux::Shell {
         program: launch.program,
         args: launch.args,
@@ -54,8 +57,10 @@ pub(crate) fn wrapped_shell() -> Result<devpit_tmux::Shell, RpcError> {
 
 /// What the shell's startup file needs to start `claude` and `codex` typed
 /// by hand the way devpit starts them: the hook settings, Claude's MCP file,
-/// and the binary Codex is pointed at. Nothing, with the switch off.
-fn typed_agents() -> Vec<(String, String)> {
+/// and the binary Codex is pointed at. The terminal's `locale` goes with
+/// them, as the language of everything started in it by hand. Nothing, with
+/// the switch off.
+fn typed_agents(locale: crate::session_locale::SessionLocale) -> Vec<(String, String)> {
     if !integrated() {
         return Vec::new();
     }
@@ -69,18 +74,19 @@ fn typed_agents() -> Vec<(String, String)> {
             root.join("hooks.json").display().to_string(),
         ));
     }
-    if let Some(defaults) = gemini_settings(&root) {
+    if let Some(defaults) = gemini_settings(locale, &root) {
         env.push((devpit_agentcli::gemini::DEFAULTS_ENV.to_owned(), defaults));
     }
     if let Some(exe) = crate::agent_reach::exe() {
         let config = root.join("mcp.json");
-        if crate::agent_reach::mcp_flags("claude", &exe, &config).is_some() {
+        if crate::agent_reach::mcp_flags(locale, "claude", &exe, &config).is_some() {
             env.push(("DEVPIT_CLAUDE_MCP".to_owned(), config.display().to_string()));
         }
-        if crate::agent_reach::mcp_flags("codex", &exe, &config).is_some() {
+        if crate::agent_reach::mcp_flags(locale, "codex", &exe, &config).is_some() {
             env.push(("DEVPIT_CODEX_EXE".to_owned(), exe.display().to_string()));
         }
     }
+    env.push(locale.var());
     env
 }
 
@@ -470,10 +476,13 @@ pub async fn session_launch_agent(
     agent_id: String,
     anyway: bool,
 ) -> Result<AgentLaunch, RpcError> {
+    // The session's language, of the click that starts it: held from here
+    // for the session's life, whatever the settings say after.
+    let locale = crate::session_locale::SessionLocale::capture();
     // A profile first, then a built-in agent. The same menu offers both, and
     // a profile is the more specific answer when an id is both — which it is
     // for a discovered command, whose id *is* the command.
-    let start = to_start_in(&agent_id, Some(&project_id))?;
+    let start = to_start_in(locale, &agent_id, Some(&project_id))?;
 
     // The pane has to be this project's. Reached from a menu, the id comes
     // from the screen, and the screen is not the authority on what is open.
@@ -577,25 +586,29 @@ pub(crate) fn profile_id(id: &str) -> String {
 /// The MCP server rides the same way and under the same switch: devpit's
 /// tools on the line of the agents devpit starts (`agent_reach`).
 fn launch_line(
+    locale: crate::session_locale::SessionLocale,
     launch: &str,
     agent: &str,
     settings_flag: Option<&str>,
     project_id: Option<&str>,
     profile_id: Option<&str>,
 ) -> String {
-    let mut line = launch.to_owned();
+    // The session's language first, as an assignment in front of the line:
+    // the agent's process is born with it, and the MCP server it starts —
+    // which inherits that environment — answers in it for its life.
+    let mut line = format!("{}{launch}", locale.assignment());
     if let Some(settings) = settings_flag.and_then(|_| hook_settings(profile_id)) {
         line.push(' ');
         line.push_str(&settings_flag.unwrap_or_default().replace("{}", &settings));
     }
-    if let Some(tools) = devpit_tools(agent) {
+    if let Some(tools) = devpit_tools(locale, agent) {
         line.push(' ');
         line.push_str(&tools);
     }
     // Devflow's hooks call devpit's tools: with the switch off there are none.
     let devflow = project_id
         .filter(|_| integrated())
-        .and_then(|id| crate::devflow_launch::flags(agent, id));
+        .and_then(|id| crate::devflow_launch::flags(locale, agent, id));
     if let Some(devflow) = devflow {
         line.push(' ');
         line.push_str(&devflow);
@@ -604,12 +617,17 @@ fn launch_line(
 }
 
 /// The flags that give this agent devpit's MCP tools, if it takes them.
-fn devpit_tools(agent: &str) -> Option<String> {
+fn devpit_tools(locale: crate::session_locale::SessionLocale, agent: &str) -> Option<String> {
     if !integrated() {
         return None;
     }
     let root = Store::root().ok()?;
-    crate::agent_reach::mcp_flags(agent, &crate::agent_reach::exe()?, &root.join("mcp.json"))
+    crate::agent_reach::mcp_flags(
+        locale,
+        agent,
+        &crate::agent_reach::exe()?,
+        &root.join("mcp.json"),
+    )
 }
 
 /// Whether devpit reaches into the agents it starts at all — hooks, tools.
@@ -628,7 +646,11 @@ fn integrated() -> bool {
 ///
 /// For a session of `project_id`, it brings Devflow's hooks
 /// and skills where the person switched it on there.
-pub(crate) fn to_start_in(id: &str, project_id: Option<&str>) -> Result<String, RpcError> {
+pub(crate) fn to_start_in(
+    locale: crate::session_locale::SessionLocale,
+    id: &str,
+    project_id: Option<&str>,
+) -> Result<String, RpcError> {
     if let Ok(store) = crate::projects::store() {
         if let Ok(profiles) = crate::agent_profiles::all(&store) {
             if let Some(found) = profiles.iter().find(|one| one.id == id && one.mine) {
@@ -637,7 +659,14 @@ pub(crate) fn to_start_in(id: &str, project_id: Option<&str>) -> Result<String, 
                 }
                 let flag = devpit_pty::agents::known(&found.base).and_then(|one| one.settings_flag);
                 let said = devpit_agentcli::running::line(&devpit_agentcli::running::runner(found));
-                let line = launch_line(&said, &found.base, flag, project_id, Some(&found.id));
+                let line = launch_line(
+                    locale,
+                    &said,
+                    &found.base,
+                    flag,
+                    project_id,
+                    Some(&found.id),
+                );
                 return Ok(in_account(line, &found.driver, project_id));
             }
         }
@@ -649,6 +678,7 @@ pub(crate) fn to_start_in(id: &str, project_id: Option<&str>) -> Result<String, 
         )
     })?;
     let line = launch_line(
+        locale,
         agent.launch,
         agent.id,
         agent.settings_flag,
@@ -690,7 +720,10 @@ fn hook_settings(profile_id: Option<&str>) -> Option<String> {
 /// it differs: the system's own defaults with devpit's hooks and MCP server
 /// added, so the person's settings file is never touched and the system's is
 /// never lost.
-pub(crate) fn gemini_settings(root: &std::path::Path) -> Option<String> {
+pub(crate) fn gemini_settings(
+    locale: crate::session_locale::SessionLocale,
+    root: &std::path::Path,
+) -> Option<String> {
     let path = root.join("gemini-hooks.json");
     let system = devpit_agentcli::gemini::defaults_path();
     // Started from a devpit terminal, the variable already names ours.
@@ -704,7 +737,7 @@ pub(crate) fn gemini_settings(root: &std::path::Path) -> Option<String> {
         }
     };
     let server = crate::agent_reach::exe()
-        .and_then(|exe| Some(crate::agent_reach::gemini_server(exe.to_str()?)));
+        .and_then(|exe| Some(crate::agent_reach::gemini_server(locale, exe.to_str()?)));
     let wanted = devpit_agentcli::gemini::settings_json(
         &devpit_agentcli::endpoint_file(root),
         &devpit_agentcli::auth_file(root),

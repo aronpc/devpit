@@ -104,3 +104,13 @@ fn an_override_replaces_the_built_in_it_was_opened_from() {
     assert_eq!(ids, ["claude", "codex"]);
     assert_eq!(all[0].label, "Claude Code (mine)");
 }
+
+/// Every line devpit types to start an agent carries the session's language
+/// in front, as the assignment a profile's own variables already are: the
+/// agent's process is born with it, and the MCP server it starts inherits it.
+#[test]
+fn a_launch_line_carries_the_sessions_language_in_front() {
+    let locale = crate::session_locale::SessionLocale::of(devpit_core::locale::Locale::PtBr);
+    let line = launch_line(locale, "claude", "claude", None, None, None);
+    assert!(line.starts_with("DEVPIT_LOCALE='pt-BR' claude"), "{line}");
+}

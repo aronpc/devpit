@@ -62,8 +62,17 @@ pub(crate) fn hand(
     let comments = store.comments(card_id).map_err(|err| err.to_string())?;
     let prompt = crate::handoff::briefed(prompt, crate::handoff::latest(&comments));
     let runs_as = wanted.profile.unwrap_or(profile_id);
-    let line = crate::opening::launched(runs_as, &board.project_id, &name, &prompt, wanted.model)
-        .map_err(|err| err.message)?;
+    // The session's language, of the moment the card's work is handed over.
+    let locale = crate::session_locale::SessionLocale::capture();
+    let line = crate::opening::launched(
+        locale,
+        runs_as,
+        &board.project_id,
+        &name,
+        &prompt,
+        wanted.model,
+    )
+    .map_err(|err| err.message)?;
     let pane_id =
         crate::opening::typed_in(app, &board.project_id, &tab_id, &cwd, &line, Some(runs_as))
             .map_err(|err| err.message)?;

@@ -106,11 +106,25 @@ fn an_orchestrator_on_codex_runs_a_claude_and_a_codex_session_to_the_end() {
     // It starts a Claude Code session in one project and a Codex one in another:
     // each briefed as its CLI takes it, and both kept by devpit, since an
     // orchestrator on Codex has no Claude Code registry of its own to read.
-    let claude = crate::opening::launched("claude", "prj_api", "api-fix", "fix the test", None)
-        .expect("claude");
+    let claude = crate::opening::launched(
+        crate::session_locale::SessionLocale::of(devpit_core::locale::Locale::En),
+        "claude",
+        "prj_api",
+        "api-fix",
+        "fix the test",
+        None,
+    )
+    .expect("claude");
     assert!(claude.contains(" --name 'api-fix' "), "{claude}");
-    let codex = crate::opening::launched("codex", "prj_web", "web-fix", "ship the page", None)
-        .expect("codex");
+    let codex = crate::opening::launched(
+        crate::session_locale::SessionLocale::of(devpit_core::locale::Locale::En),
+        "codex",
+        "prj_web",
+        "web-fix",
+        "ship the page",
+        None,
+    )
+    .expect("codex");
     assert!(
         codex.ends_with(" 'ship the page'") && !codex.contains("--name"),
         "{codex}"

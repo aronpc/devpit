@@ -567,3 +567,15 @@ fn a_session_may_be_started_on_a_host_and_on_production_only_when_confirmed() {
     assert_eq!(schema["required"], json!(["project", "prompt"]));
     assert!(tool.description.contains("confirm_production"));
 }
+
+/// The server answers in the language of the session that started it, read
+/// from the environment its own process left; nothing said — or anything
+/// but Portuguese said — is English, which is the base and the default.
+#[test]
+fn the_language_comes_from_the_sessions_own_environment() {
+    assert_eq!(locale_of(None), "en");
+    assert_eq!(locale_of(Some("")), "en");
+    assert_eq!(locale_of(Some("en")), "en");
+    assert_eq!(locale_of(Some("fr")), "en");
+    assert_eq!(locale_of(Some("pt-BR")), "pt-BR");
+}
