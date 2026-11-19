@@ -19,6 +19,8 @@
   "tray.draft": "Send the draft for {session}",
   "tray.due": "Due: {title}",
   "tray.aSession": "A session",
+  "tray.toldTitle": "devpit is still running",
+  "tray.toldBody": "It went to the tray and goes on hearing your agents. Quit it from the tray's menu.",
   "notify.anAgent": "An agent",
   "notify.waiting": "Waiting on you",
   "notify.stoppedOnError": "Stopped on an error",

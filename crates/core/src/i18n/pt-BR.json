@@ -19,6 +19,8 @@
   "tray.draft": "Enviar o rascunho para {session}",
   "tray.due": "Vencido: {title}",
   "tray.aSession": "Uma sessão",
+  "tray.toldTitle": "O devpit continua rodando",
+  "tray.toldBody": "Ele foi para a bandeja e segue ouvindo seus agentes. Para sair, use o menu da bandeja.",
   "notify.anAgent": "Um agente",
   "notify.waiting": "Esperando você",
   "notify.stoppedOnError": "Parou com um erro",

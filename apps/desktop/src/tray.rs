@@ -10,6 +10,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Mutex, OnceLock};
 use std::time::Duration;
 
+use devpit_core::locale::Locale;
 use devpit_core::store::preference;
 use devpit_core::Store;
 use devpit_rpc::{Doing, RpcError, Tray};
@@ -437,13 +438,15 @@ fn told_once(app: &AppHandle) {
     if store.preference_flag(preference::TRAY_TOLD).ok().flatten() == Some(true) {
         return;
     }
-    crate::island_notify::show(
-        app,
-        "devpit is still running",
-        "It went to the tray and goes on hearing your agents. Quit it from the tray's menu.",
-        false,
-    );
+    let (title, body) = told_words(Locale::current());
+    crate::island_notify::show(app, &title, &body, false);
     let _ = store.set_preference_flag(preference::TRAY_TOLD, true);
+}
+
+/// The title and body of the one notice closing the window gives.
+fn told_words(locale: Locale) -> (String, String) {
+    let say = |key: &str| devpit_core::i18n::t_for(locale, key, &[]);
+    (say("tray.toldTitle"), say("tray.toldBody"))
 }
 
 fn kept(store: &Store) -> bool {
@@ -485,3 +488,7 @@ pub async fn tray_keep_set(on: bool) -> Result<Tray, RpcError> {
     })
     .await
 }
+
+#[cfg(test)]
+#[path = "tray_tests.rs"]
+mod tests;
