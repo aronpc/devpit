@@ -304,10 +304,15 @@ async fn heard(update: &Value) {
         }
         Update::Pressed { query, key } => {
             let action = key.and_then(|key| crate::channel_actions::take(&key));
-            let said = action.as_ref().map_or_else(
-                || "That button has expired.".to_owned(),
-                |action| crate::channel_actions::act(action, "Telegram"),
-            );
+            let said = match action {
+                // Off the runtime: a stop waits to see its processes gone.
+                Some(action) => tauri::async_runtime::spawn_blocking(move || {
+                    crate::channel_actions::act(&action, "Telegram")
+                })
+                .await
+                .unwrap_or_else(|_| "That button could not be acted on.".to_owned()),
+                None => "That button has expired.".to_owned(),
+            };
             let _ = call(
                 &kept.token,
                 "answerCallbackQuery",

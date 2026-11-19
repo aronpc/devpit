@@ -41,7 +41,7 @@ impl Listed {
     /// whatever process took the number.
     fn running(&self) -> bool {
         self.pid
-            .is_some_and(|pid| alive(pid) && same_start(pid, self.proc_start.as_deref()))
+            .is_some_and(|pid| still_running(pid, self.proc_start.as_deref()))
     }
 }
 

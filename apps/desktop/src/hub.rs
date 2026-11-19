@@ -155,7 +155,12 @@ pub(crate) fn listen() {
             for pressed in pending.pressed {
                 // A key from before a restart names nothing: that button has expired.
                 if let Some(action) = crate::channel_actions::take(&pressed.action) {
-                    let said = crate::channel_actions::act(&action, "devpit.app");
+                    // Off the runtime: a stop waits to see its processes gone.
+                    let said = tauri::async_runtime::spawn_blocking(move || {
+                        crate::channel_actions::act(&action, "devpit.app")
+                    })
+                    .await
+                    .unwrap_or_else(|_| "that button could not be acted on".to_owned());
                     devpit_core::reports::background(
                         "hub",
                         &format!("a button pressed on devpit.app: {said}"),

@@ -17,8 +17,16 @@ fn running(pid: i32, started: Option<String>) -> Running {
     }
 }
 
+/// When `pid` started, as a listing writes it.
+#[cfg(target_os = "linux")]
+fn started_of(pid: i32) -> Option<String> {
+    let stat = std::fs::read_to_string(format!("/proc/{pid}/stat")).ok()?;
+    crate::live_sessions::start_of(&stat).map(ToOwned::to_owned)
+}
+
 /// A `sleep` reaped as it ends, as its own parent would reap it: a zombie
 /// still answers to its pid.
+#[cfg(unix)]
 fn sleeping() -> (i32, std::thread::JoinHandle<()>) {
     let mut child = std::process::Command::new("sleep")
         .arg("30")
@@ -28,18 +36,28 @@ fn sleeping() -> (i32, std::thread::JoinHandle<()>) {
     (pid, std::thread::spawn(move || drop(child.wait())))
 }
 
+/// Whether `pid` is gone within a few seconds: one reaped by init, not by
+/// this test, takes a moment.
+#[cfg(target_os = "linux")]
+fn gone_soon(pid: i32) -> bool {
+    (0..100).any(|_| {
+        std::thread::sleep(Duration::from_millis(50));
+        !devpit_pty::process::alive(pid)
+    })
+}
+
 /// The terminal a listing named was not the one the session ran in — the old
 /// pane of a conversation resumed elsewhere — so closing it left the process
 /// running. It is ended directly, and the stop says so, never "stopped" while
 /// it runs on.
-#[cfg(unix)]
+#[cfg(target_os = "linux")]
 #[test]
 fn a_process_that_outlives_the_terminal_closed_for_it_is_ended_directly() {
     let (pid, reaped) = sleeping();
 
-    let directly = outlived("worker", &running(pid, None), QUICK).expect("ended");
+    let directly = made_sure("worker", &[running(pid, started_of(pid))], QUICK).expect("ended");
 
-    assert!(directly, "said ended with its terminal");
+    assert_eq!(directly, 1, "said ended with its terminal");
     assert!(!devpit_pty::process::alive(pid), "still running");
     reaped.join().expect("reaped");
 }
@@ -52,7 +70,10 @@ fn a_process_that_ended_with_its_terminal_is_not_ended_again() {
     let pid = child.id() as i32;
     child.wait().expect("ended");
 
-    assert!(!outlived("worker", &running(pid, None), QUICK).expect("ended"));
+    assert_eq!(
+        made_sure("worker", &[running(pid, None)], QUICK).expect("ended"),
+        0
+    );
 }
 
 /// A pid now held by another process, started after the listing's, is not
@@ -62,9 +83,9 @@ fn a_process_that_ended_with_its_terminal_is_not_ended_again() {
 fn a_pid_another_process_now_holds_is_left_alone() {
     let (pid, reaped) = sleeping();
 
-    let directly = outlived("worker", &running(pid, Some("1".to_owned())), QUICK);
+    let directly = made_sure("worker", &[running(pid, Some("1".to_owned()))], QUICK);
 
-    assert!(!directly.expect("not this session's"));
+    assert_eq!(directly.expect("not this session's"), 0);
     assert!(
         devpit_pty::process::alive(pid),
         "ended a process that was not the session's"
@@ -90,14 +111,87 @@ fn a_process_that_will_not_end_is_an_error_not_stopped() {
         std::thread::sleep(Duration::from_millis(10));
     }
 
-    let refused = outlived("worker", &running(pid, None), QUICK).expect_err("said stopped");
+    let refused =
+        made_sure("worker", &[running(pid, started_of(pid))], QUICK).expect_err("said stopped");
 
     assert_eq!(refused.code, ErrorCode::Conflict);
     assert!(
-        refused.message.contains(&pid.to_string()),
+        refused
+            .message
+            .contains(&format!("process {pid} would not end")),
         "{}",
         refused.message
     );
     child.kill().expect("killed");
     child.wait().expect("reaped");
+}
+
+/// A process devpit cannot tell is still the session's — no start to check
+/// it by — is never signalled: the stop answers that it was left running.
+#[cfg(unix)]
+#[test]
+fn a_process_devpit_cannot_tell_is_left_running_and_said() {
+    let (pid, reaped) = sleeping();
+
+    let refused = made_sure("worker", &[running(pid, None)], QUICK).expect_err("said stopped");
+
+    assert!(
+        refused.message.contains(&format!("process {pid} outlived")),
+        "{}",
+        refused.message
+    );
+    assert!(
+        devpit_pty::process::alive(pid),
+        "signalled a process it could not tell"
+    );
+    devpit_pty::process::terminate(pid);
+    reaped.join().expect("reaped");
+}
+
+/// An agent leads its own process group and runs its tools in it: ended
+/// directly, the group goes with it, as a closed terminal's does.
+#[cfg(target_os = "linux")]
+#[test]
+fn an_agent_ended_directly_takes_its_tools_with_it() {
+    use std::io::BufRead;
+    use std::os::unix::process::CommandExt;
+    let mut agent = std::process::Command::new("sh")
+        .args(["-c", "sleep 30 & echo $!; wait"])
+        .process_group(0)
+        .stdout(std::process::Stdio::piped())
+        .spawn()
+        .expect("sh");
+    let pid = agent.id() as i32;
+    let mut line = String::new();
+    std::io::BufReader::new(agent.stdout.take().expect("stdout"))
+        .read_line(&mut line)
+        .expect("its tool's pid");
+    let tool: i32 = line.trim().parse().expect("a pid");
+    let reaped = std::thread::spawn(move || drop(agent.wait()));
+
+    let directly = made_sure("worker", &[running(pid, started_of(pid))], QUICK).expect("ended");
+
+    assert_eq!(directly, 1);
+    reaped.join().expect("reaped");
+    assert!(gone_soon(tool), "its tool still runs");
+}
+
+/// What the stop answers, from one session to many, and when it had to end
+/// processes itself.
+#[test]
+fn a_stop_says_what_it_stopped_and_what_it_ended_itself() {
+    assert_eq!(said("w", 1, false, 0), "w was stopped");
+    assert_eq!(
+        said("w", 1, true, 0),
+        "w was stopped, and its terminal closed"
+    );
+    assert_eq!(said("w", 3, true, 0), "3 sessions called w were stopped");
+    assert_eq!(
+        said("w", 1, true, 1),
+        "w was stopped, and its terminal closed; one process still ran after that, and was ended directly"
+    );
+    assert_eq!(
+        said("w", 3, true, 2),
+        "3 sessions called w were stopped; 2 processes still ran after that, and were ended directly"
+    );
 }

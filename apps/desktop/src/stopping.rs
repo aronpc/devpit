@@ -217,83 +217,127 @@ fn end(
         }
     }
     let mut terminal = Value::Null;
-    let mut directly = 0;
     for one in found {
         match (&one.pane, &one.job) {
             (Some(pane), _) => {
                 let tab_id = close_pane(app, &pane.project_id, &pane.pane_id)?;
                 terminal = json!({ "projectId": pane.project_id, "tabId": tab_id });
-                directly += usize::from(outlived(name, one, GRACE)?);
             }
             (None, Some(job)) => stop_job(profile_id, job)
                 .map_err(|why| RpcError::new(ErrorCode::Conflict, format!("{name}: {why}")))?,
             // Outside devpit's terminals and not a job: only the process.
-            (None, None) => ended_directly(name, one, GRACE)?,
+            (None, None) => {
+                if crate::live_sessions::still_running(one.pid, one.started.as_deref()) {
+                    devpit_pty::process::terminate(one.pid);
+                }
+            }
         }
     }
+    let directly = made_sure(name, found, GRACE)?;
     crate::stop_asked::forget(profile_id, name);
-    let said = match (found.len(), terminal.is_null()) {
-        (1, true) => format!("{name} was stopped"),
-        (1, false) => format!("{name} was stopped, and its terminal closed"),
-        (many, _) => format!("{many} sessions called {name} were stopped"),
-    };
-    let said = match (directly, found.len()) {
-        (0, _) => said,
-        (_, 1) => format!(
-            "{said}; it was not running in that terminal, so its process was ended directly"
-        ),
-        (many, _) => format!(
-            "{said}; {many} were not running in their terminals, so their processes were ended directly"
-        ),
-    };
+    let said = said(name, found.len(), !terminal.is_null(), directly);
     Ok(json!({ "stopped": said, "terminal": terminal }))
 }
 
-/// How long a process is given to end: once its terminal closed, and again
-/// once it was asked to.
-const GRACE: Duration = Duration::from_secs(3);
-
-/// Whether `one`, whose terminal was just closed, outlived it — that was not
-/// the terminal it ran in — and so was ended directly. Never stopped in word
-/// only: one that will not end is an error.
-pub(crate) fn outlived(
-    name: &str,
-    one: &crate::live_sessions::Running,
-    grace: Duration,
-) -> Result<bool, RpcError> {
-    if gone_within(one, grace) {
-        return Ok(false);
+/// What a stop answers: what it stopped, and how many processes it had to
+/// end itself.
+pub(crate) fn said(name: &str, count: usize, closed: bool, directly: usize) -> String {
+    let said = match (count, closed) {
+        (1, false) => format!("{name} was stopped"),
+        (1, true) => format!("{name} was stopped, and its terminal closed"),
+        (many, _) => format!("{many} sessions called {name} were stopped"),
+    };
+    match directly {
+        0 => said,
+        1 => format!("{said}; one process still ran after that, and was ended directly"),
+        many => format!("{said}; {many} processes still ran after that, and were ended directly"),
     }
-    ended_directly(name, one, grace).map(|()| true)
 }
 
-/// Ends `one`'s process itself, and waits to see it gone.
-fn ended_directly(
+/// How long a process is given to end: once its terminal closed or its job
+/// was stopped, and again once it was ended directly.
+const GRACE: Duration = Duration::from_secs(3);
+
+/// Waits once, for all of `found`, to see each process gone. One that
+/// outlived its terminal — the listing named one it did not run in — is
+/// ended directly, when devpit can tell it is still that session's process.
+/// Answers how many were. A stop is never said done while one runs: one
+/// devpit cannot tell, or that will not end, is an error naming it.
+pub(crate) fn made_sure(
     name: &str,
-    one: &crate::live_sessions::Running,
+    found: &[crate::live_sessions::Running],
     grace: Duration,
-) -> Result<(), RpcError> {
-    if devpit_pty::process::terminate(one.pid) && gone_within(one, grace) {
-        return Ok(());
+) -> Result<usize, RpcError> {
+    let outlived = still_after(found.iter().collect(), grace);
+    let (sure, unsure): (Vec<_>, Vec<_>) = outlived.into_iter().partition(|one| identified(one));
+    for one in &sure {
+        end_itself(one, grace);
+    }
+    let stuck = still_after(sure.clone(), grace);
+    if stuck.is_empty() && unsure.is_empty() {
+        return Ok(sure.len());
+    }
+    let mut why = Vec::new();
+    if !stuck.is_empty() {
+        why.push(format!("{} would not end", processes(&stuck)));
+    }
+    if !unsure.is_empty() {
+        why.push(format!(
+            "{} outlived its terminal, and devpit cannot tell it is still that session's, so it was left running",
+            processes(&unsure)
+        ));
     }
     Err(RpcError::new(
         ErrorCode::Conflict,
-        format!(
-            "{name} could not be stopped: its process {} still runs",
-            one.pid
-        ),
+        format!("{name} could not be stopped: {}", why.join("; ")),
     ))
 }
 
-/// Whether `one`'s process is gone, or its pid another process's, within `wait`.
-fn gone_within(one: &crate::live_sessions::Running, wait: Duration) -> bool {
-    let until = std::time::Instant::now() + wait;
-    loop {
-        if !crate::live_sessions::still_running(one.pid, one.started.as_deref()) {
-            return true;
+/// `process 12` or `processes 12, 34`.
+fn processes(these: &[&crate::live_sessions::Running]) -> String {
+    let pids: Vec<String> = these.iter().map(|one| one.pid.to_string()).collect();
+    match pids.len() {
+        1 => format!("process {}", pids[0]),
+        _ => format!("processes {}", pids.join(", ")),
+    }
+}
+
+/// Whether devpit can tell `one`'s pid is still the process the listing
+/// named: only Linux keeps a process's start, and only a listing that says
+/// its own is checked against it. A pid devpit cannot tell is never signalled.
+fn identified(one: &crate::live_sessions::Running) -> bool {
+    cfg!(target_os = "linux") && one.started.is_some()
+}
+
+/// Ends `one`'s process itself. An agent leads its own process group and
+/// runs its tools in it, so the group goes, as a closed terminal's does.
+fn end_itself(one: &crate::live_sessions::Running, grace: Duration) {
+    if !crate::live_sessions::still_running(one.pid, one.started.as_deref()) {
+        return;
+    }
+    #[cfg(unix)]
+    if let Ok(pid) = u32::try_from(one.pid) {
+        // SAFETY: getpgid only reads the process table.
+        if unsafe { libc::getpgid(one.pid) } == one.pid {
+            devpit_pty::stop_group(pid, grace);
+            return;
         }
-        if std::time::Instant::now() >= until {
-            return false;
+    }
+    let _ = grace;
+    devpit_pty::process::terminate(one.pid);
+}
+
+/// Those of `these` still running after `wait`, watched together.
+fn still_after(
+    these: Vec<&crate::live_sessions::Running>,
+    wait: Duration,
+) -> Vec<&crate::live_sessions::Running> {
+    let until = std::time::Instant::now() + wait;
+    let mut left = these;
+    loop {
+        left.retain(|one| crate::live_sessions::still_running(one.pid, one.started.as_deref()));
+        if left.is_empty() || std::time::Instant::now() >= until {
+            return left;
         }
         std::thread::sleep(Duration::from_millis(50));
     }
