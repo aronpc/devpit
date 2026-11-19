@@ -31,6 +31,8 @@ enum Heard {
     Replay(Vec<u8>),
     Older(Vec<u8>),
     Folder(String),
+    /// The daemon refused the pane, and why: one it does not hold.
+    Refused(String),
     Ended,
 }
 
@@ -120,6 +122,7 @@ pub(crate) async fn attach(
     let app = app.clone();
     let acks = sink.acks();
     let mut scanner = devpit_pty::Scanner::new();
+    let mut refused = None;
     while let Some(one) = heard.recv().await {
         let (out, bytes) = match one {
             Heard::Fresh(bytes) => {
@@ -152,6 +155,10 @@ pub(crate) async fn attach(
                 crate::tap::report(&app, &pane_id, devpit_pty::Told::Cwd(cwd));
                 continue;
             }
+            Heard::Refused(why) => {
+                refused = Some(why);
+                break;
+            }
             Heard::Ended => break,
         };
         if let Ok(mut ring) = ring.lock() {
@@ -166,7 +173,14 @@ pub(crate) async fn attach(
     state.claims.forget_exactly(&pane_id, &live);
     let _ = state.claims.release(&pane_id, &client_id);
     crate::ptyd_tap::tap().let_go(&pane_id, state.claims.live(&pane_id).is_ok());
-    Ok(())
+    // Said, so the terminal shows why rather than staying blank.
+    match refused {
+        Some(why) => Err(RpcError::new(
+            ErrorCode::NotFound,
+            format!("devpit-ptyd refused this terminal: {why}"),
+        )),
+        None => Ok(()),
+    }
 }
 
 fn size_bytes(rows: u16, cols: u16) -> Vec<u8> {
@@ -201,13 +215,18 @@ fn drain(mut stream: UnixStream, pane: u32, heard: tokio::sync::mpsc::Sender<Hea
             Some(Kind::Replay) => Heard::Replay(one.bytes),
             Some(Kind::Older) => Heard::Older(one.bytes),
             Some(Kind::Cwd) => Heard::Folder(String::from_utf8_lossy(&one.bytes).into_owned()),
-            Some(Kind::Exited | Kind::Refused) => Heard::Ended,
+            Some(Kind::Refused) => Heard::Refused(String::from_utf8_lossy(&one.bytes).into_owned()),
+            Some(Kind::Exited) => Heard::Ended,
             _ => continue,
         };
-        let ended = matches!(passed, Heard::Ended);
+        let ended = matches!(passed, Heard::Ended | Heard::Refused(_));
         if heard.blocking_send(passed).is_err() || ended {
             return;
         }
     }
     let _ = heard.blocking_send(Heard::Ended);
 }
+
+#[cfg(test)]
+#[path = "ptyd_attach_tests.rs"]
+mod tests;
