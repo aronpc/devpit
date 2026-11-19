@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 
 import { deviceName } from './deviceName'
 import { holdOffer, type RelayMachine } from './relay'
+import { t } from '../i18n'
 
 /*
  * Pairing through devpit.app: the machine's QR code opened this page with
@@ -31,24 +32,24 @@ export function RelayPair({ machine, onPair }: { machine: RelayMachine; onPair: 
   if (signedIn === false)
     return (
       <main className="rm rm--center">
-        <h1 className="rm__title">Sign in first</h1>
-        <p className="rm__said">devpit.app joins this device to {machine.name} only when both are signed in to the same account. It passes along what they say and can read none of it.</p>
+        <h1 className="rm__title">{t('remote.relay.signInTitle')}</h1>
+        <p className="rm__said">{t('remote.relay.signInSaid', { machine: machine.name })}</p>
         <a className="rm__btn" href="/login?next=/remote" onClick={() => holdOffer(location.hash)}>
-          Sign in to devpit.app
+          {t('remote.relay.signInButton')}
         </a>
       </main>
     )
 
   return (
     <main className="rm rm--center">
-      <h1 className="rm__title">Pair with {machine.name}</h1>
-      <p className="rm__said">Through devpit.app, encrypted end to end: this device checks it is {machine.name} by the key in the code you scanned, and devpit.app cannot read what the two say.</p>
+      <h1 className="rm__title">{t('remote.relay.pairTitle', { machine: machine.name })}</h1>
+      <p className="rm__said">{t('remote.relay.pairSaid', { machine: machine.name })}</p>
       <label className="rm__field">
-        <span>This device</span>
+        <span>{t('remote.relay.thisDevice')}</span>
         <input value={name} onChange={(event) => setName(event.target.value)} />
       </label>
       <button className="rm__btn" disabled={signedIn === null} onClick={() => onPair(name.trim() || guessName())}>
-        Pair
+        {t('remote.relay.pair')}
       </button>
     </main>
   )
@@ -58,8 +59,8 @@ export function RelayPair({ machine, onPair }: { machine: RelayMachine; onPair: 
 export function RelayNothing(): React.JSX.Element {
   return (
     <main className="rm rm--center">
-      <h1 className="rm__title">Pair this device</h1>
-      <p className="rm__said">On the machine: Settings → Remote, through devpit.app, then Pair a device. Scan the code with this device&rsquo;s camera. It is good once, for ten minutes.</p>
+      <h1 className="rm__title">{t('remote.relay.nothingTitle')}</h1>
+      <p className="rm__said">{t('remote.relay.nothingSaid')}</p>
     </main>
   )
 }

@@ -5766,7 +5766,13 @@ binary?: boolean;
  *  The host shows the stops waiting on the person's click; absent
  *  from an older one.
  */
-stops?: boolean } | 
+stops?: boolean; 
+/**
+ *  The language the host resolved, `en` or `pt-BR`: the Remote has no
+ *  settings of its own to read it from. Empty from an older host, and
+ *  the viewer then stays in English.
+ */
+locale?: string } | 
 /**
  *  The device proved its pairing code and waits for the person at the
  *  machine to allow it. An older viewer passes it by.

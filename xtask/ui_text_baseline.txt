@@ -4,16 +4,6 @@
 # is the rule for anything written from here on; a slice that translated its
 # files runs `cargo xtask ui-text` to take the credit.
 
-web/src/remote/RelayPair.tsx 11
-web/src/remote/RemoteApp.tsx 13
-web/src/remote/RemoteBoard.tsx 8
-web/src/remote/RemoteChats.tsx 4
-web/src/remote/RemoteComposer.tsx 4
-web/src/remote/RemotePair.tsx 6
-web/src/remote/RemoteSecret.tsx 7
-web/src/remote/RemoteTalk.tsx 7
-web/src/remote/RemoteTerminal.tsx 4
-web/src/remote/RemoteWaiting.tsx 16
 web/src/shell/AboutSettings.tsx 2
 web/src/shell/AccountFields.tsx 14
 web/src/shell/AccountsSettings.tsx 11

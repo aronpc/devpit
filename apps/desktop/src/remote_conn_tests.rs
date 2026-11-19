@@ -337,3 +337,32 @@ fn a_message_from_the_hub_goes_out_while_a_pane_floods() {
         "{said:?}"
     );
 }
+
+/// The Remote runs on another device and has no settings to read, so the
+/// language the host speaks travels in the welcome, and changing it at the
+/// host reaches the viewer with the next welcome.
+#[test]
+fn the_welcome_carries_the_hosts_language_and_follows_a_change() {
+    let device = Device {
+        id: "d1".into(),
+        name: "phone".into(),
+        token_hash: String::new(),
+        key: None,
+        typing: true,
+        answering: false,
+        mcp: false,
+        paired_at: 0.0,
+        last_seen: None,
+    };
+    let said = |locale: devpit_core::locale::Locale| {
+        let _turn = crate::locale_turn::settled(locale);
+        serde_json::to_value(welcome(&device)).expect("json")["locale"].clone()
+    };
+    assert_eq!(said(devpit_core::locale::Locale::PtBr), "pt-BR");
+    assert_eq!(said(devpit_core::locale::Locale::En), "en");
+    let old: RemoteOut = serde_json::from_str(
+        r#"{"t":"welcome","device":"phone","host":"desk","typing":true,"answering":false}"#,
+    )
+    .unwrap();
+    assert!(matches!(old, RemoteOut::Welcome { locale, .. } if locale.is_empty()));
+}

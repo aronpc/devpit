@@ -183,6 +183,11 @@ pub enum RemoteOut {
         /// from an older one.
         #[serde(default)]
         stops: bool,
+        /// The language the host resolved, `en` or `pt-BR`: the Remote has no
+        /// settings of its own to read it from. Empty from an older host, and
+        /// the viewer then stays in English.
+        #[serde(default)]
+        locale: String,
     },
     /// The device proved its pairing code and waits for the person at the
     /// machine to allow it. An older viewer passes it by.

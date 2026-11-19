@@ -6,6 +6,7 @@ import type { RemoteIn } from '../gen/bindings'
 import { frame, Kind } from '../shell/paneSocket'
 import { SESSION_COMMANDS } from '../shell/sessionCommands'
 import { base64Of } from './socket'
+import { t } from '../i18n'
 
 /*
  * One terminal of the machine, watched. Its size here is its own: the
@@ -100,22 +101,22 @@ export function RemoteTerminal({
               </button>
             ))}
           </div>
-          <div className="rm__keys" aria-label="Commands">
+          <div className="rm__keys" aria-label={t('remote.terminal.commands')}>
             {SESSION_COMMANDS.map((one) => (
-              <button key={one.command} className="rm__key" title={one.what} onClick={() => confirm(`Type ${one.command} in this terminal?`) && send({ t: 'panePaste', pane, text: one.command })}>
+              <button key={one.command} className="rm__key" title={one.what} onClick={() => confirm(t('remote.terminal.confirmType', { command: one.command })) && send({ t: 'panePaste', pane, text: one.command })}>
                 {one.command}
               </button>
             ))}
           </div>
           <div className="rm__line">
-            <input value={line} placeholder="Write, and send it as a line" onChange={(event) => setLine(event.target.value)} onKeyDown={(event) => event.key === 'Enter' && !event.nativeEvent.isComposing && sendLine()} />
+            <input value={line} placeholder={t('remote.terminal.linePlaceholder')} onChange={(event) => setLine(event.target.value)} onKeyDown={(event) => event.key === 'Enter' && !event.nativeEvent.isComposing && sendLine()} />
             <button className="rm__btn" onClick={sendLine}>
-              Send
+              {t('remote.terminal.send')}
             </button>
           </div>
         </>
       ) : (
-        <p className="rm__dim">Watching only. Typing is allowed on the machine, per device.</p>
+        <p className="rm__dim">{t('remote.terminal.watchOnly')}</p>
       )}
     </div>
   )
