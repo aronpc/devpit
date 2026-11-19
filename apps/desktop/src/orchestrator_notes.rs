@@ -7,6 +7,8 @@
 use std::io::Write as _;
 use std::path::{Path, PathBuf};
 
+use crate::session_locale::SessionLocale;
+
 /// The logs an orchestrator keeps, by the name a call gives.
 const LOGS: [&str; 2] = ["sessions", "preferences"];
 /// How long one entry may be, in characters.
@@ -269,25 +271,35 @@ pub(crate) fn report_line(name: &str, send_message: bool) -> String {
 
 /// A session's brief, with whom to report to, the person's standing rules
 /// and those of the session's own project after it — cut to what still
-/// fits, so they never make a brief too long to start.
+/// fits, so they never make a brief too long to start. Written in the
+/// language of the session being started, held from its own start.
 /// A session that reports `by_bus` is one devpit keeps, with no SendMessage
 /// to the orchestrator.
 pub(crate) fn briefed(
+    locale: SessionLocale,
     folder: &Path,
     prompt: &str,
     project: Option<ProjectName>,
     by_bus: bool,
 ) -> String {
-    briefed_with(folder, prompt, project, report_to(folder, by_bus))
+    briefed_with(locale, folder, prompt, project, report_to(folder, by_bus))
 }
 
 /// [`briefed`] for a session on a host, which nothing of devpit's reaches:
 /// the person's rules, and no way of reporting back it could not use.
-pub(crate) fn briefed_on_host(folder: &Path, prompt: &str, project: Option<ProjectName>) -> String {
-    briefed_with(folder, prompt, project, None)
+pub(crate) fn briefed_on_host(
+    locale: SessionLocale,
+    folder: &Path,
+    prompt: &str,
+    project: Option<ProjectName>,
+) -> String {
+    briefed_with(locale, folder, prompt, project, None)
 }
 
+/// `_locale` is the session's own language — held for the brief's own words,
+/// still to speak it.
 fn briefed_with(
+    _locale: SessionLocale,
     folder: &Path,
     prompt: &str,
     project: Option<ProjectName>,

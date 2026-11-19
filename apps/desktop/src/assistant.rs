@@ -13,6 +13,8 @@ use devpit_core::Store;
 use devpit_rpc::{AssistantMode, ErrorCode, Project, RpcError};
 use tauri::AppHandle;
 
+use crate::session_locale::SessionLocale;
+
 /// devpit's assistant brief, beside its orchestrator brief.
 const BRIEF: (&str, &str) = (".devpit/assistant.md", include_str!("assistant_devpit.md"));
 /// The line that imports it.
@@ -68,8 +70,10 @@ pub(crate) fn inside(folder: &Path, path: &Path) -> std::io::Result<()> {
 }
 
 /// The brief and its import as the mode says: written and imported when on,
-/// taken out when off.
-pub(crate) fn brief_in(folder: &Path, on: bool) -> std::io::Result<()> {
+/// taken out when off. `_locale` is the language of the session the folder is
+/// being written for — held for the assistant brief's translation, still to
+/// come.
+pub(crate) fn brief_in(folder: &Path, on: bool, _locale: SessionLocale) -> std::io::Result<()> {
     let brief = folder.join(BRIEF.0);
     if on {
         let text = format!(
@@ -188,7 +192,8 @@ pub async fn assistant_mode_set(
         let store = crate::projects::store()?;
         let folder = folder_of(&store, &project_id)?;
         store.set_orchestrator_setting(&folder, KEY, serde_json::json!(on))?;
-        brief_in(&folder, on).map_err(|err| RpcError::internal(err.to_string()))?;
+        brief_in(&folder, on, SessionLocale::capture())
+            .map_err(|err| RpcError::internal(err.to_string()))?;
         crate::devflow_asks::rang(Some(&app), &project_id);
         Ok(AssistantMode { on })
     })

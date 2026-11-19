@@ -10,6 +10,8 @@ use devpit_core::{HostRow, Store};
 use devpit_rpc::{ErrorCode, RpcError};
 use serde_json::{json, Value};
 
+use crate::session_locale::SessionLocale;
+
 /// What a session on production is told first.
 const PRODUCTION_RULES: &str = "## This session runs on production\n\nYou are on {host}, a production host, in {path}. Make the smallest change that does the work, and a reversible one. Read before you write. Say what you will do before you do it. Nothing destructive — deleting data, a migration, restarting or stopping a service, a force push, changing access — without the person's explicit yes in this session.";
 
@@ -122,8 +124,10 @@ pub(crate) struct Planned {
 
 /// Plans a start on a host the project is linked to, for the orchestrator in
 /// `here_root` speaking as `profile`, running `runs_as`'s CLI: refused on
-/// production without the person's yes, and briefed for where it runs.
+/// production without the person's yes, and briefed for where it runs, in the
+/// language of the session being started.
 pub(crate) fn planned(
+    locale: SessionLocale,
     store: &Store,
     here_root: &std::path::Path,
     project: &devpit_rpc::Project,
@@ -140,6 +144,7 @@ pub(crate) fn planned(
     }
     let name = crate::opening::session_name(project, asked.name, profile);
     let brief = crate::orchestrator_notes::briefed_on_host(
+        locale,
         here_root,
         &briefed_for(&host, &path, asked.prompt),
         Some(crate::orchestrator_notes::ProjectName {
@@ -165,6 +170,7 @@ pub(crate) fn planned(
 /// Starts a session on a host the project is linked to: [`planned`], then a
 /// tab there, the line typed at its shell, and the session kept.
 pub(crate) fn started(
+    locale: SessionLocale,
     app: &tauri::AppHandle,
     here: &devpit_rpc::Project,
     project: &devpit_rpc::Project,
@@ -180,7 +186,7 @@ pub(crate) fn started(
         path,
         name,
         line,
-    } = planned(&store, root, project, profile, runs_as, asked)?;
+    } = planned(locale, &store, root, project, profile, runs_as, asked)?;
     let opened = crate::host_panes::opened_tab(app, &project.id, &host.id).map_err(said)?;
     let target = crate::pane_io::target_of(&project.id, &opened.pane_id).map_err(said)?;
     let _ = crate::pane_io::settled(&target);

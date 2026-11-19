@@ -778,7 +778,10 @@ fn respond_in(
                 let card = on_board(&board, &card_id)?;
                 name = name.or_else(|| Some(crate::handing::session_name(&card.title, &card_id)));
             }
+            // The session's language, of the moment it is started.
+            let locale = crate::session_locale::SessionLocale::capture();
             let started = crate::host_sessions::started(
+                locale,
                 app,
                 here,
                 project,
@@ -804,11 +807,14 @@ fn respond_in(
             let app = app.ok_or("devpit's window is not running")?;
             let profile = orchestrating(here)?;
             let runs_as = crate::opening::runs_as(profile, text("profile").as_deref())?;
+            // The session's language, of the moment it is started.
+            let locale = crate::session_locale::SessionLocale::capture();
             let started = crate::opening::open(
                 app,
                 project,
                 profile,
                 &crate::orchestrator_notes::briefed(
+                    locale,
                     Path::new(&here.root_path),
                     &crate::project_agent::nudged(
                         &text("prompt").unwrap_or_default(),
@@ -832,12 +838,15 @@ fn respond_in(
         "start" => {
             let profile = orchestrating(here)?;
             let runs_as = crate::opening::runs_as(profile, text("profile").as_deref())?;
+            // The session's language, of the moment it is started.
+            let locale = crate::session_locale::SessionLocale::capture();
             let started = crate::handing::hand(
                 app.ok_or("devpit's window is not running")?,
                 &board,
                 profile,
                 &card_id,
                 &crate::orchestrator_notes::briefed(
+                    locale,
                     Path::new(&here.root_path),
                     &crate::project_agent::nudged(
                         &text("prompt").unwrap_or_default(),
