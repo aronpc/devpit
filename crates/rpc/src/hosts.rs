@@ -48,3 +48,20 @@ pub struct Host {
 pub struct Hosts {
     pub hosts: Vec<Host>,
 }
+
+/// One line of a host's check: what was checked, whether it passed, and what
+/// was found or why not.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct HostCheckRow {
+    pub what: String,
+    pub ok: bool,
+    pub said: String,
+}
+
+/// A host's check, ssh first: when it fails, nothing else was asked.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct HostCheck {
+    pub rows: Vec<HostCheckRow>,
+}

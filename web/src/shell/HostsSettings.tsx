@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 
-import type { Host, HostDraft, HostEnvironment, Hosts } from '../gen/bindings'
+import type { Host, HostCheck, HostDraft, HostEnvironment, Hosts } from '../gen/bindings'
 import { ask, commands } from './live'
 
 /*
@@ -58,6 +58,7 @@ export function HostsSettings(): React.JSX.Element {
   const [editing, setEditing] = useState<string | null>(null)
   const [fields, setFields] = useState<Fields>(EMPTY)
   const [said, setSaid] = useState<string | null>(null)
+  const [checks, setChecks] = useState<Readonly<Record<string, HostCheck | 'checking'>>>({})
 
   useEffect(() => {
     void ask(() => commands.hostsList()).then((answer) => setHosts(answer.data?.hosts ?? []))
@@ -74,6 +75,12 @@ export function HostsSettings(): React.JSX.Element {
   }
   const save = (): void => void ask(() => commands.hostSave(draftOf(editing, fields))).then((answer) => landed(answer, true))
   const remove = (host: Host): void => void ask(() => commands.hostRemove(host.id)).then((answer) => landed(answer, host.id === editing))
+  const check = (host: Host): void => {
+    setChecks((was) => ({ ...was, [host.id]: 'checking' }))
+    void ask(() => commands.hostCheck(host.id)).then((answer) =>
+      setChecks((was) => ({ ...was, [host.id]: answer.data ?? { rows: [{ what: 'check', ok: false, said: answer.error ?? 'the check failed' }] } })),
+    )
+  }
   const edit = (host: Host): void => {
     setEditing(host.id)
     setFields(fieldsOf(host))
@@ -97,9 +104,13 @@ export function HostsSettings(): React.JSX.Element {
               <span className={`host__env host__env--${host.environment}`}>{host.environment}</span>
             </span>
             <span className="voice__row">
+              <button className="btn" aria-label={`Check ${host.name}`} disabled={checks[host.id] === 'checking'} onClick={() => check(host)}>
+                {checks[host.id] === 'checking' ? 'Checking…' : 'Check'}
+              </button>
               <button className="btn" aria-label={`Edit ${host.name}`} onClick={() => edit(host)}>Edit</button>
               <button className="btn" aria-label={`Remove ${host.name}`} onClick={() => remove(host)}>Remove</button>
             </span>
+            <CheckRows check={checks[host.id]} />
           </div>
         </div>
       ))}
@@ -129,5 +140,19 @@ export function HostsSettings(): React.JSX.Element {
         </div>
       </div>
     </>
+  )
+}
+
+/* A host's check, one line each: what, passed or not, and what was found. */
+function CheckRows({ check }: { check: HostCheck | 'checking' | undefined }): React.JSX.Element | null {
+  if (!check || check === 'checking') return null
+  return (
+    <ul className="host__check">
+      {check.rows.map((row) => (
+        <li key={row.what} data-ok={row.ok ? 'true' : 'false'}>
+          <span className="host__mark">{row.ok ? '✓' : '✗'}</span> <b>{row.what}</b> <span className="pref__d">{row.said}</span>
+        </li>
+      ))}
+    </ul>
   )
 }

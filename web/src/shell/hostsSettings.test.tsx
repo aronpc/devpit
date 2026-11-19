@@ -7,6 +7,7 @@ let hosts: Host[]
 let refusal: string | null
 const save = vi.fn()
 const remove = vi.fn()
+const check = vi.fn()
 
 vi.mock('./live', () => ({
   ask: async (call: () => Promise<{ data: unknown; error: string | null }>) => {
@@ -22,6 +23,18 @@ vi.mock('./live', () => ({
       const { id: _drop, ...rest } = draft
       hosts = [...hosts.filter((one) => one.id !== id), { ...rest, id }]
       return { data: { hosts }, error: null }
+    },
+    hostCheck: async (id: string) => {
+      check(id)
+      return {
+        data: {
+          rows: [
+            { what: 'ssh', ok: true, said: 'connected to prod-web' },
+            { what: 'tmux', ok: false, said: 'not installed: devpit runs a host\'s terminals in tmux there' },
+          ],
+        },
+        error: null,
+      }
     },
     hostRemove: async (id: string) => {
       remove(id)
@@ -121,6 +134,15 @@ describe('Settings → Hosts', () => {
     fireEvent.change(screen.getByLabelText('Environment'), { target: { value: 'staging' } })
     fireEvent.click(screen.getByRole('button', { name: 'Save host' }))
     await waitFor(() => expect(save).toHaveBeenCalledWith(expect.objectContaining({ id: 'host_1', environment: 'staging' })))
+  })
+
+  it('checks a host and shows each line, passed or not', async () => {
+    render(<HostsSettings />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Check web prod' }))
+    await waitFor(() => expect(check).toHaveBeenCalledWith('host_1'))
+    expect(await screen.findByText('connected to prod-web')).toBeTruthy()
+    const failed = screen.getByText(/not installed/)
+    expect(failed.closest('[data-ok]')?.getAttribute('data-ok')).toBe('false')
   })
 
   it('removes a host', async () => {

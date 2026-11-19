@@ -719,6 +719,8 @@ export const commands = {
 	hostSave: (host: HostDraft) => typedError<Hosts, RpcError>(__TAURI_INVOKE("host_save", { host })),
 	/**  `host.remove` — forgets a profile. Nothing on the host is touched. */
 	hostRemove: (id: string) => typedError<Hosts, RpcError>(__TAURI_INVOKE("host_remove", { id })),
+	/**  `host.check` — the host's check, over its own connection. */
+	hostCheck: (id: string) => typedError<HostCheck, RpcError>(__TAURI_INVOKE("host_check", { id })),
 	/**  `assistant.mode` — whether this orchestrator's Assistant mode is on. */
 	assistantMode: (projectId: string) => typedError<AssistantMode, RpcError>(__TAURI_INVOKE("assistant_mode", { projectId })),
 	/**
@@ -4043,6 +4045,21 @@ export type Host = {
 	identityFile: string | null,
 	workRoot: string,
 	environment: HostEnvironment,
+};
+
+/**  A host's check, ssh first: when it fails, nothing else was asked. */
+export type HostCheck = {
+	rows: HostCheckRow[],
+};
+
+/**
+ *  One line of a host's check: what was checked, whether it passed, and what
+ *  was found or why not.
+ */
+export type HostCheckRow = {
+	what: string,
+	ok: boolean,
+	said: string,
 };
 
 /**  A host profile as the window edits it: no id for a new one. */
