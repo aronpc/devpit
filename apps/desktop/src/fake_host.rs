@@ -11,8 +11,13 @@ pub(crate) struct FakeHost {
 
 impl FakeHost {
     pub(crate) fn new() -> Self {
+        // Under /tmp, not $TMPDIR: macOS's is long enough that a socket under
+        // it (ssh's, tmux's) outgrows a unix socket's 104 bytes.
         let host = Self {
-            dir: tempfile::tempdir().expect("tempdir"),
+            dir: tempfile::Builder::new()
+                .prefix("fh")
+                .tempdir_in("/tmp")
+                .expect("tempdir"),
         };
         std::fs::create_dir_all(host.bin()).expect("bin");
         std::fs::create_dir_all(host.home()).expect("home");
