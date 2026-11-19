@@ -271,3 +271,18 @@ fn an_option_a_host_s_tmux_lacks_never_keeps_its_session_from_starting() {
     );
     let _ = server.kill_session("devpit_old");
 }
+
+/// A host is never told a `window-size` value: `latest` came in tmux 3.1,
+/// and an older one stops the line at it, before the session it starts. A
+/// session there has one client, which every value sizes the same.
+#[test]
+fn a_host_is_never_told_a_value_an_older_tmux_cannot_read() {
+    assert!(!quieting().contains(&"window-size"), "{:?}", quieting());
+    assert!(quieting().contains(&"history-limit"));
+}
+
+/// `%` is quoted: fish read `%self` as its own pid.
+#[test]
+fn a_percent_is_never_left_bare() {
+    assert_eq!(quoted("%self"), "'%self'");
+}

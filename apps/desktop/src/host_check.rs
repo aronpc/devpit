@@ -117,10 +117,31 @@ fn tool_row(said: &str, tool: &str) -> HostCheckRow {
         .find(|fields| fields.first() == Some(&tool))
     {
         Some(fields) if fields.get(1) == Some(&"ok") => {
-            line(tool, true, fields.get(2).unwrap_or(&"").to_string())
+            let said = fields.get(2).unwrap_or(&"").to_string();
+            match tool != "tmux" || drivable(&said) {
+                true => line(tool, true, said),
+                false => line(
+                    tool,
+                    false,
+                    format!("{said} is older than devpit can drive: 2.9 or later"),
+                ),
+            }
         }
         _ => line(tool, false, format!("not installed: {why}")),
     }
+}
+
+/// Whether a `tmux -V` line names a tmux devpit can drive: 2.9 or later,
+/// whose `set-option -q` passes over an option it does not know.
+pub(crate) fn drivable(version: &str) -> bool {
+    let number: String = version
+        .chars()
+        .skip_while(|ch| !ch.is_ascii_digit())
+        .take_while(|ch| ch.is_ascii_digit() || *ch == '.')
+        .collect();
+    let mut parts = number.split('.').map(|one| one.parse::<u32>().unwrap_or(0));
+    let (major, minor) = (parts.next().unwrap_or(0), parts.next().unwrap_or(0));
+    (major, minor) >= (2, 9)
 }
 
 fn agent_row(said: &str) -> HostCheckRow {

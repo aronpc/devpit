@@ -164,7 +164,13 @@ pub fn spawned(command: &mut std::process::Command) -> std::io::Result<std::proc
 /// The options devpit's own server is quieted with, as tmux's words: put
 /// before a host session's `new-session`, so its first pane has them.
 pub fn quieting() -> Vec<&'static str> {
-    quieted(&crate::chrome::QUIET)
+    // Not `window-size latest`: an older tmux stops at a value it cannot read,
+    // `-q` or not, and one client per session is sized alike by any value.
+    let options: Vec<[&str; 2]> = crate::chrome::QUIET
+        .into_iter()
+        .filter(|[name, _]| *name != "window-size")
+        .collect();
+    quieted(&options)
 }
 
 /// `options` set with `-q`: a host's tmux may be older than one of them, and
