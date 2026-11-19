@@ -2,11 +2,15 @@ import { cleanup, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import type { Thread } from '../gen/bindings'
+import { setLocale } from '../i18n'
 import { NO_MARKS } from './useConversations'
 import { SessionRows } from './SessionRowsView'
 import type { Tab } from './strip'
 
-afterEach(cleanup)
+afterEach(() => {
+  cleanup()
+  setLocale('en')
+})
 
 const NOW = Math.floor(Date.now() / 1000)
 const thread = (id: string, title: string, marks = NO_MARKS, cwd: string | null = null): Thread => ({ id, title, profile: 'claude', model: null, costUsd: 0, lastAt: NOW - 120, cwd, marks })
@@ -64,5 +68,13 @@ describe('the sidebar’s conversations', () => {
     expect(await within(rowOf('Fix the lexer')).findByText('main · devpit · 2 minutes ago')).toBeTruthy()
     expect(within(rowOf('Fix the lexer')).getByText('Claude Code')).toBeTruthy()
     expect(within(rowOf('Fix the lexer')).getByLabelText('Pinned')).toBeTruthy()
+  })
+
+  it('say when it was last spoken in, in the language chosen', async () => {
+    setLocale('pt-BR')
+    render(<SessionRows />)
+    expect(await within(rowOf('Card work')).findByText('feat/325-card · devpit · há 2 minutos')).toBeTruthy()
+    expect(within(rowOf('Card work')).getByText('Claude Code · esperando por você')).toBeTruthy()
+    expect(screen.getByText('Em andamento').textContent).toBe('Em andamento 3')
   })
 })

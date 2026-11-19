@@ -1,21 +1,16 @@
 import type { Project, Thread } from '../gen/bindings'
 import { since } from './projects'
+import { t } from '../i18n'
+import { tRich } from '../i18n/rich'
 
-/* What an orchestrator is good for, as things to ask it. Picking one puts it
+const PREFERENCES = 'context/preferences.md'
+
+/* Catalog keys: what an orchestrator is good for, as things to ask it. Picking one puts it
    in the composer, unsent: a start, not a command. */
-export const ORCHESTRATOR_TRIES = [
-  'Where does every project stand?',
-  'Which sessions are working, and on what?',
-  'Plan this across projects:',
-  'Add a rule for every session you start:',
-] as const
+export const ORCHESTRATOR_TRIES = ['sessions.blank.orch1', 'sessions.blank.orch2', 'sessions.blank.orch3', 'sessions.blank.orch4'] as const
 
 /* Where a project's new conversation might start, in the same way. */
-export const PROJECT_TRIES = [
-  'What changed here since I was last in?',
-  'Pick up the next card on the board',
-  'Run the tests and fix what fails',
-] as const
+export const PROJECT_TRIES = ['sessions.blank.proj1', 'sessions.blank.proj2', 'sessions.blank.proj3'] as const
 
 /* An empty conversation: the question it is for. An orchestrator's is its own
    — it builds nothing itself; it keeps the rest moving. */
@@ -44,17 +39,13 @@ export function ChatBlank({
         )}
         {orchestrating ? (
           <>
-            <h2 className="chat__q">What should we orchestrate?</h2>
-            <p className="chat__sub">
-              Every project and every session of <code>{account ?? project?.orchestrator}</code> is in reach. Ask where things stand, plan across projects, or hand work to a session — you still approve what they do.
-            </p>
-            <p className="chat__sub">
-              Rules every session it starts must keep live under <i>Rules for sessions</i> in its <code>context/preferences.md</code>, and go with every brief. Ask it to add one.
-            </p>
+            <h2 className="chat__q">{t('sessions.blank.orchQ')}</h2>
+            <p className="chat__sub">{tRich('sessions.blank.orchSub', { account: <code>{account ?? project?.orchestrator}</code> })}</p>
+            <p className="chat__sub">{tRich('sessions.blank.orchRules', { section: <i>{t('sessions.blank.rulesSection')}</i>, file: <code>{PREFERENCES}</code> })}</p>
             <div className="chat__tries">
               {ORCHESTRATOR_TRIES.map((one) => (
-                <button key={one} className="chat__try" onClick={() => onTry(one)}>
-                  {one}
+                <button key={one} className="chat__try" onClick={() => onTry(t(one))}>
+                  {t(one)}
                 </button>
               ))}
             </div>
@@ -62,21 +53,20 @@ export function ChatBlank({
         ) : (
           <>
             <h2 className="chat__q">
-              What should we build{project ? ' in ' : ''}
-              {project && <span className="chat__where">{project.name}</span>}?
+              {project ? tRich('sessions.blank.buildIn', { project: <span className="chat__where">{project.name}</span> }) : t('sessions.blank.build')}
             </h2>
             {project && (
               <div className="chat__tries">
                 {PROJECT_TRIES.map((one) => (
-                  <button key={one} className="chat__try chat__try--project" onClick={() => onTry(one)}>
-                    {one}
+                  <button key={one} className="chat__try chat__try--project" onClick={() => onTry(t(one))}>
+                    {t(one)}
                   </button>
                 ))}
               </div>
             )}
             {onOpen && recent.length > 0 && (
-              <div className="chat__recent" aria-label="Recent conversations">
-                <div className="chat__recent-h">Recent conversations</div>
+              <div className="chat__recent" aria-label={t('sessions.blank.recent')}>
+                <div className="chat__recent-h">{t('sessions.blank.recent')}</div>
                 {recent.map((one) => (
                   <button key={one.id} className="chat__again" onClick={() => onOpen(one)}>
                     <span className="chat__again-t">{one.title}</span>

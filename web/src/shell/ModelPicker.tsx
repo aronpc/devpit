@@ -11,6 +11,7 @@ import { useInstallations } from './useInstallations'
 import { useShell } from './useShell'
 import type { Profile } from '../gen/bindings'
 import { intoView } from './intoView'
+import { t } from '../i18n'
 
 /*
  * Which account and model this conversation runs on.
@@ -108,7 +109,7 @@ export function ModelPicker({
 
   const here = profiles.find((one) => one.id === profileId)
   const on = current(here, model)
-  const name = here ? shownName(here, on) : 'No agent CLI'
+  const name = here ? shownName(here, on) : t('sessions.model.noCli')
   /* The account on the chip only when there is more than one to confuse it
      with: a lone account named on every chip is noise. */
   const label = here && profiles.length > 1 ? `${here.label} · ${name}` : name
@@ -117,7 +118,7 @@ export function ModelPicker({
     <div className="ctl" ref={box}>
       <button
         className="chip"
-        aria-label="Account and model"
+        aria-label={t('sessions.model.dialog')}
         aria-expanded={open}
         title={here ? `${here.label} · ${modelHint(on, here.env ?? [])}` : undefined}
         onClick={() => setOpen((was) => !was)}
@@ -127,8 +128,8 @@ export function ModelPicker({
       </button>
 
       {open && (
-        <div className="mpick" role="dialog" aria-label="Account and model">
-          <nav className="mpick__rail" aria-label="Accounts">
+        <div className="mpick" role="dialog" aria-label={t('sessions.model.dialog')}>
+          <nav className="mpick__rail" aria-label={t('sessions.model.accounts')}>
             <button
               className="mpick__tab"
               aria-pressed={tab === SHELF && !query}
@@ -136,7 +137,7 @@ export function ModelPicker({
               onClick={() => goTo(SHELF)}
             >
               <span className="mpick__ti"><Star on={false} size={14} /></span>
-              <span className="mpick__tb"><span className="mpick__tn">Favourites</span></span>
+              <span className="mpick__tb"><span className="mpick__tn">{t('sessions.model.favourites')}</span></span>
             </button>
             <span className="mpick__sep" />
             {usable.map((profile) => (
@@ -153,12 +154,12 @@ export function ModelPicker({
                   <span className="mpick__tn">{profile.label}</span>
                   <span className="mpick__ts">{accountHint(profile)}</span>
                 </span>
-                {profile.id === profileId && <span className="mpick__live" aria-label="This chat's account" />}
+                {profile.id === profileId && <span className="mpick__live" aria-label={t('sessions.model.thisAccount')} />}
               </button>
             ))}
             {/* Where another account comes from, said where it is missed. */}
             <button className="mpick__add" onClick={() => (setOpen(false), openPrefs('providers'))}>
-              {usable.length > 1 || fixed ? 'Manage accounts' : '+ Add an account'}
+              {usable.length > 1 || fixed ? t('sessions.model.manage') : t('sessions.model.add')}
             </button>
           </nav>
 
@@ -168,10 +169,10 @@ export function ModelPicker({
               <input
                 ref={field}
                 className="mpick__in"
-                placeholder={fixed ? 'Search this account’s models…' : 'Search models on every account…'}
+                placeholder={fixed ? t('sessions.model.searchOne') : t('sessions.model.searchAll')}
                 value={query}
                 spellCheck={false}
-                aria-label="Search models"
+                aria-label={t('sessions.model.search')}
                 onChange={(event) => {
                   setQuery(event.target.value)
                   setAt(0)
@@ -194,14 +195,14 @@ export function ModelPicker({
               />
             </div>
 
-            <div className="mpick__list" role="listbox" aria-label="Models">
+            <div className="mpick__list" role="listbox" aria-label={t('sessions.model.models')}>
               {rows.length === 0 && (
                 <div className="mpick__none">
                   {query
-                    ? 'No model by that name.'
+                    ? t('sessions.model.noMatch')
                     : tab === SHELF
-                      ? 'Star a model to keep it here.'
-                      : 'No models reported.'}
+                      ? t('sessions.model.starOne')
+                      : t('sessions.model.noneReported')}
                 </div>
               )}
               {rows.map((row, index) => {
@@ -244,8 +245,8 @@ export function ModelPicker({
                       className="mpick__star"
                       role="button"
                       tabIndex={0}
-                      aria-label={starred ? 'Remove favourite' : 'Add favourite'}
-                      title={starred ? 'Remove favourite' : 'Add favourite'}
+                      aria-label={starred ? t('sessions.model.unstar') : t('sessions.model.star')}
+                      title={starred ? t('sessions.model.unstar') : t('sessions.model.star')}
                       data-on={starred}
                       onClick={(event) => {
                         event.stopPropagation()
@@ -274,7 +275,7 @@ export function ModelPicker({
                     {counted(info) && <span>{counted(info)}</span>}
                   </>
                 ) : (
-                  <span>{viewed.label}&rsquo;s config directory is not on this machine yet.</span>
+                  <span>{t('sessions.model.noDirectory', { account: viewed.label })}</span>
                 )}
               </div>
             )}

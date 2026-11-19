@@ -1,4 +1,5 @@
 import type { Ended, Message, Part, TurnEnd } from '../gen/bindings'
+import { t } from '../i18n'
 
 /*
  * A turn in the order it happened: the agent's prose, and the work between
@@ -64,13 +65,13 @@ export function took(ms: number): string {
 
 /* The note a compaction leaves in the thread: "Compacted at 212k tokens". */
 export function compactedAt(tokens: number): string {
-  return `Compacted at ${Math.round(tokens / 1000)}k tokens`
+  return t('sessions.turn.compacted', { tokens: Math.round(tokens / 1000) })
 }
 
 const VERBS: Readonly<Record<Outcome, readonly [string, string]>> = {
-  done: ['Worked for', 'Worked'],
-  stopped: ['Interrupted after', 'Interrupted'],
-  failed: ['Failed after', 'Failed'],
+  done: ['sessions.turn.workedFor', 'sessions.turn.worked'],
+  stopped: ['sessions.turn.interruptedAfter', 'sessions.turn.interrupted'],
+  failed: ['sessions.turn.failedAfter', 'sessions.turn.failed'],
 }
 
 /* "Worked for 1m 30s", or the word alone when the start was never known. */
@@ -80,7 +81,7 @@ export function statusOf(message: Pick<Message, 'createdAt' | 'ended'>): string 
   const [timed, bare] = VERBS[outcome(ended)]
   const began = millis(message.createdAt)
   const end = millis(ended.at)
-  return began !== null && end !== null && end >= began ? `${timed} ${took(end - began)}` : bare
+  return began !== null && end !== null && end >= began ? t(timed, { time: took(end - began) }) : t(bare)
 }
 
 /* How the live end frame reads, kept on the answer like a saved one. */

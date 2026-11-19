@@ -1,6 +1,8 @@
 import { useState } from 'react'
 
 import { commandLine, SESSION_COMMANDS } from './sessionCommands'
+import { t } from '../i18n'
+import { tRich } from '../i18n/rich'
 
 /*
  * A command for a session's terminal — one of Claude Code's own, or written —
@@ -19,8 +21,8 @@ export function SessionCommand({ name, onSend }: { name: string; onSend: (line: 
 
   if (!open)
     return (
-      <button className="sess__btn" onClick={() => setOpen(true)} title={`Types a command in ${name}'s terminal, as you, once you confirm it`}>
-        Send command…
+      <button className="sess__btn" onClick={() => setOpen(true)} title={t('sessions.command.title', { name })}>
+        {t('sessions.command.send')}
       </button>
     )
 
@@ -28,24 +30,24 @@ export function SessionCommand({ name, onSend }: { name: string; onSend: (line: 
     return (
       <>
         <span className="sess__warn">
-          Type <code>{picked}</code> in {name}&rsquo;s terminal, as you?
+          {tRich('sessions.command.confirm', { command: <code>{picked}</code> }, { name })}
         </span>
-        <button className="sess__btn" onClick={() => setPicked(null)}>Back</button>
-        <button className="sess__btn" onClick={() => (onSend(picked), close())}>Send</button>
+        <button className="sess__btn" onClick={() => setPicked(null)}>{t('sessions.command.back')}</button>
+        <button className="sess__btn" onClick={() => (onSend(picked), close())}>{t('sessions.command.sendNow')}</button>
       </>
     )
 
   return (
-    <div className="sess__cmds" role="group" aria-label={`Commands for ${name}`}>
+    <div className="sess__cmds" role="group" aria-label={t('sessions.command.group', { name })}>
       {SESSION_COMMANDS.map((one) => (
-        <button key={one.command} className="sess__btn" title={one.what} onClick={() => setPicked(one.command)}>
+        <button key={one.command} className="sess__btn" title={t(one.what)} onClick={() => setPicked(one.command)}>
           {one.command}
         </button>
       ))}
       <form className="sess__reply" onSubmit={(event) => (event.preventDefault(), setPicked(commandLine(written)))}>
-        <input value={written} maxLength={4000} placeholder="Or write one, then Enter" aria-label={`A command for ${name}`} onChange={(event) => setWritten(event.target.value)} />
+        <input value={written} maxLength={4000} placeholder={t('sessions.command.write')} aria-label={t('sessions.command.for', { name })} onChange={(event) => setWritten(event.target.value)} />
       </form>
-      <button className="sess__btn" onClick={close}>Cancel</button>
+      <button className="sess__btn" onClick={close}>{t('sessions.command.cancel')}</button>
     </div>
   )
 }

@@ -8,6 +8,7 @@ import { Folder } from './GitIcons'
 import { ask, commands } from './live'
 import { keysLabel, matches } from './shortcuts'
 import { abandoned, committed } from './typing'
+import { t } from '../i18n'
 
 /*
  * Where the next line is typed, below the blocks.
@@ -190,7 +191,7 @@ export const CommandInput = forwardRef<CommandInputHandle, {
           </span>
         )}
         {glance && (
-          <span className="cin__chip cin__chip--git" title="Branch, and the working tree against HEAD">
+          <span className="cin__chip cin__chip--git" title={t('sessions.cmd.branchTitle')}>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="6" cy="6" r="3" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="8" r="3" /><path d="M6 9v6M18 11a6 6 0 0 1-6 6H9" /></svg>
             {glance.branch}
             {glance.files > 0 && (
@@ -200,19 +201,19 @@ export const CommandInput = forwardRef<CommandInputHandle, {
             )}
           </span>
         )}
-        <button className="cin__classic" title="Show the plain terminal instead of blocks" onClick={onClassic}>
-          Classic
+        <button className="cin__classic" title={t('sessions.cmd.classicTitle')} onClick={onClassic}>
+          {t('sessions.cmd.classic')}
         </button>
       </div>
 
       {search !== null && (
-        <div className="cin__search" role="listbox" aria-label="History">
-          <input autoFocus className="cin__sq" value={search} placeholder="Search history" onChange={(event) => { setSearch(event.target.value); setPick(0) }} onKeyDown={(event) => {
+        <div className="cin__search" role="listbox" aria-label={t('sessions.cmd.history')}>
+          <input autoFocus className="cin__sq" value={search} placeholder={t('sessions.cmd.searchHistory')} onChange={(event) => { setSearch(event.target.value); setPick(0) }} onKeyDown={(event) => {
             if (abandoned(event)) { setSearch(null); field.current?.focus() }
             else if (event.key === 'ArrowDown' || event.key === 'ArrowUp') { event.preventDefault(); setPick((was) => Math.max(0, Math.min(found.length - 1, was + (event.key === 'ArrowDown' ? 1 : -1)))) }
             else if (committed(event)) { event.preventDefault(); const chosen = found[pick]; setSearch(null); if (chosen) { setText(chosen); setWalk(null) } field.current?.focus() }
           }} />
-          {found.length === 0 && <div className="cin__none">Nothing in history matches.</div>}
+          {found.length === 0 && <div className="cin__none">{t('sessions.cmd.noHistory')}</div>}
           {found.map((one, at) => (
             <button key={one} className="cin__hit" role="option" aria-selected={at === pick} onMouseEnter={() => setPick(at)} onMouseDown={(event) => { event.preventDefault(); setSearch(null); setText(one); field.current?.focus() }}>
               {one}
@@ -222,7 +223,7 @@ export const CommandInput = forwardRef<CommandInputHandle, {
       )}
 
       {choices && (
-        <div className="cin__search cin__choices" role="listbox" aria-label="Completions">
+        <div className="cin__search cin__choices" role="listbox" aria-label={t('sessions.cmd.completions')}>
           {choices.found.map((one, at) => (
             <button key={one} className="cin__hit" role="option" aria-selected={at === choices.at} onMouseDown={(event) => { event.preventDefault(); put(choices.start, choices.caret, one); setChoices(null) }}>
               {one}
@@ -247,8 +248,8 @@ export const CommandInput = forwardRef<CommandInputHandle, {
             autoCapitalize="off"
             autoCorrect="off"
             value={text}
-            placeholder={`Run a command — ↑ history, ${keysLabel('searchHistory')} search`}
-            aria-label="Command"
+            placeholder={t('sessions.cmd.placeholder', { keys: keysLabel('searchHistory') })}
+            aria-label={t('sessions.cmd.label')}
             onChange={(event) => {
               setText(event.target.value)
               setWalk(null)

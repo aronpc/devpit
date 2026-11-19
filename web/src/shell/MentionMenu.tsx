@@ -1,12 +1,13 @@
 import type { MentionMenu as Menu } from './useMention'
 import { intoView } from './intoView'
+import { t } from '../i18n'
 
 /* The project's files matching what was typed after `@`, above the field —
    the slash menu's place and look, since only one is ever open. */
 export function MentionMenu({ menu }: { menu: Menu }): React.JSX.Element | null {
   if (menu.items.length === 0) return null
   return (
-    <div className="slash" role="listbox" aria-label="Files">
+    <div className="slash" role="listbox" aria-label={t('sessions.mention.label')}>
       {menu.items.map((path, index) => {
         const cut = path.lastIndexOf('/') + 1
         return (

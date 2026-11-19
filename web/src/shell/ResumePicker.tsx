@@ -7,6 +7,8 @@ import { abandoned, committed } from './typing'
 import { named } from './useInstallations'
 import { useShell } from './useShell'
 import { intoView } from './intoView'
+import { t } from '../i18n'
+import { formatDate } from '../i18n/format'
 
 /*
  * `/resume` in a chat: every earlier conversation of this project, to pick
@@ -100,14 +102,14 @@ export function ResumePicker({
   }
 
   return (
-    <div className="slash resume" role="dialog" aria-label="Resume a conversation">
+    <div className="slash resume" role="dialog" aria-label={t('sessions.resume.label')}>
       <div className="resume__in">
         <div className="resume__top">
           <input
             ref={field}
             className="resume__find"
             autoFocus
-            placeholder="Resume a conversation…"
+            placeholder={t('sessions.resume.placeholder')}
             value={wanted}
             onChange={(event) => {
               setWanted(event.target.value)
@@ -131,7 +133,7 @@ export function ResumePicker({
             <button
               className="resume__scope"
               aria-pressed={every}
-              title={every ? `Only ${account}'s conversations` : 'Conversations on every account'}
+              title={every ? t('sessions.resume.onlyAccount', { account }) : t('sessions.resume.everyTitle')}
               onClick={() => {
                 setEvery((was) => !was)
                 setAt(0)
@@ -139,7 +141,7 @@ export function ResumePicker({
                 field.current?.focus()
               }}
             >
-              {every ? 'Every account' : account}
+              {every ? t('sessions.resume.every') : account}
             </button>
           )}
         </div>
@@ -148,10 +150,10 @@ export function ResumePicker({
           {shown.length === 0 && (
             <div className="resume__none">
               {reading
-                ? 'Reading the conversations…'
+                ? t('sessions.resume.reading')
                 : scope
-                  ? `No earlier conversation on ${account ?? 'this account'} matches.`
-                  : 'No earlier conversation matches.'}
+                  ? t('sessions.resume.noneOn', { account: account ?? t('sessions.resume.thisAccount') })
+                  : t('sessions.resume.none')}
             </div>
           )}
           {shown.map((row, index) => (
@@ -168,7 +170,7 @@ export function ResumePicker({
               <span className="resume__m">{[row.where, when(row.at)].filter(Boolean).join(' · ')}</span>
             </button>
           ))}
-          {reading && shown.length > 0 && <div className="resume__none">Still reading the terminal's sessions…</div>}
+          {reading && shown.length > 0 && <div className="resume__none">{t('sessions.resume.stillReading')}</div>}
         </div>
       </div>
     </div>
@@ -203,12 +205,12 @@ function outsideRow(
     key: `outside:${session.sessionId}`,
     title: titled(session),
     at: session.lastAt ?? 0,
-    where: installation ? `terminal · ${named(installation)}` : 'terminal',
+    where: installation ? t('sessions.resume.terminalOf', { name: named(installation) }) : t('sessions.resume.terminal'),
     open: async () => {
       const profile = profileFor(session, installations, profiles)
-      if (!profile) return 'No profile runs against the installation that holds this session.'
+      if (!profile) return t('sessions.resume.noProfile')
       const answer = await ask(() => commands.chatAdopt(projectId, session.sessionId, profile.id, session.title, null))
-      if (answer.error || !answer.data) return answer.error ?? 'could not open it'
+      if (answer.error || !answer.data) return answer.error ?? t('sessions.resume.couldNot')
       show(answer.data, titled(session))
       return null
     },
@@ -217,5 +219,5 @@ function outsideRow(
 
 function when(seconds: number): string {
   if (!seconds) return ''
-  return new Date(seconds * 1000).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+  return formatDate(seconds * 1000, { month: 'short', day: 'numeric' })
 }

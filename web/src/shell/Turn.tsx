@@ -17,6 +17,7 @@ import { TurnDrafts } from './TurnDrafts'
 import { TurnChanges } from './TurnChangesView'
 import { answerOf, compactedAt, millis, outcome, segments, statusOf, took, type Segment } from './turnFold'
 import { foldOf, useDisclosed } from './useDisclosed'
+import { t } from '../i18n'
 
 /*
  * One message, drawn part by part.
@@ -194,7 +195,7 @@ function TurnStatus({
   open: boolean
   toggle: () => void
 }): React.JSX.Element {
-  const said = statusOf(message) ?? 'Worked'
+  const said = statusOf(message) ?? t('sessions.turn.worked')
   const counted = work.length > 0 ? tally(work) : ''
   const inner = (
     <>
@@ -290,12 +291,12 @@ function Foot({ message, rewind, edit }: { message: Message; rewind?: () => void
       <span className="hbar">
         {said && <CopyButton className="tfbtn" text={said} />}
         {edit && (
-          <button className="tfbtn" aria-label="Edit from here" title="Edit the message that started this turn, in a new conversation" onClick={edit}>
+          <button className="tfbtn" aria-label={t('sessions.turn.edit')} title={t('sessions.turn.editTitle')} onClick={edit}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
           </button>
         )}
         {rewind && (
-          <button className="tfbtn" aria-label="Fork from here" title="Go on from this answer in a new conversation — this one stays as it is" onClick={rewind}>
+          <button className="tfbtn" aria-label={t('sessions.turn.fork')} title={t('sessions.turn.forkTitle')} onClick={rewind}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><circle cx="6" cy="5" r="2" /><circle cx="18" cy="5" r="2" /><circle cx="12" cy="19" r="2" /><path d="M6 7v2a3 3 0 0 0 3 3h6a3 3 0 0 0 3-3V7M12 12v5" /></svg>
           </button>
         )}
@@ -310,7 +311,7 @@ function Receipt({ part }: { part: Extract<Message['parts'][number], { kind: 're
   const what = receiptSubject(part.input)
   return (
     <div className="rcpt" data-allowed={part.allowed}>
-      <b>{part.allowed ? 'Allowed' : 'Refused'}</b> {part.tool}
+      <b>{part.allowed ? t('sessions.turn.allowed') : t('sessions.turn.refused')}</b> {part.tool}
       {what && <code className="rcpt__w">{what}</code>}
     </div>
   )

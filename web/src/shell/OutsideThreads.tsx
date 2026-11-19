@@ -6,6 +6,8 @@ import { profileFor, titled } from './outside'
 import { short } from './strip'
 import { named } from './useInstallations'
 import { useShell } from './useShell'
+import { t } from '../i18n'
+import { formatDate } from '../i18n/format'
 
 /*
  * Sessions of this project started in a terminal, which devpit never held.
@@ -41,18 +43,18 @@ export function OutsideThreads(): React.JSX.Element | null {
   const open = (session: OutsideSession): void => {
     const profile = profileFor(session, installations, profiles)
     if (!profile) {
-      setError('No profile runs against the installation that holds this session.')
+      setError(t('sessions.resume.noProfile'))
       return
     }
     void ask(() => commands.chatAdopt(project.id, session.sessionId, profile.id, session.title, null)).then((answer) => {
-      if (answer.error || !answer.data) return setError(answer.error ?? 'could not open it')
+      if (answer.error || !answer.data) return setError(answer.error ?? t('sessions.resume.couldNot'))
       show('chat', { id: answer.data, title: titled(session) })
     })
   }
 
   return (
     <>
-      <div className="heading">Started in a terminal</div>
+      <div className="heading">{t('sessions.outside.head')}</div>
       {error && <div className="sessions__none">{error}</div>}
       {sessions.slice(0, 10).map((session) => {
         const installation = installations.find((one) => one.directory === session.installation)
@@ -75,5 +77,5 @@ export function OutsideThreads(): React.JSX.Element | null {
 
 function when(seconds: number | null): string {
   if (!seconds) return ''
-  return new Date(seconds * 1000).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+  return formatDate(seconds * 1000, { month: 'short', day: 'numeric' })
 }

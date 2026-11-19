@@ -9,6 +9,7 @@ import { Turn } from './Turn'
 import { outcome, statusOf, type Outcome } from './turnFold'
 import type { Reveal } from './useJump'
 import { estimate, GAP, useWindow } from './useWindow'
+import { t } from '../i18n'
 
 /* A message's words, as the person sent them. */
 const textOf = (message: Message | undefined): string => message?.parts.map((part) => ('text' in part ? part.text : '')).join('') ?? ''
@@ -97,9 +98,9 @@ export function ChatThread({
   return (
     /* A log, kept quiet: read out, every streamed word and every row the
        window draws would be spoken. The announcer speaks for it. */
-    <div className="thread" data-windowed="" role="log" aria-label="Conversation" aria-live="off">
+    <div className="thread" data-windowed="" role="log" aria-label={t('sessions.chat.conversation')} aria-live="off">
       {older && <div ref={top} className="thread__older" aria-hidden />}
-      {older && stalled && <button className="thread__more" onClick={onMore}>Load earlier</button>}
+      {older && stalled && <button className="thread__more" onClick={onMore}>{t('sessions.chat.loadEarlier')}</button>}
       {view.before > 0 && <div className="thread__gap" style={{ height: view.before - GAP }} aria-hidden />}
       {ids.slice(view.from, view.to).map((id) => (
         <Row
@@ -118,13 +119,13 @@ export function ChatThread({
         />
       ))}
       {view.after > 0 && <div className="thread__gap" style={{ height: view.after - GAP }} aria-hidden />}
-      {end.unanswered && <p className="said__cmd">No answer was saved for this — the app closed while the turn was running.</p>}
+      {end.unanswered && <p className="said__cmd">{t('sessions.chat.unanswered')}</p>}
       {end.limit && end.retry !== null ? (
         <LimitBanner limit={end.limit} onRetry={() => onRetry(end.retry!)} />
       ) : (end.continuable || end.retry !== null) && (
         <div className="thread__end">
-          {end.continuable && <button className="thread__go" onClick={onContinue}>Continue</button>}
-          {end.retry !== null && <button className="thread__go" onClick={() => onRetry(end.retry!)}>Retry</button>}
+          {end.continuable && <button className="thread__go" onClick={onContinue}>{t('sessions.chat.continue')}</button>}
+          {end.retry !== null && <button className="thread__go" onClick={() => onRetry(end.retry!)}>{t('sessions.chat.retry')}</button>}
         </div>
       )}
       {error && <div className="exempty__t" role="alert">{error}</div>}
@@ -133,21 +134,21 @@ export function ChatThread({
   )
 }
 
-const WORKING = 'The agent is working.'
-const ENDED: Readonly<Record<Outcome, string>> = { done: 'The agent answered.', stopped: 'The agent stopped.', failed: 'The turn failed.' }
+const working = (): string => t('sessions.chat.working')
+const ended = (outcome: Outcome): string => t(`sessions.chat.ended.${outcome}`)
 
 type Last = { id: string; streaming: boolean; said: string | null } | null
 
 function lastAnswer(all: readonly Message[]): Last {
   const last = all.findLast((one) => one.role === 'assistant')
   if (!last) return null
-  return { id: last.id, streaming: last.streaming, said: last.ended ? [ENDED[outcome(last.ended)], statusOf(last)].filter(Boolean).join(' ') : null }
+  return { id: last.id, streaming: last.streaming, said: last.ended ? [ended(outcome(last.ended)), statusOf(last)].filter(Boolean).join(' ') : null }
 }
 
 /* What changed between two reads of the last answer, in words: one starting, or the one that ran ending. */
 function announced(before: Last, last: Last): string | null {
   if (!last || (before?.id === last.id && before.streaming === last.streaming)) return null
-  if (last.streaming) return WORKING
+  if (last.streaming) return working()
   return before?.id === last.id ? last.said : null
 }
 
@@ -155,7 +156,7 @@ function announced(before: Last, last: Last): string | null {
 function Announcer({ messages }: { messages: ChatMessages }): React.JSX.Element {
   const last = useMessagesPick(messages, lastAnswer)
   const [seen, setSeen] = useState(last)
-  const [said, setSaid] = useState(() => (last?.streaming ? WORKING : ''))
+  const [said, setSaid] = useState(() => (last?.streaming ? working() : ''))
   if (seen !== last) {
     setSeen(last)
     const next = announced(seen, last)
@@ -168,7 +169,7 @@ function Announcer({ messages }: { messages: ChatMessages }): React.JSX.Element 
   )
 }
 
-const speaker = (role: Message['role']): string => (role === 'user' ? 'You' : role === 'assistant' ? 'Agent' : 'Note')
+const speaker = (role: Message['role']): string => (role === 'user' ? t('sessions.chat.you') : role === 'assistant' ? t('sessions.chat.agent') : t('sessions.chat.note'))
 
 /* One message of the window, drawn again only when that message is replaced. */
 const Row = memo(function Row({

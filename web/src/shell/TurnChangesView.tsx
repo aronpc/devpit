@@ -1,6 +1,7 @@
 import type { Part } from '../gen/bindings'
 import { byAgent, totals, type TurnFile } from './turnChanges'
 import { useShellPick } from './shellStore'
+import { t } from '../i18n'
 
 /*
  * The files a finished turn changed, under the turn that changed them.
@@ -19,7 +20,7 @@ export function TurnChanges({ files, parts }: { files: readonly TurnFile[]; part
     <div className="tchg">
       <div className="tchg__h">
         <span>
-          {files.length} file{files.length === 1 ? '' : 's'} changed
+          {t('sessions.turn.filesChanged', { count: files.length })}
         </span>
         <span className="ecard__add">+{added}</span>
         <span className="ecard__del">−{removed}</span>
@@ -28,12 +29,12 @@ export function TurnChanges({ files, parts }: { files: readonly TurnFile[]; part
         <button
           key={file.path}
           className="tchg__f"
-          onClick={() => show('diff', { id: `diff:${file.path}`, path: file.path, title: `${file.path.split('/').pop()} diff` })}
+          onClick={() => show('diff', { id: `diff:${file.path}`, path: file.path, title: t('sessions.turn.diffTitle', { name: file.path.split('/').pop() ?? file.path }) })}
         >
           <span className="tchg__p">{file.path}</span>
           {!byAgent(file, parts) && (
-            <span className="tchg__by" title="No edit call names this file; something the agent ran changed it">
-              by a command
+            <span className="tchg__by" title={t('sessions.turn.byCommandTitle')}>
+              {t('sessions.turn.byCommand')}
             </span>
           )}
           <span className="ecard__add">+{file.added}</span>
