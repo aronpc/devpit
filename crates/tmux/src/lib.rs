@@ -25,7 +25,7 @@ mod viewers;
 mod windows;
 pub use error::TmuxError;
 pub use pane::{copy_to, Key};
-pub use remote::{quoted, shell_line, HOST_SERVER};
+pub use remote::{quieting, quoted, shell_line, spawned, HOST_PATH, HOST_SERVER};
 pub use scratch::Scratch;
 pub use shell::{parse_running, parse_snapshot, Running, Shell, Snapped, PANE_ENV};
 

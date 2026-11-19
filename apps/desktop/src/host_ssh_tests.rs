@@ -85,49 +85,6 @@ fn every_command_to_a_host_shares_its_control_socket() {
         .any(|one| one.starts_with("ControlPersist=")));
 }
 
-/// The host's shell gets each word back as it was: no expansion, no second
-/// command, whatever the word holds.
-#[cfg(unix)]
-#[test]
-fn every_word_reaches_the_host_s_shell_as_one_argument() {
-    let dir = tempfile::tempdir().expect("tempdir");
-    let words = [
-        "printf",
-        "%s\\n",
-        "a b",
-        "$(touch pwned)",
-        "x;touch pwned",
-        "it's",
-        "`touch pwned`",
-        "",
-    ];
-
-    let said = std::process::Command::new("sh")
-        .arg("-c")
-        .arg(line(&words))
-        .current_dir(dir.path())
-        .output()
-        .expect("sh");
-
-    let printed = String::from_utf8_lossy(&said.stdout);
-    assert_eq!(
-        printed.split('\n').collect::<Vec<_>>(),
-        [
-            "a b",
-            "$(touch pwned)",
-            "x;touch pwned",
-            "it's",
-            "`touch pwned`",
-            "",
-            ""
-        ]
-    );
-    assert!(
-        !dir.path().join("pwned").exists(),
-        "a word ran as a command"
-    );
-}
-
 /// A dead connection is found out, and nothing of the person's agent or
 /// display goes along with a command.
 #[test]
@@ -168,14 +125,6 @@ fn a_socket_path_ssh_cannot_take_shares_no_connection() {
             "{sockets}: {argv:?}"
         );
     }
-}
-
-/// zsh reads a word starting with `=` as a program's path: it is quoted.
-#[test]
-fn a_word_a_shell_would_expand_at_its_start_is_quoted() {
-    assert_eq!(quoted("=ls"), "'=ls'");
-    assert_eq!(quoted("~/x"), "'~/x'");
-    assert_eq!(quoted("tmux"), "tmux");
 }
 
 /// What a host prints is read up to a ceiling, and the rest is drained.

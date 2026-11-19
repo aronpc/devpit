@@ -214,12 +214,9 @@ pub(crate) fn cwd(target: &str) -> Option<PathBuf> {
     match holder(target) {
         Holder::Tmux { session, window } => tmux().ok()?.pane_path(session, window),
         Holder::Ptyd(pane) => told_cwd(pane).map(PathBuf::from),
-        Holder::Host(target) => on_host(target, |server, at| {
-            server.format_of(at, "#{pane_current_path}")
-        })
-        .ok()
-        .filter(|path| !path.is_empty())
-        .map(PathBuf::from),
+        // A folder on the host, which this machine's readers would take as
+        // one of its own.
+        Holder::Host(_) => None,
     }
 }
 

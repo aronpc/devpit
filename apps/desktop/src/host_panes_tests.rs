@@ -40,7 +40,9 @@ fn eventually(mut seen: impl FnMut() -> bool) -> bool {
 #[test]
 fn a_terminal_on_a_host_starts_in_the_link_s_folder() {
     let fake = FakeHost::new();
-    fake.with_tmux();
+    if !fake.with_tmux() {
+        return;
+    }
     let folder = fake.folder("apps/demo");
     let session = session_of("prj_1", "leaf_1");
 
@@ -57,7 +59,9 @@ fn a_terminal_on_a_host_starts_in_the_link_s_folder() {
 #[test]
 fn typing_and_a_paste_reach_the_terminal_on_the_host() {
     let fake = FakeHost::new();
-    fake.with_tmux();
+    if !fake.with_tmux() {
+        return;
+    }
     fake.folder("demo");
     let session = session_of("prj_1", "leaf_2");
     started(&reach(&fake), &profile(), "~/demo", &session).expect("started");
@@ -81,12 +85,14 @@ fn typing_and_a_paste_reach_the_terminal_on_the_host() {
 #[test]
 fn a_folder_gone_from_the_host_is_said() {
     let fake = FakeHost::new();
-    fake.with_tmux();
+    if !fake.with_tmux() {
+        return;
+    }
     let session = session_of("prj_1", "leaf_3");
 
     let refused = started(&reach(&fake), &profile(), "~/nowhere", &session).expect_err("started");
 
-    assert_eq!(refused.code, ErrorCode::NotFound);
+    assert_eq!(refused.code, ErrorCode::NotFound, "{}", refused.message);
     assert!(!fake.tmux().has_exactly(&session).unwrap_or(false));
 }
 
@@ -95,7 +101,9 @@ fn a_folder_gone_from_the_host_is_said() {
 #[test]
 fn a_folder_with_shell_in_its_name_stays_one_argument() {
     let fake = FakeHost::new();
-    fake.with_tmux();
+    if !fake.with_tmux() {
+        return;
+    }
     let folder = fake.folder("a b;touch pwned");
     let session = session_of("prj_1", "leaf_4");
 
@@ -145,7 +153,9 @@ fn the_attach_runs_again_while_the_connection_drops() {
 #[test]
 fn the_session_outlives_its_window_and_the_next_attach_shows_it() {
     let fake = FakeHost::new();
-    fake.with_tmux();
+    if !fake.with_tmux() {
+        return;
+    }
     fake.folder("demo");
     let session = session_of("prj_1", "leaf_5");
     started(&reach(&fake), &profile(), "~/demo", &session).expect("started");
@@ -156,7 +166,9 @@ fn the_session_outlives_its_window_and_the_next_attach_shows_it() {
 
     let first = Attached::spawn(&argv, 120);
     assert!(first.shows("before-44"), "{}", first.said());
-    first.end();
+    // Its client ends; its pty stays open until the test does, so the next
+    // one never reuses it.
+    let _first = first.end();
     assert!(
         fake.tmux().has_exactly(&session).expect("asked"),
         "the session went with its window"
@@ -170,7 +182,7 @@ fn the_session_outlives_its_window_and_the_next_attach_shows_it() {
             .unwrap_or_default()
     };
     assert!(eventually(|| width() == "100"), "width {}", width());
-    second.end();
+    let _second = second.end();
 }
 
 /// A window attached in a pty, its screen read as it comes.
@@ -216,6 +228,23 @@ impl Attached {
         }
     }
 
+    fn types(&mut self, text: &str) {
+        use std::io::Write;
+        let mut writer = self._master.take_writer().expect("writer");
+        writer.write_all(text.as_bytes()).expect("typed");
+    }
+
+    fn waited(&mut self, within: Duration) -> Option<portable_pty::ExitStatus> {
+        let until = Instant::now() + within;
+        while Instant::now() < until {
+            if let Ok(Some(status)) = self.child.try_wait() {
+                return Some(status);
+            }
+            std::thread::sleep(Duration::from_millis(100));
+        }
+        None
+    }
+
     fn said(&self) -> String {
         self.screen.lock().expect("screen").clone()
     }
@@ -224,9 +253,10 @@ impl Attached {
         eventually(|| self.said().contains(text))
     }
 
-    fn end(mut self) {
+    fn end(mut self) -> Self {
         let _ = self.child.kill();
         let _ = self.child.wait();
+        self
     }
 }
 
@@ -237,4 +267,69 @@ fn old_targets_keep_their_meaning_and_only_ssh_ones_reach_a_host() {
     assert_eq!(parsed("ptyd:leaf_1"), None);
     let target = target("host_1", "devpit_prj_1__leaf_1");
     assert_eq!(parsed(&target), Some(("host_1", "devpit_prj_1__leaf_1")));
+}
+
+/// A host's session starts quieted like devpit's own: no status bar, a long
+/// history.
+#[test]
+fn a_session_on_a_host_starts_quieted_like_devpit_s_own() {
+    let fake = FakeHost::new();
+    if !fake.with_tmux() {
+        return;
+    }
+    fake.folder("demo");
+    let session = session_of("prj_1", "leaf_6");
+
+    started(&reach(&fake), &profile(), "~/demo", &session).expect("started");
+
+    let at = format!("{session}:");
+    assert_eq!(
+        fake.tmux().format_of(&at, "#{status}").expect("asked"),
+        "off"
+    );
+    assert_eq!(
+        fake.tmux()
+            .format_of(&at, "#{history_limit}")
+            .expect("asked"),
+        "10000"
+    );
+}
+
+/// While it waits to reconnect, a Ctrl+C never ends the window's loop, and
+/// what was typed meanwhile is dropped rather than typed on the host.
+#[test]
+fn waiting_to_reconnect_outlasts_a_ctrl_c_and_drops_what_was_typed() {
+    let fake = FakeHost::new();
+    let tries = fake.dir.path().join("tries");
+    let got = fake.dir.path().join("got");
+    fake.program(
+        &fake.ssh(),
+        &format!(
+            "n=$(cat '{tries}' 2>/dev/null | wc -l); echo x >> '{tries}'\n[ \"$n\" -eq 0 ] && exit 255\nstty -icanon min 0 time 0; cat > '{got}'; exit 0",
+            tries = tries.display(),
+            got = got.display()
+        ),
+    );
+    let argv = attach_argv_after(&reach(&fake), &profile(), "~", "devpit_s", "2");
+
+    let mut waiting = Attached::spawn(&argv, 80);
+    assert!(waiting.shows("reconnecting"), "{}", waiting.said());
+    waiting.types("\x03echo replayed\r");
+
+    let ended = waiting
+        .waited(Duration::from_secs(15))
+        .expect("the loop ended");
+    assert!(ended.success(), "ended with {ended:?}: {}", waiting.said());
+    assert_eq!(
+        std::fs::read_to_string(&tries)
+            .expect("tries")
+            .lines()
+            .count(),
+        2
+    );
+    assert_eq!(
+        std::fs::read_to_string(&got).unwrap_or_default(),
+        "",
+        "typed on the host"
+    );
 }

@@ -6,16 +6,17 @@
 use std::path::Path;
 use std::time::Duration;
 
-use devpit_core::{HostRow, Store};
+use devpit_core::Store;
 use devpit_rpc::{ErrorCode, HostLink, HostLinks, RpcError};
 
-/// How long a link waits for the host to say whether the folder is there.
-const PATIENCE: Duration = Duration::from_secs(25);
-
-/// Whether `$1` is a folder, `~` read as the login's home. The path arrives
-/// as an argument, never as part of the script.
-/// It answers on stdout, so a banner on stderr never changes the answer.
-pub(crate) const FOLDER: &str = "p=$1; case $p in \"~\") p=$HOME ;; \"~/\"*) p=$HOME/${p#\"~/\"} ;; esac; if test -d \"$p\"; then echo yes; else echo no; fi";
+/// Whether the folder in `$1` is one there. It answers on stdout, so a
+/// banner on stderr never changes the answer.
+pub(crate) fn folder_script() -> String {
+    format!(
+        "{} if test -d \"$p\"; then echo yes; else echo no; fi",
+        crate::host_ssh::FOLDER_IN_P
+    )
+}
 
 /// The project's links, with each host's name and environment.
 pub(crate) fn listed(store: &Store, project_id: &str) -> Result<HostLinks, RpcError> {
@@ -36,14 +37,6 @@ pub(crate) fn listed(store: &Store, project_id: &str) -> Result<HostLinks, RpcEr
     Ok(HostLinks { links })
 }
 
-fn host_named(store: &Store, host_id: &str) -> Result<HostRow, RpcError> {
-    store
-        .hosts()?
-        .into_iter()
-        .find(|one| one.id == host_id)
-        .ok_or_else(|| RpcError::new(ErrorCode::NotFound, "that host is no longer there"))
-}
-
 /// Links the project to `path` on the host, once the host says it is a
 /// folder there; `ssh` and `envs` are the program and variables it runs with.
 #[allow(clippy::too_many_arguments)]
@@ -61,8 +54,9 @@ pub(crate) fn linked_with(
     if let Some(why) = crate::hosts::folder_refusal(path, "the project's path") {
         return Err(RpcError::new(ErrorCode::Invalid, why));
     }
-    let host = host_named(store, host_id)?;
-    let mut argv = crate::host_ssh::argv(&host, sockets, &["sh", "-c", FOLDER, "sh", path]);
+    let host = crate::hosts::host_by_id(store, host_id)?;
+    let mut argv =
+        crate::host_ssh::argv(&host, sockets, &["sh", "-c", &folder_script(), "sh", path]);
     argv[0] = ssh.display().to_string();
     let output = crate::host_ssh::run(&argv, envs, patience)
         .map_err(|why| RpcError::new(ErrorCode::Busy, format!("{}: {why}", host.name)))?;
@@ -118,7 +112,7 @@ pub async fn project_host_link(
         linked_with(
             Path::new("ssh"),
             &[],
-            PATIENCE,
+            crate::host_ssh::PATIENCE,
             &Store::open_default()?,
             &sockets,
             &project_id,

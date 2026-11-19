@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import type { HostLink } from '../gen/bindings'
+import { useAway } from './away'
 import { ask, commands } from './live'
+import { went } from './problems'
 import { useShell } from './useShell'
 
 /*
@@ -13,8 +15,10 @@ export function HostTerminals(): React.JSX.Element | null {
   const { project } = useShell()
   const [linked, setLinked] = useState<{ id: string; links: readonly HostLink[] } | null>(null)
   const [open, setOpen] = useState(false)
-  const [said, setSaid] = useState<string | null>(null)
+  const [opening, setOpening] = useState<string | null>(null)
+  const box = useRef<HTMLSpanElement>(null)
   const id = project?.id ?? null
+  useAway(box, useCallback(() => setOpen(false), []), open)
 
   useEffect(() => {
     if (!id) return
@@ -26,12 +30,23 @@ export function HostTerminals(): React.JSX.Element | null {
   if (!id || links.length === 0) return null
   const start = (link: HostLink): void => {
     setOpen(false)
-    setSaid(null)
-    void ask(() => commands.hostTerminalOpen(id, link.hostId)).then((answer) => setSaid(answer.error))
+    setOpening(link.hostName)
+    void ask(() => commands.hostTerminalOpen(id, link.hostId)).then((answer) => {
+      setOpening(null)
+      went(answer)
+    })
   }
   return (
-    <span className="hostterm">
-      <button className="sq26" aria-label="New terminal on a host" title="New terminal on a host" aria-expanded={open} onClick={() => setOpen(!open)}>
+    <span className="hostterm" ref={box}>
+      <button
+        className="sq26"
+        aria-label="New terminal on a host"
+        title={opening ? `Opening a terminal on ${opening}…` : 'New terminal on a host'}
+        aria-expanded={open}
+        aria-busy={opening !== null}
+        disabled={opening !== null}
+        onClick={() => setOpen(!open)}
+      >
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="7" rx="1" /><rect x="3" y="13" width="18" height="7" rx="1" /><path d="M7 7.5h.01M7 16.5h.01" /></svg>
       </button>
       {open && (
@@ -43,7 +58,6 @@ export function HostTerminals(): React.JSX.Element | null {
           ))}
         </div>
       )}
-      {said && <span className="hostterm__said voice__bad" role="alert" title={said}>{said}</span>}
     </span>
   )
 }

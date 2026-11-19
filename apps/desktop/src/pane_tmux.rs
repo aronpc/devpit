@@ -74,29 +74,31 @@ pub async fn pane_open_in_tmux(
 fn open_in_tmux(project_id: &str, pane_id: &str) -> Result<PaneInTmux, RpcError> {
     let target = crate::pane_io::target_of(project_id, pane_id)?;
     let server = crate::sessions::tmux_server()?;
-    let session =
-        match crate::pane_io::holder(&target) {
-            Holder::Tmux { .. } => target.clone(),
-            Holder::Host(_) => return Err(RpcError::new(
-                ErrorCode::Unsupported,
-                "this terminal runs on a host: reach it there with ssh and `tmux -L devpit attach`",
-            )),
-            Holder::Ptyd(_) => {
-                let exe = crate::agent_reach::exe().ok_or_else(|| {
-                    RpcError::new(ErrorCode::Unsupported, "devpit cannot find its own binary")
-                })?;
-                let session = view_session(pane_id);
-                let argv = [
-                    exe.display().to_string(),
-                    "ptyd-attach".to_owned(),
-                    pane_id.to_owned(),
-                ];
-                server
-                    .ensure_view(&session, &view_env(), &argv)
-                    .map_err(|err| RpcError::internal(err.to_string()))?;
-                session
-            }
-        };
+    let session = match crate::pane_io::holder(&target) {
+        Holder::Tmux { .. } => target.clone(),
+        Holder::Host(on_host) => {
+            let session = crate::host_panes::parsed(on_host).map_or("", |(_, session)| session);
+            return Err(RpcError::new(
+                    ErrorCode::Unsupported,
+                    format!("this terminal runs on a host: reach it there with ssh and `tmux -L devpit attach -t ={session}`"),
+                ));
+        }
+        Holder::Ptyd(_) => {
+            let exe = crate::agent_reach::exe().ok_or_else(|| {
+                RpcError::new(ErrorCode::Unsupported, "devpit cannot find its own binary")
+            })?;
+            let session = view_session(pane_id);
+            let argv = [
+                exe.display().to_string(),
+                "ptyd-attach".to_owned(),
+                pane_id.to_owned(),
+            ];
+            server
+                .ensure_view(&session, &view_env(), &argv)
+                .map_err(|err| RpcError::internal(err.to_string()))?;
+            session
+        }
+    };
     let attach = attach_line(&crate::sessions::socket_path()?, &session);
     Ok(PaneInTmux { session, attach })
 }

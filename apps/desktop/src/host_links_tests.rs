@@ -2,6 +2,7 @@ use std::time::Duration;
 
 use super::*;
 use crate::fake_host::FakeHost;
+use devpit_core::HostRow;
 use devpit_rpc::HostEnvironment;
 
 const PATIENCE: Duration = Duration::from_secs(10);
@@ -188,7 +189,7 @@ fn the_path_is_an_argument_of_the_script_never_part_of_it() {
     let said = std::process::Command::new("sh")
         .args([
             "-c",
-            FOLDER,
+            &folder_script(),
             "sh",
             "/nowhere; touch pwned",
             "$(touch pwned)",

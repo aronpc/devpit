@@ -71,17 +71,25 @@ impl FakeHost {
 impl FakeHost {
     /// A host whose ssh runs tmux: its own home, PATH and tmux sockets, set
     /// by its ssh as the real one sets the host's.
-    pub(crate) fn with_tmux(&self) {
+    /// Answers whether this machine has a tmux to stand in for the host's:
+    /// without one, a test of a host's tmux has nothing to run.
+    pub(crate) fn with_tmux(&self) -> bool {
+        let Some(found) = tmux_folder() else {
+            eprintln!("no tmux on this machine: a host's tmux is not tried");
+            return false;
+        };
         std::fs::create_dir_all(self.dir.path().join("tmux")).expect("tmux dir");
         self.program(
             &self.ssh(),
             &format!(
-                "export HOME='{home}' PATH='{bin}:/usr/bin:/bin' SHELL=/bin/sh TMUX_TMPDIR='{tmux}'\nwhile [ \"$1\" != -- ]; do shift; done\nshift 2\nexec /bin/sh -c \"$1\"",
+                "export HOME='{home}' PATH='{bin}:{found}:/usr/bin:/bin' SHELL=/bin/sh TMUX_TMPDIR='{tmux}'\nwhile [ \"$1\" != -- ]; do shift; done\nshift 2\nexec /bin/sh -c \"$1\"",
                 home = self.home().display(),
                 bin = self.bin().display(),
+                found = found.display(),
                 tmux = self.dir.path().join("tmux").display(),
             ),
         );
+        true
     }
 
     /// The tmux server of the host, as devpit drives it.
@@ -107,4 +115,9 @@ impl Drop for FakeHost {
                 .output();
         }
     }
+}
+
+/// The folder this machine's tmux is in, on the PATH.
+fn tmux_folder() -> Option<PathBuf> {
+    std::env::split_paths(&std::env::var_os("PATH")?).find(|dir| dir.join("tmux").is_file())
 }

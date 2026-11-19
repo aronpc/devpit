@@ -34,6 +34,10 @@ pub(crate) fn run(server: &Server, args: &[&str]) -> Result<Output, TmuxError> {
             let argv = crate::remote::argv(via, args);
             let mut command = devpit_pty::host_env::command(&argv[0]);
             command.args(&argv[1..]);
+            // Its own group, so a host that never answers is ended with all
+            // ssh started for it.
+            #[cfg(unix)]
+            std::os::unix::process::CommandExt::process_group(&mut command, 0);
             command
         }
         None => {
@@ -61,8 +65,13 @@ pub(crate) fn run(server: &Server, args: &[&str]) -> Result<Output, TmuxError> {
             stderr: err.to_string(),
         },
     };
-    let child = command.spawn().map_err(failed)?;
-    match within(child, server.patience) {
+    let child = crate::remote::spawned(&mut command).map_err(failed)?;
+    // A host's answer is read up to a ceiling: it is not this machine's.
+    let answered = match server.via {
+        Some(_) => crate::remote::within_bounded(child, server.patience),
+        None => within(child, server.patience),
+    };
+    match answered {
         Some(output) => output.map_err(failed),
         None => Err(TmuxError::Unanswered {
             command: args.join(" "),

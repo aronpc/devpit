@@ -6,7 +6,6 @@
 //! the connection dropped: the session on the host lives on meanwhile.
 
 use std::path::PathBuf;
-use std::time::Duration;
 
 use devpit_core::{HostRow, Store};
 use devpit_rpc::{ErrorCode, HostTerminal, LayoutNode, RpcError, SessionLayout};
@@ -14,28 +13,24 @@ use devpit_rpc::{ErrorCode, HostTerminal, LayoutNode, RpcError, SessionLayout};
 /// What every host target starts with.
 pub(crate) const PREFIX: &str = "ssh:";
 
-/// How long a start waits for the host.
-const PATIENCE: Duration = Duration::from_secs(25);
-
 /// Seconds between two attaches after a dropped connection.
 const RETRY_AFTER: &str = "3";
 
-/// The PATH a non-interactive login on a host often lacks, and `~` read as
-/// the login's home, before either script below.
-const PRELUDE: &str = "PATH=\"$HOME/.local/bin:$HOME/bin:/usr/local/bin:$PATH\"; p=$1; case $p in \"~\") p=$HOME ;; \"~/\"*) p=$HOME/${p#\"~/\"} ;; esac;";
-
 /// Starts the leaf's session in the folder `$1`, unless it is there: exits 3
 /// when the folder is not.
-const START: &str = "cd -- \"$p\" || exit 3; tmux -L devpit has-session -t \"=$2\" 2>/dev/null || tmux -L devpit new-session -d -s \"$2\"";
+/// The rest of the arguments are tmux's: devpit's options, then the session.
+const START: &str = "cd -- \"$p\" || exit 3; s=$2; shift 2; tmux -L devpit has-session -t \"=$s\" 2>/dev/null || tmux -L devpit \"$@\"";
 
 /// Attaches to the leaf's session, made again in the folder when the host
 /// lost it.
-const ATTACH: &str =
-    "cd -- \"$p\" 2>/dev/null || cd; exec tmux -u -L devpit new-session -A -s \"$2\"";
+const ATTACH: &str = "cd -- \"$p\" 2>/dev/null || cd; shift 2; exec tmux -u -L devpit \"$@\"";
 
 /// Runs the attach in `$2…` again, `$1` seconds apart, while ssh ends with
 /// 255: the connection dropped. Any other end is the terminal's own.
-const RETRY: &str = "w=$1; shift; while :; do \"$@\"; s=$?; [ \"$s\" -eq 255 ] || exit \"$s\"; printf '\\r\\n[devpit] the connection to the host dropped; reconnecting\\r\\n'; sleep \"$w\"; done";
+/// While it waits, Ctrl+C and the like never end it, the wait grows to a
+/// minute while the host stays away, and what was typed meanwhile is dropped
+/// rather than typed on the host once it is back.
+const RETRY: &str = "trap '' INT QUIT TSTP; i=$1; shift; w=$i; while :; do t=$(date +%s); \"$@\"; s=$?; [ \"$s\" -eq 255 ] || exit \"$s\"; [ $(( $(date +%s) - t )) -lt 30 ] || w=$i; printf '\\r\\n[devpit] the connection to the host dropped; reconnecting in %ss\\r\\n' \"$w\"; sleep \"$w\"; o=$(stty -g 2>/dev/null) && stty -icanon min 0 time 0 2>/dev/null && cat >/dev/null; [ -n \"$o\" ] && stty \"$o\" 2>/dev/null; w=$((w * 2)); [ \"$w\" -le 60 ] || w=60; done";
 
 /// How devpit reaches hosts: the ssh it runs, and where its sockets live.
 pub(crate) struct Reach {
@@ -91,9 +86,16 @@ pub(crate) fn started(
     path: &str,
     session: &str,
 ) -> Result<(), RpcError> {
-    let script = format!("{PRELUDE} {START}");
-    let argv = reach.argv(host, &["sh", "-c", &script, "sh", path, session], false);
-    let output = crate::host_ssh::run(&argv, &[], PATIENCE)
+    let script = format!(
+        "{}; {} {START}",
+        devpit_tmux::HOST_PATH,
+        crate::host_ssh::FOLDER_IN_P
+    );
+    let mut words = vec!["sh", "-c", &script, "sh", path, session];
+    words.extend(devpit_tmux::quieting());
+    words.extend([";", "new-session", "-d", "-s", session]);
+    let argv = reach.argv(host, &words, false);
+    let output = crate::host_ssh::run(&argv, &[], crate::host_ssh::PATIENCE)
         .map_err(|why| RpcError::new(ErrorCode::Busy, format!("{}: {why}", host.name)))?;
     let why = crate::host_ssh::last_line(&output.stderr).unwrap_or_default();
     match output.status.code() {
@@ -122,8 +124,15 @@ pub(crate) fn attach_argv_after(
     session: &str,
     after: &str,
 ) -> Vec<String> {
-    let script = format!("{PRELUDE} {ATTACH}");
-    let attach = reach.argv(host, &["sh", "-c", &script, "sh", path, session], true);
+    let script = format!(
+        "{}; {} {ATTACH}",
+        devpit_tmux::HOST_PATH,
+        crate::host_ssh::FOLDER_IN_P
+    );
+    let mut words = vec!["sh", "-c", &script, "sh", path, session];
+    words.extend(devpit_tmux::quieting());
+    words.extend([";", "new-session", "-A", "-s", session]);
+    let attach = reach.argv(host, &words, true);
     ["sh", "-c", RETRY, "devpit-host", after]
         .into_iter()
         .map(str::to_owned)
@@ -133,11 +142,7 @@ pub(crate) fn attach_argv_after(
 
 /// The host and the project's folder there, for a host target of `project_id`.
 fn reached(store: &Store, project_id: &str, host_id: &str) -> Result<(HostRow, String), RpcError> {
-    let host = store
-        .hosts()?
-        .into_iter()
-        .find(|one| one.id == host_id)
-        .ok_or_else(|| RpcError::new(ErrorCode::NotFound, "that host is no longer there"))?;
+    let host = crate::hosts::host_by_id(store, host_id)?;
     let path = store
         .host_links(project_id)?
         .into_iter()
@@ -173,11 +178,7 @@ pub(crate) fn attach_argv(
 pub(crate) fn server_of(target: &str) -> Result<(devpit_tmux::Server, String), RpcError> {
     let (host_id, session) = parsed(target)
         .ok_or_else(|| RpcError::new(ErrorCode::Invalid, "not a terminal on a host"))?;
-    let host = Store::open_default()?
-        .hosts()?
-        .into_iter()
-        .find(|one| one.id == host_id)
-        .ok_or_else(|| RpcError::new(ErrorCode::NotFound, "that host is no longer there"))?;
+    let host = crate::hosts::host_by_id(&Store::open_default()?, host_id)?;
     Ok((Reach::here()?.server(&host), format!("{session}:")))
 }
 

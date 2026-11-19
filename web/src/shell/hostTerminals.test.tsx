@@ -20,6 +20,7 @@ vi.mock('./live', () => ({
 }))
 
 import { HostTerminals } from './HostTerminals'
+import { PROBLEM } from './problems'
 
 beforeEach(() => {
   links = [
@@ -49,11 +50,23 @@ describe('a new terminal on a host', () => {
     await waitFor(() => expect(screen.queryByRole('button', { name: 'New terminal on a host' })).toBeNull())
   })
 
-  it('says why a terminal could not open there', async () => {
+  it('says why a terminal could not open there, where refusals are said', async () => {
     refusal = 'ssh could not reach staging: Connection timed out'
+    const said: string[] = []
+    const heard = (event: Event): void => void said.push((event as CustomEvent<string>).detail)
+    window.addEventListener(PROBLEM, heard)
     render(<HostTerminals />)
     fireEvent.click(await screen.findByRole('button', { name: 'New terminal on a host' }))
     fireEvent.click(screen.getByRole('menuitem', { name: /staging/ }))
-    expect((await screen.findByRole('alert')).textContent).toContain('Connection timed out')
+    await waitFor(() => expect(said).toContain('ssh could not reach staging: Connection timed out'))
+    window.removeEventListener(PROBLEM, heard)
+  })
+
+  it('closes its menu on Escape', async () => {
+    render(<HostTerminals />)
+    fireEvent.click(await screen.findByRole('button', { name: 'New terminal on a host' }))
+    expect(screen.getByRole('menu')).toBeTruthy()
+    fireEvent.keyDown(window, { key: 'Escape' })
+    await waitFor(() => expect(screen.queryByRole('menu')).toBeNull())
   })
 })

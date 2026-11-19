@@ -231,3 +231,13 @@ fn a_host_leaf_is_reached_by_its_stored_target() {
         devpit_tmux::Server::target(&devpit_tmux::Server::session_name("p1"), "leaf_a")
     );
 }
+
+/// A host's folder is the host's: nothing on this machine reads it as one of
+/// its own.
+#[test]
+fn a_host_pane_has_no_folder_on_this_machine() {
+    assert_eq!(
+        cwd(&crate::host_panes::target("host_1", "devpit_p1__leaf_a")),
+        None
+    );
+}

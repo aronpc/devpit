@@ -14,6 +14,14 @@ use devpit_core::HostRow;
 const CONNECT_SECONDS: u32 = 10;
 /// How long a host's connection stays open after its last command.
 const PERSIST_SECONDS: u32 = 600;
+/// How long a command waits for a host, past ssh's own connect timeout.
+pub(crate) const PATIENCE: Duration = Duration::from_secs(25);
+
+/// Reads the folder in `$1` into `p`, `~` as the login's home: the folder
+/// arrives as an argument, never as part of a script.
+pub(crate) const FOLDER_IN_P: &str =
+    "p=$1; case $p in \"~\") p=$HOME ;; \"~/\"*) p=$HOME/${p#\"~/\"} ;; esac;";
+
 /// The most of a host's output read; the rest is drained unread.
 pub(crate) const OUTPUT_MOST: usize = 4 << 20;
 
@@ -115,11 +123,6 @@ pub(crate) fn line(words: &[&str]) -> String {
     devpit_tmux::shell_line(words)
 }
 
-#[cfg(test)]
-pub(crate) fn quoted(word: &str) -> String {
-    devpit_tmux::quoted(word)
-}
-
 /// A pipe read on its own thread, up to [`OUTPUT_MOST`], the rest drained.
 struct Drained {
     bytes: Arc<Mutex<Vec<u8>>>,
@@ -181,7 +184,7 @@ pub(crate) fn run(
         .stderr(Stdio::piped());
     #[cfg(unix)]
     std::os::unix::process::CommandExt::process_group(&mut command, 0);
-    let mut child = command.spawn().map_err(|err| match err.kind() {
+    let mut child = devpit_tmux::spawned(&mut command).map_err(|err| match err.kind() {
         std::io::ErrorKind::NotFound => format!("{program} is not installed on this computer"),
         _ => err.to_string(),
     })?;

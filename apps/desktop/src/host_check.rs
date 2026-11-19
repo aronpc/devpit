@@ -8,10 +8,7 @@ use std::path::Path;
 use std::time::Duration;
 
 use devpit_core::{HostRow, Store};
-use devpit_rpc::{ErrorCode, HostCheck, HostCheckRow, RpcError};
-
-/// How long a check waits for the host, past ssh's own connect timeout.
-const PATIENCE: Duration = Duration::from_secs(25);
+use devpit_rpc::{HostCheck, HostCheckRow, RpcError};
 
 /// Where an agent's sign-in lives on a host, for the agents that keep one in
 /// a file. Any other installed agent is reported as found.
@@ -33,7 +30,7 @@ fn script() -> String {
         .map(|(cli, file)| format!("{cli}) [ -s \"$HOME/{file}\" ] && s=signed || s=unsigned ;; "))
         .collect();
     format!(
-        "PATH=\"$HOME/.local/bin:$HOME/.npm-global/bin:$HOME/bin:$PATH\"
+        "{host_path}
 first() {{ \"$@\" 2>/dev/null | {{ IFS= read -r l; printf \"%s\" \"$l\"; }}; }}
 for t in tmux git; do
   if command -v \"$t\" >/dev/null 2>&1; then
@@ -48,6 +45,7 @@ for c in {agents}; do
 done
 ",
         agents = agents.join(" "),
+        host_path = devpit_tmux::HOST_PATH,
     )
 }
 
@@ -156,16 +154,12 @@ fn agent_row(said: &str) -> HostCheckRow {
 #[specta::specta]
 pub async fn host_check(id: String) -> Result<HostCheck, RpcError> {
     crate::off_main::blocking(move || {
-        let host = Store::open_default()?
-            .hosts()?
-            .into_iter()
-            .find(|one| one.id == id)
-            .ok_or_else(|| RpcError::new(ErrorCode::NotFound, "that host is no longer there"))?;
+        let host = crate::hosts::host_by_id(&Store::open_default()?, &id)?;
         let sockets = crate::host_ssh::sockets().map_err(RpcError::internal)?;
         Ok(checked_with(
             Path::new("ssh"),
             &[],
-            PATIENCE,
+            crate::host_ssh::PATIENCE,
             &host,
             &sockets,
         ))

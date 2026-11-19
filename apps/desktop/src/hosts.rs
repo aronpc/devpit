@@ -104,6 +104,15 @@ fn host_of(row: HostRow) -> Host {
     }
 }
 
+/// The profile with `id`, or why there is none.
+pub(crate) fn host_by_id(store: &Store, id: &str) -> Result<HostRow, RpcError> {
+    store
+        .hosts()?
+        .into_iter()
+        .find(|one| one.id == id)
+        .ok_or_else(|| RpcError::new(ErrorCode::NotFound, "that host is no longer there"))
+}
+
 pub(crate) fn listed(store: &Store) -> Result<Hosts, RpcError> {
     Ok(Hosts {
         hosts: store.hosts()?.into_iter().map(host_of).collect(),
