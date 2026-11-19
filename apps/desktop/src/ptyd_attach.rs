@@ -31,7 +31,7 @@ enum Heard {
     Replay(Vec<u8>),
     Older(Vec<u8>),
     Folder(String),
-    /// The daemon refused the pane, and why: one it does not hold.
+    /// The daemon refused the attach itself, and why: a pane it does not hold.
     Refused(String),
     Ended,
 }
@@ -173,11 +173,16 @@ pub(crate) async fn attach(
     state.claims.forget_exactly(&pane_id, &live);
     let _ = state.claims.release(&pane_id, &client_id);
     crate::ptyd_tap::tap().let_go(&pane_id, state.claims.live(&pane_id).is_ok());
-    // Said, so the terminal shows why rather than staying blank.
+    ended(refused)
+}
+
+/// How an attach ends: a refused one says why, so the terminal shows that
+/// rather than staying blank.
+fn ended(refused: Option<String>) -> Result<(), RpcError> {
     match refused {
         Some(why) => Err(RpcError::new(
             ErrorCode::NotFound,
-            format!("devpit-ptyd refused this terminal: {why}"),
+            format!("devpit-ptyd no longer holds this terminal: {why}"),
         )),
         None => Ok(()),
     }
@@ -202,8 +207,11 @@ fn acknowledge(live: &Live, pane: u32, bytes: usize) -> std::io::Result<()> {
     )
 }
 
-/// The socket's frames for `pane`, until it ends or the connection does.
+/// The socket's frames for `pane`, until it ends or the connection does. A
+/// refusal before anything of the pane's is the attach's own; a later one,
+/// of an input or a resize, ends it as it always did.
 fn drain(mut stream: UnixStream, pane: u32, heard: tokio::sync::mpsc::Sender<Heard>) {
+    let mut held = false;
     loop {
         let one = match frame::read(&mut stream) {
             Ok(Some(one)) if one.pane == pane => one,
@@ -215,10 +223,16 @@ fn drain(mut stream: UnixStream, pane: u32, heard: tokio::sync::mpsc::Sender<Hea
             Some(Kind::Replay) => Heard::Replay(one.bytes),
             Some(Kind::Older) => Heard::Older(one.bytes),
             Some(Kind::Cwd) => Heard::Folder(String::from_utf8_lossy(&one.bytes).into_owned()),
-            Some(Kind::Refused) => Heard::Refused(String::from_utf8_lossy(&one.bytes).into_owned()),
-            Some(Kind::Exited) => Heard::Ended,
-            _ => continue,
+            Some(Kind::Refused) if !held => {
+                Heard::Refused(String::from_utf8_lossy(&one.bytes).into_owned())
+            }
+            Some(Kind::Exited | Kind::Refused) => Heard::Ended,
+            _ => {
+                held = true;
+                continue;
+            }
         };
+        held = true;
         let ended = matches!(passed, Heard::Ended | Heard::Refused(_));
         if heard.blocking_send(passed).is_err() || ended {
             return;

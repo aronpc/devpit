@@ -8,7 +8,7 @@ const card: Tab = { id: 'tab_card', kind: 'term', panes: ['leaf_card'] }
 const session: Tab = { id: 'tab_session', kind: 'term', panes: ['leaf_session'] }
 
 describe('a pane asked for from another view', () => {
-  it('focuses the tab that holds it, and opens none', () => {
+  it('focuses the tab that already holds it', () => {
     const focus = vi.fn()
     const { result } = renderHook(({ open }) => useWantedPane(open, focus), { initialProps: { open: [card, session] } })
     act(() => result.current('leaf_session'))
