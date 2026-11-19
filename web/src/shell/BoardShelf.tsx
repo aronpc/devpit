@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 
 import { t } from '../i18n'
+import { formatDate } from '../i18n/format'
 import type { ArchivedCard, DeleteRefusal } from '../gen/bindings'
 import { CardEnding, type Ending } from './CardHeader'
 import { ask, commands } from './live'
@@ -122,7 +123,7 @@ export function ArchivedPane({
               <span className="crun__t">{card.title}</span>
               <span className="crun__o">
                 {card.columnName ?? t('board.laneGone')}
-                {card.archivedAt !== null && ` · ${t('board.archivedAt', { when: new Date(card.archivedAt * 1000).toLocaleString() })}`}
+                {card.archivedAt !== null && ` · ${t('board.archivedAt', { when: formatDate(card.archivedAt * 1000, { dateStyle: 'short', timeStyle: 'short' }) })}`}
               </span>
             </span>
             <span className="pin__acts">
