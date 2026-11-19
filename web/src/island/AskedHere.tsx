@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 
 import type { IslandAsked, IslandSession, PendingPrompt } from '../gen/bindings'
+import { t } from '../i18n'
 import { ask, commands } from '../shell/live'
 
 /*
@@ -72,7 +73,7 @@ export function AskedHere({
         </div>
       ))}
       {prompt && (
-        <div className="isl-q__picks" aria-label="Answer in its terminal">
+        <div className="isl-q__picks" aria-label={t('island.asked.picksLabel')}>
           {prompt.options.map((option, n) => (
             <button key={n} className="isl-q__pick" disabled={busy} title={option.hint ?? undefined} onClick={() => pick(prompt, n)}>
               <span className="isl-q__n">{n + 1}</span>
@@ -80,7 +81,7 @@ export function AskedHere({
             </button>
           ))}
           <button className="isl-q__pick isl-q__esc" disabled={busy} onClick={() => pick(prompt, null)}>
-            Esc
+            {t('island.asked.esc')}
           </button>
         </div>
       )}

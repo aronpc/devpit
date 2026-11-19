@@ -1,6 +1,8 @@
 import enCommon from './en/common.json'
+import enIsland from './en/island.json'
 import enSettings from './en/settings.json'
 import ptBrCommon from './pt-BR/common.json'
+import ptBrIsland from './pt-BR/island.json'
 import ptBrSettings from './pt-BR/settings.json'
 
 /* One entry is a sentence, or the two plural forms of one. Flat keys —
@@ -11,8 +13,8 @@ type Catalog = Record<string, Entry>
 
 /* English is the base: every key is born in its catalog (AGENTS.md). */
 const catalogs: Record<string, Catalog> = {
-  en: { ...enCommon, ...enSettings },
-  'pt-BR': { ...ptBrCommon, ...ptBrSettings },
+  en: { ...enCommon, ...enIsland, ...enSettings },
+  'pt-BR': { ...ptBrCommon, ...ptBrIsland, ...ptBrSettings },
 }
 
 export interface TranslateArgs {

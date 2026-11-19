@@ -8,6 +8,7 @@ import thinking from '../assets/brand/island/thinking.png'
 import waiting from '../assets/brand/island/waiting.png'
 import working from '../assets/brand/island/working.png'
 import mark from '../assets/brand/mark.png'
+import { t } from '../i18n'
 import { onCarried } from '../shell/window'
 import type { Mood } from './sessions'
 
@@ -111,13 +112,18 @@ export function Mascot({
       data-react={react ?? undefined}
       style={{ '--size': `${size}px`, '--ring': color ?? 'var(--accent)' } as React.CSSProperties}
       role="img"
-      aria-label={label ?? `devpit, ${mood}`}
+      aria-label={label ?? t('island.mascot.label', { mood })}
       onClick={looks ? tapped : undefined}
     >
       <span className="isl-face__ring" />
       <span className="isl-face__lean">
         <span className="isl-face__body">
-          <img className="isl-face__img" src={FACES[mood] ?? mark} alt="" draggable={false} />
+          <img
+            className="isl-face__img"
+            src={FACES[mood] ?? mark}
+            alt="" // ui-text: ok decorative image, the empty alt is the point
+            draggable={false}
+          />
           <span className="isl-face__shine" />
         </span>
       </span>

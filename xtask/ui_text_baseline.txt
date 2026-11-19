@@ -4,11 +4,6 @@
 # is the rule for anything written from here on; a slice that translated its
 # files runs `cargo xtask ui-text` to take the credit.
 
-web/src/island/AskedHere.tsx 2
-web/src/island/Mascot.tsx 1
-web/src/island/Preview.tsx 1
-web/src/island/Reply.tsx 4
-web/src/island/views.tsx 17
 web/src/remote/RelayPair.tsx 11
 web/src/remote/RemoteApp.tsx 13
 web/src/remote/RemoteBoard.tsx 8

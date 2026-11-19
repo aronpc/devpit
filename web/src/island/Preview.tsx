@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 
 import type { IslandSession, IslandStep, Touch } from '../gen/bindings'
+import { t } from '../i18n'
 import { ofPath } from '../shell/languages'
 import { ask, commands } from '../shell/live'
 import { Painted } from '../shell/Painted'
@@ -126,7 +127,7 @@ function ReadLines({
   }, [session.sessionId, touch.path])
 
   if (refused) return <div className="isl-peek__none">{refused}</div>
-  if (text === null) return <div className="isl-peek__none">Reading…</div>
+  if (text === null) return <div className="isl-peek__none">{t('island.preview.reading')}</div>
   return (
     <>
       {linesFrom(text, touch.offset).map((one, at) => (

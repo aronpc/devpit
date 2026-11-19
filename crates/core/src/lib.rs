@@ -11,6 +11,7 @@
 pub mod bus;
 pub mod data_files;
 pub mod home;
+pub mod i18n;
 pub mod locale;
 #[cfg(test)]
 mod locale_tests;

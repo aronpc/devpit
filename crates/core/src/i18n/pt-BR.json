@@ -1,0 +1,6 @@
+{
+  "tray.quit": "Sair do devpit",
+  "tray.recentProjects": "Projetos recentes",
+  "tray.sessions": { "one": "{count} sessão", "other": "{count} sessões" },
+  "tray.greet": "Olá, {name}"
+}
