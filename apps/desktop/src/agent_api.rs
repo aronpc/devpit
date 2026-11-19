@@ -308,7 +308,10 @@ fn respond_in(
             let live = crate::live_sessions::orchestrator_sessions_now(profile).map_err(said)?;
             let reachable = crate::orchestrator_links::reachable(here, live.sessions);
             crate::round_state::keep(Path::new(&here.root_path), &here.id, profile, &reachable);
-            let running = json!(reachable);
+            let running = match devpit_core::Store::open_default() {
+                Ok(store) => crate::host_sessions::marked_in(&store, json!(reachable)),
+                Err(_) => json!(reachable),
+            };
             if asked.params.get("include_ended").and_then(Value::as_bool) != Some(true) {
                 return Ok(running);
             }
@@ -757,6 +760,37 @@ fn respond_in(
             }
             done
         }
+        // On a host, card or not: a session devpit keeps there.
+        "start" if text("host").is_some_and(|host| !host.trim().is_empty()) => {
+            let app = app.ok_or("devpit's window is not running")?;
+            let profile = orchestrating(here)?;
+            let runs_as = crate::opening::runs_as(profile, text("profile").as_deref())?;
+            let (host, prompt) = (
+                text("host").unwrap_or_default(),
+                text("prompt").unwrap_or_default(),
+            );
+            let (name, model) = (text("name"), text("model"));
+            let started = crate::host_sessions::started(
+                app,
+                here,
+                project,
+                profile,
+                &runs_as,
+                &crate::host_sessions::Asked {
+                    host: &host,
+                    prompt: &prompt,
+                    name: name.as_deref(),
+                    model: model.as_deref(),
+                    card: (!card_id.is_empty()).then_some(card_id.as_str()),
+                    confirmed: asked
+                        .params
+                        .get("confirm_production")
+                        .and_then(Value::as_bool)
+                        == Some(true),
+                },
+            )?;
+            crate::pane_sessions::once_up(started, profile, &project.id)
+        }
         // No card: a session of its own, in the project's folder.
         "start" if card_id.is_empty() => {
             let app = app.ok_or("devpit's window is not running")?;
@@ -885,7 +919,16 @@ fn every_project(projects: &[Project], linked: &[String]) -> Value {
                         .collect::<Vec<_>>()
                 })
                 .unwrap_or_default();
-            json!({ "id": one.id, "name": one.name, "group": one.group, "root": one.root_path, "linked": true, "lanes": lanes })
+            let mut listed = json!({ "id": one.id, "name": one.name, "group": one.group, "root": one.root_path, "linked": true, "lanes": lanes });
+            // Only where there are some: a project on no host lists as before.
+            if let Some(hosts) = devpit_core::Store::open_default()
+                .ok()
+                .map(|store| crate::host_sessions::hosts_of(&store, &one.id))
+                .filter(|hosts| !hosts.is_empty())
+            {
+                listed["hosts"] = json!(hosts);
+            }
+            listed
         })
         .collect();
     json!(listed)

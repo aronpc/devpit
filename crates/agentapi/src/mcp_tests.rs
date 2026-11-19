@@ -549,3 +549,18 @@ fn the_message_bus_tools_take_a_name_and_words() {
     );
     assert_eq!(said["result"]["isError"], false);
 }
+
+/// A session may start on a host the project is linked to, production only
+/// with the person's yes passed on; neither is needed for one started here.
+#[test]
+fn a_session_may_be_started_on_a_host_and_on_production_only_when_confirmed() {
+    let tool = TOOLS
+        .iter()
+        .find(|tool| tool.name == "devpit_start_session")
+        .expect("the tool");
+    let schema = (tool.input)();
+    assert_eq!(schema["properties"]["host"]["type"], "string");
+    assert_eq!(schema["properties"]["confirm_production"]["type"], "boolean");
+    assert_eq!(schema["required"], json!(["project", "prompt"]));
+    assert!(tool.description.contains("confirm_production"));
+}

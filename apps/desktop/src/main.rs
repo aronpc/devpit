@@ -158,6 +158,7 @@ mod history;
 mod host_check;
 mod host_links;
 mod host_panes;
+mod host_sessions;
 mod host_ssh;
 mod hosts;
 mod hub;

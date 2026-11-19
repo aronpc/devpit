@@ -220,27 +220,34 @@ pub async fn host_terminal_open(
     project_id: String,
     host_id: String,
 ) -> Result<HostTerminal, RpcError> {
-    crate::off_main::blocking(move || {
-        let tab_id = crate::opening::fresh_tab();
-        let leaf_id = format!("leaf_{}", ulid::Ulid::generate());
-        let target = opened_leaf(&project_id, &host_id, &leaf_id)?;
-        let layout = SessionLayout {
-            project_id: project_id.clone(),
-            focused_id: leaf_id.clone(),
-            tree: LayoutNode::leaf(leaf_id.clone(), target),
-        };
-        crate::sessions::persist(&Store::open_default()?, &tab_id, &layout)?;
-        let _ = tauri::Emitter::emit(
-            &app,
-            crate::opening::TAB_OPENED,
-            serde_json::json!({ "projectId": project_id, "tabId": tab_id, "paneId": leaf_id }),
-        );
-        Ok(HostTerminal {
-            tab_id,
-            pane_id: leaf_id,
-        })
+    crate::off_main::blocking(move || opened_tab(&app, &project_id, &host_id)).await
+}
+
+/// A new tab of the project with one terminal on the host, said to the
+/// window so it opens.
+pub(crate) fn opened_tab(
+    app: &tauri::AppHandle,
+    project_id: &str,
+    host_id: &str,
+) -> Result<HostTerminal, RpcError> {
+    let tab_id = crate::opening::fresh_tab();
+    let leaf_id = format!("leaf_{}", ulid::Ulid::generate());
+    let target = opened_leaf(project_id, host_id, &leaf_id)?;
+    let layout = SessionLayout {
+        project_id: project_id.to_owned(),
+        focused_id: leaf_id.clone(),
+        tree: LayoutNode::leaf(leaf_id.clone(), target),
+    };
+    crate::sessions::persist(&Store::open_default()?, &tab_id, &layout)?;
+    let _ = tauri::Emitter::emit(
+        app,
+        crate::opening::TAB_OPENED,
+        serde_json::json!({ "projectId": project_id, "tabId": tab_id, "paneId": leaf_id }),
+    );
+    Ok(HostTerminal {
+        tab_id,
+        pane_id: leaf_id,
     })
-    .await
 }
 
 /// Whether a target is a host's.

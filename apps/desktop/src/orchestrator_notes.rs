@@ -278,6 +278,21 @@ pub(crate) fn briefed(
     project: Option<ProjectName>,
     by_bus: bool,
 ) -> String {
+    briefed_with(folder, prompt, project, report_to(folder, by_bus))
+}
+
+/// [`briefed`] for a session on a host, which nothing of devpit's reaches:
+/// the person's rules, and no way of reporting back it could not use.
+pub(crate) fn briefed_on_host(folder: &Path, prompt: &str, project: Option<ProjectName>) -> String {
+    briefed_with(folder, prompt, project, None)
+}
+
+fn briefed_with(
+    folder: &Path,
+    prompt: &str,
+    project: Option<ProjectName>,
+    report: Option<String>,
+) -> String {
     if prompt.trim().is_empty() {
         return prompt.to_owned();
     }
@@ -286,7 +301,7 @@ pub(crate) fn briefed(
         .unwrap_or_default();
     let mut brief = prompt.trim_end().to_owned();
     let added = [
-        ("Reporting back".to_owned(), report_to(folder, by_bus)),
+        ("Reporting back".to_owned(), report),
         ("Rules for sessions".to_owned(), rules_in(&preferences)),
         (
             format!("Rules for sessions: {}", project.map_or("", |one| one.name)),

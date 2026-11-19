@@ -96,27 +96,7 @@ pub(crate) fn open(
             format!("a session is started with between 1 and {LONGEST} characters of brief"),
         ));
     }
-    let name = crate::handing::unused(
-        wanted
-            .name
-            .map(str::trim)
-            .filter(|one| !one.is_empty())
-            .map(str::to_owned)
-            .unwrap_or_else(|| {
-                let short: String = ulid::Ulid::generate()
-                    .to_string()
-                    .chars()
-                    .rev()
-                    .take(4)
-                    .collect();
-                format!(
-                    "{}-{}",
-                    crate::chat_remote::remote_name(&project.name).trim_start_matches("devpit-"),
-                    short.to_lowercase()
-                )
-            }),
-        &crate::handing::live_names(profile_id),
-    );
+    let name = session_name(project, wanted.name, profile_id);
     let runs_as = wanted.profile.unwrap_or(profile_id);
     let tab_id = fresh_tab();
     let pane_id = typed_in(
@@ -151,6 +131,31 @@ pub(crate) fn open(
         "kept": kept,
         "next": "It runs in a new terminal tab of that project. Message it by this name with SendMessage once it is up, and pass notify_when_idle to hear when it is done.",
     }))
+}
+
+/// The name a new session is messaged by: the one asked for, else the
+/// project's with four letters of its own, never one already running.
+pub(crate) fn session_name(project: &Project, wanted: Option<&str>, profile_id: &str) -> String {
+    crate::handing::unused(
+        wanted
+            .map(str::trim)
+            .filter(|one| !one.is_empty())
+            .map(str::to_owned)
+            .unwrap_or_else(|| {
+                let short: String = ulid::Ulid::generate()
+                    .to_string()
+                    .chars()
+                    .rev()
+                    .take(4)
+                    .collect();
+                format!(
+                    "{}-{}",
+                    crate::chat_remote::remote_name(&project.name).trim_start_matches("devpit-"),
+                    short.to_lowercase()
+                )
+            }),
+        &crate::handing::live_names(profile_id),
+    )
 }
 
 /// A tab id nothing else has.

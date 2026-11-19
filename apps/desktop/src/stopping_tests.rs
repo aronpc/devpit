@@ -313,3 +313,18 @@ fn a_job_seen_in_a_terminal_is_never_signalled_either() {
     devpit_pty::process::terminate(pid);
     reaped.join().expect("reaped");
 }
+
+/// A session on a host is devpit's to stop through its terminal there: its
+/// row carries no pid of this computer, and nothing here is signalled.
+#[test]
+fn a_session_on_a_host_signals_nothing_here() {
+    let on_host = Running {
+        pane: Some(devpit_rpc::LivePane {
+            project_id: "p".to_owned(),
+            pane_id: "leaf_on_host".to_owned(),
+        }),
+        ..running(0, None)
+    };
+
+    assert_eq!(made_sure("worker", &[on_host], QUICK).expect("stopped"), 0);
+}
