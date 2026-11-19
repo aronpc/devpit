@@ -37,9 +37,26 @@ impl FakeHost {
         self.dir.path().join("ssh")
     }
 
+    /// Writes a program, then runs it once to no effect until it runs: a
+    /// child another test's thread forked while it was being written holds it
+    /// open, and running it then fails until that child runs its own.
     pub(crate) fn program(&self, path: &Path, body: &str) {
-        std::fs::write(path, format!("#!/bin/sh\n{body}\n")).expect("write");
+        std::fs::write(
+            path,
+            format!("#!/bin/sh\n[ -n \"$FAKE_PROBE\" ] && exit 0\n{body}\n"),
+        )
+        .expect("write");
         std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o755)).expect("chmod");
+        for _ in 0..300 {
+            let ran = std::process::Command::new(path)
+                .env("FAKE_PROBE", "1")
+                .status();
+            if ran.is_ok_and(|status| status.success()) {
+                return;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(10));
+        }
+        panic!("{} never ran", path.display());
     }
 
     pub(crate) fn installs(&self, name: &str, says: &str) {
