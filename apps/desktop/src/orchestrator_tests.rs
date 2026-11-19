@@ -4,6 +4,10 @@ fn en() -> crate::session_locale::SessionLocale {
     crate::session_locale::SessionLocale::of(devpit_core::locale::Locale::En)
 }
 
+fn pt_br() -> crate::session_locale::SessionLocale {
+    crate::session_locale::SessionLocale::of(devpit_core::locale::Locale::PtBr)
+}
+
 #[test]
 fn a_new_orchestrator_starts_with_its_brief_and_folders() {
     let dir = tempfile::tempdir().expect("tempdir");
@@ -236,6 +240,58 @@ fn english_writes_the_bytes_it_always_did() {
     );
 }
 
+/// English seeds the person's half with the bytes it always did: the base
+/// text of `CLAUDE.md`, byte for byte, whatever came to carry the language.
+#[test]
+fn english_seeds_the_persons_half_with_the_bytes_it_always_did() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let folder = dir.path().join("work");
+    seed(&folder, en()).expect("seeded");
+    assert_eq!(
+        std::fs::read_to_string(folder.join("CLAUDE.md")).expect("the person's half"),
+        include_str!("orchestrator_claude.md")
+    );
+}
+
+/// A folder born in Portuguese carries every brief in it — devpit's half, the
+/// person's half, the assistant's — and the headings the code reads by text
+/// stay the text it reads, whatever the language around them.
+#[test]
+fn a_folder_born_in_portuguese_gets_the_pt_br_briefs_and_keeps_the_read_headings() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let store = devpit_core::Store::open(&dir.path().join("state.db")).expect("store");
+    let folder = dir.path().join("work");
+    store
+        .set_orchestrator_setting(&folder, "assistant", serde_json::json!(true))
+        .expect("assistant on");
+    written_in(&store, &folder, pt_br()).expect("born");
+    assert_eq!(
+        std::fs::read_to_string(folder.join(".devpit/orchestrator.md")).expect("brief"),
+        format!(
+            "<!-- written by devpit {} -->\n{}",
+            env!("CARGO_PKG_VERSION"),
+            include_str!("orchestrator_devpit_pt_br.md")
+        )
+    );
+    assert_eq!(
+        std::fs::read_to_string(folder.join("CLAUDE.md")).expect("the person's half"),
+        crate::assistant::imported(include_str!("orchestrator_claude_pt_br.md"), true)
+    );
+    assert_eq!(
+        std::fs::read_to_string(folder.join(".devpit/assistant.md")).expect("assistant"),
+        format!(
+            "<!-- written by devpit {} -->\n{}",
+            env!("CARGO_PKG_VERSION"),
+            include_str!("assistant_devpit_pt_br.md")
+        )
+    );
+    // What the code looks for by text is looked for in English: the pt-BR
+    // brief says so, in those words.
+    let brief = include_str!("orchestrator_devpit_pt_br.md");
+    assert!(brief.contains("heading `## Rules for sessions`"));
+    assert!(brief.contains("`## Rules for sessions: <project>`"));
+}
+
 /// One folder is one orchestrator's, so the birth of each of its sessions
 /// rewrites its files whole, in the language of the session being born. A
 /// language switched in Settings never reaches under one already running: the
@@ -266,7 +322,7 @@ fn each_birth_rewrites_the_folder_and_a_switched_language_waits_for_the_next() {
         format!(
             "<!-- written by devpit {} -->\n{}",
             env!("CARGO_PKG_VERSION"),
-            include_str!("assistant_devpit.md")
+            include_str!("assistant_devpit_pt_br.md")
         )
     );
 

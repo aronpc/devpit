@@ -19,19 +19,31 @@ const DEVPIT_BRIEF: (&str, &str) = (
     include_str!("orchestrator_devpit.md"),
 );
 
-/// What a new orchestrator's folder starts with. Written only when missing:
-/// the person edits these, and a second opening must not undo that.
-const SEEDED: &[(&str, &str)] = &[
-    ("CLAUDE.md", include_str!("orchestrator_claude.md")),
-    // Gemini follows the same imports; `AGENTS.md` is written from both.
-    ("GEMINI.md", "@CLAUDE.md\n"),
-    // Where it keeps what it learns: an orchestrator's notes, not a
-    // repository — there is no remote to push them to, so no git either.
-    ("context/projects/.keep", ""),
-    ("decisions/.keep", ""),
-    ("docs/.keep", ""),
-    ("artifacts/.keep", ""),
-];
+/// What a new orchestrator's folder starts with, in the session's language.
+/// Written only when missing: the person edits these, and a second opening
+/// must not undo that.
+fn seeded(locale: SessionLocale) -> Vec<(&'static str, &'static str)> {
+    vec![
+        ("CLAUDE.md", persons_half(locale)),
+        // Gemini follows the same imports; `AGENTS.md` is written from both.
+        ("GEMINI.md", "@CLAUDE.md\n"),
+        // Where it keeps what it learns: an orchestrator's notes, not a
+        // repository — there is no remote to push them to, so no git either.
+        ("context/projects/.keep", ""),
+        ("decisions/.keep", ""),
+        ("docs/.keep", ""),
+        ("artifacts/.keep", ""),
+    ]
+}
+
+/// The person's half of the brief a folder is born with, in the session's
+/// language: `CLAUDE.md`, theirs to edit from its first line on.
+fn persons_half(locale: SessionLocale) -> &'static str {
+    match locale.tag() {
+        "pt-BR" => include_str!("orchestrator_claude_pt_br.md"),
+        _ => include_str!("orchestrator_claude.md"),
+    }
+}
 
 /// `orchestrator.create` — a new orchestrator speaking as this profile.
 ///
@@ -241,19 +253,24 @@ pub(crate) fn slug(name: &str) -> String {
     }
 }
 
-/// devpit's brief as this build writes it: the text, under a line naming the
-/// build — so "which brief is this orchestrator reading" is answered by
-/// opening the file rather than by diffing it against a release.
-///
-/// `_locale` is the language of the session the folder is being written for,
-/// held for the brief's own translation, still to come: until it lands, the
-/// English text is not only the base but the whole of it.
-pub(crate) fn brief(_locale: SessionLocale) -> String {
+/// devpit's brief as this build writes it in `locale`: the text, under a line
+/// naming the build — so "which brief is this orchestrator reading" is
+/// answered by opening the file rather than by diffing it against a release.
+pub(crate) fn brief(locale: SessionLocale) -> String {
     format!(
         "<!-- written by devpit {} -->\n{}",
         env!("CARGO_PKG_VERSION"),
-        DEVPIT_BRIEF.1
+        devpits_half(locale)
     )
+}
+
+/// devpit's half of the brief in the session's language: the pt-BR words
+/// beside the English base, which every other language reads too.
+fn devpits_half(locale: SessionLocale) -> &'static str {
+    match locale.tag() {
+        "pt-BR" => include_str!("orchestrator_devpit_pt_br.md"),
+        _ => DEVPIT_BRIEF.1,
+    }
 }
 
 /// Writes devpit's brief as this build has it in `locale`, and what a new
@@ -265,7 +282,7 @@ pub(crate) fn seed(folder: &Path, locale: SessionLocale) -> std::io::Result<()> 
         std::fs::create_dir_all(brief.parent().unwrap_or(folder))?;
         std::fs::write(&brief, text)?;
     }
-    for (name, text) in SEEDED {
+    for (name, text) in seeded(locale) {
         let path = folder.join(name);
         if path.exists() {
             continue;

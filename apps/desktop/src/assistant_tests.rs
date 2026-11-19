@@ -4,6 +4,10 @@ fn en() -> crate::session_locale::SessionLocale {
     crate::session_locale::SessionLocale::of(devpit_core::locale::Locale::En)
 }
 
+fn pt_br() -> crate::session_locale::SessionLocale {
+    crate::session_locale::SessionLocale::of(devpit_core::locale::Locale::PtBr)
+}
+
 const SEEDED: &str = include_str!("orchestrator_claude.md");
 
 /// The orchestrator's context: what `CLAUDE.md` imports, and whether each
@@ -97,6 +101,54 @@ fn a_brief_linked_out_of_the_folder_is_left_alone() {
     std::os::unix::fs::symlink(&elsewhere, folder.join(".devpit/assistant.md")).expect("link");
     assert!(brief_in(&folder, true, en()).is_err());
     assert_eq!(std::fs::read_to_string(&elsewhere).expect("read"), "mine");
+}
+
+/// Portuguese writes the pt-BR variant of the assistant brief, under the
+/// same line naming the build: one text per language, one shape for both.
+#[test]
+fn portuguese_writes_the_pt_br_assistant_brief() {
+    let dir = tempfile::tempdir().expect("tmp");
+    let folder = dir.path();
+    std::fs::write(folder.join("CLAUDE.md"), SEEDED).expect("seeded");
+    std::fs::create_dir_all(folder.join(".devpit")).expect("dir");
+    std::fs::write(folder.join(".devpit/orchestrator.md"), "devpit").expect("brief");
+
+    brief_in(folder, true, pt_br()).expect("on");
+    assert_eq!(
+        std::fs::read_to_string(folder.join(".devpit/assistant.md")).expect("assistant"),
+        format!(
+            "<!-- written by devpit {} -->\n{}",
+            env!("CARGO_PKG_VERSION"),
+            include_str!("assistant_devpit_pt_br.md")
+        )
+    );
+}
+
+/// Each pt-BR brief stays within a quarter more characters than its English
+/// base: a translation, not a rewrite that outgrows what it translates.
+#[test]
+fn the_pt_br_briefs_stay_within_a_quarter_more_characters() {
+    for (en, pt) in [
+        (
+            include_str!("orchestrator_devpit.md"),
+            include_str!("orchestrator_devpit_pt_br.md"),
+        ),
+        (
+            include_str!("orchestrator_claude.md"),
+            include_str!("orchestrator_claude_pt_br.md"),
+        ),
+        (
+            include_str!("assistant_devpit.md"),
+            include_str!("assistant_devpit_pt_br.md"),
+        ),
+    ] {
+        assert!(
+            pt.chars().count() <= en.chars().count() * 5 / 4,
+            "a {}-character base carries a {}-character pt-BR brief",
+            en.chars().count(),
+            pt.chars().count()
+        );
+    }
 }
 
 /// English writes the assistant brief as it always did: the base text under

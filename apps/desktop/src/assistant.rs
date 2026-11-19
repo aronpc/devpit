@@ -17,6 +17,15 @@ use crate::session_locale::SessionLocale;
 
 /// devpit's assistant brief, beside its orchestrator brief.
 const BRIEF: (&str, &str) = (".devpit/assistant.md", include_str!("assistant_devpit.md"));
+
+/// The assistant brief's words in the session's language: the pt-BR ones
+/// beside the English base, which every other language reads too.
+fn words(locale: SessionLocale) -> &'static str {
+    match locale.tag() {
+        "pt-BR" => include_str!("assistant_devpit_pt_br.md"),
+        _ => BRIEF.1,
+    }
+}
 /// The line that imports it.
 pub(crate) const IMPORT: &str = "@.devpit/assistant.md";
 /// The line it goes under.
@@ -70,16 +79,15 @@ pub(crate) fn inside(folder: &Path, path: &Path) -> std::io::Result<()> {
 }
 
 /// The brief and its import as the mode says: written and imported when on,
-/// taken out when off. `_locale` is the language of the session the folder is
-/// being written for — held for the assistant brief's translation, still to
-/// come.
-pub(crate) fn brief_in(folder: &Path, on: bool, _locale: SessionLocale) -> std::io::Result<()> {
+/// taken out when off, in the language of the session the folder is being
+/// written for.
+pub(crate) fn brief_in(folder: &Path, on: bool, locale: SessionLocale) -> std::io::Result<()> {
     let brief = folder.join(BRIEF.0);
     if on {
         let text = format!(
             "<!-- written by devpit {} -->\n{}",
             env!("CARGO_PKG_VERSION"),
-            BRIEF.1
+            words(locale)
         );
         std::fs::create_dir_all(brief.parent().unwrap_or(folder))?;
         inside(folder, &brief)?;
