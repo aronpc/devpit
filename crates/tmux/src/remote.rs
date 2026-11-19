@@ -203,6 +203,13 @@ impl Server {
 }
 
 impl Server {
+    /// Ends the session of exactly this name, or says why not — that the
+    /// server could not be reached included, which `kill_session` keeps quiet.
+    pub fn kill_exactly(&self, session: &str) -> Result<(), TmuxError> {
+        self.require(&["kill-session", "-t", &format!("={session}")])?;
+        Ok(())
+    }
+
     /// What tmux says of `target` in `format`: `#{pane_current_command}`.
     pub fn format_of(&self, target: &str, format: &str) -> Result<String, TmuxError> {
         let output = self.require(&["display-message", "-p", "-t", target, format])?;

@@ -173,9 +173,12 @@ fn target(one: &Kept) -> Option<String> {
 
 fn look(one: &Kept) -> Option<Looked> {
     let target = target(one)?;
+    let shell = crate::pane_io::shell_in_front(&target);
+    // A host that did not answer is not asked again for its screen.
+    let answered = shell.is_ok();
     Some(Looked {
-        agent: agent_in_front(&target, crate::pane_io::shell_in_front(&target))?,
-        screen: crate::pane_io::screen(&target),
+        agent: agent_in_front(&target, shell)?,
+        screen: answered.then(|| crate::pane_io::screen(&target)).flatten(),
         hook: crate::pane_said::heard_of(&one.pane_id),
     })
 }
@@ -190,9 +193,18 @@ pub(crate) fn agent_in_front(
 ) -> Option<bool> {
     match shell {
         Ok(shell) => Some(!shell),
-        Err(_) if crate::host_panes::is_host(target) => Some(true),
+        Err(err) if crate::host_panes::is_host(target) && !gone(&err) => Some(true),
         Err(_) => None,
     }
+}
+
+/// Whether a host answered that the session is gone, or the host itself is,
+/// rather than not answering at all.
+fn gone(err: &devpit_rpc::RpcError) -> bool {
+    err.code == devpit_rpc::ErrorCode::NotFound
+        || crate::host_panes::GONE
+            .iter()
+            .any(|said| err.message.contains(said))
 }
 
 /// The one called `name` of `profile`'s orchestrator.

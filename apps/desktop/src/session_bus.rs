@@ -686,8 +686,10 @@ pub(crate) fn message(
         });
         go();
         let typed = !bus().waiting().contains(&inbox);
-        let note = if on_host {
+        let note = if on_host && typed {
             "Typed into its terminal on the host. It cannot answer through devpit: read its answer with devpit_session_screen."
+        } else if on_host {
+            "It waits in devpit and is typed into its terminal on the host at its next idle prompt. It cannot answer through devpit: read its answer with devpit_session_screen."
         } else if typed {
             "Typed at its prompt. Its answer reaches this chat as a turn of devpit's, not the person's."
         } else {

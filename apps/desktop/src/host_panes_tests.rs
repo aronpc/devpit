@@ -333,3 +333,28 @@ fn waiting_to_reconnect_outlasts_a_ctrl_c_and_drops_what_was_typed() {
         "typed on the host"
     );
 }
+
+/// A stop ends the session on the host there and then, and says so when the
+/// host does not answer: never "stopped" while it goes on there.
+#[test]
+fn a_stop_ends_the_session_on_the_host_or_says_it_could_not() {
+    let fake = FakeHost::new();
+    if !fake.with_tmux() {
+        return;
+    }
+    fake.folder("demo");
+    let session = session_of("prj_1", "leaf_9");
+    started(&reach(&fake), &profile(), "~/demo", &session).expect("started");
+
+    ended_on(&reach(&fake), &profile(), &session).expect("ended");
+    assert!(
+        !fake.tmux().has_exactly(&session).unwrap_or(true),
+        "it goes on there"
+    );
+
+    started(&reach(&fake), &profile(), "~/demo", &session).expect("started again");
+    let away = FakeHost::new();
+    away.program(&away.ssh(), "exit 255");
+    let refused = ended_on(&reach(&away), &profile(), &session).expect_err("said stopped");
+    assert!(refused.message.contains("staging"), "{}", refused.message);
+}

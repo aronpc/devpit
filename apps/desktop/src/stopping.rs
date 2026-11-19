@@ -227,6 +227,14 @@ fn end(
         }
         match (&one.pane, &one.job) {
             (Some(pane), _) => {
+                // A host's session ends there first: one the host does not
+                // end is never said stopped, and keeps its tab.
+                let target = crate::pane_io::target_of(&pane.project_id, &pane.pane_id);
+                if let Some(target) = target.ok().filter(|one| crate::host_panes::is_host(one)) {
+                    crate::host_panes::ended_now(&target).map_err(|err| {
+                        RpcError::new(ErrorCode::Conflict, format!("{name}: {}", err.message))
+                    })?;
+                }
                 let tab_id = close_pane(app, &pane.project_id, &pane.pane_id)?;
                 terminal = json!({ "projectId": pane.project_id, "tabId": tab_id });
             }

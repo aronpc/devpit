@@ -247,20 +247,8 @@ fn a_start_on_production_is_written_down() {
 fn a_start_on_a_host_is_planned_with_the_production_gate_and_brief() {
     let dir = tempfile::tempdir().expect("tempdir");
     let (store, project_id) = linked(&dir);
-    let project = devpit_rpc::Project {
-        id: project_id,
-        name: "site".to_owned(),
-        root_path: dir.path().display().to_string(),
-        group: None,
-        accent: "#888888".to_owned(),
-        worktrees: Vec::new(),
-        unreadable: None,
-        orchestrator: None,
-        origin: None,
-        last_opened_at: None,
-        icon: None,
-        color: None,
-    };
+    let mut project = site(&dir);
+    project.id = project_id;
     let asked = |host, confirmed| Asked {
         host,
         prompt: "Fix the total.",
@@ -305,4 +293,44 @@ fn a_project_on_no_host_lists_none() {
     let project = store.add_project(dir.path(), None).expect("project");
 
     assert!(hosts_of(&store, &project).is_empty());
+}
+
+/// An empty brief starts nothing on a host: there is nothing for it to do.
+#[test]
+fn an_empty_brief_starts_nothing_on_a_host() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let (store, project_id) = linked(&dir);
+    let mut project = site(&dir);
+    project.id = project_id;
+    let asked = Asked {
+        host: "staging",
+        prompt: "  ",
+        name: None,
+        model: None,
+        card: None,
+        confirmed: false,
+    };
+
+    let refused =
+        planned(&store, dir.path(), &project, "claude", "claude", &asked).expect_err("planned");
+
+    assert!(refused.contains("brief"), "{refused}");
+}
+
+/// The project the tests start sessions in.
+fn site(dir: &tempfile::TempDir) -> devpit_rpc::Project {
+    devpit_rpc::Project {
+        id: String::new(),
+        name: "site".to_owned(),
+        root_path: dir.path().display().to_string(),
+        group: None,
+        accent: "#888888".to_owned(),
+        worktrees: Vec::new(),
+        unreadable: None,
+        orchestrator: None,
+        origin: None,
+        last_opened_at: None,
+        icon: None,
+        color: None,
+    }
 }

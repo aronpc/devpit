@@ -14,14 +14,17 @@ use serde_json::{json, Value};
 const PRODUCTION_RULES: &str = "## This session runs on production\n\nYou are on {host}, a production host, in {path}. Make the smallest change that does the work, and a reversible one. Read before you write. Say what you will do before you do it. Nothing destructive — deleting data, a migration, restarting or stopping a service, a force push, changing access — without the person's explicit yes in this session.";
 
 /// What any session on a host is told of where it runs.
-const ON_HOST: &str = "## Where you run\n\nYou run on {host} ({environment}), in {path}, over ssh from the person's devpit. devpit's tools and messages do not reach you there: say what you did here, in this terminal, where the orchestrator reads it.";
+const ON_HOST: &str = "## Where you run\n\nYou run on {host} ({environment}), in {path}, over ssh from the person's devpit. devpit's tools do not reach you there: a message from the orchestrator is typed into this terminal, and you answer here, where it reads your terminal.";
+
+/// Whether `host` is production: an unreadable label is.
+fn on_production(host: &HostRow) -> bool {
+    crate::hosts::environment_of(&host.environment) == devpit_rpc::HostEnvironment::Production
+}
 
 /// Why a start on `host` waits, or nothing when it does not: production
 /// waits for the person's yes, which the orchestrator passes on.
 pub(crate) fn production_refusal(host: &HostRow, confirmed: bool) -> Option<String> {
-    let production =
-        crate::hosts::environment_of(&host.environment) == devpit_rpc::HostEnvironment::Production;
-    (production && !confirmed).then(|| {
+    (on_production(host) && !confirmed).then(|| {
         format!(
             "{} is a production host: ask the person first, and start it with confirm_production: true once they say yes",
             host.name
@@ -35,10 +38,10 @@ pub(crate) fn briefed_for(host: &HostRow, path: &str, prompt: &str) -> String {
     let filled = |text: &str| {
         text.replace("{host}", &host.name)
             .replace("{path}", path)
-            .replace("{environment}", &host.environment)
+            .replace("{environment}", label_of(host))
     };
     let mut brief = String::new();
-    if production_refusal(host, false).is_some() {
+    if on_production(host) {
         brief.push_str(&filled(PRODUCTION_RULES));
         brief.push_str("\n\n");
     }
@@ -128,6 +131,9 @@ pub(crate) fn planned(
     runs_as: &str,
     asked: &Asked,
 ) -> Result<Planned, String> {
+    if asked.prompt.trim().is_empty() {
+        return Err("a session on a host is started with a brief: say what it is to do".to_owned());
+    }
     let (host, path) = linked_host(store, &project.id, asked.host)?;
     if let Some(why) = production_refusal(&host, asked.confirmed) {
         return Err(why);
@@ -175,9 +181,6 @@ pub(crate) fn started(
         name,
         line,
     } = planned(&store, root, project, profile, runs_as, asked)?;
-    if asked.confirmed {
-        noted_on_production(root, &host, &name);
-    }
     let opened = crate::host_panes::opened_tab(app, &project.id, &host.id).map_err(said)?;
     let target = crate::pane_io::target_of(&project.id, &opened.pane_id).map_err(said)?;
     let _ = crate::pane_io::settled(&target);
@@ -193,6 +196,10 @@ pub(crate) fn started(
         cwd: path.clone(),
         pane_id: opened.pane_id,
     });
+    // Written once it started: a start that failed on the way is not one.
+    if asked.confirmed {
+        noted_on_production(root, &host, &name);
+    }
     let mut answer = json!({
         "name": name,
         "project": project.name,
@@ -222,7 +229,7 @@ fn label_of(host: &HostRow) -> &'static str {
 /// Writes a start on production in the orchestrator's sessions log, so the
 /// person can see later what was started there on their yes.
 pub(crate) fn noted_on_production(folder: &std::path::Path, host: &HostRow, name: &str) {
-    if production_refusal(host, false).is_none() {
+    if !on_production(host) {
         return;
     }
     let _ = crate::orchestrator_notes::note(

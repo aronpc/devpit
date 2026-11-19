@@ -141,3 +141,34 @@ fn a_host_that_does_not_answer_keeps_its_session_listed() {
         "the shell is back in front"
     );
 }
+
+/// A host that answers its session is gone has ended it, as has a host no
+/// longer known: only one that does not answer keeps it listed.
+#[test]
+fn a_host_that_says_its_session_is_gone_ends_it() {
+    let on_host = crate::host_panes::target("host_1", "devpit_s");
+    let said = |why: &str| Err(devpit_rpc::RpcError::new(devpit_rpc::ErrorCode::Busy, why));
+
+    assert_eq!(
+        agent_in_front(&on_host, said("can't find session: devpit_s")),
+        None
+    );
+    assert_eq!(
+        agent_in_front(&on_host, said("no server running on /tmp/tmux-1000/devpit")),
+        None
+    );
+    assert_eq!(
+        agent_in_front(
+            &on_host,
+            Err(devpit_rpc::RpcError::new(
+                devpit_rpc::ErrorCode::NotFound,
+                "that host is no longer there"
+            ))
+        ),
+        None
+    );
+    assert_eq!(
+        agent_in_front(&on_host, said("no answer within 10 seconds")),
+        Some(true)
+    );
+}

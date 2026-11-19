@@ -200,6 +200,39 @@ pub(crate) fn ended(targets: Vec<String>) {
     });
 }
 
+/// Ends `session` on `host` there and then: a stop says it could not, rather
+/// than stopped, when the host does not answer.
+pub(crate) fn ended_on(reach: &Reach, host: &HostRow, session: &str) -> Result<(), RpcError> {
+    match reach.server(host).kill_exactly(session) {
+        Ok(()) => Ok(()),
+        // The host answered it has no such session: it has ended.
+        Err(err) if GONE.iter().any(|said| err.to_string().contains(said)) => Ok(()),
+        Err(err) => Err(RpcError::new(
+            ErrorCode::Busy,
+            format!(
+                "{} did not answer, so its session goes on there: {err}",
+                host.name
+            ),
+        )),
+    }
+}
+
+/// What tmux on a host answers of a session or server that is not there.
+pub(crate) const GONE: [&str; 4] = [
+    "can't find session",
+    "no server running",
+    "can't find pane",
+    "can't find window",
+];
+
+/// [`ended_on`] for the session a host target names.
+pub(crate) fn ended_now(target: &str) -> Result<(), RpcError> {
+    let (host_id, session) = parsed(target)
+        .ok_or_else(|| RpcError::new(ErrorCode::Invalid, "not a terminal on a host"))?;
+    let host = crate::hosts::host_by_id(&Store::open_default()?, host_id)?;
+    ended_on(&Reach::here()?, &host, session)
+}
+
 /// `host.terminal_open` — a new tab of the project with one terminal on the
 /// host, in the project's folder there.
 #[tauri::command]
