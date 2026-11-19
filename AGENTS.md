@@ -64,7 +64,7 @@ CI runs `setup`, `test` and `build`; the end-to-end job calls `e2e`.
 
 ## Guards that fail the build
 
-`cargo xtask check` enforces thirteen rules. Each reports file and line,
+`cargo xtask check` enforces fourteen rules. Each reports file and line,
 because "the guard failed" sends someone looking and a location sends someone
 fixing.
 
@@ -83,6 +83,7 @@ fixing.
 | `the_bundle_says_what_it_ships` | the release bundle declares the targets and the updater artifacts it is built with |
 | `the_release_workflow_keeps_its_promises` | the tag-only release workflow keeps its pinned actions, its tag check and the key in one step |
 | `the_app_never_kills_the_tmux_server` | nothing in `apps/desktop` names `kill_server`, because the terminals outlive the window |
+| `every_catalog_keeps_up_with_english` | every key of `en/<area>.json` reaches `pt-BR/<area>.json` — translated, or listed with its reason in `untranslated.txt` (twenty keys at most); no empty value, no `{placeholder}` one side lacks, no plural without `.one` and `.other`, no key only pt-BR carries — over `web/src/i18n/` and `crates/core/src/i18n/` |
 
 The ratchet only tightens: a file over its ceiling fails, and `cargo xtask
 ceilings` refuses to raise one. A ceiling *above* what a file needs does not

@@ -23,7 +23,21 @@ vi.mock('../shell/live', () => ({
 /* Says a translated sentence, and hears the locale so a change reaches it. */
 function Says(): React.JSX.Element {
   useLocale()
-  return createElement('p', null, t('greet.hello', { name: 'Ada', surname: 'Lovelace' }))
+  return createElement('p', null, t('greet.hello', { name: 'Ada' }))
+}
+
+/* The real catalogs stay parallel — that parity is a guard (T7), so no test
+   data may bend them. What needs a bent pair (a key English alone carries, a
+   placeholder one language fills and the other drops) is proven on catalogs
+   made for the test: the module is loaded again over these. */
+async function overCatalogs(
+  english: Record<string, unknown>,
+  portuguese: Record<string, unknown>,
+): Promise<typeof import('./index')> {
+  vi.resetModules()
+  vi.doMock('./en/common.json', () => ({ default: english }))
+  vi.doMock('./pt-BR/common.json', () => ({ default: portuguese }))
+  return import('./index')
 }
 
 afterEach(() => {
@@ -53,9 +67,13 @@ describe('a sentence with placeholders', () => {
 })
 
 describe('a key the locale does not carry', () => {
-  it('falls back to the English text', () => {
-    setLocale('pt-BR')
-    expect(t('board.englishOnly')).toBe('Only the English catalog carries this one')
+  it('falls back to the English text', async () => {
+    const over = await overCatalogs(
+      { 'board.englishOnly': 'Only the English catalog carries this one' },
+      {},
+    )
+    over.setLocale('pt-BR')
+    expect(over.t('board.englishOnly')).toBe('Only the English catalog carries this one')
   })
 
   it('says the last key segment, readably, and warns in dev', () => {
@@ -79,7 +97,7 @@ describe('the LocaleRoot', () => {
     chosen = 'pt-BR'
     render(createElement(LocaleRoot, null, createElement(Says)))
     await waitFor(() => expect(document.documentElement.lang).toBe('pt-BR'))
-    expect(screen.getByText('Olá, Ada Lovelace')).toBeTruthy()
+    expect(screen.getByText('Olá, Ada')).toBeTruthy()
   })
 
   it('renders again when the choice changes, with no reload', async () => {
@@ -90,16 +108,20 @@ describe('the LocaleRoot', () => {
 
     setLocale('pt-BR')
     await waitFor(() => expect(document.documentElement.lang).toBe('pt-BR'))
-    expect(screen.getByText('Olá, Ada Lovelace')).toBeTruthy()
+    expect(screen.getByText('Olá, Ada')).toBeTruthy()
   })
 })
 
 describe('a placeholder one language carries and the other lacks', () => {
-  it('fills it where it is, and drops it where it is not', () => {
-    setLocale('pt-BR')
-    expect(t('greet.hello', { name: 'Ada', surname: 'Lovelace' })).toBe('Olá, Ada Lovelace')
+  it('fills it where it is, and drops it where it is not', async () => {
+    const over = await overCatalogs(
+      { 'greet.hello': 'Hello, {name}' },
+      { 'greet.hello': 'Olá, {name} {surname}' },
+    )
+    over.setLocale('pt-BR')
+    expect(over.t('greet.hello', { name: 'Ada', surname: 'Lovelace' })).toBe('Olá, Ada Lovelace')
 
-    setLocale('en')
-    expect(t('greet.hello', { name: 'Ada', surname: 'Lovelace' })).toBe('Hello, Ada')
+    over.setLocale('en')
+    expect(over.t('greet.hello', { name: 'Ada', surname: 'Lovelace' })).toBe('Hello, Ada')
   })
 })

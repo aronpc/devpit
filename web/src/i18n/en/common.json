@@ -1,5 +1,4 @@
 {
   "greet.hello": "Hello, {name}",
-  "board.cards": { "one": "{count} card", "other": "{count} cards" },
-  "board.englishOnly": "Only the English catalog carries this one"
+  "board.cards": { "one": "{count} card", "other": "{count} cards" }
 }

@@ -10,6 +10,7 @@ use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
 mod agent_boundary;
+mod catalog;
 mod csp;
 mod dead_controls;
 mod home_paths;
@@ -171,6 +172,7 @@ fn check() -> ExitCode {
     findings.extend(uncalled::the_app_answers_what_the_contract_offers(&root));
     findings.extend(off_main::no_command_holds_the_window(&root));
     findings.extend(listening::nothing_listens_beyond_loopback(&root));
+    findings.extend(catalog::every_catalog_keeps_up_with_english(&root));
 
     if findings.is_empty() {
         println!("guards: ok");
