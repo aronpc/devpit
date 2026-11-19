@@ -8,6 +8,9 @@
 
 pub const ONBOARDED_AT: &str = "onboarding.completed_at";
 pub const THEME: &str = "appearance.theme";
+/// The language the person chose for devpit's own words: `system`, `en` or
+/// `pt_br`. System unless chosen.
+pub const LANGUAGE: &str = "general.language";
 pub const AUTO_UPDATE: &str = "general.automatic_updates";
 /// Whether closing a terminal with something running stops to ask.
 pub const CONFIRM_STOP: &str = "terminal.confirm_stop";

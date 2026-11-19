@@ -64,6 +64,7 @@ export function Settings({
       ask(() =>
         commands.settingsWrite(
           null,
+          null,
           field === 'automaticUpdates' ? next : null,
           field === 'confirmStop' ? next : null,
           null,
@@ -169,7 +170,7 @@ export function Settings({
             <TerminalContrast
               value={flags?.terminalContrast ?? null}
               onPick={(value) =>
-                void inOrder('settings', () => ask(() => commands.settingsWrite(null, null, null, value, null, null, null))).then((answer) =>
+                void inOrder('settings', () => ask(() => commands.settingsWrite(null, null, null, null, value, null, null, null))).then((answer) =>
                   setFlags(answer.data ?? flags),
                 )
               }

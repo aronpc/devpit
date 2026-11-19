@@ -165,7 +165,7 @@ pub use session::{
     AgentPresence, KnownAgent, LayoutNode, PaneInTmux, PaneKind, PaneRunning, PaneSize,
     SessionLayout, SplitDirection,
 };
-pub use settings::{ErrorReportsPreview, SessionRelay, Settings, Theme};
+pub use settings::{ErrorReportsPreview, Language, SessionRelay, Settings, Theme};
 pub use sign_ins::{AccountSignIn, AgentLaunch, MissingSignIn, NeededSignIn, SignIns};
 pub use spend::{
     PlanLimits, PlanWindow, SessionCost, SpendCard, SpendDay, SpendHistory, SpendInstallation,
