@@ -279,5 +279,21 @@
   "card.due": "Due",
   "card.dueAt": "Due at",
   "card.clear": "Clear",
-  "card.spent": "{amount} spent"
+  "card.spent": "{amount} spent",
+  "card.menu.open": "Open",
+  "card.menu.rename": "Rename",
+  "card.menu.moveTo": "Move to…",
+  "card.menu.runStep": "Run step",
+  "card.menu.terminal": "Open a terminal",
+  "card.menu.chat": "Chat about this card",
+  "card.menu.copyBranch": "Copy branch",
+  "card.menu.archive": "Archive",
+  "card.menu.delete": "Delete…",
+  "card.doing.open": "An agent is open on this card — what it is doing shows once it reports. Only the project open in this window is followed.",
+  "card.doing.working": "An agent is working on this card",
+  "card.doing.waiting": "An agent is waiting on you",
+  "card.doing.done": "An agent finished",
+  "card.doing.doneUnread": "An agent finished, and nobody has looked yet",
+  "card.doing.failed": "A run on this card failed",
+  "card.doing.gone": "The session on this card ended"
 }

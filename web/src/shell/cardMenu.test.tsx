@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import type { Card, CardDetail, Column, DeleteRefusal } from '../gen/bindings'
+import { setLocale } from '../i18n'
 import type { Lane } from './board'
 import { cardMenu } from './cardMenu'
 import { wired } from './fileMenu'
@@ -74,6 +75,26 @@ describe('the card menu', () => {
       'Archive',
       'Delete…',
     ])
+  })
+})
+
+describe('the card menu in Portuguese', () => {
+  afterEach(() => setLocale('en'))
+
+  it('says every entry in the chosen language', () => {
+    setLocale('pt-BR')
+    const all = cardMenu({ ...hands, moveTo: vi.fn(), play: vi.fn(), copyBranch: vi.fn() })
+    expect(all.filter((one) => !one.rule).map((one) => one.label)).toEqual([
+      'Abrir',
+      'Renomear',
+      'Mover para…',
+      'Rodar o passo',
+      'Conversar sobre este cartão',
+      'Copiar a branch',
+      'Arquivar',
+      'Excluir…',
+    ])
+    expect(cardMenu(hands).find((one) => one.run === hands.terminal)?.label).toBe('Abrir um terminal')
   })
 })
 

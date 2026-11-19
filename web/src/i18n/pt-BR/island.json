@@ -71,5 +71,26 @@
   "island.verb.Plan": "Planejar",
   "island.verb.UseSkill": "Usar skill",
   "island.verb.Ask": "Perguntar",
-  "island.verb.ProposePlan": "Propor um plano"
+  "island.verb.ProposePlan": "Propor um plano",
+  "island.drop.noTarget": "Solte o arquivo numa sessão",
+  "island.drop.inPrompt": "No prompt dela — termine a mensagem lá",
+  "island.overview.none": "Nenhum agente rodando",
+  "island.overview.sessions": {
+    "one": "{count} sessão",
+    "other": "{count} sessões"
+  },
+  "island.overview.projects": {
+    "one": "{count} projeto",
+    "other": "{count} projetos"
+  },
+  "island.overview.across": "{sessions} em {projects}",
+  "island.overview.more": "mais {count}",
+  "island.asking.title": "{who} pede para",
+  "island.asking.anAgent": "Um agente",
+  "island.asking.fromTerminal": "Do terminal · esperando sua resposta",
+  "island.asking.fromChat": "De um chat · esperando sua resposta",
+  "island.preview.nothingYet": "Nada ainda",
+  "island.preview.nothingForStep": "Nada a mostrar neste passo",
+  "island.preview.stepsShowHere": "Os passos aparecem aqui conforme rodam",
+  "island.preview.notShown": "Não mostrado"
 }

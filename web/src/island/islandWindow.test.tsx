@@ -2,6 +2,7 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { IslandChange, IslandQuestion, IslandSession, Question } from '../gen/bindings'
+import { setLocale } from '../i18n'
 import { IslandWindow } from './IslandWindow'
 
 /* What the window would hear, by event name, so a test can say it. */
@@ -16,6 +17,7 @@ const say = (name: string, payload: unknown): void => {
   }
   act(() => heard.get(name)?.(payload))
 }
+let peeked: { text: string | null; notShown: string | null } = { text: 'one\ntwo', notShown: null }
 let askedChat: ((question: Question) => void) | undefined
 let paused = { on: false, until: null as number | null }
 
@@ -32,7 +34,7 @@ vi.mock('../shell/live', () => ({
     islandDecide: (id: string, verdict: string) => (called('decide', id, verdict), null),
     islandOpenPane: (projectId: string | null, paneId: string) => (called('open', projectId, paneId), null),
     islandOpenChat: (sessionId: string) => (called('chat', sessionId), null),
-    islandPeek: () => ({ text: 'one\ntwo', notShown: null }),
+    islandPeek: () => peeked,
     islandDrop: (sessionId: string, text: string) => (called('drop', sessionId, text), null),
     islandChecks: () => ({ branch: 'fix/x', pull: { number: 7, state: 'OPEN', title: 'Fix', url: 'https://example.invalid/7' }, checks: 'passing' }),
     urlOpen: (url: string) => (called('url', url), null),
@@ -67,6 +69,7 @@ const shape = (): HTMLElement => document.querySelector('.isl-shape') as HTMLEle
 
 beforeEach(() => {
   paused = { on: false, until: null }
+  peeked = { text: 'one\ntwo', notShown: null }
   heard.clear()
   alive.clear()
   called.mockClear()
@@ -284,5 +287,69 @@ describe('the island window', () => {
     fireEvent.click(screen.getByText('Open chat'))
     expect(called).toHaveBeenCalledWith('chat', 's1')
     expect(screen.queryByText('Open terminal')).toBeNull()
+  })
+})
+
+describe('the island in Portuguese', () => {
+  beforeEach(() => setLocale('pt-BR'))
+  afterEach(() => setLocale('en'))
+
+  it('says nobody is running once the last session has gone', async () => {
+    render(<IslandWindow />)
+    await act(async () => {})
+    say('island:session', changed(session()))
+    fireEvent.click(shape())
+    expect(screen.getByText('1 sessão em 1 projeto')).toBeTruthy()
+    say('island:session', { was: 'gone', sessionId: 's1' })
+    expect(screen.getByText('Nenhum agente rodando')).toBeTruthy()
+  })
+
+  it('counts sessions and projects in the plural', async () => {
+    render(<IslandWindow />)
+    await act(async () => {})
+    say('island:session', changed(session()))
+    say('island:session', changed(session({ sessionId: 's2', projectId: 'p2', project: 'web', paneId: 'leaf_2' })))
+    fireEvent.click(shape())
+    expect(screen.getByText('2 sessões em 2 projetos')).toBeTruthy()
+  })
+
+  it('asks for a session to drop a file on when there is no one place for it', async () => {
+    render(<IslandWindow />)
+    await act(async () => {})
+    say('island:session', changed(session()))
+    say('island:session', changed(session({ sessionId: 's2', project: 'web', paneId: 'leaf_2' })))
+    fireEvent.click(shape())
+    const files = { types: ['Files'], getData: () => 'file:///w/a.png' }
+    fireEvent.dragOver(shape(), { dataTransfer: files })
+    fireEvent.drop(shape(), { dataTransfer: files })
+    expect(screen.getByText('Solte o arquivo numa sessão')).toBeTruthy()
+  })
+
+  it('says who asks, and from where', async () => {
+    render(<IslandWindow />)
+    await act(async () => {})
+    say('island:asked', { id: 'ask_1', sessionId: 'sx', paneId: 'leaf_1', project: null, tool: 'Bash', input: '{"command":"ls"}', keepable: false })
+    expect(screen.getByText('Um agente pede para')).toBeTruthy()
+    expect(screen.getByText('Do terminal · esperando sua resposta')).toBeTruthy()
+  })
+
+  it('says a preview has nothing yet before any step', async () => {
+    render(<IslandWindow />)
+    await act(async () => {})
+    say('island:session', changed(session({ steps: [] })))
+    fireEvent.click(shape())
+    fireEvent.click(screen.getByText('api'))
+    expect(screen.getByText('Nada ainda')).toBeTruthy()
+    expect(screen.getByText('Os passos aparecem aqui conforme rodam')).toBeTruthy()
+  })
+
+  it('says a read it may not show is not shown', async () => {
+    peeked = { text: null, notShown: null }
+    render(<IslandWindow />)
+    await act(async () => {})
+    say('island:session', changed(session({ steps: [{ tool: 'Read', target: 'a.ts', done: true, failed: false, touch: { kind: 'read', path: '/w/api/a.ts', offset: null, limit: null } }] })))
+    fireEvent.click(shape())
+    fireEvent.click(screen.getByText('api'))
+    expect(await screen.findByText('Não mostrado')).toBeTruthy()
   })
 })

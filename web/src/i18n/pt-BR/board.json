@@ -279,5 +279,21 @@
   "card.due": "Prazo",
   "card.dueAt": "Prazo às",
   "card.clear": "Limpar",
-  "card.spent": "{amount} gastos"
+  "card.spent": "{amount} gastos",
+  "card.menu.open": "Abrir",
+  "card.menu.rename": "Renomear",
+  "card.menu.moveTo": "Mover para…",
+  "card.menu.runStep": "Rodar o passo",
+  "card.menu.terminal": "Abrir um terminal",
+  "card.menu.chat": "Conversar sobre este cartão",
+  "card.menu.copyBranch": "Copiar a branch",
+  "card.menu.archive": "Arquivar",
+  "card.menu.delete": "Excluir…",
+  "card.doing.open": "Há um agente aberto neste cartão — o que ele faz aparece quando ele reportar. Só o projeto aberto nesta janela é acompanhado.",
+  "card.doing.working": "Um agente está trabalhando neste cartão",
+  "card.doing.waiting": "Um agente está esperando você",
+  "card.doing.done": "Um agente terminou",
+  "card.doing.doneUnread": "Um agente terminou, e ninguém olhou ainda",
+  "card.doing.failed": "Uma execução neste cartão falhou",
+  "card.doing.gone": "A sessão deste cartão terminou"
 }

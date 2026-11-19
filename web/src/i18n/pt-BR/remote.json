@@ -114,5 +114,12 @@
   "remote.waiting.mcpUpIn": "Respondendo, em {ms} ms.",
   "remote.waiting.mcpDown": "Sem responder: {failures} verificações seguidas.",
   "remote.waiting.confirmRestart": "Reiniciar o MCP do devpit? A janela, as conversas e os terminais continuam.",
-  "remote.waiting.restart": "Reiniciar o MCP"
+  "remote.waiting.restart": "Reiniciar o MCP",
+  "remote.mic.refused": "o microfone não foi permitido",
+  "remote.mic.dictate": "Ditar",
+  "remote.mic.stopDictating": "Parar de ditar",
+  "remote.mic.byMachine": "Ouvido pelo motor de voz da máquina",
+  "remote.mic.byPhone": "Ouvido por este celular",
+  "remote.mic.stop": "Parar",
+  "remote.mic.mic": "Mic"
 }

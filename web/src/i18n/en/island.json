@@ -71,5 +71,26 @@
   "island.verb.Plan": "Plan",
   "island.verb.UseSkill": "Use skill",
   "island.verb.Ask": "Ask",
-  "island.verb.ProposePlan": "Propose a plan"
+  "island.verb.ProposePlan": "Propose a plan",
+  "island.drop.noTarget": "Drop the file on a session",
+  "island.drop.inPrompt": "In its prompt — finish the message there",
+  "island.overview.none": "No agent is running",
+  "island.overview.sessions": {
+    "one": "{count} session",
+    "other": "{count} sessions"
+  },
+  "island.overview.projects": {
+    "one": "{count} project",
+    "other": "{count} projects"
+  },
+  "island.overview.across": "{sessions} in {projects}",
+  "island.overview.more": "{count} more",
+  "island.asking.title": "{who} asks to",
+  "island.asking.anAgent": "An agent",
+  "island.asking.fromTerminal": "From its terminal · waiting on your answer",
+  "island.asking.fromChat": "From a chat · waiting on your answer",
+  "island.preview.nothingYet": "Nothing yet",
+  "island.preview.nothingForStep": "Nothing to show for this step",
+  "island.preview.stepsShowHere": "Steps show here as they run",
+  "island.preview.notShown": "Not shown"
 }

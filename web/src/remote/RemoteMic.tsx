@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 
+import { t } from '../i18n'
 import { VOICE_SECONDS } from './talk'
 
 /*
@@ -93,7 +94,7 @@ export function RemoteMic({
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true })
     } catch {
-      return onRefused('the microphone was not allowed')
+      return onRefused(t('remote.mic.refused'))
     }
     const type = recordedAs()
     const recorder = new MediaRecorder(stream, type ? { mimeType: type } : undefined)
@@ -120,11 +121,11 @@ export function RemoteMic({
     <button
       className="rm__btn rm__mic"
       data-on={on || undefined}
-      aria-label={on ? 'Stop dictating' : 'Dictate'}
-      title={by === 'machine' ? 'Heard by the machine’s voice engine' : 'Heard by this phone'}
+      aria-label={on ? t('remote.mic.stopDictating') : t('remote.mic.dictate')}
+      title={by === 'machine' ? t('remote.mic.byMachine') : t('remote.mic.byPhone')}
       onClick={() => (on ? stop.current() : by === 'machine' ? void record() : listen())}
     >
-      {on ? 'Stop' : 'Mic'}
+      {on ? t('remote.mic.stop') : t('remote.mic.mic')}
     </button>
   )
 }
