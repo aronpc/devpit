@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import type { Credentials, ProfileSignIn, ProviderFound, ProvidersFound } from '../gen/bindings'
+import { t } from '../i18n'
+import { useLocale } from '../i18n/LocaleRoot'
 import { AgentGlyph } from './AgentGlyph'
 import { useCheckEvery } from './checkEvery'
 import { ask, commands } from './live'
@@ -13,17 +15,13 @@ import { useShell } from './useShell'
  * into a terminal; devpit never handles the credentials.
  */
 
-const SAID: Record<Credentials, string> = {
-  saved: 'Signed in',
-  missing: 'Signed out',
-  expired: 'Sign-in expired',
-  unknown: 'Sign-in not readable',
-}
+const said = (state: Credentials): string => t(`scan.state.${state}`)
 
 /** Whether a sign-in is worth offering: anything but one known to hold. */
 const needsSignIn = (state: Credentials): boolean => state !== 'saved'
 
 export function ProviderScan(): React.JSX.Element {
+  useLocale()
   const { project, show, closePrefs } = useShell()
   const every = useCheckEvery()
   const [found, setFound] = useState<ProvidersFound | null>(null)
@@ -52,8 +50,8 @@ export function ProviderScan(): React.JSX.Element {
 
   /* The login runs in a terminal of the open project, where the person finishes it. */
   const signIn = (id: string, label: string): void => {
-    if (!project) return setError('Open a project first: the sign-in runs in one of its terminals.')
-    show('term', { title: `Sign in · ${label}`, login: id })
+    if (!project) return setError(t('scan.openFirst'))
+    show('term', { title: t('scan.signInTitle', { label }), login: id })
     closePrefs()
   }
 
@@ -63,16 +61,15 @@ export function ProviderScan(): React.JSX.Element {
       <div className="card2__top">
         <div style={{ flex: '1', minWidth: '0' }}>
           <div className="card2__t">
-            Providers{' '}
-            <span className="git__count">{providers.filter((one) => one.path).length} installed</span>
+            {t('scan.providers')}{' '}
+            <span className="git__count">{t('scan.installed', { count: providers.filter((one) => one.path).length })}</span>
           </div>
           <div className="card2__d">
-            The CLIs devpit holds a chat with, found on your PATH and in the usual install folders.
-            Each one signs in with its own login, in a terminal.
+            {t('scan.said')}
           </div>
         </div>
         <button className="card2__go" disabled={scanning} onClick={again}>
-          {scanning ? 'Scanning…' : 'Scan again'}
+          {scanning ? t('scan.scanning') : t('scan.again')}
         </button>
       </div>
       {error && <p className="acc__note">{error}</p>}
@@ -97,6 +94,7 @@ function ProviderLine({
   profiles: readonly ProfileSignIn[]
   onSignIn: (id: string, label: string) => void
 }): React.JSX.Element {
+  useLocale()
   const [copied, setCopied] = useState(false)
   const installed = one.path !== null
   const copy = (): void => {
@@ -115,8 +113,8 @@ function ProviderLine({
         <span className="prov__body">
           <span className="prov__top">
             <span className="prov__n">{one.label}</span>
-            <span className="prov__v">{installed ? (one.version ?? 'version unknown') : 'not installed'}</span>
-            <span className="pscan__tag">{one.chat ? 'Chat' : 'Terminal only'}</span>
+            <span className="prov__v">{installed ? (one.version ?? t('scan.versionUnknown')) : t('scan.notInstalled')}</span>
+            <span className="pscan__tag">{one.chat ? t('scan.chat') : t('scan.terminalOnly')}</span>
           </span>
           <span className="prov__sub">
             {installed ? (needsSignIn(one.signedIn) ? one.login : one.path) : one.install}
@@ -124,14 +122,14 @@ function ProviderLine({
         </span>
         {installed ? (
           <>
-            <span className="pscan__state" data-state={one.signedIn}>{SAID[one.signedIn]}</span>
+            <span className="pscan__state" data-state={one.signedIn}>{said(one.signedIn)}</span>
             {needsSignIn(one.signedIn) && (
-              <button className="acc__act" onClick={() => onSignIn(one.id, one.label)}>Sign in</button>
+              <button className="acc__act" onClick={() => onSignIn(one.id, one.label)}>{t('scan.signIn')}</button>
             )}
           </>
         ) : (
-          <button className="acc__act" onClick={copy} aria-label={`Copy how to install ${one.label}`}>
-            {copied ? 'Copied' : 'Copy'}
+          <button className="acc__act" onClick={copy} aria-label={t('scan.copyInstall', { label: one.label })}>
+            {copied ? t('scan.copied') : t('scan.copy')}
           </button>
         )}
       </div>
@@ -139,9 +137,9 @@ function ProviderLine({
         profiles.map((profile) => (
           <div className="pscan__prof" key={profile.id}>
             <span className="prov__n">{profile.label}</span>
-            <span className="pscan__state" data-state={profile.signedIn}>{SAID[profile.signedIn]}</span>
+            <span className="pscan__state" data-state={profile.signedIn}>{said(profile.signedIn)}</span>
             {needsSignIn(profile.signedIn) && (
-              <button className="acc__act" onClick={() => onSignIn(profile.id, profile.label)}>Sign in</button>
+              <button className="acc__act" onClick={() => onSignIn(profile.id, profile.label)}>{t('scan.signIn')}</button>
             )}
           </div>
         ))}

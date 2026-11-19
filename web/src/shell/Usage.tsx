@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import type { PlanLimits, Spend, SpendHistory, SpendRow } from '../gen/bindings'
+import { t } from '../i18n'
+import { formatNumber } from '../i18n/format'
+import { useLocale } from '../i18n/LocaleRoot'
 import { ask, commands } from './live'
 import { ago, allTokens, dollars, heights, n, resetIn, tokens, valueOf, type Metric } from './usageFormat'
 import { useShell } from './useShell'
@@ -18,15 +21,16 @@ import { useShell } from './useShell'
 const RANGES = [7, 30, 90] as const
 
 function Table({ rows, what }: { rows: readonly SpendRow[]; what: string }): React.JSX.Element | null {
+  useLocale()
   if (rows.length === 0) return null
   return (
     <section className="use__block">
-      <span className="use__label">By {what}</span>
+      <span className="use__label">{t('usage.by', { what })}</span>
       <div className="mrow mrow--h">
         <span className="mrow__n">{what}</span>
-        <span>tokens</span>
-        <span>sessions</span>
-        <span>cost</span>
+        <span>{t('usage.colTokens')}</span>
+        <span>{t('usage.colSessions')}</span>
+        <span>{t('usage.colCost')}</span>
       </div>
       {rows.slice(0, 8).map((row) => (
         <div className="mrow" key={row.name}>
@@ -43,6 +47,7 @@ function Table({ rows, what }: { rows: readonly SpendRow[]; what: string }): Rea
 }
 
 export function Usage(): React.JSX.Element {
+  useLocale()
   const { project, show, openCard } = useShell()
   const [days, setDays] = useState<number>(30)
   const [installation, setInstallation] = useState<string | null>(null)
@@ -85,34 +90,34 @@ export function Usage(): React.JSX.Element {
 
   return (
     <>
-      <h1 className="prefs__h">Usage</h1>
+      <h1 className="prefs__h">{t('usage.title')}</h1>
 
       <div className="use__top">
-        <div className="seg2" role="tablist" aria-label="Range">
+        <div className="seg2" role="tablist" aria-label={t('usage.range')}>
           {RANGES.map((range) => (
             <button key={range} role="tab" aria-selected={days === range} onClick={() => setDays(range)}>
-              {range}d
+              {t('usage.rangeDays', { days: range })}
             </button>
           ))}
         </div>
         <select
           className="use__pick"
-          aria-label="Installation"
+          aria-label={t('usage.installation')}
           value={installation ?? ''}
           onChange={(event) => setInstallation(event.target.value || null)}
         >
-          <option value="">All installations</option>
+          <option value="">{t('usage.allInstallations')}</option>
           {history?.installations.map((one) => (
             <option key={one.directory} value={one.directory}>
               {one.label}
-              {one.billed ? '' : ' (not billed by Anthropic)'}
+              {one.billed ? '' : t('usage.notBilled')}
             </option>
           ))}
         </select>
         {project && (
-          <div className="seg2" role="tablist" aria-label="Scope">
+          <div className="seg2" role="tablist" aria-label={t('usage.scope')}>
             <button role="tab" aria-selected={!onlyProject} onClick={() => setOnlyProject(false)}>
-              All projects
+              {t('usage.allProjects')}
             </button>
             <button role="tab" aria-selected={onlyProject} onClick={() => setOnlyProject(true)}>
               {project.name}
@@ -120,15 +125,15 @@ export function Usage(): React.JSX.Element {
           </div>
         )}
         <button className="btn" disabled={reading} onClick={read}>
-          {reading ? 'Reading…' : 'Rescan'}
+          {reading ? t('usage.reading') : t('usage.rescan')}
         </button>
       </div>
 
       {error && <p className="acc__note">{error}</p>}
 
       {limits && (
-        <section className="use__block" aria-label="Plan limits">
-          <span className="use__label">Plan{limits.plan ? ` · ${limits.plan}` : ''}</span>
+        <section className="use__block" aria-label={t('usage.planLimits')}>
+          <span className="use__label">{t('usage.plan')}{limits.plan ? ` · ${limits.plan}` : ''}</span>
           {limits.problem && <p className="use__note">{limits.problem}</p>}
           <div className="use__limits">
           {limits.windows.map((window) => (
@@ -150,51 +155,51 @@ export function Usage(): React.JSX.Element {
       {history && (
         <>
           <section className="use__block">
-          <span className="use__label">Last {history.days} days</span>
+          <span className="use__label">{t('usage.lastDays', { days: history.days })}</span>
           <div className="tiles">
             <div className="tile2">
-              <div className="tile2__l">Est. cost</div>
+              <div className="tile2__l">{t('usage.estCost')}</div>
               <div className="tile2__v">{dollars(history.costUsd)}</div>
-              <div className="tile2__s">{history.estimated ? 'partly list price, not billed' : 'at list price'}</div>
+              <div className="tile2__s">{history.estimated ? t('usage.partlyList') : t('usage.atList')}</div>
             </div>
             <div className="tile2">
-              <div className="tile2__l">Tokens</div>
+              <div className="tile2__l">{t('usage.tokens')}</div>
               <div className="tile2__v">
                 {tokens(allTokens(history.tokens))}
               </div>
-              <div className="tile2__s">{tokens(history.tokens.output)} written</div>
+              <div className="tile2__s">{t('usage.written', { tokens: tokens(history.tokens.output) })}</div>
             </div>
             <div className="tile2">
-              <div className="tile2__l">Sessions</div>
+              <div className="tile2__l">{t('usage.sessions')}</div>
               <div className="tile2__v">{history.sessions}</div>
-              <div className="tile2__s">{history.turns} turns</div>
+              <div className="tile2__s">{t('usage.turnsCount', { count: history.turns })}</div>
             </div>
             <div className="tile2">
-              <div className="tile2__l">Active days</div>
+              <div className="tile2__l">{t('usage.activeDays')}</div>
               <div className="tile2__v">{history.activeDays}</div>
-              <div className="tile2__s">of {history.days}</div>
+              <div className="tile2__s">{t('usage.ofDays', { days: history.days })}</div>
             </div>
             <div className="tile2">
-              <div className="tile2__l">Cache reuse</div>
+              <div className="tile2__l">{t('usage.cacheReuse')}</div>
               <div className="tile2__v">{Math.round(n(history.cacheReuse) * 100)}%</div>
-              <div className="tile2__s">of input from cache</div>
+              <div className="tile2__s">{t('usage.fromCache')}</div>
             </div>
           </div>
           </section>
 
           <section className="use__block">
             <div className="use__hrow">
-              <span className="use__label">By day</span>
-              <div className="seg2" role="tablist" aria-label="Chart shows">
+              <span className="use__label">{t('usage.byDay')}</span>
+              <div className="seg2" role="tablist" aria-label={t('usage.chartShows')}>
                 <button role="tab" aria-selected={metric === 'cost'} onClick={() => setMetric('cost')}>
-                  Cost
+                  {t('usage.cost')}
                 </button>
                 <button role="tab" aria-selected={metric === 'tokens'} onClick={() => setMetric('tokens')}>
-                  Tokens
+                  {t('usage.tokens')}
                 </button>
               </div>
             </div>
-            <svg className="use__chart" viewBox={`0 0 ${history.daily.length * 10} 100`} preserveAspectRatio="none" role="img" aria-label={`${metric} by day`}>
+            <svg className="use__chart" viewBox={`0 0 ${history.daily.length * 10} 100`} preserveAspectRatio="none" role="img" aria-label={t(metric === 'cost' ? 'usage.chartCost' : 'usage.chartTokens')}>
               {history.daily.map((one, at) => {
                 const height = (tall[at] ?? 0) * 96
                 const value = valueOf(one, metric)
@@ -215,13 +220,13 @@ export function Usage(): React.JSX.Element {
           </section>
 
           <div className="use__cols">
-            <Table rows={history.models} what="model" />
-            <Table rows={history.projects} what="project" />
+            <Table rows={history.models} what={t('usage.model')} />
+            <Table rows={history.projects} what={t('usage.project')} />
           </div>
 
           {history.recent.length > 0 && (
             <section className="use__block">
-              <span className="use__label">Recent sessions</span>
+              <span className="use__label">{t('usage.recent')}</span>
               {history.recent.map((session) => (
                 <div className="srow" key={session.sessionId}>
                   <span className="srow__when">{ago(session.lastActive, now)}</span>
@@ -242,7 +247,7 @@ export function Usage(): React.JSX.Element {
                   ) : (
                     <span />
                   )}
-                  <span className="srow__n">{session.turns} turns</span>
+                  <span className="srow__n">{t('usage.turnsCount', { count: session.turns })}</span>
                   <span className="srow__n">{dollars(session.costUsd)}</span>
                 </div>
               ))}
@@ -251,7 +256,7 @@ export function Usage(): React.JSX.Element {
 
           {cards && cards.cards.length > 0 && (
             <section className="use__block">
-              <span className="use__label">This project&rsquo;s cards, by what their runs cost</span>
+              <span className="use__label">{t('usage.cards')}</span>
               {cards.cards.map(([title, usd]) => (
                 <div className="mrow" key={title}>
                   <span className="mrow__n">
@@ -266,8 +271,8 @@ export function Usage(): React.JSX.Element {
           )}
 
           <p className="use__scan">
-            {history.files} transcripts · {history.records} messages · {Math.round(n(history.scanMs))} ms · days in UTC
-            {n(history.unpricedTokens) > 0 ? ` · ${tokens(history.unpricedTokens)} tokens from models with no price` : ''}
+            {t('usage.scan', { files: formatNumber(history.files), records: formatNumber(history.records), ms: formatNumber(Math.round(n(history.scanMs))) })}
+            {n(history.unpricedTokens) > 0 ? t('usage.unpriced', { tokens: tokens(history.unpricedTokens) }) : ''}
           </p>
         </>
       )}

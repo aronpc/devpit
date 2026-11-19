@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 
 import type { ProfileModels as Kept } from '../gen/bindings'
+import { t } from '../i18n'
+import { useLocale } from '../i18n/LocaleRoot'
 import { ask, commands } from './live'
 import { PrefRow } from './PrefRow'
 import { type Draft, SUBAGENT_VAR, withSubagent } from './profiles'
@@ -13,6 +15,7 @@ import { type Draft, SUBAGENT_VAR, withSubagent } from './profiles'
  */
 
 export function ProfileModels({ profileId, claude = true, draft, onDraft }: { profileId: string; claude?: boolean; draft?: Draft | null; onDraft?: (draft: Draft) => void }): React.JSX.Element {
+  useLocale()
   const [kept, setKept] = useState<Kept | null>(null)
   const [offered, setOffered] = useState<readonly string[]>([])
   const [error, setError] = useState<string | null>(null)
@@ -52,24 +55,24 @@ export function ProfileModels({ profileId, claude = true, draft, onDraft }: { pr
   )
   return (
     <>
-      <PrefRow title="Models" said="A model switched off leaves the model picker. Add your own in the profile's models field.">
+      <PrefRow title={t('models.title')} said={t('models.said')}>
         <span className="pmodels">
           {all.map((model) => (
             <label key={model} className="pmodels__one">
-              <input type="checkbox" checked={!off.includes(model)} disabled={!kept} onChange={() => flip(model)} aria-label={`Offer ${model}`} />
+              <input type="checkbox" checked={!off.includes(model)} disabled={!kept} onChange={() => flip(model)} aria-label={t('models.offer', { model })} />
               {model}
             </label>
           ))}
         </span>
       </PrefRow>
-      {defaultField('model', 'Default model', 'as the CLI', "What this profile's chats run when none is picked. Empty leaves it to the CLI.")}
-      {defaultField('effort', 'Default effort', 'as the CLI', 'The effort its chats start with, where the CLI has one. Empty keeps the CLI\'s own.')}
-      {claude && <PrefRow title="Advisor model" said="Written as advisorModel into the settings devpit starts this profile's sessions with, never into the profile's own settings. Empty is none.">
+      {defaultField('model', t('models.defaultModel'), t('models.asCli'), t('models.defaultModelSaid'))}
+      {defaultField('effort', t('models.defaultEffort'), t('models.asCli'), t('models.defaultEffortSaid'))}
+      {claude && <PrefRow title={t('models.advisor')} said={t('models.advisorSaid')}>
         <input
           key={kept?.advisorModel ?? ''}
           className="voice__in"
-          aria-label="Advisor model"
-          placeholder="none"
+          aria-label={t('models.advisor')}
+          placeholder={t('models.none')}
           defaultValue={kept?.advisorModel ?? ''}
           disabled={!kept}
           onBlur={(event) => {
@@ -79,8 +82,8 @@ export function ProfileModels({ profileId, claude = true, draft, onDraft }: { pr
         />
       </PrefRow>}
       {claude && draft && onDraft && (
-        <PrefRow title="Subagent model" said={`${SUBAGENT_VAR} for this profile's sessions. Saved with the profile.`}>
-          <input className="voice__in" aria-label="Subagent model" placeholder="as the session" value={subagent} onChange={(event) => onDraft(withSubagent(draft, event.target.value))} />
+        <PrefRow title={t('models.subagent')} said={t('models.subagentSaid', { variable: SUBAGENT_VAR })}>
+          <input className="voice__in" aria-label={t('models.subagent')} placeholder={t('models.asSession')} value={subagent} onChange={(event) => onDraft(withSubagent(draft, event.target.value))} />
         </PrefRow>
       )}
       {error && <p className="pref__d">{error}</p>}
