@@ -195,6 +195,7 @@ pub(crate) fn running_named(profile: &str, name: &str) -> Option<crate::live_ses
         status: row.status,
         cwd: one.cwd,
         session_id: None,
+        started: None,
     })
 }
 

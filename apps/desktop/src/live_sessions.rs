@@ -426,6 +426,14 @@ pub(crate) struct Running {
     pub status: String,
     pub cwd: String,
     pub session_id: Option<String>,
+    /// When its process started, as the listing says: what tells it from a
+    /// later process given the same pid.
+    pub started: Option<String>,
+}
+
+/// Whether `pid` is still the process that started at `started`.
+pub(crate) fn still_running(pid: i32, started: Option<&str>) -> bool {
+    alive(pid) && same_start(pid, started)
 }
 
 /// Every live session of this account called `name`. More than one is
@@ -451,6 +459,7 @@ pub(crate) fn running_named(profile_id: &str, name: &str) -> Result<Vec<Running>
             status: listed.status.unwrap_or_default(),
             cwd: listed.cwd.unwrap_or_default(),
             session_id: listed.session_id,
+            started: listed.proc_start,
         })
         .collect();
     if found.is_empty() {

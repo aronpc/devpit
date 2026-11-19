@@ -6,6 +6,8 @@
 //! Never on the orchestrator's own initiative: the tool says so, and the
 //! brief. Work in flight is lost, and that is the person's call.
 
+use std::time::Duration;
+
 use devpit_rpc::{ErrorCode, RpcError};
 use serde_json::{json, Value};
 use tauri::{AppHandle, Emitter, Manager};
@@ -215,23 +217,18 @@ fn end(
         }
     }
     let mut terminal = Value::Null;
+    let mut directly = 0;
     for one in found {
         match (&one.pane, &one.job) {
             (Some(pane), _) => {
                 let tab_id = close_pane(app, &pane.project_id, &pane.pane_id)?;
                 terminal = json!({ "projectId": pane.project_id, "tabId": tab_id });
+                directly += usize::from(outlived(name, one, GRACE)?);
             }
             (None, Some(job)) => stop_job(profile_id, job)
                 .map_err(|why| RpcError::new(ErrorCode::Conflict, format!("{name}: {why}")))?,
-            (None, None) => {
-                // Outside devpit's terminals and not a job: only the process.
-                if !devpit_pty::process::terminate(one.pid) {
-                    return Err(RpcError::new(
-                        ErrorCode::Conflict,
-                        format!("{name} could not be stopped"),
-                    ));
-                }
-            }
+            // Outside devpit's terminals and not a job: only the process.
+            (None, None) => ended_directly(name, one, GRACE)?,
         }
     }
     crate::stop_asked::forget(profile_id, name);
@@ -240,7 +237,66 @@ fn end(
         (1, false) => format!("{name} was stopped, and its terminal closed"),
         (many, _) => format!("{many} sessions called {name} were stopped"),
     };
+    let said = match (directly, found.len()) {
+        (0, _) => said,
+        (_, 1) => format!(
+            "{said}; it was not running in that terminal, so its process was ended directly"
+        ),
+        (many, _) => format!(
+            "{said}; {many} were not running in their terminals, so their processes were ended directly"
+        ),
+    };
     Ok(json!({ "stopped": said, "terminal": terminal }))
+}
+
+/// How long a process is given to end: once its terminal closed, and again
+/// once it was asked to.
+const GRACE: Duration = Duration::from_secs(3);
+
+/// Whether `one`, whose terminal was just closed, outlived it — that was not
+/// the terminal it ran in — and so was ended directly. Never stopped in word
+/// only: one that will not end is an error.
+pub(crate) fn outlived(
+    name: &str,
+    one: &crate::live_sessions::Running,
+    grace: Duration,
+) -> Result<bool, RpcError> {
+    if gone_within(one, grace) {
+        return Ok(false);
+    }
+    ended_directly(name, one, grace).map(|()| true)
+}
+
+/// Ends `one`'s process itself, and waits to see it gone.
+fn ended_directly(
+    name: &str,
+    one: &crate::live_sessions::Running,
+    grace: Duration,
+) -> Result<(), RpcError> {
+    if devpit_pty::process::terminate(one.pid) && gone_within(one, grace) {
+        return Ok(());
+    }
+    Err(RpcError::new(
+        ErrorCode::Conflict,
+        format!(
+            "{name} could not be stopped: its process {} still runs",
+            one.pid
+        ),
+    ))
+}
+
+/// Whether `one`'s process is gone, or its pid another process's, within `wait`.
+fn gone_within(one: &crate::live_sessions::Running, wait: Duration) -> bool {
+    let until = std::time::Instant::now() + wait;
+    loop {
+        if !crate::live_sessions::still_running(one.pid, one.started.as_deref()) {
+            return true;
+        }
+        if std::time::Instant::now() >= until {
+            return false;
+        }
+        std::thread::sleep(Duration::from_millis(50));
+    }
 }
 
 /// A background job, stopped by its own CLI under the account that runs it.
@@ -249,3 +305,7 @@ fn stop_job(profile_id: &str, job: &str) -> Result<(), String> {
     let runner = crate::agent_profiles::runner_for(&store, profile_id)?;
     devpit_agentcli::stop_background(Some(&runner), job).map_err(|err| err.to_string())
 }
+
+#[cfg(test)]
+#[path = "stopping_tests.rs"]
+mod tests;
