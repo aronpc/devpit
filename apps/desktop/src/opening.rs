@@ -11,7 +11,7 @@ use tauri::{AppHandle, Emitter, Manager};
 pub(crate) const TAB_OPENED: &str = "session:tab-opened";
 
 /// The longest brief typed: a brief, not a document.
-const LONGEST: usize = 8000;
+pub(crate) const LONGEST: usize = 8000;
 
 /// What the one starting a session asked of it beyond its brief.
 #[derive(Debug, Clone, Copy, Default)]
@@ -195,17 +195,7 @@ pub(crate) fn launched(
 ) -> Result<String, RpcError> {
     typeable(name)?;
     typeable(prompt)?;
-    let model = match model.map(str::trim).filter(|one| !one.is_empty()) {
-        Some(one)
-            if one
-                .chars()
-                .any(|ch| ch.is_whitespace() || ch.is_control() || ch == ';') =>
-        {
-            return Err(RpcError::new(
-                ErrorCode::Invalid,
-                "a model is one word, such as opus or claude-opus-5-5",
-            ))
-        }
+    let model = match model_of(model)? {
         Some(one) => format!(" --model {}", devpit_agentcli::declaring::quoted(one)),
         None => String::new(),
     };
@@ -232,6 +222,23 @@ pub(crate) fn launched(
         "{}{rest}",
         crate::shell_launch::to_start_in(profile_id, Some(project_id))?
     ))
+}
+
+/// The model asked for, as one word, or none: what a start takes for `--model`.
+pub(crate) fn model_of(model: Option<&str>) -> Result<Option<&str>, RpcError> {
+    match model.map(str::trim).filter(|one| !one.is_empty()) {
+        Some(one)
+            if one
+                .chars()
+                .any(|ch| ch.is_whitespace() || ch.is_control() || ch == ';') =>
+        {
+            Err(RpcError::new(
+                ErrorCode::Invalid,
+                "a model is one word, such as opus or claude-opus-5-5",
+            ))
+        }
+        one => Ok(one),
+    }
 }
 
 /// The CLI a profile runs, by the id it is known by.

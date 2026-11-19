@@ -142,19 +142,8 @@ pub(crate) fn attach_argv_after(
 
 /// The host and the project's folder there, for a host target of `project_id`.
 fn reached(store: &Store, project_id: &str, host_id: &str) -> Result<(HostRow, String), RpcError> {
-    let host = crate::hosts::host_by_id(store, host_id)?;
-    let path = store
-        .host_links(project_id)?
-        .into_iter()
-        .find(|one| one.host_id == host_id)
-        .map(|one| one.path)
-        .ok_or_else(|| {
-            RpcError::new(
-                ErrorCode::NotFound,
-                format!("this project is no longer linked to {}", host.name),
-            )
-        })?;
-    Ok((host, path))
+    crate::host_sessions::linked_host(store, project_id, host_id)
+        .map_err(|why| RpcError::new(ErrorCode::NotFound, why))
 }
 
 /// [`attach_argv_after`] for a leaf of `project_id` on a host.

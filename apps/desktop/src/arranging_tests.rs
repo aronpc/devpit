@@ -116,3 +116,33 @@ fn only_a_tabs_tmux_leaves_are_handed_to_tmux() {
     assert_eq!(asked, ["leaf_t"]);
     assert_eq!(store.pane_layout(&project, "tab_1").expect("read"), None);
 }
+
+/// A host's leaf is ended on its host, never handed to this machine's tmux:
+/// closing its tab asks tmux here of the local leaves alone.
+#[cfg(unix)]
+#[test]
+fn a_host_s_leaf_is_never_handed_to_tmux_here() {
+    let home = tempfile::tempdir().expect("home");
+    let store = Store::open(&home.path().join("state.db")).expect("store");
+    let project = store.add_project(home.path(), None).expect("project");
+    let layout = tab_of(
+        &project,
+        &[
+            ("leaf_t", "devpit_p:leaf_t".to_owned()),
+            (
+                "leaf_h",
+                crate::host_panes::target("host_gone", "devpit_p__leaf_h"),
+            ),
+        ],
+    );
+    persist(&store, "tab_1", &layout).expect("persist");
+    let mut asked = Vec::new();
+
+    let closed = end_tab_at(&store, Some(home.path()), &layout, "tab_1", |leaves| {
+        asked = leaves.iter().map(|leaf| leaf.to_string()).collect();
+    })
+    .expect("closed");
+
+    assert_eq!(asked, ["leaf_t"]);
+    assert_eq!(closed.len(), 2, "both leaves are closed");
+}

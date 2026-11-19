@@ -1,4 +1,4 @@
-use super::{adopted, keeps, rows_in, Kept, Looked};
+use super::{adopted, agent_in_front, keeps, rows_in, Kept, Looked};
 use crate::card_activity::Doing;
 
 /// Codex's screen at its prompt, and in a turn, as 0.160 draws them.
@@ -118,5 +118,26 @@ fn a_session_running_before_a_switch_is_still_listed_after_it() {
     assert_eq!(
         rows[0].pane.as_ref().map(|pane| pane.pane_id.as_str()),
         Some("leaf_api")
+    );
+}
+
+/// A host that does not answer has not ended its session: it stays listed,
+/// while a pane on this machine that cannot say has.
+#[test]
+fn a_host_that_does_not_answer_keeps_its_session_listed() {
+    let busy = || {
+        Err(devpit_rpc::RpcError::new(
+            devpit_rpc::ErrorCode::Busy,
+            "no answer",
+        ))
+    };
+    let on_host = crate::host_panes::target("host_1", "devpit_s");
+
+    assert_eq!(agent_in_front(&on_host, busy()), Some(true));
+    assert_eq!(agent_in_front("devpit_p:leaf_1", busy()), None);
+    assert_eq!(
+        agent_in_front(&on_host, Ok(true)),
+        Some(false),
+        "the shell is back in front"
     );
 }

@@ -398,6 +398,13 @@ pub(crate) fn to_session(from: &str, text: &str) -> String {
     )
 }
 
+/// [`to_session`] for a session on a host, where no devpit tool reaches: it
+/// answers in its terminal, which the orchestrator reads.
+pub(crate) fn to_host_session(from: &str, text: &str) -> String {
+    let text = words(text).split_whitespace().collect::<Vec<_>>().join(" ");
+    format!("[devpit, not the person] A message from {from}, through devpit. Answer it here, in this terminal, where {from} reads it: {text}")
+}
+
 /// What an orchestrator reads of a session's message, as devpit's own turn.
 pub(crate) fn to_orchestrator(from: &Sender, text: &str) -> String {
     let card = from
@@ -660,9 +667,17 @@ pub(crate) fn message(
         if let Inbox::Pane { leaf, .. } = &inbox {
             bus().wrote(leaf, &here.id);
         }
+        let on_host = match &inbox {
+            Inbox::Pane { project, leaf } => crate::pane_io::target_of(project, leaf)
+                .is_ok_and(|target| crate::host_panes::is_host(&target)),
+            Inbox::Chat { .. } => false,
+        };
         bus().post(Letter {
             to: inbox.clone(),
-            text: to_session(&from, text),
+            text: match on_host {
+                true => to_host_session(&from, text),
+                false => to_session(&from, text),
+            },
             held: Some(Held {
                 orchestrator: here.id.clone(),
                 name: name.clone(),
@@ -671,7 +686,9 @@ pub(crate) fn message(
         });
         go();
         let typed = !bus().waiting().contains(&inbox);
-        let note = if typed {
+        let note = if on_host {
+            "Typed into its terminal on the host. It cannot answer through devpit: read its answer with devpit_session_screen."
+        } else if typed {
             "Typed at its prompt. Its answer reaches this chat as a turn of devpit's, not the person's."
         } else {
             "It waits in devpit and is typed at the session's next idle prompt, never mid-turn."

@@ -73,15 +73,25 @@ fn the_launch_line_is_the_cli_by_name_with_every_word_quoted() {
     let line =
         launch_line("claude", "fix-it", "don't touch \\ the db", Some("opus")).expect("a line");
 
+    // A leading space keeps the line, and the brief in it, out of the
+    // host's shell history.
     assert!(
-        line.starts_with("claude --name fix-it --model opus "),
+        line.starts_with(" claude --name fix-it --model opus "),
         "{line}"
     );
     assert!(
         !line.contains("\\'"),
         "a quote fish would read as escaped: {line}"
     );
-    assert!(launch_line("claude", "bad\nname", "x", None).is_err());
+    assert!(launch_line("claude", "bad\u{7}name", "x", None).is_err());
+    assert!(
+        launch_line("claude", "fix-it", "x", Some("opus; rm -rf ~")).is_err(),
+        "a model is one word"
+    );
+    assert!(
+        launch_line("claude", "fix-it", "  ", None).is_err(),
+        "an empty brief"
+    );
 }
 
 /// Typed at a shell on the host, the line runs the CLI with the brief whole.
@@ -110,7 +120,7 @@ fn the_launch_line_runs_the_cli_on_the_host_with_the_brief_whole() {
     };
     let session = crate::host_panes::session_of("prj_1", "leaf_1");
     crate::host_panes::started(&reach, &host("staging"), "~/site", &session).expect("started");
-    let brief = "Fix it: don't `rm` $HOME; a\\b";
+    let brief = "Fix it: don't `rm` $HOME; a\\b\n\nThen say so.";
 
     reach
         .server(&host("staging"))
@@ -203,4 +213,96 @@ fn a_project_lists_its_hosts_with_their_environments() {
             json!({ "host": "web prod", "environment": "production", "path": "/srv/site" }),
         ]
     );
+}
+
+/// A brief longer than a start takes is refused before anything opens.
+#[test]
+fn a_brief_too_long_to_start_is_refused() {
+    let refused = launch_line("claude", "fix-it", &"x".repeat(9_000), None).expect_err("took it");
+
+    assert_eq!(refused.code, ErrorCode::Invalid);
+}
+
+/// A start on production is written in the orchestrator's sessions log:
+/// which host, which session, and that the person's yes was passed on.
+#[test]
+fn a_start_on_production_is_written_down() {
+    let folder = tempfile::tempdir().expect("folder");
+
+    noted_on_production(folder.path(), &host("production"), "fix-it");
+
+    let log = std::fs::read_to_string(
+        crate::orchestrator_notes::log_file(folder.path(), "sessions").expect("a log"),
+    )
+    .expect("written");
+    assert!(
+        log.contains("web prod") && log.contains("fix-it") && log.contains("confirm_production"),
+        "{log}"
+    );
+}
+
+/// The start, planned before anything opens: production waits for the yes
+/// and, given it, briefs its rules; staging needs neither.
+#[test]
+fn a_start_on_a_host_is_planned_with_the_production_gate_and_brief() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let (store, project_id) = linked(&dir);
+    let project = devpit_rpc::Project {
+        id: project_id,
+        name: "site".to_owned(),
+        root_path: dir.path().display().to_string(),
+        group: None,
+        accent: "#888888".to_owned(),
+        worktrees: Vec::new(),
+        unreadable: None,
+        orchestrator: None,
+        origin: None,
+        last_opened_at: None,
+        icon: None,
+        color: None,
+    };
+    let asked = |host, confirmed| Asked {
+        host,
+        prompt: "Fix the total.",
+        name: Some("fix-it"),
+        model: None,
+        card: None,
+        confirmed,
+    };
+    let plan = |host, confirmed| {
+        planned(
+            &store,
+            dir.path(),
+            &project,
+            "claude",
+            "claude",
+            &asked(host, confirmed),
+        )
+    };
+
+    let refused = plan("web prod", false).expect_err("refused");
+    assert!(refused.contains("confirm_production"), "{refused}");
+    let on_prod = plan("web prod", true).expect("planned");
+    assert!(
+        on_prod.line.contains("This session runs on production"),
+        "{}",
+        on_prod.line
+    );
+    assert_eq!(on_prod.path, "/srv/site");
+    let on_staging = plan("staging", false).expect("planned");
+    assert!(
+        !on_staging.line.contains("production"),
+        "{}",
+        on_staging.line
+    );
+}
+
+/// A project on no host is listed as before: no hosts to add.
+#[test]
+fn a_project_on_no_host_lists_none() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let store = Store::open(&dir.path().join("state.db")).expect("open");
+    let project = store.add_project(dir.path(), None).expect("project");
+
+    assert!(hosts_of(&store, &project).is_empty());
 }

@@ -605,7 +605,11 @@ fn respond_in(
     if asked.method == "repo" {
         return repo(project, &card_id, &asked.params);
     }
-    if asked.method == "start" && asked.params.get("anyway").and_then(Value::as_bool) != Some(true)
+    // A host's own login runs its sessions: this machine's sign-ins are not asked.
+    let on_host = text("host").is_some_and(|host| !host.trim().is_empty());
+    if asked.method == "start"
+        && !on_host
+        && asked.params.get("anyway").and_then(Value::as_bool) != Some(true)
     {
         let missing = crate::sign_ins::before_start(
             orchestrating(here).ok(),
@@ -769,7 +773,11 @@ fn respond_in(
                 text("host").unwrap_or_default(),
                 text("prompt").unwrap_or_default(),
             );
-            let (name, model) = (text("name"), text("model"));
+            let (mut name, model) = (text("name"), text("model"));
+            if !card_id.is_empty() {
+                let card = on_board(&board, &card_id)?;
+                name = name.or_else(|| Some(crate::handing::session_name(&card.title, &card_id)));
+            }
             let started = crate::host_sessions::started(
                 app,
                 here,

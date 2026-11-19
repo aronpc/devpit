@@ -128,8 +128,10 @@ fn running(
 /// Whether any of `found` is working, and the most files one leaves.
 fn stake(found: &[crate::live_sessions::Running]) -> (bool, Option<u32>) {
     let busy = found.iter().any(|one| one.status == "busy");
+    // A host's folder is the host's: one of this machine at that path is not it.
     let dirty = found
         .iter()
+        .filter(|one| !crate::host_sessions::pane_on_host(one.pane.as_ref()))
         .filter_map(|one| crate::ended_sessions::dirty_in(&one.cwd))
         .max();
     (busy, dirty)

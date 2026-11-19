@@ -58,7 +58,17 @@ pub(crate) fn began(one: Kept) {
 /// The sessions of `profile`'s orchestrator still running, as rows like the
 /// rest. One whose pane is gone, or whose agent left it, has ended.
 pub(crate) fn rows(profile: &str) -> Vec<LiveSession> {
-    rows_in(&mut held(), profile, look, crate::session_bus::now_ms())
+    // Looked at with the list let go: a host's look is an ssh round trip, and
+    // the list is every orchestrator's.
+    let before = held().clone();
+    let mut after = before.clone();
+    let rows = rows_in(&mut after, profile, look, crate::session_bus::now_ms());
+    let ended: Vec<Kept> = before
+        .into_iter()
+        .filter(|one| !after.contains(one))
+        .collect();
+    held().retain(|one| !ended.contains(one));
+    rows
 }
 
 /// [`rows`], over a list it is handed and a look it is given.
@@ -164,10 +174,25 @@ fn target(one: &Kept) -> Option<String> {
 fn look(one: &Kept) -> Option<Looked> {
     let target = target(one)?;
     Some(Looked {
-        agent: !crate::pane_io::shell_in_front(&target).ok()?,
+        agent: agent_in_front(&target, crate::pane_io::shell_in_front(&target))?,
         screen: crate::pane_io::screen(&target),
         hook: crate::pane_said::heard_of(&one.pane_id),
     })
+}
+
+/// Whether the agent, not the shell, is in front, from what was asked of the
+/// pane: nothing, its session ended, when this machine's pane cannot say. A
+/// host that does not answer now — a dropped connection — has not ended its
+/// session there, which goes on in tmux: it is still listed.
+pub(crate) fn agent_in_front(
+    target: &str,
+    shell: Result<bool, devpit_rpc::RpcError>,
+) -> Option<bool> {
+    match shell {
+        Ok(shell) => Some(!shell),
+        Err(_) if crate::host_panes::is_host(target) => Some(true),
+        Err(_) => None,
+    }
 }
 
 /// The one called `name` of `profile`'s orchestrator.

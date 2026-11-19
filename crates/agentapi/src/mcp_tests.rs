@@ -560,7 +560,10 @@ fn a_session_may_be_started_on_a_host_and_on_production_only_when_confirmed() {
         .expect("the tool");
     let schema = (tool.input)();
     assert_eq!(schema["properties"]["host"]["type"], "string");
-    assert_eq!(schema["properties"]["confirm_production"]["type"], "boolean");
+    assert_eq!(
+        schema["properties"]["confirm_production"]["type"],
+        "boolean"
+    );
     assert_eq!(schema["required"], json!(["project", "prompt"]));
     assert!(tool.description.contains("confirm_production"));
 }

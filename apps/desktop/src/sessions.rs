@@ -357,7 +357,15 @@ pub(crate) fn holding(project_id: &str, leaf_id: &str) -> Result<SessionLayout, 
     // One connection for the whole walk. `layout_of` opens its own, so asking
     // it per tab opened the database once per tab a project has — on the path
     // that attaches a terminal, which is the one nobody is willing to wait on.
-    let store = store()?;
+    holding_in(&store()?, project_id, leaf_id)
+}
+
+/// [`holding`], in `store`.
+pub(crate) fn holding_in(
+    store: &Store,
+    project_id: &str,
+    leaf_id: &str,
+) -> Result<SessionLayout, RpcError> {
     for tab_id in store.pane_layout_tabs(project_id)? {
         let Ok(Some((tree, focused))) = store.pane_layout(project_id, &tab_id) else {
             continue;

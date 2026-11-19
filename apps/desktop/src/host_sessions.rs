@@ -19,7 +19,9 @@ const ON_HOST: &str = "## Where you run\n\nYou run on {host} ({environment}), in
 /// Why a start on `host` waits, or nothing when it does not: production
 /// waits for the person's yes, which the orchestrator passes on.
 pub(crate) fn production_refusal(host: &HostRow, confirmed: bool) -> Option<String> {
-    (host.environment != "dev" && host.environment != "staging" && !confirmed).then(|| {
+    let production =
+        crate::hosts::environment_of(&host.environment) == devpit_rpc::HostEnvironment::Production;
+    (production && !confirmed).then(|| {
         format!(
             "{} is a production host: ask the person first, and start it with confirm_production: true once they say yes",
             host.name
@@ -55,24 +57,29 @@ pub(crate) fn launch_line(
     prompt: &str,
     model: Option<&str>,
 ) -> Result<String, RpcError> {
+    crate::opening::typeable(name)?;
     crate::opening::typeable(prompt)?;
-    if name.is_empty() || name.chars().any(|ch| ch.is_whitespace() || ch.is_control()) {
+    if prompt.trim().is_empty() || prompt.chars().count() > crate::opening::LONGEST {
         return Err(RpcError::new(
             ErrorCode::Invalid,
-            "a session's name is one word",
+            format!(
+                "a session is started with between 1 and {} characters of brief",
+                crate::opening::LONGEST
+            ),
         ));
     }
     let quoted = devpit_tmux::remote::quoted;
-    let model = model.map(str::trim).filter(|one| !one.is_empty());
+    let model = crate::opening::model_of(model)?;
     let known = devpit_pty::agents::known(cli);
     let program = known.map_or(cli, |one| one.launch);
+    // A leading space keeps the line, brief and all, out of the shell's history.
     if cli == crate::claude_accounts::DRIVER {
         let mut words = vec![program.to_owned(), "--name".to_owned(), quoted(name)];
         if let Some(model) = model {
             words.extend(["--model".to_owned(), quoted(model)]);
         }
         words.push(quoted(prompt));
-        return Ok(words.join(" "));
+        return Ok(format!(" {}", words.join(" ")));
     }
     let flag = known.and_then(|one| one.prompt_flag).ok_or_else(|| {
         RpcError::new(
@@ -82,7 +89,7 @@ pub(crate) fn launch_line(
     })?;
     let model = model.map_or_else(String::new, |one| format!(" --model {}", quoted(one)));
     Ok(format!(
-        "{program}{model} {}",
+        " {program}{model} {}",
         flag.replace("{}", &quoted(prompt))
     ))
 }
@@ -100,25 +107,34 @@ pub(crate) struct Asked<'a> {
     pub confirmed: bool,
 }
 
-/// Starts a session on a host the project is linked to, for the orchestrator
-/// in `here` speaking as `profile`, running `runs_as`'s CLI there.
-pub(crate) fn started(
-    app: &tauri::AppHandle,
-    here: &devpit_rpc::Project,
+/// What a start on a host comes to before anything opens: the host, the
+/// project's folder there, the session's name and the line typed there.
+#[derive(Debug)]
+pub(crate) struct Planned {
+    pub host: HostRow,
+    pub path: String,
+    pub name: String,
+    pub line: String,
+}
+
+/// Plans a start on a host the project is linked to, for the orchestrator in
+/// `here_root` speaking as `profile`, running `runs_as`'s CLI: refused on
+/// production without the person's yes, and briefed for where it runs.
+pub(crate) fn planned(
+    store: &Store,
+    here_root: &std::path::Path,
     project: &devpit_rpc::Project,
     profile: &str,
     runs_as: &str,
     asked: &Asked,
-) -> Result<Value, String> {
-    let said = |err: RpcError| err.message;
-    let store = Store::open_default().map_err(|err| err.to_string())?;
-    let (host, path) = linked_host(&store, &project.id, asked.host)?;
+) -> Result<Planned, String> {
+    let (host, path) = linked_host(store, &project.id, asked.host)?;
     if let Some(why) = production_refusal(&host, asked.confirmed) {
         return Err(why);
     }
     let name = crate::opening::session_name(project, asked.name, profile);
     let brief = crate::orchestrator_notes::briefed_on_host(
-        std::path::Path::new(&here.root_path),
+        here_root,
         &briefed_for(&host, &path, asked.prompt),
         Some(crate::orchestrator_notes::ProjectName {
             id: &project.id,
@@ -131,7 +147,37 @@ pub(crate) fn started(
         &brief,
         asked.model,
     )
-    .map_err(said)?;
+    .map_err(|err| err.message)?;
+    Ok(Planned {
+        host,
+        path,
+        name,
+        line,
+    })
+}
+
+/// Starts a session on a host the project is linked to: [`planned`], then a
+/// tab there, the line typed at its shell, and the session kept.
+pub(crate) fn started(
+    app: &tauri::AppHandle,
+    here: &devpit_rpc::Project,
+    project: &devpit_rpc::Project,
+    profile: &str,
+    runs_as: &str,
+    asked: &Asked,
+) -> Result<Value, String> {
+    let said = |err: RpcError| err.message;
+    let store = Store::open_default().map_err(|err| err.to_string())?;
+    let root = std::path::Path::new(&here.root_path);
+    let Planned {
+        host,
+        path,
+        name,
+        line,
+    } = planned(&store, root, project, profile, runs_as, asked)?;
+    if asked.confirmed {
+        noted_on_production(root, &host, &name);
+    }
     let opened = crate::host_panes::opened_tab(app, &project.id, &host.id).map_err(said)?;
     let target = crate::pane_io::target_of(&project.id, &opened.pane_id).map_err(said)?;
     let _ = crate::pane_io::settled(&target);
@@ -151,7 +197,7 @@ pub(crate) fn started(
         "name": name,
         "project": project.name,
         "host": host.name,
-        "environment": host.environment,
+        "environment": label_of(&host),
         "cwd": path,
         "kept": true,
     });
@@ -162,6 +208,32 @@ pub(crate) fn started(
         ));
     }
     Ok(answer)
+}
+
+/// A host's environment as devpit reads it: an unreadable label is production.
+fn label_of(host: &HostRow) -> &'static str {
+    match crate::hosts::environment_of(&host.environment) {
+        devpit_rpc::HostEnvironment::Dev => "dev",
+        devpit_rpc::HostEnvironment::Staging => "staging",
+        devpit_rpc::HostEnvironment::Production => "production",
+    }
+}
+
+/// Writes a start on production in the orchestrator's sessions log, so the
+/// person can see later what was started there on their yes.
+pub(crate) fn noted_on_production(folder: &std::path::Path, host: &HostRow, name: &str) {
+    if production_refusal(host, false).is_none() {
+        return;
+    }
+    let _ = crate::orchestrator_notes::note(
+        folder,
+        "sessions",
+        &format!(
+            "`{name}` started on production host {} with confirm_production, on the person's yes",
+            host.name
+        ),
+        crate::orchestrator_notes::Section::Log,
+    );
 }
 
 /// The host named `named` — its name or id — among the project's links, with
@@ -208,29 +280,27 @@ pub(crate) fn marked_in(store: &Store, mut sessions: Value) -> Value {
             continue;
         };
         row["host"] = json!(host.name);
-        row["environment"] = json!(host.environment);
+        row["environment"] = json!(label_of(&host));
     }
     sessions
 }
 
 /// The host a project's leaf runs on, read from the tab that holds it.
 fn host_of_leaf(store: &Store, project_id: &str, leaf_id: &str) -> Option<HostRow> {
-    for tab in store.pane_layout_tabs(project_id).ok()? {
-        let Some((tree, focused)) = store.pane_layout(project_id, &tab).ok()? else {
-            continue;
-        };
-        let layout = crate::sessions::decode(project_id, &tree, &focused).ok()?;
-        let held = layout
-            .tree
-            .leaves()
-            .into_iter()
-            .find(|(id, _)| *id == leaf_id);
-        if let Some((_, target)) = held {
-            let (host, _) = crate::host_panes::parsed(target)?;
-            return crate::hosts::host_by_id(store, host).ok();
-        }
-    }
-    None
+    let layout = crate::sessions::holding_in(store, project_id, leaf_id).ok()?;
+    let target = crate::pane_io::target_in(&layout, leaf_id);
+    let (host, _) = crate::host_panes::parsed(&target)?;
+    crate::hosts::host_by_id(store, host).ok()
+}
+
+/// Whether a session's pane is a terminal on a host: what is said of its
+/// folder is the host's, not this machine's.
+pub(crate) fn pane_on_host(pane: Option<&devpit_rpc::LivePane>) -> bool {
+    let Some(pane) = pane else { return false };
+    Store::open_default()
+        .ok()
+        .and_then(|store| host_of_leaf(&store, &pane.project_id, &pane.pane_id))
+        .is_some()
 }
 
 /// A project's links as `devpit_projects` lists them.
@@ -242,7 +312,7 @@ pub(crate) fn hosts_of(store: &Store, project_id: &str) -> Vec<Value> {
         .into_iter()
         .filter_map(|link| {
             let host = hosts.iter().find(|one| one.id == link.host_id)?;
-            Some(json!({ "host": host.name, "environment": host.environment, "path": link.path }))
+            Some(json!({ "host": host.name, "environment": label_of(host), "path": link.path }))
         })
         .collect()
 }

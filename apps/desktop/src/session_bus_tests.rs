@@ -323,3 +323,16 @@ fn a_message_held_too_long_tells_its_sender_once() {
         .is_empty());
     assert_eq!(bus.waiting(), vec![pane("leaf_1")], "it keeps waiting");
 }
+
+/// A session on a host has no devpit tool to answer with: its message never
+/// names one, and says where its answer is read.
+#[test]
+fn a_message_to_a_host_session_names_no_tool_it_lacks() {
+    let said = to_host_session("orchestrator-x", "Is the deploy done?");
+
+    assert!(!said.contains("devpit_session_message"), "{said}");
+    assert!(
+        said.contains("in this terminal") && said.ends_with("Is the deploy done?"),
+        "{said}"
+    );
+}
