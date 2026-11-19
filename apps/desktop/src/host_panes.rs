@@ -88,11 +88,11 @@ pub(crate) fn started(
 ) -> Result<(), RpcError> {
     let script = format!(
         "{}; {} {START}",
-        devpit_tmux::HOST_PATH,
+        devpit_tmux::remote::HOST_PATH,
         crate::host_ssh::FOLDER_IN_P
     );
     let mut words = vec!["sh", "-c", &script, "sh", path, session];
-    words.extend(devpit_tmux::quieting());
+    words.extend(devpit_tmux::remote::quieting());
     words.extend([";", "new-session", "-d", "-s", session]);
     let argv = reach.argv(host, &words, false);
     let output = crate::host_ssh::run(&argv, &[], crate::host_ssh::PATIENCE)
@@ -126,11 +126,11 @@ pub(crate) fn attach_argv_after(
 ) -> Vec<String> {
     let script = format!(
         "{}; {} {ATTACH}",
-        devpit_tmux::HOST_PATH,
+        devpit_tmux::remote::HOST_PATH,
         crate::host_ssh::FOLDER_IN_P
     );
     let mut words = vec!["sh", "-c", &script, "sh", path, session];
-    words.extend(devpit_tmux::quieting());
+    words.extend(devpit_tmux::remote::quieting());
     words.extend([";", "new-session", "-A", "-s", session]);
     let attach = reach.argv(host, &words, true);
     ["sh", "-c", RETRY, "devpit-host", after]

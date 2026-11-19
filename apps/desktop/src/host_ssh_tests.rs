@@ -143,7 +143,7 @@ fn a_host_s_output_is_read_up_to_a_ceiling() {
     .expect("ran");
 
     assert!(said.status.success());
-    assert_eq!(said.stdout.len(), OUTPUT_MOST);
+    assert_eq!(said.stdout.len(), devpit_tmux::remote::OUTPUT_MOST);
 }
 
 /// A process left behind holding the output open, as ssh's shared

@@ -63,6 +63,9 @@ fn every_word_reaches_the_host_s_shell_as_one_argument() {
 #[cfg(unix)]
 #[test]
 fn a_server_over_a_command_is_driven_like_a_local_one() {
+    if !Server::available() {
+        return;
+    }
     let tmp = tempfile::tempdir().expect("tempdir");
     let folder = tmp.path().join("a b $(touch pwned)");
     std::fs::create_dir_all(&folder).expect("folder");
@@ -77,6 +80,8 @@ fn a_server_over_a_command_is_driven_like_a_local_one() {
             session,
             "-c",
             &folder.display().to_string(),
+            // A plain shell, ready at once: a login's own may take its time.
+            "sh",
         ])
         .expect("started there");
 
@@ -94,7 +99,7 @@ fn a_server_over_a_command_is_driven_like_a_local_one() {
     server
         .send_keys(&format!("{session}:"), "echo marker-$((40+2))")
         .expect("typed");
-    let seen = (0..50).any(|_| {
+    let seen = (0..100).any(|_| {
         std::thread::sleep(std::time::Duration::from_millis(100));
         server
             .capture_pane(&format!("{session}:"))
@@ -197,6 +202,9 @@ fn a_host_s_answer_is_read_up_to_a_ceiling() {
 #[cfg(unix)]
 #[test]
 fn a_host_s_session_starts_quieted_like_devpit_s_own() {
+    if !Server::available() {
+        return;
+    }
     let tmp = tempfile::tempdir().expect("tempdir");
     let server = over(tmp.path());
     let mut args = quieting();
@@ -240,4 +248,26 @@ fn something_left_holding_the_answer_does_not_keep_it_waiting() {
         "{:?}",
         started.elapsed()
     );
+}
+
+/// A host's tmux older than an option devpit sets still starts the session:
+/// an option it does not know is passed over, never the end of the line.
+#[cfg(unix)]
+#[test]
+fn an_option_a_host_s_tmux_lacks_never_keeps_its_session_from_starting() {
+    if !Server::available() {
+        return;
+    }
+    let tmp = tempfile::tempdir().expect("tempdir");
+    let server = over(tmp.path());
+    let mut args = quieted(&[["status", "off"], ["no-such-option", "on"]]);
+    args.extend([";", "new-session", "-d", "-s", "devpit_old", "-c", "/"]);
+
+    let _ = server.require(&args);
+
+    assert!(
+        server.has_exactly("devpit_old").expect("asked"),
+        "the session never started"
+    );
+    let _ = server.kill_session("devpit_old");
 }

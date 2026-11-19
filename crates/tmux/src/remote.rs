@@ -27,7 +27,7 @@ pub fn quoted(word: &str) -> String {
         && !word.starts_with('=')
         && word
             .chars()
-            .all(|ch| ch.is_ascii_alphanumeric() || "@%+=:,./_-".contains(ch));
+            .all(|ch| ch.is_ascii_alphanumeric() || "@+=:,./_-".contains(ch));
     if plain {
         return word.to_owned();
     }
@@ -75,7 +75,7 @@ pub(crate) fn argv(via: &[String], args: &[&str]) -> Vec<String> {
 }
 
 /// The most of a host's answer read; the rest is drained unread.
-pub(crate) const OUTPUT_MOST: usize = 4 << 20;
+pub const OUTPUT_MOST: usize = 4 << 20;
 
 /// How long the answer waits, once the child has ended, for output something
 /// it left behind still holds open: an ssh connection's master can.
@@ -83,7 +83,7 @@ const DRAIN_AFTER: std::time::Duration = std::time::Duration::from_secs(2);
 
 /// What the child said, up to [`OUTPUT_MOST`] of each stream, or nothing
 /// once it has run for `patience`, when it is ended with its group.
-pub(crate) fn within_bounded(
+pub fn within_bounded(
     mut child: std::process::Child,
     patience: std::time::Duration,
 ) -> Option<std::io::Result<std::process::Output>> {
@@ -164,7 +164,19 @@ pub fn spawned(command: &mut std::process::Command) -> std::io::Result<std::proc
 /// The options devpit's own server is quieted with, as tmux's words: put
 /// before a host session's `new-session`, so its first pane has them.
 pub fn quieting() -> Vec<&'static str> {
-    crate::chrome::one_line()
+    quieted(&crate::chrome::QUIET)
+}
+
+/// `options` set with `-q`: a host's tmux may be older than one of them, and
+/// an error would end the line before the session it starts.
+pub(crate) fn quieted<'a>(options: &[[&'a str; 2]]) -> Vec<&'a str> {
+    let mut argv = Vec::new();
+    for [name, value] in options {
+        argv.extend(["set-option", "-q", "-g", name, value, ";"]);
+    }
+    let [set, scope, name, value] = crate::chrome::TRUE_COLOUR;
+    argv.extend([set, "-q", scope, name, value]);
+    argv
 }
 
 impl Server {

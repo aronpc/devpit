@@ -45,7 +45,7 @@ for c in {agents}; do
 done
 ",
         agents = agents.join(" "),
-        host_path = devpit_tmux::HOST_PATH,
+        host_path = devpit_tmux::remote::HOST_PATH,
     )
 }
 
