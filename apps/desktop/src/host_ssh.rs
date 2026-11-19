@@ -5,6 +5,7 @@
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::process::{Output, Stdio};
+use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 use devpit_core::HostRow;
@@ -13,6 +14,8 @@ use devpit_core::HostRow;
 const CONNECT_SECONDS: u32 = 10;
 /// How long a host's connection stays open after its last command.
 const PERSIST_SECONDS: u32 = 600;
+/// The most of a host's output read; the rest is drained unread.
+pub(crate) const OUTPUT_MOST: usize = 4 << 20;
 
 /// Where the control sockets live: under devpit's home, short enough for a
 /// unix socket's path once ssh adds its 40-character hash.
@@ -29,19 +32,46 @@ pub(crate) fn sockets() -> Result<PathBuf, String> {
     Ok(dir)
 }
 
+/// How long the answer waits, once ssh has ended, for output something it
+/// left behind still holds open: a shared connection's master can.
+const DRAIN_AFTER: Duration = Duration::from_secs(2);
+
+/// The longest control socket path ssh can bind, with the hash it adds and
+/// the suffix it binds under first: macOS's limit, the lower of the two.
+const SOCKET_MOST: usize = 104 - 1 - 40 - 18;
+
+/// The control options for `sockets`: one shared connection per host, or none
+/// when ssh could not take the path.
+fn control(sockets: &Path) -> Vec<String> {
+    let dir = sockets.display().to_string();
+    let usable = dir.len() <= SOCKET_MOST
+        && !dir
+            .chars()
+            .any(|ch| ch.is_whitespace() || "%\"'".contains(ch));
+    match usable {
+        true => vec![
+            "ControlMaster=auto".to_owned(),
+            format!("ControlPath={dir}/%C"),
+            format!("ControlPersist={PERSIST_SECONDS}"),
+        ],
+        false => vec!["ControlMaster=no".to_owned(), "ControlPath=none".to_owned()],
+    }
+}
+
 /// The argv that runs `remote` on `host` over its shared connection. Its
 /// options come from the profile alone, and `--` ends them before the target.
+/// Nothing of the person's agent or display is forwarded to the host.
 pub(crate) fn argv(host: &HostRow, sockets: &Path, remote: &[&str]) -> Vec<String> {
-    let mut argv: Vec<String> = ["ssh", "-o", "BatchMode=yes"]
-        .into_iter()
-        .map(str::to_owned)
-        .collect();
-    for option in [
+    let mut argv = vec!["ssh".to_owned()];
+    let options = [
+        "BatchMode=yes".to_owned(),
         format!("ConnectTimeout={CONNECT_SECONDS}"),
-        "ControlMaster=auto".to_owned(),
-        format!("ControlPath={}/%C", sockets.display()),
-        format!("ControlPersist={PERSIST_SECONDS}"),
-    ] {
+        "ServerAliveInterval=15".to_owned(),
+        "ServerAliveCountMax=3".to_owned(),
+        "ForwardAgent=no".to_owned(),
+        "ForwardX11=no".to_owned(),
+    ];
+    for option in options.into_iter().chain(control(sockets)) {
         argv.push("-o".to_owned());
         argv.push(option);
     }
@@ -60,7 +90,7 @@ pub(crate) fn argv(host: &HostRow, sockets: &Path, remote: &[&str]) -> Vec<Strin
 }
 
 /// `words` as the one line ssh hands the host's shell: each word quoted, so
-/// the shell gives it back as it was.
+/// a POSIX shell gives it back as it was.
 pub(crate) fn line(words: &[&str]) -> String {
     words
         .iter()
@@ -70,78 +100,118 @@ pub(crate) fn line(words: &[&str]) -> String {
 }
 
 /// A word in single quotes, a quote inside it closed and escaped. A word of
-/// plain characters is left as it is, for a line a person can read.
+/// plain characters is left as it is, for a line a person can read; one
+/// starting with `=` is not plain, since zsh reads it as a program's path.
 pub(crate) fn quoted(word: &str) -> String {
     let plain = !word.is_empty()
+        && !word.starts_with('=')
         && word
             .chars()
             .all(|ch| ch.is_ascii_alphanumeric() || "@%+=:,./_-".contains(ch));
-    if plain {
-        return word.to_owned();
+    match plain {
+        true => word.to_owned(),
+        false => devpit_agentcli::declaring::quoted(word),
     }
-    format!("'{}'", word.replace('\'', r"'\''"))
+}
+
+/// A pipe read on its own thread, up to [`OUTPUT_MOST`], the rest drained.
+struct Drained {
+    bytes: Arc<Mutex<Vec<u8>>>,
+    ended: std::sync::mpsc::Receiver<()>,
+}
+
+fn drained(pipe: Option<impl Read + Send + 'static>) -> Drained {
+    let bytes = Arc::new(Mutex::new(Vec::new()));
+    let (done, ended) = std::sync::mpsc::channel();
+    let kept = Arc::clone(&bytes);
+    std::thread::spawn(move || {
+        if let Some(mut pipe) = pipe {
+            let mut chunk = [0u8; 8192];
+            while let Ok(read) = pipe.read(&mut chunk) {
+                if read == 0 {
+                    break;
+                }
+                if let Ok(mut kept) = kept.lock() {
+                    let room = OUTPUT_MOST.saturating_sub(kept.len());
+                    kept.extend_from_slice(&chunk[..read.min(room)]);
+                }
+            }
+        }
+        let _ = done.send(());
+    });
+    Drained { bytes, ended }
+}
+
+impl Drained {
+    /// What was read, once the pipe ended or `until` passed.
+    fn taken(self, until: Instant) -> Vec<u8> {
+        let _ = self
+            .ended
+            .recv_timeout(until.saturating_duration_since(Instant::now()));
+        std::mem::take(
+            &mut *self
+                .bytes
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner),
+        )
+    }
 }
 
 /// Runs `argv` with `envs` added, and gives up on it after `patience`: a
-/// host that hangs past ssh's own timeout ends here. Its output is read as
-/// it comes, so a long one never stalls it on a full pipe.
+/// host that hangs past ssh's own timeout ends here, with what it started.
+/// Its output is read as it comes, so a long one never stalls it.
 pub(crate) fn run(
     argv: &[String],
     envs: &[(&str, &str)],
     patience: Duration,
 ) -> Result<Output, String> {
     let (program, args) = argv.split_first().ok_or("nothing to run")?;
-    let mut child = devpit_pty::host_env::command(Path::new(program))
+    let mut command = devpit_pty::host_env::command(Path::new(program));
+    command
         .args(args)
         .envs(envs.iter().copied())
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
-        .map_err(|err| match err.kind() {
-            std::io::ErrorKind::NotFound => {
-                format!("{program} is not installed on this computer")
-            }
-            _ => err.to_string(),
-        })?;
-    let drained = |pipe: Option<Box<dyn Read + Send>>| {
-        std::thread::spawn(move || {
-            let mut bytes = Vec::new();
-            if let Some(mut pipe) = pipe {
-                let _ = pipe.read_to_end(&mut bytes);
-            }
-            bytes
-        })
-    };
-    let stdout = drained(
-        child
-            .stdout
-            .take()
-            .map(|one| Box::new(one) as Box<dyn Read + Send>),
-    );
-    let stderr = drained(
-        child
-            .stderr
-            .take()
-            .map(|one| Box::new(one) as Box<dyn Read + Send>),
-    );
+        .stderr(Stdio::piped());
+    #[cfg(unix)]
+    std::os::unix::process::CommandExt::process_group(&mut command, 0);
+    let mut child = command.spawn().map_err(|err| match err.kind() {
+        std::io::ErrorKind::NotFound => format!("{program} is not installed on this computer"),
+        _ => err.to_string(),
+    })?;
+    let stdout = drained(child.stdout.take());
+    let stderr = drained(child.stderr.take());
     let deadline = Instant::now() + patience;
     let status = loop {
         if let Some(status) = child.try_wait().map_err(|err| err.to_string())? {
             break status;
         }
         if Instant::now() >= deadline {
-            let _ = child.kill();
-            let _ = child.wait();
-            return Err(format!("no answer within {} seconds", patience.as_secs()));
+            end_group(&mut child);
+            return Err(format!(
+                "no answer within {} seconds",
+                patience.as_secs().max(1)
+            ));
         }
         std::thread::sleep(Duration::from_millis(50));
     };
+    let until = Instant::now() + DRAIN_AFTER;
     Ok(Output {
         status,
-        stdout: stdout.join().unwrap_or_default(),
-        stderr: stderr.join().unwrap_or_default(),
+        stdout: stdout.taken(until),
+        stderr: stderr.taken(until),
     })
+}
+
+/// Ends the child and the group it leads.
+fn end_group(child: &mut std::process::Child) {
+    #[cfg(unix)]
+    // SAFETY: signals the group this function's child leads; no memory is read.
+    unsafe {
+        libc::kill(-(child.id() as i32), libc::SIGKILL);
+    }
+    let _ = child.kill();
+    let _ = child.wait();
 }
 
 #[cfg(test)]

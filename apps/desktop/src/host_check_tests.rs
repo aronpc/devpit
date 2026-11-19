@@ -155,6 +155,20 @@ fn a_host_ssh_cannot_reach_says_why_and_checks_nothing_else() {
     );
 }
 
+/// ssh got in, but the host's shell could not run the check: that is said
+/// apart from ssh's own failure.
+#[test]
+fn a_host_whose_shell_fails_the_check_says_so_apart_from_ssh() {
+    let host = FakeHost::new();
+    host.program(&host.ssh(), "echo \"Unmatched '.\" >&2\nexit 1");
+
+    let check = host.checked(PATIENCE);
+
+    assert_eq!(check.rows.len(), 1, "{check:?}");
+    assert!(check.rows[0].said.contains("the host's shell"), "{check:?}");
+    assert!(check.rows[0].said.contains("Unmatched"), "{check:?}");
+}
+
 /// A host that never answers is given up on, and said so.
 #[test]
 fn a_host_that_does_not_answer_is_given_up_on() {
@@ -182,14 +196,14 @@ fn a_check_writes_nothing_on_the_host() {
     assert_eq!(tree(&host.home()), before);
 }
 
-fn tree(dir: &Path) -> Vec<(PathBuf, u64)> {
+fn tree(dir: &Path) -> Vec<(PathBuf, u64, Option<std::time::SystemTime>)> {
     let mut found = Vec::new();
     for entry in std::fs::read_dir(dir).expect("dir").flatten() {
         let path = entry.path();
-        if path.is_dir() {
+        let meta = std::fs::metadata(&path).expect("meta");
+        found.push((path.clone(), meta.len(), meta.modified().ok()));
+        if meta.is_dir() {
             found.extend(tree(&path));
-        } else {
-            found.push((path.clone(), std::fs::metadata(&path).expect("meta").len()));
         }
     }
     found.sort();

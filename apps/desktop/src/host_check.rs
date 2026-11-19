@@ -10,6 +10,9 @@ use std::time::Duration;
 use devpit_core::{HostRow, Store};
 use devpit_rpc::{ErrorCode, HostCheck, HostCheckRow, RpcError};
 
+/// What ssh exits with when it, not the command, failed.
+const SSH_FAILED: i32 = 255;
+
 /// How long a check waits for the host, past ssh's own connect timeout.
 const PATIENCE: Duration = Duration::from_secs(25);
 
@@ -64,11 +67,15 @@ pub(crate) fn checked_with(
     let mut argv = crate::host_ssh::argv(host, sockets, &["sh", "-c", &script]);
     argv[0] = ssh.display().to_string();
     let reached = crate::host_ssh::run(&argv, envs, patience).and_then(|output| {
-        match output.status.success() {
-            true => Ok(String::from_utf8_lossy(&output.stdout).into_owned()),
-            false => Err(last_line(&output.stderr).unwrap_or_else(|| {
-                format!("ssh ended with {}", output.status.code().unwrap_or(-1))
-            })),
+        let code = output.status.code().unwrap_or(-1);
+        let why = last_line(&output.stderr).unwrap_or_else(|| format!("it ended with {code}"));
+        match code {
+            0 => Ok(String::from_utf8_lossy(&output.stdout).into_owned()),
+            // ssh's own failures end with 255; anything else is the host's.
+            SSH_FAILED => Err(why),
+            _ => Err(format!(
+                "ssh got in, but the host's shell could not run the check: {why}"
+            )),
         }
     });
     let said = match reached {

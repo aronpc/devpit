@@ -73,7 +73,14 @@ export function HostsSettings(): React.JSX.Element {
       setFields(EMPTY)
     }
   }
-  const save = (): void => void ask(() => commands.hostSave(draftOf(editing, fields))).then((answer) => landed(answer, true))
+  /* A check said what the host was; an edit may make it another. */
+  const save = (): void => {
+    const id = editing
+    void ask(() => commands.hostSave(draftOf(id, fields))).then((answer) => {
+      if (answer.data && id) setChecks(({ [id]: _was, ...rest }) => rest)
+      landed(answer, true)
+    })
+  }
   const remove = (host: Host): void => void ask(() => commands.hostRemove(host.id)).then((answer) => landed(answer, host.id === editing))
   const check = (host: Host): void => {
     setChecks((was) => ({ ...was, [host.id]: 'checking' }))

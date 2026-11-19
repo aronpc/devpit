@@ -1,4 +1,5 @@
 use std::path::Path;
+use std::time::Duration;
 
 use super::*;
 
@@ -125,4 +126,124 @@ fn every_word_reaches_the_host_s_shell_as_one_argument() {
         !dir.path().join("pwned").exists(),
         "a word ran as a command"
     );
+}
+
+/// A dead connection is found out, and nothing of the person's agent or
+/// display goes along with a command.
+#[test]
+fn the_connection_is_kept_alive_and_forwards_nothing() {
+    let argv = argv(&host(), Path::new("/home/me/.devpit/ssh"), &["true"]);
+
+    for option in ["ServerAliveInterval=15", "ForwardAgent=no", "ForwardX11=no"] {
+        assert!(
+            argv.contains(&option.to_owned()),
+            "{option} not in {argv:?}"
+        );
+    }
+}
+
+/// A home whose path ssh cannot take as a control socket gets no shared
+/// connection, rather than a broken one.
+#[test]
+fn a_socket_path_ssh_cannot_take_shares_no_connection() {
+    for sockets in [
+        "/home/a b/.devpit/ssh",
+        "/home/100%/.devpit/ssh",
+        &format!("/{}", "x".repeat(60)),
+    ] {
+        let argv = argv(&host(), Path::new(sockets), &["true"]);
+
+        assert!(
+            argv.contains(&"ControlPath=none".to_owned()),
+            "{sockets}: {argv:?}"
+        );
+        assert!(
+            !argv.contains(&"ControlMaster=auto".to_owned()),
+            "{sockets}: {argv:?}"
+        );
+    }
+}
+
+/// zsh reads a word starting with `=` as a program's path: it is quoted.
+#[test]
+fn a_word_a_shell_would_expand_at_its_start_is_quoted() {
+    assert_eq!(quoted("=ls"), "'=ls'");
+    assert_eq!(quoted("~/x"), "'~/x'");
+    assert_eq!(quoted("tmux"), "tmux");
+}
+
+/// What a host prints is read up to a ceiling, and the rest is drained.
+#[cfg(unix)]
+#[test]
+fn a_host_s_output_is_read_up_to_a_ceiling() {
+    let said = run(
+        &[
+            "sh".to_owned(),
+            "-c".to_owned(),
+            "head -c 9000000 /dev/zero".to_owned(),
+        ],
+        &[],
+        Duration::from_secs(20),
+    )
+    .expect("ran");
+
+    assert!(said.status.success());
+    assert_eq!(said.stdout.len(), OUTPUT_MOST);
+}
+
+/// A process left behind holding the output open, as ssh's shared
+/// connection can be, does not keep the answer waiting.
+#[cfg(unix)]
+#[test]
+fn a_process_left_holding_the_output_does_not_hold_the_answer() {
+    let started = std::time::Instant::now();
+
+    let said = run(
+        &[
+            "sh".to_owned(),
+            "-c".to_owned(),
+            "sleep 8 & echo done".to_owned(),
+        ],
+        &[],
+        Duration::from_secs(20),
+    )
+    .expect("ran");
+
+    assert_eq!(String::from_utf8_lossy(&said.stdout).trim(), "done");
+    assert!(
+        started.elapsed() < Duration::from_secs(5),
+        "{:?}",
+        started.elapsed()
+    );
+}
+
+/// Given up on, the command goes with whatever it started.
+#[cfg(target_os = "linux")]
+#[test]
+fn a_command_given_up_on_takes_what_it_started_with_it() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let pidfile = dir.path().join("pid");
+    let script = format!("sleep 30 & echo $! > {}; wait", pidfile.display());
+
+    let said = run(
+        &["sh".to_owned(), "-c".to_owned(), script],
+        &[],
+        Duration::from_millis(500),
+    );
+
+    assert!(said.expect_err("answered").contains("no answer"));
+    let pid: i32 = std::fs::read_to_string(&pidfile)
+        .expect("pid")
+        .trim()
+        .parse()
+        .expect("a pid");
+    let gone = (0..60).any(|_| {
+        std::thread::sleep(Duration::from_millis(50));
+        let stat = std::fs::read_to_string(format!("/proc/{pid}/stat")).unwrap_or_default();
+        stat.is_empty()
+            || stat
+                .rsplit_once(')')
+                .is_some_and(|(_, rest)| rest.trim_start().starts_with('Z'))
+    });
+    assert!(gone, "what it started still runs");
 }

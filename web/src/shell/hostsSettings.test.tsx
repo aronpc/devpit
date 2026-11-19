@@ -145,6 +145,15 @@ describe('Settings → Hosts', () => {
     expect(failed.closest('[data-ok]')?.getAttribute('data-ok')).toBe('false')
   })
 
+  it('forgets a check once the host is edited', async () => {
+    render(<HostsSettings />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Check web prod' }))
+    await screen.findByText('connected to prod-web')
+    fireEvent.click(screen.getByRole('button', { name: 'Edit web prod' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Save host' }))
+    await waitFor(() => expect(screen.queryByText('connected to prod-web')).toBeNull())
+  })
+
   it('removes a host', async () => {
     render(<HostsSettings />)
     fireEvent.click(await screen.findByRole('button', { name: 'Remove web prod' }))
