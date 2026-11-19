@@ -66,6 +66,11 @@ fn removing_a_host_removes_its_links_and_keeps_the_project() {
     let links = store.host_links(&project).expect("links");
     assert_eq!(links.len(), 1);
     assert_eq!(links[0].host_id, "host_2");
+    let kept: i64 = store
+        .conn()
+        .query_row("SELECT COUNT(*) FROM project_host", [], |row| row.get(0))
+        .expect("count");
+    assert_eq!(kept, 1, "the removed host's link is still stored");
     assert!(store.project(&project).expect("read").is_some());
 }
 

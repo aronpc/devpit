@@ -14,8 +14,8 @@ const PATIENCE: Duration = Duration::from_secs(25);
 
 /// Whether `$1` is a folder, `~` read as the login's home. The path arrives
 /// as an argument, never as part of the script.
-const FOLDER: &str =
-    "p=$1; case $p in \"~\") p=$HOME ;; \"~/\"*) p=$HOME/${p#\"~/\"} ;; esac; test -d \"$p\"";
+/// It answers on stdout, so a banner on stderr never changes the answer.
+pub(crate) const FOLDER: &str = "p=$1; case $p in \"~\") p=$HOME ;; \"~/\"*) p=$HOME/${p#\"~/\"} ;; esac; if test -d \"$p\"; then echo yes; else echo no; fi";
 
 /// The project's links, with each host's name and environment.
 pub(crate) fn listed(store: &Store, project_id: &str) -> Result<HostLinks, RpcError> {
@@ -66,35 +66,23 @@ pub(crate) fn linked_with(
     argv[0] = ssh.display().to_string();
     let output = crate::host_ssh::run(&argv, envs, patience)
         .map_err(|why| RpcError::new(ErrorCode::Busy, format!("{}: {why}", host.name)))?;
-    let why = crate::host_ssh::last_line(&output.stderr);
-    match output.status.code() {
-        Some(0) => {}
-        Some(crate::host_ssh::SSH_FAILED) => {
-            return Err(RpcError::new(
-                ErrorCode::Busy,
-                format!(
-                    "ssh could not reach {}: {}",
-                    host.name,
-                    why.unwrap_or_default()
-                ),
-            ))
-        }
-        Some(1) if why.is_none() => {
+    let why = crate::host_ssh::last_line(&output.stderr).unwrap_or_default();
+    let answer = crate::host_ssh::last_line(&output.stdout);
+    // A host's failure is the host's: never devpit's own error, which an
+    // error report would carry off the machine with the host's words.
+    let failed = |said: String| Err(RpcError::new(ErrorCode::Busy, said));
+    match (output.status.code(), answer.as_deref()) {
+        (Some(0), Some("yes")) => {}
+        (Some(0), Some("no")) => {
             return Err(RpcError::new(
                 ErrorCode::NotFound,
                 format!("there is no folder {path} on {}", host.name),
             ))
         }
-        _ => {
-            return Err(RpcError::new(
-                ErrorCode::Internal,
-                format!(
-                    "{} could not check {path}: {}",
-                    host.name,
-                    why.unwrap_or_default()
-                ),
-            ))
+        (Some(crate::host_ssh::SSH_FAILED), _) => {
+            return failed(format!("ssh could not reach {}: {why}", host.name))
         }
+        _ => return failed(format!("{} could not check {path}: {why}", host.name)),
     }
     store.link_host(project_id, &host.id, path)?;
     listed(store, project_id)
