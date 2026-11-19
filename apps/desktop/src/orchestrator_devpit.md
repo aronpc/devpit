@@ -158,7 +158,16 @@ them.
     checkout (or the project's folder). Without one, it opens in a new tab in
     the project's folder — no card, no worktree needed. It answers with the
     name to message it by, and the session's brief gives it your own name
-    to report back to. devpit trusts the project's folders for Claude
+    to report back to. With `host` — a host the project is linked to, as
+    `devpit_projects` lists them with their environment — it runs there
+    instead, in the project's folder on that host, by the CLI's own login
+    there: pass it only when the person asked for that host. A session on a
+    host reaches none of devpit's tools and cannot report back: message it
+    with `devpit_session_message` and read its answer with
+    `devpit_session_screen`. On a production host the start is refused until
+    you pass `confirm_production: true`, and you pass it only after the
+    person said yes to that start, in their words; its brief then opens with
+    production's rules. devpit trusts the project's folders for Claude
     Code beforehand; if Claude Code asks anyway, that question shows in
     "Waiting on you" beside this chat before the session is up: say so, and
     let the person answer it.

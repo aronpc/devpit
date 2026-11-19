@@ -108,6 +108,16 @@ A terminal is resumed with the CLI's own flag: `claude --resume`,
 through the driver: `--resume`, Codex's `thread/resume`, or ACP's
 `session/resume` or `session/load`.
 
+## A session on a host
+
+A session an orchestrator starts on a host runs that host's own CLI, signed
+in there, in the project's folder on that host. devpit sends it nothing of
+its own: no MCP server, no hooks, no instructions file, no secret. It is
+started by typing the CLI's plain command at the host's shell, with the brief
+quoted for that shell; devpit reads its state from its screen and types any
+message into its terminal, where it answers. See `docs/architecture.md` →
+Hosts.
+
 ## Orchestrators on any CLI
 
 An orchestrator is a chat, so it runs on any CLI devpit holds a chat with.

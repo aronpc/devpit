@@ -34,6 +34,11 @@ work stands, and a number on every agent call.
   agent drive a page you give it is not built yet.
 - **File tree and diffs** beside the terminal, so reviewing what an agent did
   does not mean leaving.
+- **Terminals on your other machines.** Link a project to a folder on a
+  host you reach with ssh — dev, staging or production — and open a terminal
+  there that comes back by itself when the connection drops. The tab says
+  which host and environment, production in red; an orchestrator can start a
+  session there, on production only with your yes.
 - **On your machine.** Projects, boards, conversations and terminal history
   live in `~/.devpit` on this computer. An account is optional; with it,
   preferences and project settings can sync between your computers, sealed

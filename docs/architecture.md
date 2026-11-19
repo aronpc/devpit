@@ -386,6 +386,44 @@ one it does not serve yet stays on the linked engine.
   reviewing follow a person into all their projects, named in their own
   devflow.yaml, and a company's into its projects, named in its layer.
 
+## Hosts
+
+A project's terminals can run on another machine the person reaches with
+their own ssh: a **host**, kept as a profile in Settings → Hosts (a target ssh
+resolves — an alias of their ssh config or a host name — with an optional
+user, port and identity file *path*, a work root and an environment: dev,
+staging or production). devpit stores no key and reads none. A project is
+linked to a folder on a host in its dialog; the folder is checked to be one
+there, and devpit never creates, clones or moves anything on a host
+(ADR 0002).
+
+**Nothing of devpit's is installed or written on a host.** Its terminals are
+tmux there, on a server of devpit's own (`tmux -L devpit`), one session per
+pane, driven with `ssh … tmux …` over one ControlMaster connection per host
+(`BatchMode`, a connect timeout, keepalive, no agent, X11 or port forwarding,
+and the person's `RemoteCommand` set aside). A pane on a host has the target
+`ssh:<host>:<session>`; tmux and devpit-ptyd targets keep their meaning. Every
+value sent is quoted for the host's shell — POSIX shells and fish alike — and
+a folder reaches a script there as an argument, never as script.
+
+A window attaches with `ssh -t … tmux new-session -A` in a local loop that runs
+the attach again while ssh says the connection dropped (exit 255), waiting
+longer each time up to a minute; Ctrl+C never ends that wait, and what was
+typed meanwhile is dropped rather than typed on the host. The session on the
+host lives on meanwhile. A tab on a host shows a badge with the host's name,
+its environment (production reads PROD, in red) and whether devpit's
+connection to it is up, read from the shared connection.
+
+A session on a host reaches nothing of devpit's: no MCP, no hooks, no
+transcripts. Its state is read from its screen; a message is typed into its
+terminal and answered there. An orchestrator starts one with
+`devpit_start_session`'s `host`; on a production host only with
+`confirm_production: true`, passed on after the person's yes, and its brief
+then opens with production's rules. Such a start is written in the
+orchestrator's sessions log. Stopping a session on a host ends it there, or
+fails saying the host did not answer; nothing on this computer is signalled
+for it.
+
 ## Remote
 
 devpit can be reached from the person's other devices over their Tailscale
