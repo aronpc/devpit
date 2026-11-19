@@ -187,3 +187,47 @@ fn a_shell_at_its_prompt_is_drawn_by_its_replay_and_not_resized_to_redraw() {
         "a pane not heard from yet is redrawn"
     );
 }
+
+/// Only an `ssh:` target reaches a host; tmux and ptyd targets keep their
+/// meaning, whatever their names hold.
+#[test]
+fn only_an_ssh_target_is_held_by_a_host() {
+    let on_host = crate::host_panes::target("host_1", "devpit_p1__leaf_a");
+    assert_eq!(holder(&on_host), Holder::Host(&on_host));
+    assert_eq!(
+        holder("devpit_p1:ssh"),
+        Holder::Tmux {
+            session: "devpit_p1",
+            window: "ssh"
+        }
+    );
+    assert!(matches!(
+        holder(&crate::ptyd_link::target("leaf_a")),
+        Holder::Ptyd(_)
+    ));
+}
+
+/// A host's leaf is reached by the target it was stored with: its host is
+/// nowhere else, while its neighbours are rebuilt as before.
+#[test]
+fn a_host_leaf_is_reached_by_its_stored_target() {
+    let on_host = crate::host_panes::target("host_1", "devpit_p1__leaf_b");
+    let tree = LayoutNode::leaf("leaf_a", "an-older-spelling")
+        .split_leaf(
+            "leaf_a",
+            SplitDirection::Vertical,
+            LayoutNode::leaf("leaf_b", on_host.clone()),
+        )
+        .expect("split");
+    let layout = SessionLayout {
+        project_id: "p1".into(),
+        focused_id: "leaf_a".into(),
+        tree,
+    };
+
+    assert_eq!(target_in(&layout, "leaf_b"), on_host);
+    assert_eq!(
+        target_in(&layout, "leaf_a"),
+        devpit_tmux::Server::target(&devpit_tmux::Server::session_name("p1"), "leaf_a")
+    );
+}

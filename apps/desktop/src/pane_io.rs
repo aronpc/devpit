@@ -21,9 +21,14 @@ pub(crate) enum Holder<'a> {
     },
     /// devpit-ptyd, by its number for the pane.
     Ptyd(u32),
+    /// tmux on a host, by the whole target ([`crate::host_panes`]).
+    Host(&'a str),
 }
 
 pub(crate) fn holder(target: &str) -> Holder<'_> {
+    if crate::host_panes::is_host(target) {
+        return Holder::Host(target);
+    }
     match target.strip_prefix(crate::ptyd_link::TARGET_PREFIX) {
         Some(leaf) => Holder::Ptyd(crate::ptyd_link::pane_number(leaf)),
         None => {
@@ -61,6 +66,15 @@ pub(crate) fn placed_target_of(project_id: &str, leaf_id: &str) -> Result<String
 /// A tmux leaf's target is rebuilt from its names rather than read back, so
 /// a layout stored by an older build still reaches its window.
 pub(crate) fn target_in(layout: &SessionLayout, leaf_id: &str) -> String {
+    // A host's leaf is read back: its host is nowhere else.
+    let stored = layout
+        .tree
+        .leaves()
+        .into_iter()
+        .find(|(id, _)| *id == leaf_id);
+    if let Some((_, target)) = stored.filter(|(_, target)| crate::host_panes::is_host(target)) {
+        return target.to_owned();
+    }
     match crate::ptyd_link::leaf_is_ptyd(layout, leaf_id) {
         true => crate::ptyd_link::target(leaf_id),
         false => devpit_tmux::Server::target(
@@ -75,6 +89,7 @@ pub(crate) fn submit(target: &str, line: &str) -> Result<(), RpcError> {
     match holder(target) {
         Holder::Tmux { .. } => tmux()?.submit(target, line).map_err(internal),
         Holder::Ptyd(pane) => write(pane, submitted(line, bracketing(modes(pane), line))),
+        Holder::Host(target) => on_host(target, |server, at| server.submit(at, line)),
     }
 }
 
@@ -96,6 +111,7 @@ pub(crate) fn send_line_at(
         #[cfg(unix)]
         (Holder::Ptyd(pane), Some(home)) => write_at(home, pane, &typed(line)),
         (Holder::Ptyd(pane), _) => write(pane, typed(line)),
+        (Holder::Host(target), _) => on_host(target, |server, at| server.send_keys(at, line)),
     }
 }
 
@@ -112,7 +128,9 @@ pub(crate) fn label(target: &str, profile: &str) {
 pub(crate) fn settled(target: &str) -> Ready {
     match holder(target) {
         Holder::Tmux { session, window } => crate::shell_launch::settled(session, window),
-        Holder::Ptyd(_) => settled_on(|| front(target), crate::shell_launch::AT_MOST),
+        Holder::Ptyd(_) | Holder::Host(_) => {
+            settled_on(|| front(target), crate::shell_launch::AT_MOST)
+        }
     }
 }
 
@@ -144,6 +162,10 @@ pub(crate) fn paste(target: &str, text: &str, enter: bool) -> Result<(), RpcErro
         Holder::Tmux { .. } if enter => tmux()?.paste_and_send(target, text).map_err(internal),
         Holder::Tmux { .. } => tmux()?.paste(target, text).map_err(internal),
         Holder::Ptyd(pane) => write(pane, pasted(text, enter, bracketing(modes(pane), text))),
+        Holder::Host(target) if enter => {
+            on_host(target, |server, at| server.paste_and_send(at, text))
+        }
+        Holder::Host(target) => on_host(target, |server, at| server.paste(at, text)),
     }
 }
 
@@ -155,6 +177,7 @@ pub(crate) fn press(target: &str, keys: &[Key]) -> Result<(), RpcError> {
             let application = modes(pane).is_some_and(|modes| modes.application_cursor);
             write(pane, pressed(keys, application))
         }
+        Holder::Host(target) => on_host(target, |server, at| server.press(at, keys)),
     }
 }
 
@@ -165,6 +188,7 @@ pub(crate) fn shell_in_front(target: &str) -> Result<bool, RpcError> {
         Holder::Ptyd(_) => Ok(front(target)
             .as_deref()
             .is_some_and(devpit_pty::agents::idle_shell)),
+        Holder::Host(target) => on_host(target, |server, at| server.shell_in_front(at)),
     }
 }
 
@@ -180,6 +204,7 @@ pub(crate) fn nudge(target: &str) -> Result<bool, RpcError> {
             press(target, &[Key::Enter])?;
             Ok(true)
         }
+        Holder::Host(target) => on_host(target, |server, at| server.nudge(at)),
     }
 }
 
@@ -189,6 +214,12 @@ pub(crate) fn cwd(target: &str) -> Option<PathBuf> {
     match holder(target) {
         Holder::Tmux { session, window } => tmux().ok()?.pane_path(session, window),
         Holder::Ptyd(pane) => told_cwd(pane).map(PathBuf::from),
+        Holder::Host(target) => on_host(target, |server, at| {
+            server.format_of(at, "#{pane_current_path}")
+        })
+        .ok()
+        .filter(|path| !path.is_empty())
+        .map(PathBuf::from),
     }
 }
 
@@ -201,6 +232,9 @@ pub(crate) fn scroll(target: &str, lines: i32) -> Result<bool, RpcError> {
             .map(|()| true)
             .map_err(internal),
         Holder::Ptyd(_) => Ok(false),
+        Holder::Host(target) => {
+            on_host(target, |server, at| server.scroll(at, lines)).map(|()| true)
+        }
     }
 }
 
@@ -222,6 +256,8 @@ pub(crate) fn redraw(app: &tauri::AppHandle, target: &str) -> Result<bool, RpcEr
                 .unwrap_or_default();
             jiggle(app, leaf)
         }
+        // Its attach is a tmux client, which draws the screen whole.
+        Holder::Host(_) => Ok(true),
     }
 }
 
@@ -256,6 +292,11 @@ pub(crate) fn front(target: &str) -> Option<String> {
             Some(program.unwrap_or(pane.command))
         }
         Holder::Ptyd(pane) => told_front(pane),
+        Holder::Host(target) => on_host(target, |server, at| {
+            server.format_of(at, "#{pane_current_command}")
+        })
+        .ok()
+        .filter(|program| !program.is_empty()),
     }
 }
 
@@ -265,6 +306,7 @@ pub(crate) fn screen(target: &str) -> Option<String> {
     match holder(target) {
         Holder::Tmux { .. } => tmux().ok()?.capture_pane(target).ok(),
         Holder::Ptyd(pane) => drawn(pane),
+        Holder::Host(target) => on_host(target, |server, at| server.capture_pane(at)).ok(),
     }
 }
 
@@ -273,6 +315,9 @@ pub(crate) fn cursor(target: &str) -> Option<(u16, u16)> {
     match holder(target) {
         Holder::Tmux { .. } => tmux().ok()?.cursor(target),
         Holder::Ptyd(pane) => cursor_drawn(pane),
+        Holder::Host(target) => crate::host_panes::server_of(target)
+            .ok()
+            .and_then(|(server, at)| server.cursor(&at)),
     }
 }
 
@@ -284,6 +329,16 @@ fn cursor_drawn(pane: u32) -> Option<(u16, u16)> {
 #[cfg(not(unix))]
 fn cursor_drawn(_pane: u32) -> Option<(u16, u16)> {
     None
+}
+
+/// Runs `work` on the tmux of the host `target` is on, with the target
+/// tmux knows there.
+fn on_host<T>(
+    target: &str,
+    work: impl FnOnce(&devpit_tmux::Server, &str) -> Result<T, devpit_tmux::TmuxError>,
+) -> Result<T, RpcError> {
+    let (server, at) = crate::host_panes::server_of(target)?;
+    work(&server, &at).map_err(|err| RpcError::new(ErrorCode::Busy, err.to_string()))
 }
 
 /// What a program asked of its terminal, which says how to type into it.

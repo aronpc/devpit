@@ -134,7 +134,13 @@ fn every_word_reaches_the_host_s_shell_as_one_argument() {
 fn the_connection_is_kept_alive_and_forwards_nothing() {
     let argv = argv(&host(), Path::new("/home/me/.devpit/ssh"), &["true"]);
 
-    for option in ["ServerAliveInterval=15", "ForwardAgent=no", "ForwardX11=no"] {
+    for option in [
+        "ServerAliveInterval=15",
+        "ForwardAgent=no",
+        "ForwardX11=no",
+        "ClearAllForwardings=yes",
+        "RemoteCommand=none",
+    ] {
         assert!(
             argv.contains(&option.to_owned()),
             "{option} not in {argv:?}"
@@ -246,4 +252,13 @@ fn a_command_given_up_on_takes_what_it_started_with_it() {
                 .is_some_and(|(_, rest)| rest.trim_start().starts_with('Z'))
     });
     assert!(gone, "what it started still runs");
+}
+
+/// A window attaches with a terminal on the host; a command never asks one.
+#[test]
+fn only_an_attach_asks_the_host_for_a_terminal() {
+    let sockets = Path::new("/s");
+
+    assert!(argv_tty(&host(), sockets, &["tmux"]).contains(&"-t".to_owned()));
+    assert!(!argv(&host(), sockets, &["tmux"]).contains(&"-t".to_owned()));
 }

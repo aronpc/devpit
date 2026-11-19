@@ -1,3 +1,4 @@
+import { HostTerminals } from './HostTerminals'
 import { useShell } from './useShell'
 import { useKeys } from './useShortcut'
 
@@ -70,6 +71,7 @@ export function PaneCorner({
       <button className="sq26" aria-label="New terminal" title="New terminal" onClick={() => show('term')}>
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="m7 9 3 3-3 3M13 15h4" /></svg>
       </button>
+      <HostTerminals />
       {onSplit && (
         <>
           <button className="sq26" aria-label="Split right" title={`Split right (${keys('splitRight')})`} onClick={() => onSplit('horizontal')}>

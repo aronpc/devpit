@@ -16,6 +16,7 @@ mod environment;
 mod error;
 mod naming;
 mod pane;
+mod remote;
 mod running;
 mod scratch;
 mod scroll;
@@ -24,6 +25,7 @@ mod viewers;
 mod windows;
 pub use error::TmuxError;
 pub use pane::{copy_to, Key};
+pub use remote::{quoted, shell_line, HOST_SERVER};
 pub use scratch::Scratch;
 pub use shell::{parse_running, parse_snapshot, Running, Shell, Snapped, PANE_ENV};
 
@@ -35,6 +37,7 @@ pub struct Server {
     pub(crate) window_env: Vec<(String, String)>,
     /// How long a command waits for the server before giving up on it.
     pub(crate) patience: std::time::Duration,
+    pub(crate) via: Option<Vec<String>>, // what runs a line on a host: `remote`
 }
 
 impl Server {
@@ -54,6 +57,7 @@ impl Server {
             shell: None,
             window_env: Vec::new(),
             patience: running::PATIENCE,
+            via: None,
         }
     }
 

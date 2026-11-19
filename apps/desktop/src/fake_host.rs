@@ -67,3 +67,44 @@ impl FakeHost {
         dir
     }
 }
+
+impl FakeHost {
+    /// A host whose ssh runs tmux: its own home, PATH and tmux sockets, set
+    /// by its ssh as the real one sets the host's.
+    pub(crate) fn with_tmux(&self) {
+        std::fs::create_dir_all(self.dir.path().join("tmux")).expect("tmux dir");
+        self.program(
+            &self.ssh(),
+            &format!(
+                "export HOME='{home}' PATH='{bin}:/usr/bin:/bin' SHELL=/bin/sh TMUX_TMPDIR='{tmux}'\nwhile [ \"$1\" != -- ]; do shift; done\nshift 2\nexec /bin/sh -c \"$1\"",
+                home = self.home().display(),
+                bin = self.bin().display(),
+                tmux = self.dir.path().join("tmux").display(),
+            ),
+        );
+    }
+
+    /// The tmux server of the host, as devpit drives it.
+    pub(crate) fn tmux(&self) -> devpit_tmux::Server {
+        devpit_tmux::Server::over(vec![
+            self.ssh().display().to_string(),
+            "--".to_owned(),
+            "host".to_owned(),
+        ])
+    }
+}
+
+impl Drop for FakeHost {
+    fn drop(&mut self) {
+        // Every session ended, its server ends with them.
+        if self.dir.path().join("tmux").exists() {
+            let _ = std::process::Command::new(self.ssh())
+                .args([
+                    "--",
+                    "host",
+                    "tmux -L devpit list-sessions -F '#{session_name}' | while read -r s; do tmux -L devpit kill-session -t \"=$s\"; done",
+                ])
+                .output();
+        }
+    }
+}

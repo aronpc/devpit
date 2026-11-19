@@ -108,7 +108,8 @@ pub use focus::{HeadsDown, Waiting};
 pub use frame::{Context, Frame};
 pub use front::{Elsewhere, ElsewhereFile, Front, SessionChanges};
 pub use hosts::{
-    Host, HostCheck, HostCheckRow, HostDraft, HostEnvironment, HostLink, HostLinks, Hosts,
+    Host, HostCheck, HostCheckRow, HostDraft, HostEnvironment, HostLink, HostLinks, HostTerminal,
+    Hosts,
 };
 pub use island::{
     IslandAsked, IslandChange, IslandChecks, IslandDrawn, IslandHow, IslandNow, IslandPull,

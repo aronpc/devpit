@@ -146,6 +146,10 @@ pub(crate) fn layout_of(project_id: &str, tab_id: &str) -> Result<SessionLayout,
 
 /// The argv a pty spawns to become a client of this leaf's tmux window.
 pub(crate) fn attach_argv(project_id: &str, leaf_id: &str) -> Result<Vec<String>, RpcError> {
+    let target = crate::pane_io::target_of(project_id, leaf_id)?;
+    if let Some((host, session)) = crate::host_panes::parsed(&target) {
+        return crate::host_panes::attach_argv(project_id, host, session);
+    }
     Ok(tmux_server()?.attach_argv(&devpit_tmux::Server::session_name(project_id), leaf_id))
 }
 
@@ -184,6 +188,10 @@ fn load_or_create(
         let mut server = None;
         let home = Store::root().ok();
         for (leaf_id, target) in layout.tree.leaves() {
+            // On a host, its session is there, made again by its attach.
+            if crate::host_panes::is_host(target) {
+                continue;
+            }
             if crate::ptyd_link::is_ptyd(target) {
                 let was = was_in(leaf_id);
                 crate::ptyd_link::revive_at(&store, home.as_deref(), project_id, leaf_id, was, cwd);

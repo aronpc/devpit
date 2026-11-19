@@ -60,9 +60,27 @@ fn control(sockets: &Path) -> Vec<String> {
 
 /// The argv that runs `remote` on `host` over its shared connection. Its
 /// options come from the profile alone, and `--` ends them before the target.
-/// Nothing of the person's agent or display is forwarded to the host.
+/// Nothing of the person's agent, display or forwards goes to the host, and a
+/// `RemoteCommand` in the person's config never replaces devpit's.
 pub(crate) fn argv(host: &HostRow, sockets: &Path, remote: &[&str]) -> Vec<String> {
+    let mut argv = via(host, sockets, false);
+    argv.push(line(remote));
+    argv
+}
+
+/// [`argv`] with a terminal on the host, for a window to attach through.
+pub(crate) fn argv_tty(host: &HostRow, sockets: &Path, remote: &[&str]) -> Vec<String> {
+    let mut argv = via(host, sockets, true);
+    argv.push(line(remote));
+    argv
+}
+
+/// Everything before the line: what runs one line on `host`.
+pub(crate) fn via(host: &HostRow, sockets: &Path, tty: bool) -> Vec<String> {
     let mut argv = vec!["ssh".to_owned()];
+    if tty {
+        argv.push("-t".to_owned());
+    }
     let options = [
         "BatchMode=yes".to_owned(),
         format!("ConnectTimeout={CONNECT_SECONDS}"),
@@ -70,6 +88,8 @@ pub(crate) fn argv(host: &HostRow, sockets: &Path, remote: &[&str]) -> Vec<Strin
         "ServerAliveCountMax=3".to_owned(),
         "ForwardAgent=no".to_owned(),
         "ForwardX11=no".to_owned(),
+        "ClearAllForwardings=yes".to_owned(),
+        "RemoteCommand=none".to_owned(),
     ];
     for option in options.into_iter().chain(control(sockets)) {
         argv.push("-o".to_owned());
@@ -85,33 +105,19 @@ pub(crate) fn argv(host: &HostRow, sockets: &Path, remote: &[&str]) -> Vec<Strin
         argv.extend(["-i".to_owned(), file.clone()]);
         argv.extend(["-o".to_owned(), "IdentitiesOnly=yes".to_owned()]);
     }
-    argv.extend(["--".to_owned(), host.target.clone(), line(remote)]);
+    argv.extend(["--".to_owned(), host.target.clone()]);
     argv
 }
 
 /// `words` as the one line ssh hands the host's shell: each word quoted, so
 /// a POSIX shell gives it back as it was.
 pub(crate) fn line(words: &[&str]) -> String {
-    words
-        .iter()
-        .map(|word| quoted(word))
-        .collect::<Vec<_>>()
-        .join(" ")
+    devpit_tmux::shell_line(words)
 }
 
-/// A word in single quotes, a quote inside it closed and escaped. A word of
-/// plain characters is left as it is, for a line a person can read; one
-/// starting with `=` is not plain, since zsh reads it as a program's path.
+#[cfg(test)]
 pub(crate) fn quoted(word: &str) -> String {
-    let plain = !word.is_empty()
-        && !word.starts_with('=')
-        && word
-            .chars()
-            .all(|ch| ch.is_ascii_alphanumeric() || "@%+=:,./_-".contains(ch));
-    match plain {
-        true => word.to_owned(),
-        false => devpit_agentcli::declaring::quoted(word),
-    }
+    devpit_tmux::quoted(word)
 }
 
 /// A pipe read on its own thread, up to [`OUTPUT_MOST`], the rest drained.

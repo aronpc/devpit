@@ -260,7 +260,7 @@ fn ptyd_number(project: &str, pane: &str) -> Option<u32> {
     let target = crate::pane_io::target_of(project, pane).ok()?;
     match crate::pane_io::holder(&target) {
         crate::pane_io::Holder::Ptyd(number) => Some(number),
-        crate::pane_io::Holder::Tmux { .. } => None,
+        crate::pane_io::Holder::Tmux { .. } | crate::pane_io::Holder::Host(_) => None,
     }
 }
 

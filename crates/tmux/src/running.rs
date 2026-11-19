@@ -29,8 +29,19 @@ pub(crate) fn require(server: &Server, args: &[&str]) -> Result<Output, TmuxErro
 }
 
 pub(crate) fn run(server: &Server, args: &[&str]) -> Result<Output, TmuxError> {
-    let mut command = devpit_pty::host_env::command(crate::naming::program());
-    command.arg("-S").arg(&server.socket).args(args);
+    let mut command = match &server.via {
+        Some(via) => {
+            let argv = crate::remote::argv(via, args);
+            let mut command = devpit_pty::host_env::command(&argv[0]);
+            command.args(&argv[1..]);
+            command
+        }
+        None => {
+            let mut command = devpit_pty::host_env::command(crate::naming::program());
+            command.arg("-S").arg(&server.socket).args(args);
+            command
+        }
+    };
     #[cfg(windows)]
     {
         use std::os::windows::process::CommandExt;

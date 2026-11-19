@@ -730,6 +730,11 @@ export const commands = {
 	projectHostLink: (projectId: string, hostId: string, path: string) => typedError<HostLinks, RpcError>(__TAURI_INVOKE("project_host_link", { projectId, hostId, path })),
 	/**  `project.host_unlink` — forgets the link; nothing on the host changes. */
 	projectHostUnlink: (projectId: string, hostId: string) => typedError<HostLinks, RpcError>(__TAURI_INVOKE("project_host_unlink", { projectId, hostId })),
+	/**
+	 *  `host.terminal_open` — a new tab of the project with one terminal on the
+	 *  host, in the project's folder there.
+	 */
+	hostTerminalOpen: (projectId: string, hostId: string) => typedError<HostTerminal, RpcError>(__TAURI_INVOKE("host_terminal_open", { projectId, hostId })),
 	/**  `assistant.mode` — whether this orchestrator's Assistant mode is on. */
 	assistantMode: (projectId: string) => typedError<AssistantMode, RpcError>(__TAURI_INVOKE("assistant_mode", { projectId })),
 	/**
@@ -4099,6 +4104,12 @@ export type HostLink = {
 /**  A project's links to hosts. */
 export type HostLinks = {
 	links: HostLink[],
+};
+
+/**  A terminal just opened on a host: its tab and its pane. */
+export type HostTerminal = {
+	tabId: string,
+	paneId: string,
 };
 
 /**  A list, so tomorrow's field has somewhere to go. */

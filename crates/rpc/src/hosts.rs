@@ -82,3 +82,11 @@ pub struct HostLink {
 pub struct HostLinks {
     pub links: Vec<HostLink>,
 }
+
+/// A terminal just opened on a host: its tab and its pane.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct HostTerminal {
+    pub tab_id: String,
+    pub pane_id: String,
+}

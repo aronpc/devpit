@@ -371,8 +371,9 @@ pub(crate) fn listen(state: &State<SessionState>, project_id: &str, layout: &Ses
         if let Some(blocks) = &blocks {
             blocks.belongs(leaf_id, project_id);
         }
-        // Heard by `ptyd_tap` instead: there is no tmux window to pipe.
-        if crate::ptyd_link::is_ptyd(target) {
+        // Heard by `ptyd_tap` instead: there is no tmux window to pipe. A
+        // host's window is not on this machine to pipe either.
+        if crate::ptyd_link::is_ptyd(target) || crate::host_panes::is_host(target) {
             continue;
         }
         let server = tmux.get_or_insert_with(|| crate::sessions::tmux_server().ok());

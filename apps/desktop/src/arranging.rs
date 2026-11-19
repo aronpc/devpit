@@ -54,6 +54,21 @@ pub(crate) fn session_split_now(
             "that pane is not in this project's layout",
         ));
     }
+    // A pane on a host splits into another there, in the project's folder.
+    let split_from = crate::pane_io::target_in(&current, &leaf_id);
+    if let Some((host, _)) = crate::host_panes::parsed(&split_from) {
+        let new_id = format!("leaf_{}", Ulid::generate());
+        let target = crate::host_panes::opened_leaf(&project_id, host, &new_id)?;
+        return split_into(
+            &project_id,
+            &tab_id,
+            current,
+            &leaf_id,
+            direction,
+            &new_id,
+            target,
+        );
+    }
     // Where the pane it splits from stands: a card's tab is in its worktree,
     // and the project root would put the new pane on another branch.
     let stood = crate::pane_io::cwd(&crate::pane_io::target_in(&current, &leaf_id))
@@ -192,6 +207,11 @@ pub(crate) fn session_close_leaf_now(
     // never leaves a session whose layout and tmux disagree.
     if crate::ptyd_link::leaf_is_ptyd(&current, &leaf_id) {
         crate::ptyd_link::close(std::slice::from_ref(&leaf_id));
+        return closed_leaf(app, &project_id, &tab_id, current, &leaf_id, tree);
+    }
+    let target = crate::pane_io::target_in(&current, &leaf_id);
+    if crate::host_panes::is_host(&target) {
+        crate::host_panes::ended(vec![target]);
         return closed_leaf(app, &project_id, &tab_id, current, &leaf_id, tree);
     }
     let session = devpit_tmux::Server::session_name(&project_id);
@@ -365,9 +385,17 @@ pub(crate) fn end_tab_at(
         .collect();
     let ptyd = crate::ptyd_link::ptyd_leaves(layout);
     crate::ptyd_link::close_at(home, &ptyd);
+    let on_hosts: Vec<(String, String)> = layout
+        .tree
+        .leaves()
+        .into_iter()
+        .filter(|(_, target)| crate::host_panes::is_host(target))
+        .map(|(leaf, target)| (leaf.to_owned(), target.to_owned()))
+        .collect();
+    crate::host_panes::ended(on_hosts.iter().map(|(_, target)| target.clone()).collect());
     let leaves: Vec<&str> = closed
         .iter()
-        .filter(|leaf| !ptyd.contains(leaf))
+        .filter(|leaf| !ptyd.contains(leaf) && !on_hosts.iter().any(|(one, _)| one == *leaf))
         .map(String::as_str)
         .collect();
     if !leaves.is_empty() {
