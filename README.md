@@ -41,7 +41,21 @@ every agent call.
 - **An orchestrator** chat that sees every project and can hand work to sessions.
 - **A browser pane** for the page your project serves.
 - **File tree and diffs** beside the terminal.
-- **Local first**: everything lives in `~/.devpit`; an account is optional.
+- **Local or online boards**: keep work on this machine or carry a board through
+  devpit.app; an account is optional.
+
+## Where data lives
+
+An online board keeps its board, columns, cards (title, description and plan),
+comments, acceptance criteria, links, history with its author and date, and
+attachments on devpit.app, where the server can read them. The app reaches it
+through the board API and MCP. Attachments have limits per file, per account
+and across the service.
+
+Personal sync is separate: preferences, project settings and files you choose
+remain sealed with a key held only by your machines, so the server never opens
+those blobs. A local SQLite board, projects, conversations and terminal history
+never leave this machine.
 
 ## Install
 

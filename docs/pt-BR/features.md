@@ -35,7 +35,13 @@ está, e um número em cada chamada de agente.
   agente dirigir a página que você der a ele ainda não está pronto.
 - **Árvore de arquivos e diffs** ao lado do terminal, para revisar o que o
   agente fez sem precisar sair.
-- **Na sua máquina.** Projetos, quadros, conversas e histórico de terminal
-  ficam em `~/.devpit`, neste computador. A conta é opcional; com ela,
-  preferências e configurações de projeto sincronizam entre seus
-  computadores, cifradas em cada um com uma chave que o devpit.app nunca vê.
+- **Um quadro Online.** O quadro, as colunas, os cards (título, descrição e
+  plano), comentários, critérios de aceite, vínculos, histórico com autor e
+  data e anexos ficam no devpit.app, onde o servidor consegue lê-los. O app
+  chega a ele pela API de quadros e pelo MCP. Os anexos têm limites por arquivo,
+  por conta e em todo o serviço.
+- **O sync pessoal continua selado.** Preferências, configurações de projeto e
+  arquivos que você escolher são selados com uma chave que só as suas máquinas
+  têm; o devpit.app nunca abre esses blobs (`docs/sync.md`).
+- **Na sua máquina.** Um quadro Local em SQLite, projetos, conversas e histórico
+  de terminal nunca saem deste computador. A conta é opcional.

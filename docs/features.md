@@ -39,7 +39,13 @@ work stands, and a number on every agent call.
   there that comes back by itself when the connection drops. The tab says
   which host and environment, production in red; an orchestrator can start a
   session there, on production only with your yes.
-- **On your machine.** Projects, boards, conversations and terminal history
-  live in `~/.devpit` on this computer. An account is optional; with it,
-  preferences and project settings can sync between your computers, sealed
-  on each with a key devpit.app never sees (`docs/sync.md`).
+- **An online board.** Its board, columns, cards (title, description and plan),
+  comments, acceptance criteria, links, history with its author and date, and
+  attachments live on devpit.app, where the server can read them. The app
+  reaches it through the board API and MCP. Attachments have limits per file,
+  per account and across the service.
+- **Personal sync stays sealed.** Preferences, project settings and files you
+  choose are sealed with a key held only by your machines; devpit.app never
+  opens those blobs (`docs/sync.md`).
+- **On your machine.** A local SQLite board, projects, conversations and
+  terminal history never leave this computer. An account is optional.
