@@ -58,7 +58,7 @@ fn put(app: &tauri::AppHandle, control: &Control, prompt: Prompt, conversation: 
             let _ = app.emit("permission:asked", question);
             crate::island_notify::asked(app, &question.tool, &question.input);
         },
-        || asking.wait(&question.id, hear),
+        || asking.wait_for(&question, hear, &app.state::<crate::asking_wait::Ends>()),
         |answer| {
             if plan && answer == Answer::Allow {
                 // Out of plan mode, the session asks before what it changes.

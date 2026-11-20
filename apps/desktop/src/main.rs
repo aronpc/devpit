@@ -21,6 +21,7 @@ mod asking;
 mod asking_kept;
 mod asking_picks;
 mod asking_plan;
+mod asking_wait;
 mod asking_waiting;
 mod assistant;
 mod assistant_watch;
@@ -467,6 +468,7 @@ fn main() {
         .manage(steering::Steering::default())
         .manage(asking::Asking::default())
         .manage(asking_waiting::Waiting::default())
+        .manage(asking_wait::Ends::default())
         .manage(asking_kept::Kept::default())
         .manage(asking_picks::Picks::default())
         .manage(blocks::Blocks::default())

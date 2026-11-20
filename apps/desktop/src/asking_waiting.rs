@@ -28,7 +28,8 @@ impl Waiting {
         }
     }
 
-    /// The question is answered, or timed out: no window is offered it again.
+    /// The question is answered, or its wait ended (a question to the person
+    /// has no deadline; another one times out): no window is offered it again.
     pub fn settled(&self, id: &str) {
         if let Ok(mut held) = self.0.lock() {
             held.retain(|one| one.id != id);

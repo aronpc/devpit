@@ -256,7 +256,7 @@ fn serve(app: AppHandle, mut stream: TcpStream, seq: u64) {
             .opened(&question);
         let _ = app.emit("permission:asked", &question);
         crate::island_notify::asked(&app, &question.tool, &question.input);
-        let answer = asking.wait(&question.id, hear);
+        let answer = asking.wait_for(&question, hear, &app.state::<crate::asking_wait::Ends>());
         let said = reply_for(&app.state::<Picks>(), &question.id, &question.input, answer);
         reply(&mut stream, &said);
         // Answered here or anywhere else, or timed out: every window that

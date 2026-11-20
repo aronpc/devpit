@@ -12,18 +12,12 @@
 use std::collections::HashMap;
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::sync::{Arc, Mutex};
-use std::time::Duration;
 
 use devpit_rpc::{ErrorCode, RpcError};
 use serde::{Deserialize, Serialize};
 use specta::Type;
 
-/// How long a question waits before it answers itself.
-///
-/// A hook that waits forever hangs the agent when the window is gone. Two
-/// minutes is long enough for a person to look up and short enough that a
-/// forgotten turn does not sit there for the afternoon.
-const WAITS: Duration = Duration::from_secs(120);
+use crate::asking_wait::Ends;
 
 /// What the agent wants to do, as the screen puts it.
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
@@ -119,16 +113,26 @@ impl Asking {
         hear
     }
 
-    /// Waits for the person, or gives up.
-    ///
-    /// Giving up denies: a question nobody answered is not a question someone
-    /// said yes to.
+    /// Waits for the person as long as the question waits (`asking_wait`).
+    pub fn wait_for(&self, question: &Question, hear: Receiver<Answer>, ends: &Ends) -> Answer {
+        let answer = crate::asking_wait::waits(&hear, question, ends, &crate::asking_wait::Wall);
+        self.forget(&question.id);
+        answer
+    }
+
+    /// The wait for a question that changes something, for a test that has
+    /// already answered it or dropped the sender.
+    #[cfg(test)]
     pub fn wait(&self, id: &str, hear: Receiver<Answer>) -> Answer {
-        let answer = hear.recv_timeout(WAITS).unwrap_or(Answer::Deny);
+        let answer = crate::asking_wait::within(&hear, &crate::asking_wait::Wall);
+        self.forget(id);
+        answer
+    }
+
+    fn forget(&self, id: &str) {
         if let Ok(mut held) = self.waiting.lock() {
             held.remove(id);
         }
-        answer
     }
 
     /// Answers a question that is waiting. False when none was.

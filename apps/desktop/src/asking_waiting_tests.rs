@@ -77,3 +77,32 @@ fn a_question_from_outside_a_chat_is_offered_by_its_session_alone() {
     assert_eq!(ids(&waiting.of("ses_term", "conv_b")), ["q1"]);
     assert!(waiting.of("ses_other", "conv_a").is_empty());
 }
+
+/// Ten minutes unanswered, the person's question is still waiting, and a chat
+/// that opens then is offered it as before: by its session and its chat.
+#[test]
+fn an_unanswered_question_is_still_offered_after_ten_minutes() {
+    use std::sync::Arc;
+    use std::time::Duration;
+
+    use crate::asking::Answer;
+    use crate::asking_wait::tests::{let_pass, waiting as asked_now};
+    use crate::asking_wait::{Ends, Ticking};
+
+    let waiting = Waiting::default();
+    let question = asked_in("q1", "ses_orch", Some("conv_a"));
+    waiting.opened(&question);
+    let (ends, clock) = (
+        Arc::new(Ends::default()),
+        Arc::new(Ticking::by(Duration::from_secs(30))),
+    );
+    let (tell, wait) = asked_now(question, &ends, &clock);
+
+    let_pass(&clock, Duration::from_secs(600), &wait);
+    assert!(!wait.is_finished(), "gave up after {:?}", clock.passed());
+    assert_eq!(ids(&waiting.of("ses_orch", "conv_a")), ["q1"]);
+    assert!(waiting.of("ses_orch", "conv_b").is_empty());
+
+    tell.send(Answer::Allow).expect("the wait is listening");
+    assert_eq!(wait.join().expect("the wait panicked"), Answer::Allow);
+}
