@@ -84,6 +84,12 @@ pub(crate) fn nearly_out(windows: &[PlanWindow]) -> bool {
     five_hour(windows).is_some_and(|percent| percent > NEARLY_OUT)
 }
 
+/// Whether the 5-hour window is used up: a step stops only on this, not on
+/// `nearly_out`, because what is merely low can still run.
+pub(crate) fn exhausted(windows: &[PlanWindow]) -> bool {
+    five_hour(windows).is_some_and(|percent| percent >= 100.0)
+}
+
 /// One account's quota from what was read, as the window gets it.
 pub(crate) fn quota_of(account: &ClaudeAccount, answer: Answer, read_at: f64) -> AccountQuota {
     let (state, windows) = match answer {

@@ -297,6 +297,7 @@ mod staging;
 mod stall_watch;
 mod starting;
 mod steering;
+mod step_check;
 mod steps;
 mod still_holds;
 mod stop_asked;
