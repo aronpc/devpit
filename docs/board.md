@@ -53,6 +53,23 @@ Skills are not on that list. The CLI offers a turn all of them or none, so a
 step asks for one in its prompt — `/tdd` — the way you would in a session, and
 a step that tries to declare them is refused when it is saved.
 
+## An agent run keeps the account it started with
+
+The account and model are fixed on the run before its process starts. Editing
+or deleting the profile later does not rewrite that history, and the model the
+CLI reports is kept separately from the one devpit requested.
+
+Before starting, devpit checks only blockers it knows: a missing or disabled
+profile, no saved sign-in, an exhausted Claude quota, or an unavailable model.
+If one is present, the attempt is paused by default, with the reason recorded;
+an unknown or merely low quota and an expired access token do not block it.
+
+The pause offers every account that passes the same check. One click starts
+the next numbered attempt under the chosen account. Automatic switching is an
+opt-in per project, off by default; when enabled, it tries the first account
+that can run. Retrying without a switch keeps the paused attempt's account and
+model.
+
 ## A lane moves a card only as far as you let it
 
 A step that finishes writes down what happened — output, exit code, real cost.
@@ -65,8 +82,9 @@ What happens next is the lane's setting, and you choose it per lane:
 | `auto` | it moves, and the next lane's step runs. |
 
 `manual` is the default, and a lane set to `auto` says so on the board. There
-is no orchestrator behind this: nothing schedules work, nothing retries, and a
-chain of `auto` lanes is one you built lane by lane and can see.
+is no orchestrator behind this: nothing schedules a failed or finished step
+for another run, and a chain of `auto` lanes is one you built lane by lane and
+can see.
 
 ## An orchestrator, when you want one
 
