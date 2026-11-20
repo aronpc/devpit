@@ -21,7 +21,7 @@ use devpit_rpc::SessionKind;
 use std::sync::Mutex;
 use tauri::{AppHandle, Emitter, Manager};
 
-use crate::asking::{decision, Asking};
+use crate::asking::{decision, Asking, Question};
 use crate::asking_picks::{reply_for, Picks};
 use crate::card_activity::{hear, next_seq, pane_word, state_of_event, Activities, Key, Place};
 use crate::card_route::{card_of_leaf, card_of_session, notice_for, Ring};
@@ -168,6 +168,14 @@ fn fresh_secret() -> Option<String> {
     Some(bytes.iter().map(|byte| format!("{byte:02x}")).collect())
 }
 
+/// A hook holds only changes from sessions running in Supervised. Questions
+/// to the person stay on the CLI prompt, outside the hook's curl budget.
+fn held_by_the_hook(posted: &Posted, asking: &Asking) -> Option<Question> {
+    crate::question::asked_by(posted).filter(|question| {
+        crate::question::changes_something(&question.tool) && asking.asks(&question.session_id)
+    })
+}
+
 fn serve(app: AppHandle, mut stream: TcpStream, seq: u64) {
     trace(&format!("post seq={seq}"));
     let Some(posted) = read_request(&mut stream, SECRET.get().map(String::as_str)) else {
@@ -216,18 +224,9 @@ fn serve(app: AppHandle, mut stream: TcpStream, seq: u64) {
     // a person answers. Everything else is answered at once and empty, which
     // leaves the CLI's own permission mode in charge — a board step running
     // where nobody is watching must never wait on a window.
-    let held = crate::question::asked_by(&posted).filter(|question| {
-        let supervised = crate::question::changes_something(&question.tool)
-            && app
-                .try_state::<Asking>()
-                .map(|asking| asking.asks(&question.session_id))
-                .unwrap_or(false);
-        // A question to the person waits for them in any mode a chat runs in.
-        supervised
-            || app
-                .try_state::<Picks>()
-                .is_some_and(|picks| picks.holds(&question.session_id, &question.tool))
-    });
+    let held = app
+        .try_state::<Asking>()
+        .and_then(|asking| held_by_the_hook(&posted, &asking));
     // Already allowed for the rest of this conversation: answered as the
     // person answered it then, without asking again.
     if let Some(question) = &held {

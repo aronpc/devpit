@@ -13,25 +13,6 @@ fn answers(said: &str) -> serde_json::Value {
     said["hookSpecificOutput"]["updatedInput"].clone()
 }
 
-/// Answered in the chat whatever its mode: a question has no mode that
-/// answers it for the person. A terminal's own, or a board step's, is not held.
-/// A plan is not the hook's either: its prompt is the one that leaves plan mode.
-#[test]
-fn a_chat_holds_its_questions_to_the_person_in_any_mode() {
-    let picks = Picks::default();
-    picks.draw("s1");
-    assert!(picks.holds("s1", "AskUserQuestion"));
-    assert!(
-        !picks.holds("s1", "ExitPlanMode"),
-        "a plan goes to the stdio prompt"
-    );
-    assert!(
-        !picks.holds("s1", "Bash"),
-        "a command is the mode's to allow"
-    );
-    assert!(!picks.holds("s2", "AskUserQuestion"), "no chat draws s2");
-}
-
 /// The shape the CLI turned into "Your questions have been answered:
 /// \"Which colour?\"=\"Green\"" on 2.1.318.
 #[test]
