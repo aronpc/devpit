@@ -108,16 +108,18 @@ fn a_card_and_a_step_produce_a_real_answer() {
         irreversible: false,
     };
 
-    // Opened first, as the board does, so the step has a row to record its
-    // folder and session on.
+    // Opened first, as the board does, so the step can record its folder and session.
     let run = store.start_run(&card, &step_id, None).expect("start");
     let mut streamed = 0;
     let finished = agent::run(
         &store,
         &card,
         &step,
-        &run,
-        &fresh_session_id(),
+        agent::Starting {
+            run_id: &run,
+            session_id: &fresh_session_id(),
+            fixed: None,
+        },
         |_| streamed += 1,
         |_| {},
     )

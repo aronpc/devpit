@@ -29,6 +29,7 @@ pub struct Carrying {
     /// The session an agent or session step speaks in, new for this run.
     pub session_id: String,
     pub step: Step,
+    pub fixed_agent: Option<crate::run_start::FixedAgent>,
     pub hops: u8,
 }
 
@@ -42,6 +43,7 @@ pub fn carry_out(carrying: Carrying, store: &Store) {
         card_id: card,
         session_id,
         step,
+        fixed_agent,
         hops,
     } = carrying;
 
@@ -61,11 +63,18 @@ pub fn carry_out(carrying: Carrying, store: &Store) {
     };
 
     let outcome = match step.kind {
-        StepKind::Agent => {
-            steps::agent::run(store, &card, &step, &id, &session_id, on_progress, |pid| {
-                watching.watch(&watched, pid)
-            })
-        }
+        StepKind::Agent => steps::agent::run(
+            store,
+            &card,
+            &step,
+            steps::agent::Starting {
+                run_id: &id,
+                session_id: &session_id,
+                fixed: fixed_agent.as_ref(),
+            },
+            on_progress,
+            |pid| watching.watch(&watched, pid),
+        ),
         StepKind::Session => steps::session::start(&app, store, &card, &step, &session_id),
         StepKind::Command => steps::command::run(store, &card, &step, &id, on_progress, |pid| {
             watching.watch(&watched, pid)

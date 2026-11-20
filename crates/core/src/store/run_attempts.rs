@@ -90,6 +90,22 @@ impl Store {
         carry: AttemptCarry,
         blocked: Option<&str>,
     ) -> Result<String, StoreError> {
+        self.begin_checked_attempt(ask, from_column, carry, |_| blocked.map(str::to_owned))
+            .map(|(id, _, _)| id)
+    }
+
+    /// Begins an attempt after checking the carry its transition selected.
+    ///
+    /// A retry carries the previous attempt rather than the caller's choice,
+    /// so its check has to run after that transition is known and before the
+    /// row is inserted.
+    pub fn begin_checked_attempt(
+        &self,
+        ask: RunAsk,
+        from_column: Option<&str>,
+        carry: AttemptCarry,
+        check: impl FnOnce(&AttemptCarry) -> Option<String>,
+    ) -> Result<(String, AttemptCarry, Option<String>), StoreError> {
         let tx = self.writing()?;
         let transition = match ask {
             RunAsk::Step { card, step } => asked(&tx, &card, &step, &carry)?,
@@ -109,6 +125,11 @@ impl Store {
             }
         }
 
+        let carry = AttemptCarry {
+            pinned: transition.pinned.clone(),
+            requested_model: transition.requested_model.clone(),
+        };
+        let blocked = check(&carry);
         let id = format!("run_{}", ulid::Ulid::generate());
         let state = if blocked.is_some() {
             "paused"
@@ -131,7 +152,7 @@ impl Store {
                 transition.attempt,
                 transition.previous,
                 transition.cause,
-                blocked
+                blocked.as_deref()
             ],
         );
         match inserted {
@@ -145,7 +166,7 @@ impl Store {
             Err(err) => Err(err.into()),
             Ok(_) => {
                 tx.commit()?;
-                Ok(id)
+                Ok((id, carry, blocked))
             }
         }
     }
@@ -173,6 +194,15 @@ impl Store {
                 },
             )
             .optional()?)
+    }
+
+    /// Records the model the agent said it used, when it said one.
+    pub fn set_run_effective_model(&self, run_id: &str, model: &str) -> Result<(), StoreError> {
+        self.conn.execute(
+            "UPDATE run SET effective_model = ?2 WHERE id = ?1",
+            [run_id, model],
+        )?;
+        Ok(())
     }
 }
 

@@ -11,10 +11,6 @@ pub(crate) enum StepCheck {
     Blocked(String),
 }
 
-#[cfg_attr(
-    not(test),
-    expect(dead_code, reason = "caller arrives in T4 (lp#1480)")
-)]
 pub(crate) fn check(
     pinned: Option<PinnedProfile>,
     profile: Option<&Profile>,
