@@ -109,6 +109,37 @@ pub(crate) fn questions() -> Vec<RemoteQuestion> {
         .unwrap_or_default()
 }
 
+pub(crate) fn question(id: &str) -> Option<RemoteQuestion> {
+    QUESTIONS
+        .lock()
+        .ok()?
+        .iter()
+        .find(|question| question.id == id)
+        .cloned()
+}
+
+pub(crate) fn chat_question(question: crate::asking::Question) -> RemoteQuestion {
+    RemoteQuestion {
+        id: question.id,
+        from: "chat".to_owned(),
+        project: None,
+        tool: question.tool,
+        input: question.input,
+        touch: question.touch,
+    }
+}
+
+fn terminal_question(question: devpit_rpc::IslandQuestion) -> RemoteQuestion {
+    RemoteQuestion {
+        id: question.id,
+        from: "terminal".to_owned(),
+        project: question.project,
+        tool: question.tool,
+        input: question.input,
+        touch: None,
+    }
+}
+
 fn asked(question: RemoteQuestion) {
     if let Ok(mut held) = QUESTIONS.lock() {
         held.retain(|one| one.id != question.id);
@@ -137,24 +168,12 @@ pub(crate) fn listen(app: &tauri::AppHandle) {
     });
     app.listen_any("island:asked", |event| {
         if let Ok(question) = serde_json::from_str::<devpit_rpc::IslandQuestion>(event.payload()) {
-            asked(RemoteQuestion {
-                id: question.id,
-                from: "terminal".to_owned(),
-                project: question.project,
-                tool: question.tool,
-                input: question.input,
-            });
+            asked(terminal_question(question));
         }
     });
     app.listen_any("permission:asked", |event| {
         if let Ok(question) = serde_json::from_str::<crate::asking::Question>(event.payload()) {
-            asked(RemoteQuestion {
-                id: question.id,
-                from: "chat".to_owned(),
-                project: None,
-                tool: question.tool,
-                input: question.input,
-            });
+            asked(chat_question(question));
         }
     });
     app.listen_any(crate::stop_asked::STOP_ASKED, |_| {

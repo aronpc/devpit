@@ -1,5 +1,160 @@
 use super::*;
 
+#[test]
+fn a_remote_question_carries_the_choices() {
+    let touch = devpit_rpc::Touch::Ask {
+        questions: vec![devpit_rpc::IslandAsked {
+            header: Some("Colour".into()),
+            question: "Which colour?".into(),
+            options: vec!["Red".into(), "Green".into()],
+            multi: false,
+        }],
+    };
+    let question = crate::asking::Question {
+        id: "q_colour".into(),
+        session_id: "session_colour".into(),
+        tool: "AskUserQuestion".into(),
+        input: "{}".into(),
+        cwd: "/project".into(),
+        touch: Some(touch.clone()),
+        conversation_id: Some("chat_colour".into()),
+    };
+    let remote = crate::remote_hub::chat_question(question);
+    assert_eq!(remote.touch, Some(touch));
+}
+
+fn choice_question(id: &str, questions: usize) -> RemoteQuestion {
+    RemoteQuestion {
+        id: id.into(),
+        from: "chat".into(),
+        project: None,
+        tool: "AskUserQuestion".into(),
+        input: "{}".into(),
+        touch: Some(Touch::Ask {
+            questions: (0..questions)
+                .map(|number| devpit_rpc::IslandAsked {
+                    header: None,
+                    question: format!("Question {number}"),
+                    options: vec!["Red".into(), "Green".into()],
+                    multi: false,
+                })
+                .collect(),
+        }),
+    }
+}
+
+fn answering_device() -> crate::remote_devices::Device {
+    let mut device = device(false);
+    device.answering = true;
+    device
+}
+
+#[test]
+fn a_pick_from_a_device_that_may_answer_reaches_the_question() {
+    let RemoteIn::Pick { id, chosen } =
+        serde_json::from_str(r#"{"t":"pick","id":"q_colour","chosen":[["Green"]]}"#).expect("pick")
+    else {
+        panic!("a pick");
+    };
+    let asking = crate::asking::Asking::default();
+    let picks = crate::asking_picks::Picks::default();
+    let hear = asking.opened(&id);
+    let root = tempfile::tempdir().expect("remote home");
+
+    pick_for_device(
+        root.path(),
+        &answering_device(),
+        &asking,
+        &picks,
+        Some(&choice_question(&id, 1)),
+        chosen.clone(),
+    )
+    .expect("answered");
+
+    assert_eq!(asking.wait(&id, hear), crate::asking::Answer::Allow);
+    assert_eq!(picks.taken(&id), Some(chosen));
+    let log = std::fs::read_to_string(root.path().join("remote-log.jsonl")).expect("note");
+    assert!(log.contains("answered a question"), "{log}");
+}
+
+#[test]
+fn a_pick_of_the_wrong_length_is_refused() {
+    let asking = crate::asking::Asking::default();
+    let picks = crate::asking_picks::Picks::default();
+    let hear = asking.opened("q_two");
+    let root = tempfile::tempdir().expect("remote home");
+    let error = pick_for_device(
+        root.path(),
+        &answering_device(),
+        &asking,
+        &picks,
+        Some(&choice_question("q_two", 2)),
+        vec![vec!["Green".into()]],
+    )
+    .expect_err("wrong length");
+    assert!(error.contains("needs 2 answers"), "{error}");
+    assert!(asking.answer("q_two", crate::asking::Answer::Deny));
+    assert_eq!(asking.wait("q_two", hear), crate::asking::Answer::Deny);
+}
+
+#[test]
+fn a_device_that_may_not_answer_cannot_pick() {
+    let asking = crate::asking::Asking::default();
+    let picks = crate::asking_picks::Picks::default();
+    let hear = asking.opened("q_read_only");
+    let root = tempfile::tempdir().expect("remote home");
+    let error = pick_for_device(
+        root.path(),
+        &device(false),
+        &asking,
+        &picks,
+        Some(&choice_question("q_read_only", 1)),
+        vec![vec!["Green".into()]],
+    )
+    .expect_err("read only");
+    assert!(error.contains("may not answer"), "{error}");
+    assert!(asking.answer("q_read_only", crate::asking::Answer::Deny));
+    assert_eq!(
+        asking.wait("q_read_only", hear),
+        crate::asking::Answer::Deny
+    );
+}
+
+#[test]
+fn an_oversized_pick_is_refused_before_it_reaches_the_question() {
+    let asking = crate::asking::Asking::default();
+    let picks = crate::asking_picks::Picks::default();
+    let hear = asking.opened("q_large");
+    let root = tempfile::tempdir().expect("remote home");
+    let error = pick_for_device(
+        root.path(),
+        &answering_device(),
+        &asking,
+        &picks,
+        Some(&choice_question("q_large", 1)),
+        vec![vec!["Green".into(); MOST_PICK_LABELS + 1]],
+    )
+    .expect_err("too many choices");
+    assert!(error.contains("too many choices"), "{error}");
+    assert!(asking.answer("q_large", crate::asking::Answer::Deny));
+    assert_eq!(asking.wait("q_large", hear), crate::asking::Answer::Deny);
+}
+
+#[test]
+fn an_allow_without_a_choice_is_refused_for_a_question() {
+    let mut question = choice_question("q_colour", 1);
+    question.touch = None;
+    let error = validate_answer(true, Some(&question)).expect_err("choice required");
+    assert!(error.contains("asks for a choice"), "{error}");
+    assert!(validate_answer(false, Some(&question)).is_ok());
+
+    let asking = crate::asking::Asking::default();
+    let picks = crate::asking_picks::Picks::default();
+    let hear = asking.opened("q_denied");
+    refuse_choice(&asking, &picks, "q_denied").expect("denied");
+    assert_eq!(asking.wait("q_denied", hear), crate::asking::Answer::Deny);
+}
+
 /// A viewer built before ptyd reads the list it always did: a ptyd pane is
 /// one more terminal in the same shape, after the tmux ones.
 #[test]
