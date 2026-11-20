@@ -277,6 +277,35 @@ fn a_settled_prompt_question_is_gone_before_the_window_hears_it_settled() {
     }
 }
 
+#[test]
+fn a_cancelled_question_is_settled_without_writing_to_stdin() {
+    let asking = Asking::default();
+    let picks = Picks::default();
+    let waiting = Waiting::default();
+    let question = asked_on_the_prompt("q1", "AskUserQuestion");
+    let hear = asking.opened(&question.id);
+    assert!(crate::asking_picks::cancel(&asking, &picks, &question.id));
+    let writes = std::sync::atomic::AtomicUsize::new(0);
+    let settled = std::sync::Mutex::new(Vec::new());
+
+    held_for_a_late_window(
+        &waiting,
+        &question,
+        |_| (),
+        || asking.wait(&question.id, hear),
+        |answer| {
+            answer_if_not_cancelled(&picks, &question.id, answer, |_| {
+                writes.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            });
+        },
+        |id| settled.lock().expect("settled").push(id.to_owned()),
+    );
+
+    assert!(waiting.of("ses_orch", "conv_a").is_empty());
+    assert_eq!(writes.load(std::sync::atomic::Ordering::SeqCst), 0);
+    assert_eq!(*settled.lock().expect("settled"), ["q1"]);
+}
+
 /// A question held as `put` holds it, on its own thread: what the window
 /// can still draw, and what it was told settled.
 struct Held {

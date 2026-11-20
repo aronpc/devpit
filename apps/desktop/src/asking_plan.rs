@@ -42,6 +42,16 @@ pub(crate) fn plans(app: &tauri::AppHandle, asks: bool, conversation_id: &str) -
     })
 }
 
+/// Connects both ways a prompt can settle before a chat turn starts.
+pub(crate) fn listen(app: &tauri::AppHandle, control: &Control, asks: bool, conversation_id: &str) {
+    control.asks_with(plans(app, asks, conversation_id));
+    let app = app.clone();
+    control.on_cancel(Arc::new(move |id| {
+        use tauri::Manager;
+        crate::asking_picks::cancel(&app.state::<Asking>(), &app.state::<Picks>(), id);
+    }));
+}
+
 /// Waits for the person, as a question the hook holds does, then answers on stdin.
 fn put(app: &tauri::AppHandle, control: &Control, prompt: Prompt, conversation: String) {
     use tauri::{Emitter, Manager};
@@ -62,6 +72,8 @@ fn put(app: &tauri::AppHandle, control: &Control, prompt: Prompt, conversation: 
     }
     let asking = app.state::<Asking>();
     let hear = asking.opened(&question.id);
+    let picks = app.state::<Picks>();
+    crate::asking_picks::wake_cancelled(&asking, &picks, &question.id);
     held_for_a_late_window(
         &app.state::<Waiting>(),
         &question,
@@ -71,24 +83,40 @@ fn put(app: &tauri::AppHandle, control: &Control, prompt: Prompt, conversation: 
         },
         || asking.wait_for(&question, hear, &app.state::<crate::asking_wait::Ends>()),
         |answer| {
-            if plan && answer == Answer::Allow {
-                // Out of plan mode, the session asks before what it changes.
-                asking.ask_from_now(&question.session_id, true);
-            }
-            let picks = app.state::<Picks>();
-            let said = if plan {
-                plan_reply(&picks, &question.id, prompt.input, answer)
-            } else if person {
-                person_reply(&picks, &question.id, &question.input, answer)
-            } else {
-                approval_reply(&picks, &question.id, answer)
-            };
-            control.answer(&prompt.request_id, said);
+            answer_if_not_cancelled(&picks, &question.id, answer, |answer| {
+                if plan && answer == Answer::Allow {
+                    // Out of plan mode, the session asks before what it changes.
+                    asking.ask_from_now(&question.session_id, true);
+                }
+                let said = if plan {
+                    plan_reply(&picks, &question.id, prompt.input, answer)
+                } else if person {
+                    person_reply(&picks, &question.id, &question.input, answer)
+                } else {
+                    approval_reply(&picks, &question.id, answer)
+                };
+                control.answer(&prompt.request_id, said);
+            });
         },
         |id| {
             let _ = app.emit("permission:settled", id);
         },
     );
+}
+
+/// Answers only when devpit won the prompt; a remote cancellation already
+/// answered the CLI and needs only the ordinary settled path around this.
+pub(crate) fn answer_if_not_cancelled(
+    picks: &Picks,
+    id: &str,
+    answer: Answer,
+    reply: impl FnOnce(Answer),
+) {
+    if crate::asking_picks::cancelled(picks, id) {
+        return;
+    }
+    reply(answer);
+    crate::asking_picks::finished(picks, id);
 }
 
 /// One question on the CLI's own prompt, kept for the Waiting the hook holds

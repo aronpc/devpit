@@ -33,6 +33,9 @@ pub struct Prompt {
 /// be refused (false).
 pub type Asker = Arc<dyn Fn(Prompt, &Control) -> bool + Send + Sync>;
 
+/// Hears that the CLI no longer waits for one of its permission prompts.
+pub type Canceller = Arc<dyn Fn(&str) + Send + Sync>;
+
 /// A running turn's stdin, shared with whoever may need to steer it.
 #[derive(Clone, Default)]
 pub struct Control {
@@ -40,6 +43,7 @@ pub struct Control {
     /// Steers written and not echoed back yet: the uuid sent, and devpit's id for it.
     awaiting: Arc<Mutex<Vec<(String, String)>>>,
     asker: Arc<Mutex<Option<Asker>>>,
+    canceller: Arc<Mutex<Option<Canceller>>>,
     /// How this CLI is written to; Claude Code's stream-json until a turn says.
     wire: Arc<Mutex<Option<Arc<dyn Wire>>>>,
     /// A stop the wire took without a word to the CLI, until its turn ends.
@@ -207,6 +211,13 @@ impl Control {
         }
     }
 
+    /// Who settles a permission prompt the CLI cancelled elsewhere.
+    pub fn on_cancel(&self, canceller: Canceller) {
+        if let Ok(mut held) = self.canceller.lock() {
+            *held = Some(canceller);
+        }
+    }
+
     /// Answers the prompt sent under `request_id` — `{behavior: "allow",
     /// updatedInput}` or `{behavior: "deny", message}` — in the CLI's own shape.
     pub fn answer(&self, request_id: &str, response: serde_json::Value) -> bool {
@@ -218,7 +229,14 @@ impl Control {
     /// A permission prompt on `line`, handed to the asker or refused. False
     /// when the line is not one.
     pub(crate) fn prompted(&self, line: &str, session_id: Option<&str>) -> bool {
-        let Some(asked) = self.wire().asked(line, session_id) else {
+        let wire = self.wire();
+        if let Some(id) = wire.cancelled(line) {
+            if let Some(cancel) = self.canceller.lock().ok().and_then(|held| held.clone()) {
+                cancel(&id);
+            }
+            return true;
+        }
+        let Some(asked) = wire.asked(line, session_id) else {
             return false;
         };
         let asker = self.asker.lock().ok().and_then(|held| held.clone());
@@ -300,6 +318,21 @@ pub(crate) fn prompt_of(line: &str, session_id: Option<&str>) -> Option<Prompt> 
         input: request.get("input").cloned().unwrap_or_default(),
         session_id: session_id.map(str::to_owned),
     })
+}
+
+/// The request id of a permission prompt the CLI cancelled elsewhere.
+pub(crate) fn cancelled_prompt(line: &str) -> Option<String> {
+    if !line.contains("\"control_cancel_request\"") {
+        return None;
+    }
+    let cancelled: serde_json::Value = serde_json::from_str(line).ok()?;
+    let request = cancelled.get("request")?;
+    if cancelled.get("type")?.as_str()? != "control_cancel_request"
+        || request.get("subtype")?.as_str()? != "can_use_tool"
+    {
+        return None;
+    }
+    cancelled.get("request_id")?.as_str().map(str::to_owned)
 }
 
 /// The answer to a permission prompt no hook decided: refused in the CLI's

@@ -184,8 +184,7 @@ pub async fn chat_send(
     let transcript = file.clone();
 
     let control = steering.hold(&conversation_id);
-    let plans = crate::asking_plan::plans(&app, driver.asks(), &conversation_id);
-    control.asks_with(plans);
+    crate::asking_plan::listen(&app, &control, driver.asks(), &conversation_id);
     let steered = control.clone();
     crate::card_chat::turn_heard(&app, &conversation_id, Doing::Working);
     let noticed = (project_id.clone(), profile_id.clone(), from);
