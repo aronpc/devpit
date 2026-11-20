@@ -201,6 +201,14 @@ impl Ear {
         self.now.lock().map(|now| now.closed).unwrap_or(true)
     }
 
+    /// Whether another conversation has taken this one's place.
+    pub(crate) fn displaced(&self) -> bool {
+        self.now
+            .lock()
+            .map(|now| now.closing.is_some() || now.closed)
+            .unwrap_or(true)
+    }
+
     /// Stops a person's turn still waiting for the process. The woken turn it
     /// waits for goes on: Stop is for the person's own turn. False when none
     /// waits.
