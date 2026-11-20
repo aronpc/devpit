@@ -195,6 +195,27 @@ pub struct StopsAsked {
     pub stops: Vec<StopAsked>,
 }
 
+/// A request another orchestrator forwarded, waiting in this orchestrator's
+/// conversation for the person. Nothing in it has been sent or run.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct ForwardedRequest {
+    /// The address of the orchestrator that sent it.
+    pub from: String,
+    /// What the sender calls it: the same request sent again carries it again.
+    pub id: String,
+    /// The conversation it waits in.
+    pub conversation: String,
+    pub text: String,
+}
+
+/// A list, so tomorrow's field has somewhere to go.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct ForwardedRequests {
+    pub requests: Vec<ForwardedRequest>,
+}
+
 /// What the person's click on the stops asked did.
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]

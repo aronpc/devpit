@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 import type { Project, Thread } from '../gen/bindings'
+import { ForwardedMark } from './ForwardedMark'
 import { ChevronDown, Folder, Pencil, Plus, Trash } from './GitIcons'
 import { ask, commands } from './live'
 import { OrchestratorDialog } from './OrchestratorDialog'
@@ -149,6 +150,7 @@ export function RailOrchestrators({
               <span className="rail__n">{one.name}</span>
               <span className="rail__s">orchestrator</span>
             </span>
+            <ForwardedMark projectId={one.id} />
           </button>
         ))}
       {!folded && (

@@ -14,8 +14,13 @@
 use std::collections::HashMap;
 use std::sync::{Mutex, OnceLock};
 
-use devpit_rpc::{Project, Thread};
+use devpit_rpc::{ForwardedRequest, ForwardedRequests, Project, RpcError, Thread};
 use serde_json::{json, Value};
+use tauri::{AppHandle, Emitter};
+
+/// What the window hears when a destination's requests change; it carries
+/// the destination's project id.
+pub(crate) const FORWARDED: &str = "orchestrator:forwarded";
 
 /// The most a request may be, in characters: what a message may be.
 pub(crate) const LONGEST: usize = crate::session_bus::LONGEST;
@@ -84,6 +89,59 @@ fn checked<'a>(id: &'a str, text: &'a str) -> Result<(&'a str, &'a str), String>
     Ok((id, text))
 }
 
+/// What waits for project `destination`, oldest sender first.
+pub(crate) fn listed(destination: &str) -> ForwardedRequests {
+    let held = requests()
+        .lock()
+        .map(|held| held.clone())
+        .unwrap_or_default();
+    let mut requests: Vec<ForwardedRequest> = held
+        .into_iter()
+        .filter(|((to, ..), _)| to == destination)
+        .map(|((_, from, id), (conversation, text))| ForwardedRequest {
+            from,
+            id,
+            conversation,
+            text,
+        })
+        .collect();
+    requests.sort_by(|a, b| (&a.from, &a.id).cmp(&(&b.from, &b.id)));
+    ForwardedRequests { requests }
+}
+
+/// Lets go of request `id` from `origin` for project `destination`: the
+/// others stay. Answers whether there was one.
+pub(crate) fn dropped(destination: &str, origin: &str, id: &str) -> bool {
+    requests().lock().is_ok_and(|mut held| {
+        held.remove(&(destination.to_owned(), origin.to_owned(), id.to_owned()))
+            .is_some()
+    })
+}
+
+/// `forwarded.list` — what other orchestrators forwarded to this one.
+#[tauri::command]
+#[specta::specta]
+pub async fn forwarded_list(project_id: String) -> Result<ForwardedRequests, RpcError> {
+    crate::off_main::blocking(move || Ok(listed(&project_id))).await
+}
+
+/// `forwarded.drop` — the person lets go of one request without sending it.
+#[tauri::command]
+#[specta::specta]
+pub async fn forwarded_drop(
+    app: AppHandle,
+    project_id: String,
+    from: String,
+    id: String,
+) -> Result<(), RpcError> {
+    crate::off_main::blocking(move || {
+        dropped(&project_id, &from, &id);
+        let _ = app.emit(FORWARDED, &project_id);
+        Ok(())
+    })
+    .await
+}
+
 /// The conversation of the destination a request is kept for: the one its
 /// live process listens in, else its latest on `profile`, else none yet.
 pub(crate) fn chosen(
@@ -122,7 +180,19 @@ pub(crate) fn route(
     params: &Value,
     text: &str,
 ) -> Option<Result<Value, String>> {
-    forward(projects, here, to, params, text, conversation_of)
+    forward(
+        projects,
+        here,
+        to,
+        params,
+        text,
+        conversation_of,
+        |project| {
+            if let Some(app) = crate::session_bus::app() {
+                let _ = app.emit(FORWARDED, project);
+            }
+        },
+    )
 }
 
 fn forward(
@@ -132,6 +202,7 @@ fn forward(
     params: &Value,
     text: &str,
     conversation_of: impl Fn(&Project) -> Result<String, String>,
+    told: impl Fn(&str),
 ) -> Option<Result<Value, String>> {
     if !to.starts_with("orchestrator-") {
         return None;
@@ -165,6 +236,9 @@ fn forward(
             format!("{to} could not start: {cause}; nothing was kept, send again with the same id")
         })?;
         let again = keep(&destination.id, &from, id, &conversation, text)?;
+        // The window learns of it and marks the destination; nothing is
+        // opened or raised, so the person is not taken from what they do.
+        told(&destination.id);
         Ok(json!({
             "forwarded": to,
             "again": again,

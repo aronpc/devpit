@@ -43,10 +43,18 @@ fn forwarded(
 ) -> Option<Result<Value, String>> {
     let to = params["to"].as_str().expect("to");
     let text = params["text"].as_str().expect("text");
-    forward(projects, here, to, params, text, |_| match starts {
-        true => Ok("conv-1".to_owned()),
-        false => Err("its folder is gone".to_owned()),
-    })
+    forward(
+        projects,
+        here,
+        to,
+        params,
+        text,
+        |_| match starts {
+            true => Ok("conv-1".to_owned()),
+            false => Err("its folder is gone".to_owned()),
+        },
+        |_| (),
+    )
 }
 
 #[test]
@@ -237,4 +245,82 @@ fn through_message_a_destination_unknown_to_the_store_does_not_start() {
     .expect_err("does not start");
     assert!(err.contains("send again with the same id"), "{err}");
     assert_eq!(waiting_for("prj_nostore"), 0);
+}
+
+#[test]
+fn listing_answers_an_object() {
+    keep("dest-list", "orchestrator-b", "2", "c1", "second").expect("kept");
+    keep("dest-list", "orchestrator-a", "1", "c1", "first").expect("kept");
+    keep("dest-elsewhere", "orchestrator-a", "1", "c9", "not here").expect("kept");
+    let said = serde_json::to_value(listed("dest-list")).expect("json");
+    assert_eq!(
+        said,
+        json!({ "requests": [
+            { "from": "orchestrator-a", "id": "1", "conversation": "c1", "text": "first" },
+            { "from": "orchestrator-b", "id": "2", "conversation": "c1", "text": "second" },
+        ] })
+    );
+    assert_eq!(listed("dest-nobody").requests, Vec::new());
+}
+
+#[test]
+fn dropping_one_keeps_the_other() {
+    keep("dest-drop", "orchestrator-a", "1", "c", "first").expect("kept");
+    keep("dest-drop", "orchestrator-a", "2", "c", "second").expect("kept");
+    keep(
+        "dest-drop",
+        "orchestrator-b",
+        "1",
+        "c",
+        "same id, other sender",
+    )
+    .expect("kept");
+    assert!(dropped("dest-drop", "orchestrator-a", "1"));
+    assert!(!dropped("dest-drop", "orchestrator-a", "1"), "gone already");
+    let left: Vec<(String, String)> = listed("dest-drop")
+        .requests
+        .into_iter()
+        .map(|one| (one.from, one.id))
+        .collect();
+    assert_eq!(
+        left,
+        vec![
+            ("orchestrator-a".to_owned(), "2".to_owned()),
+            ("orchestrator-b".to_owned(), "1".to_owned()),
+        ]
+    );
+    // Dropped, the sender may send it again and it is kept as new.
+    assert_eq!(
+        keep("dest-drop", "orchestrator-a", "1", "c", "first"),
+        Ok(false)
+    );
+}
+
+#[test]
+fn a_kept_request_is_told_to_the_window() {
+    let here = project("prj_a", "a", Some("prof"));
+    let projects = [here.clone(), project("prj_told", "told", Some("prof"))];
+    let heard = std::cell::RefCell::new(Vec::new());
+    let send = |id: &str, starts: bool| {
+        let params = json!({ "to": "orchestrator-told", "text": "look", "id": id });
+        forward(
+            &projects,
+            &here,
+            "orchestrator-told",
+            &params,
+            "look",
+            |_| match starts {
+                true => Ok("conv-1".to_owned()),
+                false => Err("its folder is gone".to_owned()),
+            },
+            |project| heard.borrow_mut().push(project.to_owned()),
+        )
+        .expect("a route")
+    };
+    send("r1", true).expect("kept");
+    assert_eq!(*heard.borrow(), vec!["prj_told".to_owned()]);
+    // A refused request leaves nothing and tells nothing.
+    send("r2", false).expect_err("it could not start");
+    assert_eq!(heard.borrow().len(), 1);
+    assert!(crate::local_events::TOPICS.contains(&FORWARDED));
 }

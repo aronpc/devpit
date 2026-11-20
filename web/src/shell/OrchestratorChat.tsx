@@ -2,6 +2,7 @@ import { useState } from 'react'
 
 import type { LiveSession } from '../gen/bindings'
 import { ComebackBriefing } from './ComebackBriefing'
+import { ForwardedDrafts } from './ForwardedDrafts'
 import { refreshSessions, useLiveSessions } from './liveStatus'
 import { ProjectProposals } from './ProjectProposals'
 import { ReplyDrafts } from './ReplyDrafts'
@@ -16,7 +17,8 @@ import { WaitingPrompts } from './WaitingPrompts'
  * count in its corner, which opens the Sessions panel, and — above the
  * composer — every question one of them is stopped on, answered from here or
  * in its own terminal opened over the chat, every reply the orchestrator
- * drafted for the person to send as theirs, and the stops it asked for.
+ * drafted for the person to send as theirs, the stops it asked for, and the
+ * requests other orchestrators forwarded to it.
  */
 
 export function SessionsChip({ profileId }: { profileId: string }): React.JSX.Element {
@@ -31,7 +33,7 @@ export function SessionsChip({ profileId }: { profileId: string }): React.JSX.El
 }
 
 export function SessionsWaiting({ profileId }: { profileId: string }): React.JSX.Element {
-  const { setProject, openPane, project } = useShell()
+  const { setProject, openPane, project, active } = useShell()
   const live = useLiveSessions(profileId)
   const [terminal, setTerminal] = useState<LiveSession | null>(null)
   return (
@@ -40,6 +42,7 @@ export function SessionsWaiting({ profileId }: { profileId: string }): React.JSX
       <ReplyDrafts profileId={profileId} sessions={live} onDone={() => refreshSessions(profileId)} />
       <StopsAsked profileId={profileId} sessions={live} onDone={() => refreshSessions(profileId)} />
       <ProjectProposals />
+      {project?.orchestrator && <ForwardedDrafts projectId={project.id} conversation={active?.id ?? null} />}
       {project?.orchestrator && <ComebackBriefing projectId={project.id} />}
       {terminal && (
         <SessionTerminal
