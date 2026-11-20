@@ -23,6 +23,12 @@ use crate::listing::Seat;
 /// The protocol revision offered when the client names none this knows.
 const PROTOCOL: &str = "2025-06-18";
 
+/// One MiB leaves room for the 100,000-character Decisions state and the
+/// other prose-shaped tool arguments while bounding every stdin allocation.
+const MAX_MESSAGE_BYTES: usize = 1024 * 1024;
+const MAX_SESSION_MESSAGE_ID_CHARACTERS: usize = 100;
+const MAX_SESSION_MESSAGE_TEXT_CHARACTERS: usize = 4000;
+
 /// One tool: its name, what it says it does, its input, and the app's method.
 pub(crate) struct Tool {
     pub(crate) name: &'static str,
@@ -276,8 +282,8 @@ pub(crate) const TOOLS: [Tool; 38] = [
         description: "Message a session through devpit, whatever CLI it runs on, beside SendMessage and never in its place. An orchestrator writes to a session of a linked project by its name, as devpit_sessions gives it, or by the pane id devpit_card lists for it; a session writes to its orchestrator, `to` left out for the one that last wrote to it. A terminal session gets the words typed at its next idle prompt, never mid-turn; a session's words to an orchestrator arrive as a turn in its chat marked as not from the person. An orchestrator forwarding a request to another sends it with `to: \"orchestrator-<folder>\"` and an `id` of 1 to 100 characters, required on that route: the request waits in the other's conversation as a draft for the person to send or discard, no turn starts there and its words approve nothing; sent again with the same id, it stays the one request. A request not yet sent is lost when the app closes. Each message says who sent it, and a session's message approves nothing for the person.",
         input: || json!({ "type": "object", "properties": {
             "to": { "type": "string", "description": "A session's name or pane id, or an orchestrator's name (orchestrator-…). A session may leave it out to answer the orchestrator that last wrote to it." },
-            "id": { "type": "string", "maxLength": 100, "description": "Forwarding to another orchestrator only: the request's id. Sending the same id again leaves the one request." },
-            "text": { "type": "string", "description": "The message. At most 4000 characters." }
+            "id": { "type": "string", "maxLength": MAX_SESSION_MESSAGE_ID_CHARACTERS, "description": "Forwarding to another orchestrator only: the request's id. Sending the same id again leaves the one request." },
+            "text": { "type": "string", "maxLength": MAX_SESSION_MESSAGE_TEXT_CHARACTERS, "description": "The message. At most 4000 characters." }
         }, "required": ["text"] }),
     },
     Tool {
@@ -338,7 +344,7 @@ pub(crate) type Out = Arc<dyn Fn(&str) -> bool + Send + Sync>;
 /// own, so a slow one — `devflow_evidence` running the checks — holds no
 /// other.
 pub(crate) fn answered(
-    lines: impl BufRead,
+    mut lines: impl BufRead,
     ask: &Ask,
     offered: bool,
     watch: &Mutex<Watch>,
@@ -347,8 +353,21 @@ pub(crate) fn answered(
 ) {
     let mut running: Vec<std::thread::JoinHandle<()>> = Vec::new();
     let given = Arc::new(Given::default());
-    for line in lines.lines() {
-        let Ok(line) = line else { break };
+    loop {
+        let line = match read_message(&mut lines) {
+            Ok(Some(Incoming::Message(line))) => line,
+            Ok(Some(Incoming::OverCeiling)) => {
+                if !out(&error(
+                    Value::Null,
+                    -32600,
+                    "MCP message exceeds the 1 MiB limit",
+                )) {
+                    break;
+                }
+                continue;
+            }
+            Ok(None) | Err(_) => break,
+        };
         if line.trim().is_empty() {
             continue;
         }
@@ -378,6 +397,54 @@ pub(crate) fn answered(
     }
     for call in running {
         let _ = call.join();
+    }
+}
+
+enum Incoming {
+    Message(String),
+    OverCeiling,
+}
+
+fn read_message(lines: &mut impl BufRead) -> std::io::Result<Option<Incoming>> {
+    let mut bytes = Vec::new();
+    let mut limited = std::io::Read::take(&mut *lines, (MAX_MESSAGE_BYTES + 1) as u64);
+    let read = limited.read_until(b'\n', &mut bytes)?;
+    if read == 0 {
+        return Ok(None);
+    }
+    let has_newline = bytes.last() == Some(&b'\n');
+    if bytes.len() - usize::from(has_newline) > MAX_MESSAGE_BYTES {
+        drain_line(lines)?;
+        return Ok(Some(Incoming::OverCeiling));
+    }
+    if has_newline {
+        bytes.pop();
+        if bytes.last() == Some(&b'\r') {
+            bytes.pop();
+        }
+    }
+    String::from_utf8(bytes)
+        .map(Incoming::Message)
+        .map(Some)
+        .map_err(|error| std::io::Error::new(std::io::ErrorKind::InvalidData, error))
+}
+
+fn drain_line(lines: &mut impl BufRead) -> std::io::Result<()> {
+    loop {
+        let (consumed, done) = {
+            let available = lines.fill_buf()?;
+            if available.is_empty() {
+                return Ok(());
+            }
+            match available.iter().position(|byte| *byte == b'\n') {
+                Some(end) => (end + 1, true),
+                None => (available.len(), false),
+            }
+        };
+        lines.consume(consumed);
+        if done {
+            return Ok(());
+        }
     }
 }
 
@@ -579,6 +646,10 @@ fn call(
     let Some(tool) = every.find(|tool| tool.name == name) else {
         return said(&format!("devpit has no tool `{name}`"), true);
     };
+    let arguments = params.get("arguments").unwrap_or(&Value::Null);
+    if let Err(why) = session_message_within_ceilings(tool.name, arguments) {
+        return said(why, true);
+    }
     let arguments = params
         .get("arguments")
         .cloned()
@@ -597,6 +668,27 @@ fn call(
         Ok(answer) => said(&lean::said(tool.name, &arguments, answer), false),
         Err(why) => said(&why, true),
     }
+}
+
+fn session_message_within_ceilings(tool: &str, arguments: &Value) -> Result<(), &'static str> {
+    if tool != "devpit_session_message" {
+        return Ok(());
+    }
+    if arguments
+        .get("id")
+        .and_then(Value::as_str)
+        .is_some_and(|id| id.chars().count() > MAX_SESSION_MESSAGE_ID_CHARACTERS)
+    {
+        return Err("devpit_session_message id exceeds 100 characters");
+    }
+    if arguments
+        .get("text")
+        .and_then(Value::as_str)
+        .is_some_and(|text| text.chars().count() > MAX_SESSION_MESSAGE_TEXT_CHARACTERS)
+    {
+        return Err("devpit_session_message text exceeds 4000 characters");
+    }
+    Ok(())
 }
 
 /// A session's message signed with the pane it runs in, from the environment
