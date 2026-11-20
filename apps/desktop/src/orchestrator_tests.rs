@@ -261,6 +261,10 @@ fn a_folder_born_in_portuguese_gets_the_pt_br_briefs_and_keeps_the_read_headings
     let dir = tempfile::tempdir().expect("tempdir");
     let store = devpit_core::Store::open(&dir.path().join("state.db")).expect("store");
     let folder = dir.path().join("work");
+    // The store keys settings by the folder's canonical path, so the folder
+    // exists before its setting is kept: on macOS the temp dir is a symlink
+    // and a path that does not exist yet would be keyed by another name.
+    std::fs::create_dir_all(&folder).expect("folder");
     store
         .set_orchestrator_setting(&folder, "assistant", serde_json::json!(true))
         .expect("assistant on");
