@@ -44,6 +44,7 @@ pub mod reminder;
 pub mod remote;
 pub mod remote_view;
 pub mod review;
+pub mod run_switch;
 pub mod runs;
 pub mod schedule;
 pub mod search;
@@ -156,6 +157,7 @@ pub use review::{
     blocking, reviewed, standing, CardFindings, CardReview, Finding, Found, Review, Severity,
     Standing, REVIEW_EVIDENCE,
 };
+pub use run_switch::{RunSwitchOptions, RunSwitchProfile};
 pub use runs::{ProjectRun, RunCursor, RunsPage, RunsQuery};
 pub use schedule::{
     AssistantMode, Briefing, Heartbeat, ProposedReminder, Routine, RoutineKind, Schedule,

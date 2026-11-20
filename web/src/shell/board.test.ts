@@ -65,6 +65,8 @@ describe('whether a tile can be played', () => {
     exitCode: null,
     costUsd: null,
     durationMs: null,
+    profile: null,
+    model: null,
     startedAt: 0,
   })
 
@@ -128,7 +130,7 @@ describe('a board read again', () => {
   const running: Board = {
     ...board,
     cards: board.cards.map((one) =>
-      one.id === 'c3' ? { ...one, runs: [{ id: 'r', stepId: 's', stepName: 'tests', state: 'running', output: null, exitCode: null, costUsd: null, durationMs: null, startedAt: 0 }] } : one,
+      one.id === 'c3' ? { ...one, runs: [{ id: 'r', stepId: 's', stepName: 'tests', state: 'running', output: null, exitCode: null, costUsd: null, durationMs: null, profile: null, model: null, startedAt: 0 }] } : one,
     ),
   }
 

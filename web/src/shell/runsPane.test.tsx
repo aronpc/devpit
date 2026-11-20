@@ -19,6 +19,8 @@ const listed = (id: string, title: string, state: ProjectRun['run']['state']): P
     exitCode: null,
     costUsd: null,
     durationMs: null,
+    profile: null,
+    model: null,
     startedAt: 100,
   },
   cardId: `card_${id}`,

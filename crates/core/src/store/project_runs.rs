@@ -36,6 +36,9 @@ pub struct ListedRun {
     pub exit_code: Option<i64>,
     pub cost_usd: Option<f64>,
     pub duration_ms: Option<i64>,
+    pub pinned: Option<String>,
+    pub requested_model: Option<String>,
+    pub effective_model: Option<String>,
     pub started_at: i64,
 }
 
@@ -55,7 +58,8 @@ impl Store {
         let (before_at, before_id) = query.before.unzip();
         let mut stmt = self.conn.prepare(
             "SELECT r.id, r.card_id, c.title, r.step_id, r.state, substr(r.output, 1, 400), \
-             r.exit_code, r.cost_usd, r.duration_ms, r.started_at \
+             r.exit_code, r.cost_usd, r.duration_ms, r.pinned, r.requested_model, \
+             r.effective_model, r.started_at \
              FROM run r JOIN card c ON c.id = r.card_id \
              WHERE c.project_id = ?1 \
              AND (?2 IS NULL OR r.step_id = ?2) \
@@ -88,7 +92,10 @@ impl Store {
                         exit_code: row.get(6)?,
                         cost_usd: row.get(7)?,
                         duration_ms: row.get(8)?,
-                        started_at: row.get(9)?,
+                        pinned: row.get(9)?,
+                        requested_model: row.get(10)?,
+                        effective_model: row.get(11)?,
+                        started_at: row.get(12)?,
                     })
                 },
             )?

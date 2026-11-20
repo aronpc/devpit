@@ -25,10 +25,10 @@ use crate::{
     profile_models, profile_waiting, project_agent, project_lessons, project_memory_view,
     project_naming, project_proposals, project_settings, projects, provider_scan, reading_path,
     rebound, receipts, recipes, regrouping, reminders, remote, reply_drafts, reveal, rewinding,
-    runs_list, saves, schedules, search, session_cost, session_search, session_window, sessions,
-    settings, shell_launch, sign_ins, skills, slash, sources, spend_history, staging, stall_watch,
-    steering, steps, stop_asked, stopping, tab_opening, threads, transcribe, tray, update,
-    watching, workspace, worktree_base, worktree_branch, worktree_cleanup, worktree_setup,
+    run_switch, runs_list, saves, schedules, search, session_cost, session_search, session_window,
+    sessions, settings, shell_launch, sign_ins, skills, slash, sources, spend_history, staging,
+    stall_watch, steering, steps, stop_asked, stopping, tab_opening, threads, transcribe, tray,
+    update, watching, workspace, worktree_base, worktree_branch, worktree_cleanup, worktree_setup,
     worktrees, wsfiles,
 };
 
@@ -76,6 +76,8 @@ pub fn handler() -> impl Fn(tauri::ipc::Invoke<tauri::Wry>) -> bool + Send + Syn
         rewinding::chat_rewind,
         rewinding::chat_edit_from,
         runs_list::runs_list,
+        run_switch::run_switch_options,
+        run_switch::run_switch,
         session_search::sessions_search,
         chat::chat_send,
         chat_relay::chat_rejoin,

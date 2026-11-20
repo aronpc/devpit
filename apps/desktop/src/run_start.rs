@@ -16,16 +16,16 @@ pub(crate) struct BegunAgent {
     pub(crate) paused: bool,
 }
 
-struct Sources {
-    home: String,
-    declared: Vec<devpit_rpc::Declared>,
-    profiles: Vec<Profile>,
-    credentials: Vec<devpit_rpc::ProfileSignIn>,
-    waiting: std::collections::HashMap<String, String>,
+pub(crate) struct Sources {
+    pub(crate) home: String,
+    pub(crate) declared: Vec<devpit_rpc::Declared>,
+    pub(crate) profiles: Vec<Profile>,
+    pub(crate) credentials: Vec<devpit_rpc::ProfileSignIn>,
+    pub(crate) waiting: std::collections::HashMap<String, String>,
 }
 
 impl Sources {
-    fn read(store: &Store) -> Result<Self, RpcError> {
+    pub(crate) fn read(store: &Store) -> Result<Self, RpcError> {
         let home = crate::installations::home()?;
         let declared = crate::agent_profiles::declared(store);
         let profiles = crate::agent_profiles::all(store)?;
@@ -47,7 +47,7 @@ impl Sources {
         })
     }
 
-    fn current(&self, profile_id: &str, model: Option<&str>) -> AttemptCarry {
+    pub(crate) fn current(&self, profile_id: &str, model: Option<&str>) -> AttemptCarry {
         let pinned = self
             .declared
             .iter()
@@ -61,7 +61,7 @@ impl Sources {
         }
     }
 
-    fn fixed(&self, carry: &AttemptCarry) -> Result<FixedAgent, String> {
+    pub(crate) fn fixed(&self, carry: &AttemptCarry) -> Result<FixedAgent, String> {
         let pinned = carry
             .pinned
             .as_deref()
@@ -98,6 +98,29 @@ impl Sources {
             }
         }
     }
+}
+
+pub(crate) fn switch_agent(
+    store: &Store,
+    from: &str,
+    from_column: Option<&str>,
+    carry: AttemptCarry,
+    fixed: FixedAgent,
+) -> Result<BegunAgent, devpit_core::store::StoreError> {
+    let (run_id, _, _) = store.begin_checked_attempt(
+        RunAsk::Switch {
+            from: from.to_owned(),
+            how: devpit_core::store::SwitchKind::Click,
+        },
+        from_column,
+        carry,
+        |_| None,
+    )?;
+    Ok(BegunAgent {
+        run_id,
+        fixed: Some(fixed),
+        paused: false,
+    })
 }
 
 fn quota_for(profile: &Profile, home: &str) -> Option<devpit_rpc::AccountQuota> {
