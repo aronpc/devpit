@@ -6029,7 +6029,15 @@ export type Run = {
 	profile: string | null,
 	/**  The effective model when known, otherwise the one requested. */
 	model: string | null,
+	attempt: RunAttempt,
 	startedAt: number | null,
+};
+
+export type RunAttempt = {
+	/**  Absent on runs made before attempts were recorded. */
+	number: number | null,
+	/**  The shown model is the request because the CLI reported no effective one. */
+	modelIsRequested: boolean,
 };
 
 /**  Where the last page ended: the next one starts after this run. */
@@ -7262,6 +7270,11 @@ export type WouldRun = {
 	/**  The **names** of what devpit would declare, never the values. */
 	declaredEnv: string[],
 	timeoutSeconds: number | null,
+	/**  The account label and requested model, when this is a profiled agent step. */
+	profile: string | null,
+	model: string | null,
+	/**  `Ready`, or the same reason that would pause the attempt. */
+	check: string | null,
 };
 
 /* Tauri Specta runtime */

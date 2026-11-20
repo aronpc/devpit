@@ -14,6 +14,8 @@ export interface Said {
   readonly noDirectory: string
   readonly timeout: string
   readonly irreversible: string
+  readonly identity: string | null
+  readonly check: string | null
 }
 
 export function wouldRunWords(would: WouldRun): Said {
@@ -24,7 +26,13 @@ export function wouldRunWords(would: WouldRun): Said {
       : 'The project folder.',
     timeout: timeoutWords(would.timeoutSeconds),
     irreversible: 'This step is marked as having no undo. devpit asks twice before firing it.',
+    identity: identityWords(would.profile, would.model),
+    check: would.check,
   }
+}
+
+export function identityWords(profile: string | null, model: string | null): string | null {
+  return [profile, model].filter(Boolean).join(' · ') || null
 }
 
 /**

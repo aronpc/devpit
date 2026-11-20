@@ -18,6 +18,7 @@ const paused: Run = {
   startedAt: 0,
   profile: 'Old account',
   model: 'sonnet',
+  attempt: { number: 2, modelIsRequested: true },
 }
 
 let options: RunSwitchOptions = {
@@ -79,8 +80,26 @@ describe('a paused step', () => {
     expect(screen.queryByRole('button')).toBeNull()
   })
 
-  it('names the account and model on a run', () => {
-    render(<RunIdentity run={{ ...paused, profile: 'Work account', model: 'opus' }} />)
-    expect(screen.getByText('Work account · opus')).toBeTruthy()
+  it('names the account, effective model and attempt on a run', () => {
+    render(
+      <RunIdentity
+        run={{
+          ...paused,
+          profile: 'Work account',
+          model: 'claude-opus-4-6',
+          attempt: { number: 3, modelIsRequested: false },
+        }}
+      />,
+    )
+    expect(screen.getByText('Work account · claude-opus-4-6 · attempt 3')).toBeTruthy()
+  })
+
+  it('marks the requested model when no effective model was reported', () => {
+    render(
+      <RunIdentity
+        run={{ ...paused, model: 'sonnet', attempt: { number: 2, modelIsRequested: true } }}
+      />,
+    )
+    expect(screen.getByText('Old account · sonnet (requested) · attempt 2')).toBeTruthy()
   })
 })

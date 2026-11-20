@@ -38,6 +38,19 @@ pub(crate) fn previewed(store: &Store, card_id: &str, step_id: &str) -> Result<W
         .flatten();
 
     let in_a_worktree = crate::checkout::needs_worktree(step.kind, &step.config);
+    let agent = if step.kind == StepKind::Agent {
+        let config =
+            crate::steps::agent_config::readable(&step.config).map_err(RpcError::internal)?;
+        match config.profile.as_deref() {
+            Some(profile) => {
+                let sources = crate::run_start::Sources::read(store)?;
+                Some(sources.preview(profile, config.model.as_deref()))
+            }
+            None => None,
+        }
+    } else {
+        None
+    };
     Ok(WouldRun {
         step_id: step.id,
         step_name: step.name,
@@ -61,6 +74,9 @@ pub(crate) fn previewed(store: &Store, card_id: &str, step_id: &str) -> Result<W
         timeout_seconds: manifest
             .and_then(|it| it.timeout_seconds)
             .map(|seconds| seconds as f64),
+        profile: agent.as_ref().map(|agent| agent.profile.clone()),
+        model: agent.as_ref().and_then(|agent| agent.model.clone()),
+        check: agent.map(|agent| agent.check),
     })
 }
 

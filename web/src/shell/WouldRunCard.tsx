@@ -59,6 +59,18 @@ export function WouldRunCard({
       <dt>With</dt>
       {/* Names only. What is in them is not something a preview shows. */}
       <dd>{would.declaredEnv.join(', ')}</dd>
+      {said.identity && (
+        <>
+          <dt>Profile · model</dt>
+          <dd>{said.identity}</dd>
+        </>
+      )}
+      {said.check && (
+        <>
+          <dt>Check</dt>
+          <dd>{said.check}</dd>
+        </>
+      )}
       {would.irreversible && (
         <>
           <dt>Careful</dt>

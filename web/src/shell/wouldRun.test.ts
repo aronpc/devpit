@@ -12,6 +12,9 @@ const would = (over: Partial<WouldRun> = {}): WouldRun => ({
   inAWorktree: false,
   declaredEnv: ['DEVPIT_BRANCH'],
   timeoutSeconds: 600,
+  profile: null,
+  model: null,
+  check: null,
   ...over,
 })
 
@@ -45,5 +48,13 @@ describe('what a check would do, in words', () => {
   it('says out loud that a step with no undo is asked about twice', () => {
     expect(wouldRunWords(would({ irreversible: true })).irreversible).toMatch(/no undo/i)
     expect(wouldRunWords(would({ irreversible: true })).irreversible).toMatch(/asks twice/i)
+  })
+
+  it('names the profile, requested model and check result before the step runs', () => {
+    const said = wouldRunWords(
+      would({ profile: 'Work account', model: 'sonnet', check: 'Ready' }),
+    )
+    expect(said.identity).toBe('Work account · sonnet')
+    expect(said.check).toBe('Ready')
   })
 })

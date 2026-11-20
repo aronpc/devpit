@@ -21,6 +21,7 @@ const listed = (id: string, title: string, state: ProjectRun['run']['state']): P
     durationMs: null,
     profile: null,
     model: null,
+    attempt: { number: null, modelIsRequested: false },
     startedAt: 100,
   },
   cardId: `card_${id}`,

@@ -46,10 +46,11 @@ pub(crate) fn page(store: &Store, query: &RunsQuery, size: u32) -> Result<RunsPa
 }
 
 fn listed(row: ListedRun, steps: &[Step]) -> ProjectRun {
-    let (profile, model) = crate::board::identity(
+    let (profile, model, attempt) = crate::run_identity::read(
         row.pinned.as_deref(),
         row.requested_model,
         row.effective_model,
+        row.attempt,
     );
     ProjectRun {
         run: Run {
@@ -67,6 +68,7 @@ fn listed(row: ListedRun, steps: &[Step]) -> ProjectRun {
             duration_ms: row.duration_ms.map(|ms| ms as f64),
             profile,
             model,
+            attempt,
             started_at: row.started_at as f64,
         },
         card_id: row.card_id,
