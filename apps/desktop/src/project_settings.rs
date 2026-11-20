@@ -1,7 +1,6 @@
-//! What a project can set for itself: the model and the permission mode a
-//! new chat starts with, and the branch name its cards' worktrees get. Each
-//! comes from the project's own value, else its repository's
-//! `.devpit/settings.json`, else the machine's; with none set, as before.
+//! What a project can set for itself: the model and permission mode a new
+//! chat starts with, its cards' branch names, and whether blocked steps switch
+//! accounts on their own. With none set, each behaves as before.
 
 use std::collections::BTreeMap;
 use std::path::Path;
@@ -18,6 +17,7 @@ pub struct Scoped {
     pub model: Option<String>,
     pub permission_mode: Option<String>,
     pub branch_pattern: Option<String>,
+    pub automatic_switch: Option<bool>,
 }
 
 /// One scope's settings, beside where each applied value came from.
@@ -58,6 +58,9 @@ pub(crate) fn applied(own: &Scoped, repo: &Scoped, machine: &Scoped) -> Scoped {
         model: first(|scope| &scope.model),
         permission_mode: first(|scope| &scope.permission_mode),
         branch_pattern: first(|scope| &scope.branch_pattern),
+        automatic_switch: [own, repo, machine]
+            .into_iter()
+            .find_map(|scope| scope.automatic_switch),
     }
 }
 
@@ -120,6 +123,7 @@ pub(crate) fn from_repo(root: &Path) -> Result<Scoped, String> {
         model: file.model,
         permission_mode: file.permission_mode,
         branch_pattern: file.worktree.and_then(|worktree| worktree.branch_pattern),
+        automatic_switch: None,
     };
     // A mode that asks less than Supervised is the person's to choose,
     // never a repository's.
@@ -173,6 +177,7 @@ fn machine(store: &Store) -> Scoped {
         model: set(preference::CHAT_MODEL),
         permission_mode: set(preference::CHAT_PERMISSION),
         branch_pattern: set(preference::WORKTREE_BRANCH),
+        automatic_switch: None,
     }
 }
 
@@ -211,6 +216,20 @@ pub(crate) fn branch_pattern(store: &Store, project_id: &str) -> String {
         .unwrap_or_default()
 }
 
+/// Whether a blocked step on this card may try another account.
+pub(crate) fn automatic_switch(
+    store: &Store,
+    card_id: &str,
+) -> Result<bool, devpit_core::store::StoreError> {
+    let Some(project_id) = store.project_id_of_card(card_id)? else {
+        return Ok(false);
+    };
+    Ok(owned(store)
+        .get(&project_id)
+        .and_then(|settings| settings.automatic_switch)
+        .unwrap_or(false))
+}
+
 /// `project.settings_read` — `projectId` empty for the machine's.
 #[tauri::command]
 #[specta::specta]
@@ -233,6 +252,14 @@ pub(crate) fn with_field(
         "model" => scoped.model = value,
         "permissionMode" => scoped.permission_mode = value,
         "branchPattern" => scoped.branch_pattern = value,
+        "automaticSwitch" => {
+            scoped.automatic_switch = match value.as_deref() {
+                None => None,
+                Some("true") => Some(true),
+                Some("false") => Some(false),
+                Some(_) => return Err("automaticSwitch must be true or false".to_owned()),
+            }
+        }
         _ => return Err(format!("{field:?} is not a setting a project chooses")),
     }
     match refused(&scoped) {

@@ -208,6 +208,82 @@ fn run_start_pauses_a_blocked_attempt_without_launching_or_reopening_the_previou
 }
 
 #[test]
+fn run_start_automatically_switches_to_the_first_profile_that_passes() {
+    let (_dir, store, card, step) = seeded();
+    let project = store
+        .project_id_of_card(&card)
+        .expect("project")
+        .expect("project id");
+    store
+        .set_preference(
+            devpit_core::preference::PROJECT_SETTINGS,
+            &format!(r#"{{"{project}":{{"automaticSwitch":true}}}}"#),
+        )
+        .expect("setting");
+    let available = sources(&[
+        ("blocked", "", false),
+        ("first-ready", "", true),
+        ("second-ready", "", true),
+    ]);
+
+    let begun = begin_profiled(
+        &store,
+        &card,
+        &step,
+        None,
+        "blocked",
+        Some("opus"),
+        &available,
+    )
+    .expect("begin");
+
+    assert!(begun.fixed.is_some(), "the automatic attempt launches");
+    let attempt = store
+        .attempt_of(&begun.run_id)
+        .expect("read")
+        .expect("attempt");
+    let pinned: crate::run_pin::PinnedProfile =
+        serde_json::from_str(attempt.pinned.as_deref().expect("snapshot")).expect("snapshot");
+    assert_eq!(attempt.cause.as_deref(), Some("automatic"));
+    assert_eq!(pinned.id, "first-ready");
+    let paused = store
+        .attempt_of(attempt.previous_attempt.as_deref().expect("previous"))
+        .expect("read")
+        .expect("paused");
+    assert_eq!(paused.state, "paused");
+}
+
+#[test]
+fn run_start_stays_paused_when_no_profile_passes_the_check() {
+    let (_dir, store, card, step) = seeded();
+    let project = store
+        .project_id_of_card(&card)
+        .expect("project")
+        .expect("project id");
+    store
+        .set_preference(
+            devpit_core::preference::PROJECT_SETTINGS,
+            &format!(r#"{{"{project}":{{"automaticSwitch":true}}}}"#),
+        )
+        .expect("setting");
+    let available = sources(&[("blocked", "", false), ("also-blocked", "", false)]);
+
+    let begun = begin_profiled(
+        &store,
+        &card,
+        &step,
+        None,
+        "blocked",
+        Some("opus"),
+        &available,
+    )
+    .expect("begin");
+
+    assert!(begun.paused);
+    assert_eq!(store.runs(&card).expect("runs").len(), 1);
+}
+
+#[test]
 fn run_start_retries_with_the_previous_attempts_snapshot_and_model() {
     let (_dir, store, card, step) = seeded();
     let available = sources(&[("old", "", true), ("current", "", true)]);

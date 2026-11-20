@@ -84,14 +84,21 @@ pub(crate) fn switch_with(
     let fixed = sources
         .fixed(&carry)
         .map_err(|why| RpcError::new(ErrorCode::Invalid, why))?;
-    let begun = crate::run_start::switch_agent(store, run_id, from_column.as_deref(), carry, fixed)
-        .map_err(|err| match err {
-            StoreError::AlreadyContinued | StoreError::AlreadyRunning => {
-                RpcError::new(ErrorCode::Busy, err.to_string())
-            }
-            StoreError::NotPaused => RpcError::new(ErrorCode::Conflict, err.to_string()),
-            other => other.into(),
-        })?;
+    let begun = crate::run_start::switch_agent(
+        store,
+        run_id,
+        from_column.as_deref(),
+        carry,
+        fixed,
+        devpit_core::store::SwitchKind::Click,
+    )
+    .map_err(|err| match err {
+        StoreError::AlreadyContinued | StoreError::AlreadyRunning => {
+            RpcError::new(ErrorCode::Busy, err.to_string())
+        }
+        StoreError::NotPaused => RpcError::new(ErrorCode::Conflict, err.to_string()),
+        other => other.into(),
+    })?;
     Ok(Switched {
         card_id,
         step,
