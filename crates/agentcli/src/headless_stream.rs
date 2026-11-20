@@ -31,18 +31,21 @@ enum Line {
         subtype: String,
         #[serde(default)]
         session_id: Option<String>,
+        #[serde(default)]
+        model: Option<String>,
     },
     #[serde(other)]
     Other,
 }
 
 /// A turn's stream: each fragment to `on_partial`, the outcome from its
-/// `result` line, and the session from the `init` line before it.
+/// `result` line, and the session and model from the `init` line before it.
 pub(crate) fn read_stream(
     lines: impl Iterator<Item = String>,
     mut on_partial: impl FnMut(&str),
 ) -> Option<Outcome> {
     let mut session_id = None;
+    let mut model = None;
     let mut outcome = None;
     for line in lines {
         match serde_json::from_str::<Line>(&line) {
@@ -62,14 +65,17 @@ pub(crate) fn read_stream(
                     is_error,
                     stop_reason,
                     session_id: session_id.clone(),
+                    model: model.clone(),
                 });
             }
             Ok(Line::System {
                 subtype,
                 session_id: said,
+                model: used,
             }) => {
                 if subtype == "init" {
                     session_id = said;
+                    model = used;
                 }
                 on_partial(&line);
             }
