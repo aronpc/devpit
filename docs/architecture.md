@@ -75,11 +75,43 @@ would still say `working` after the app had closed.
 
 A run is a row, opened when a card lands on a lane with a step and closed when
 the step returns. It holds the state (`running`, `ok`, `failed`, `cancelled`,
-`lost`), the output as it came, the exit code for a command, the cost and the
-duration for an agent turn, the lane it came from, the folder it ran in and the
-session it ran as. The card shows the last one; what a run cost is on the card,
-and what your plan has left is on the Usage page, which reads the CLI's own
-credentials and asks Anthropic.
+`lost`, `paused`), the output as it came, the exit code for a command, the cost
+and duration for an agent turn, the lane it came from, the folder it ran in and
+the session it ran as. The card shows the last one; what a run cost is on the
+card, and what your plan has left is on the Usage page, which reads the CLI's
+own credentials and asks Anthropic.
+
+An agent run also keeps the attempt it belongs to:
+
+| Column | What it records |
+|---|---|
+| `pinned` | a snapshot of the account profile as it stood before the process started |
+| `requested_model` | the model devpit asked the CLI to use |
+| `effective_model` | the model the CLI later reported, when it reported one |
+| `attempt` | the 1-based number within this step's tries on the card |
+| `previous_attempt` | the run this attempt continues |
+| `cause` | `start`, `retry`, `click` or `automatic` |
+| `paused_because` | the known blocker that prevented the process from starting |
+
+The snapshot has no secret. It contains the profile id, label and agent, a
+home-relative config folder, a credential-free gateway URL and the requested
+model. The same allowlist as profile sync excludes tokens, keys, passwords and
+other secret environment values, and credentials are stripped from the gateway
+URL.
+
+Attempts follow one transition table; a unique index permits at most one
+successor for any attempt:
+
+| Event | Previous state | Next attempt | Cause | Account and model |
+|---|---|---|---|---|
+| ask for the step | none, `ok` or `cancelled` | 1, with no predecessor | `start` | the account and model just chosen |
+| ask for the same step again | `paused`, `failed` or `lost` | N+1, linked to N | `retry` | carried from N |
+| choose an account on a pause | `paused` | N+1, linked to N | `click` | the new choice |
+| project automatic switch | `paused` | N+1, linked to N | `automatic` | the first account that passes the check |
+
+A known blocker creates the row as `paused` with its transition intact; no
+process starts. A paused row is not work in flight, survives the launch sweep
+and does not occupy the card's one-running-run slot.
 
 A `session` step is not limited to one at a time. Each one starts a detached
 tmux session for its card and writes a link to it; what is limited to one is
@@ -111,8 +143,8 @@ of injection.
 ## Nothing runs that you did not set up
 
 There is no "work a hundred iterations and tell me at the end" mode, and
-nothing schedules or retries work. A step that fails leaves the card where it
-is with the reason written on it.
+nothing schedules a failed or finished step for another run. A step that fails
+leaves the card where it is with the reason written on it.
 
 A step that passes does what its lane says: `manual` leaves the card alone,
 `ask` asks before moving it, `auto` moves it and runs the next lane's step. A

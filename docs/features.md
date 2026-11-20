@@ -22,6 +22,9 @@ work stands, and a number on every agent call.
   runs what.
 - **Each column composes its own step** — which agent, on which model, with
   which slice of the card's context.
+- **Every agent attempt keeps its account and model.** A known blocker pauses
+  it before a process starts; switch accounts in one click, or opt a project
+  in to the first account that can run.
 - **A spending cap on every agent call**, and the real cost written on the card
   when it finishes.
 - **Agents are files** — markdown with frontmatter in `~/.devpit/agents/`, and
