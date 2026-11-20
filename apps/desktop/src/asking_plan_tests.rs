@@ -11,6 +11,10 @@ use crate::asking_wait::{waits, Ends, Over, Ticking, WAITS};
 
 const PLAN: &str = "# Steps\n1. read";
 
+/// Two questions as the CLI sends them, so an answer has to tell one from
+/// the other: one entry per question, keyed by each one's own words.
+const TWO: &str = r#"{"questions":[{"question":"Which colour?","header":"Colour","options":[{"label":"Red"},{"label":"Green"}],"multiSelect":false},{"question":"Which fruit?","header":"Fruit","options":[{"label":"Pear"},{"label":"Apple"}],"multiSelect":true}]}"#;
+
 /// Leaving plan mode is the prompt's to say: approved, the turn goes on in
 /// the mode that asks before it changes anything.
 #[test]
@@ -89,8 +93,68 @@ fn an_approval_on_the_prompt_is_answered_as_the_person_said() {
     assert_eq!(said["message"], "Refused in devpit: not on main");
 }
 
+/// A question to the person is the prompt's to hold — with the remote on,
+/// the prompt is where claude.ai answers from — so it is taken rather than
+/// left to the CLI's own "This command requires approval".
+#[test]
+fn a_question_to_the_person_on_the_prompt_is_taken_not_refused() {
+    assert!(takes("AskUserQuestion", false));
+    assert!(takes("ExitPlanMode", false), "a plan still is");
+    assert!(!takes("Bash", false), "a command is still refused");
+    assert!(
+        takes("Bash", true),
+        "a CLI that asks on its prompt takes all"
+    );
+}
+
+/// The prompt's answer carries the person's picks as the tool's `answers` —
+/// one entry per question, several choices joined by ", " — and the
+/// questions back as asked: the shape the CLI's prompt answers in.
+#[test]
+fn the_prompt_answer_carries_one_answer_per_question() {
+    let asking = Asking::default();
+    let picks = Picks::default();
+    let hear = asking.opened("q1");
+    assert!(pick(
+        &asking,
+        &picks,
+        "q1",
+        vec![
+            vec!["Green".to_owned()],
+            vec!["Pear".to_owned(), "Apple".to_owned()],
+        ]
+    ));
+    let answer = asking.wait("q1", hear);
+    let said = person_reply(&picks, "q1", TWO, answer);
+    assert_eq!(said["behavior"], "allow");
+    assert_eq!(
+        said["updatedInput"]["answers"],
+        json!({ "Which colour?": "Green", "Which fruit?": "Pear, Apple" })
+    );
+    assert_eq!(
+        said["updatedInput"]["questions"][1]["header"], "Fruit",
+        "the questions go back as asked"
+    );
+}
+
+/// A refusal on the prompt carries the person's own words, which the agent
+/// reads where it would have read the tool's result.
+#[test]
+fn a_refused_prompt_question_carries_the_persons_reason() {
+    let asking = Asking::default();
+    let picks = Picks::default();
+    let hear = asking.opened("q1");
+    assert!(refuse(&asking, &picks, "q1", "not tonight"));
+    let answer = asking.wait("q1", hear);
+    let said = person_reply(&picks, "q1", TWO, answer);
+    assert_eq!(said["behavior"], "deny");
+    assert_eq!(said["message"], "Refused in devpit: not tonight");
+    assert!(said.get("updatedInput").is_none());
+}
+
 /// "Always in this chat" answers the same call again, never one that asks
-/// for more reach on top of it, and never a plan.
+/// for more reach on top of it, never a plan, and never a question to the
+/// person: every one of those is the person's to answer again.
 #[test]
 fn always_in_this_chat_never_covers_a_request_for_more_reach() {
     use crate::asking::Question;
@@ -98,19 +162,25 @@ fn always_in_this_chat_never_covers_a_request_for_more_reach() {
     let kept = Kept::default();
     let plain = r#"{"command":"curl https://example.com"}"#;
     kept.keep("s1", rule_for("Bash", plain));
-    let asked = |input: &str| Question {
+    let asked = |tool: &str, input: &str| Question {
         id: "q".to_owned(),
         session_id: "s1".to_owned(),
-        tool: "Bash".to_owned(),
+        tool: tool.to_owned(),
         input: input.to_owned(),
         cwd: String::new(),
         touch: None,
         conversation_id: None,
     };
-    assert!(already_allowed(&kept, &asked(plain), false));
+    assert!(already_allowed(&kept, &asked("Bash", plain)));
     let wider = r#"{"command":"curl https://example.com","grants":{"networkApprovalContext":{"host":"example.com","protocol":"https"}}}"#;
-    assert!(!already_allowed(&kept, &asked(wider), false));
-    assert!(!already_allowed(&kept, &asked(plain), true));
+    assert!(!already_allowed(&kept, &asked("Bash", wider)));
+    // Kept on purpose, a plan and a question to the person are asked again.
+    let plan = r##"{"plan":"# Steps"}"##;
+    kept.keep("s1", rule_for("ExitPlanMode", plan));
+    assert!(!already_allowed(&kept, &asked("ExitPlanMode", plan)));
+    let person = r#"{"questions":[{"question":"Which colour?"}]}"#;
+    kept.keep("s1", rule_for("AskUserQuestion", person));
+    assert!(!already_allowed(&kept, &asked("AskUserQuestion", person)));
 }
 
 /// An ACP agent's shell call is asked as the command it runs, so one
@@ -132,12 +202,12 @@ fn always_on_an_acp_shell_call_covers_that_command_and_no_other() {
     };
     let build = r#"{"command":"rm -rf build","description":"bash"}"#;
     kept.keep("ses_1", rule_for("Bash", build));
-    assert!(already_allowed(&kept, &asked("Bash", build), false));
+    assert!(already_allowed(&kept, &asked("Bash", build)));
     let home = r#"{"command":"rm -rf ~","description":"bash"}"#;
-    assert!(!already_allowed(&kept, &asked("Bash", home), false));
+    assert!(!already_allowed(&kept, &asked("Bash", home)));
     let each_time = r#"{"title":"bash","kind":"delete","always":false}"#;
     kept.keep("ses_1", rule_for("bash", each_time));
-    assert!(!already_allowed(&kept, &asked("bash", each_time), false));
+    assert!(!already_allowed(&kept, &asked("bash", each_time)));
 }
 
 fn asked_on_the_prompt(id: &str, tool: &str) -> Question {
@@ -283,6 +353,16 @@ fn settled_by(gone: impl FnOnce(&Ends)) {
         &ends,
         &clock,
     );
+    // Both threads share the clock, so one's reads must not be mistaken for
+    // the other's wait having begun: wait until each has opened its question.
+    let real = Instant::now();
+    while mine.drawn("conv_a").is_empty() || other.drawn("conv_b").is_empty() {
+        assert!(
+            real.elapsed() < Duration::from_secs(5),
+            "a question never opened"
+        );
+        std::thread::sleep(Duration::from_millis(1));
+    }
     let_pass(&clock, Duration::from_secs(60), &mine.wait);
     let_pass(&clock, Duration::from_secs(60), &other.wait);
     assert_eq!(mine.drawn("conv_a"), ["q1"]);
@@ -423,4 +503,26 @@ fn only_the_question_to_the_person_waits_without_a_deadline() {
     );
     person.tell.send(Answer::Allow).expect("still listening");
     assert_eq!(person.settles("conv_a").0, Answer::Allow);
+}
+
+/// A question to the person asked on the CLI's own prompt — held as `put`
+/// holds it — is drawn for the window, which is what the island and the
+/// remote draw from too, and ten minutes unanswered it is still drawn: no
+/// deadline, until the person answers.
+#[test]
+fn a_prompt_question_to_the_person_is_shown_and_waits_unbounded() {
+    let (ends, clock) = (
+        Arc::new(Ends::default()),
+        Arc::new(Ticking::by(Duration::from_secs(30))),
+    );
+    let question = held(
+        asked("q1", "AskUserQuestion", Some("conv_a")),
+        &ends,
+        &clock,
+    );
+    let_pass(&clock, Duration::from_secs(600), &question.wait);
+    assert_eq!(question.drawn("conv_a"), ["q1"]);
+    assert!(question.settled.lock().unwrap().is_empty());
+    question.tell.send(Answer::Allow).expect("still listening");
+    assert_eq!(question.settles("conv_a").0, Answer::Allow);
 }
