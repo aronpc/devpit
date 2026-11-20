@@ -482,9 +482,13 @@ the viewer is the same either way.
 
 ## Sync
 
-Two machines of one account share preferences and project settings through
-devpit.app, sealed on each with a key devpit.app never holds. Off unless
-turned on in Settings → Account → Sync. The design is `docs/sync.md`.
+Personal sync lets two machines of one account share preferences and project
+settings through devpit.app, sealed on each with a key devpit.app never holds.
+It is off unless turned on in Settings → Account → Sync. The design is
+`docs/sync.md`.
+The server can read an online board, which the app reaches through
+devpit.app's board API and MCP; it is not a personal-sync namespace. A local
+SQLite board stays on its machine.
 
 - **One key per account**, made on the first machine and carried to the
   next by the person: an offer the first makes on the relay, taken inside
@@ -500,8 +504,6 @@ turned on in Settings → Account → Sync. The design is `docs/sync.md`.
   later change winning and a tie going to the same machine everywhere, so
   every machine settles on the same values in any order. A project is the
   same project on two machines when it clones the same repository.
-- **The board** is the next namespace, and stays on each machine until it is
-  safe to sync.
 
 ## devpit Plus
 

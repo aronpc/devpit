@@ -4,6 +4,12 @@ Two machines signed in to the same devpit account share preferences and
 project settings through devpit.app, which keeps them sealed and cannot read
 them. Off unless turned on in Settings → Account → Sync, on each machine.
 
+Boards are separate from personal sync. The server can read an online board,
+which the app reaches through devpit.app's board API and MCP. Personal sync
+remains sealed on the same `/v1/sync` routes, and the server never opens those
+blobs. A local SQLite board stays on its machine; an online board is not a
+`board:` namespace in this sync.
+
 ## What each party sees
 
 | | sees | cannot |
@@ -26,7 +32,7 @@ pseudorandom key, draws three keys from it:
 |---|---|
 | `devpit-sync/1 seal` | seals each blob |
 | `devpit-sync/1 key id` | eight bytes written on every blob, so a machine holding another key knows at once |
-| `devpit-sync/1 names` | HMAC-SHA256 under it names each blob, so the name says nothing — not even which project a board would be |
+| `devpit-sync/1 names` | HMAC-SHA256 under it names each blob, so the name says nothing — not even which project a record belongs to |
 
 A second machine gets the key one of two ways, never through devpit.app:
 
@@ -189,16 +195,6 @@ DEVPIT_APP_DIR=../devpit-app DATABASE_URL=postgres://…/devpit_app_test \
 
 ## Not yet
 
-- **The board.** It is the next namespace, one per project
-  (`board:<record>`, named through the key like the others), and the round
-  already merges what it needs: a card a record, a field per thing a card
-  holds, a cleared field as a tombstone. What is still to decide before it
-  syncs is what makes it safe: matching columns that each machine seeded on
-  its own, a card's place among positions written apart, a card moved into a
-  lane with a step on the other machine (it must not run there), dates that
-  would remind on both machines, and which of a card's edges and comments
-  travel. Until those are settled and tested, the board stays on each
-  machine.
 - **A project's memory** arrives the same way: a namespace per project, its
   blob named through the key, and nothing else to build in the round or on
   devpit.app.
