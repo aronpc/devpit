@@ -56,7 +56,6 @@ pub fn holding(
     let (app, asks) = (app.clone(), mode == Some(ASKING_MODE));
     move |session: &str| {
         use tauri::Manager;
-        app.state::<crate::asking_picks::Picks>().draw(session);
         if asks {
             app.state::<Asking>().ask_from_now(session, true);
         }
@@ -116,7 +115,7 @@ impl Asking {
     /// Waits for the person as long as the question waits (`asking_wait`).
     pub fn wait_for(&self, question: &Question, hear: Receiver<Answer>, ends: &Ends) -> Answer {
         let answer = crate::asking_wait::waits(&hear, question, ends, &crate::asking_wait::Wall);
-        self.forget(&question.id);
+        drop(self.forget(&question.id));
         answer
     }
 
@@ -125,24 +124,23 @@ impl Asking {
     #[cfg(test)]
     pub fn wait(&self, id: &str, hear: Receiver<Answer>) -> Answer {
         let answer = crate::asking_wait::within(&hear, &crate::asking_wait::Wall);
-        self.forget(id);
+        drop(self.forget(id));
         answer
     }
 
-    fn forget(&self, id: &str) {
-        if let Ok(mut held) = self.waiting.lock() {
-            held.remove(id);
-        }
+    fn forget(&self, id: &str) -> Option<Sender<Answer>> {
+        self.waiting.lock().ok()?.remove(id)
     }
 
     /// Answers a question that is waiting. False when none was.
     pub fn answer(&self, id: &str, answer: Answer) -> bool {
-        let Ok(held) = self.waiting.lock() else {
-            return false;
-        };
-        held.get(id)
+        self.forget(id)
             .map(|tell| tell.send(answer).is_ok())
             .unwrap_or(false)
+    }
+
+    pub(crate) fn end(&self, id: &str) -> bool {
+        self.answer(id, Answer::Deny)
     }
 }
 

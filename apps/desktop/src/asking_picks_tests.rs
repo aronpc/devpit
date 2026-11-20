@@ -41,6 +41,35 @@ fn several_choices_to_one_question_go_back_as_one_answer() {
 }
 
 #[test]
+fn the_window_refuses_mismatched_choice_counts() {
+    let asking = Asking::default();
+    let ends = crate::asking_wait::Ends::default();
+    let mut question =
+        crate::asking_wait::tests::asked("q_wrong_count", "AskUserQuestion", Some("conv_a"));
+    question.touch = Some(devpit_rpc::Touch::Ask {
+        questions: vec![devpit_rpc::IslandAsked {
+            header: None,
+            question: "Which colour?".to_owned(),
+            options: vec!["Green".to_owned()],
+            multi: false,
+        }],
+    });
+    let hear = asking.opened(&question.id);
+    let picks = Picks::default();
+    picks.opened(&question);
+    assert!(!pick(&asking, &picks, &question.id, Vec::new()));
+    assert!(asking.answer(&question.id, Answer::Deny));
+    assert_eq!(asking.wait_for(&question, hear, &ends), Answer::Deny);
+
+    assert!(answered_input(COLOUR, Vec::new()).is_err());
+    assert!(answered_input(
+        COLOUR,
+        vec![vec!["Green".to_owned()], vec!["Red".to_owned()]],
+    )
+    .is_err());
+}
+
+#[test]
 fn a_question_refused_sends_no_answer() {
     let picks = Picks::default();
     picks.picked("q1", vec![vec!["Red".to_owned()]]);

@@ -108,10 +108,9 @@ fn a_question_ends_when_its_conversation_ends() {
     assert!(!ends.ended("q1"), "an ended wait left itself behind");
 }
 
-/// Ending a conversation that has no question waiting changes nothing, and
-/// ending one twice is ending it once.
+/// Ending one conversation changes no other, and ending it twice is once.
 #[test]
-fn ending_a_conversation_with_no_question_waiting_ends_nothing() {
+fn ending_one_conversation_changes_no_other() {
     let ends = Ends::default();
     ends.open("q1", Some("conv_a"));
     ends.end("conv_nobody");
@@ -123,6 +122,61 @@ fn ending_a_conversation_with_no_question_waiting_ends_nothing() {
     ends.close("q1");
     ends.close("q1");
     assert!(!ends.ended("q1"));
+}
+
+#[test]
+fn a_new_turn_clears_the_conversations_end() {
+    let ends = Ends::default();
+    ends.end("conv_a");
+    assert!(ends.open("q1", Some("conv_a")));
+    ends.close("q1");
+
+    ends.started("conv_a");
+    assert!(!ends.open("q2", Some("conv_a")));
+}
+
+#[test]
+fn ended_conversations_are_bounded() {
+    let ends = Ends::default();
+    for number in 0..=ENDED_CONVERSATIONS {
+        ends.end(&format!("conv_{number}"));
+    }
+    assert!(!ends.open("old", Some("conv_0")));
+    assert!(ends.open("recent", Some(&format!("conv_{ENDED_CONVERSATIONS}"))));
+}
+
+#[test]
+fn no_answer_wins_answer_after_the_end() {
+    let asking = crate::asking::Asking::default();
+    let picks = crate::asking_picks::Picks::default();
+    let ends = Ends::default();
+    let question = asked("q1", "AskUserQuestion", Some("conv_a"));
+    let hear = asking.opened(&question.id);
+    ends.open(&question.id, question.conversation_id.as_deref());
+
+    ends.settle(Over::Closed("conv_a"), &asking);
+
+    assert!(!asking.answer(&question.id, Answer::Allow));
+    assert!(!crate::asking_picks::pick(
+        &asking,
+        &picks,
+        &question.id,
+        vec![vec!["Green".to_owned()]],
+    ));
+    assert!(!crate::asking_picks::refuse(
+        &asking,
+        &picks,
+        &question.id,
+        "too late",
+    ));
+    assert_eq!(asking.wait_for(&question, hear, &ends), Answer::Deny);
+}
+
+#[test]
+fn an_unknown_cancel_is_forgotten_unknown_cancel_is_forgotten() {
+    let decisions = Decisions::default();
+    assert!(!decisions.cancel("q_unknown", || false));
+    assert!(decisions.answer("q_unknown", || true));
 }
 
 /// Closing the app ends every question, a terminal's too.

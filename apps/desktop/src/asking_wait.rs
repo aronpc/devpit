@@ -6,7 +6,7 @@
 //! tool that changes something, and a plan, still answer themselves at two
 //! minutes — a turn held on a command is a turn going nowhere.
 
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::mpsc::{Receiver, RecvTimeoutError};
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
@@ -23,13 +23,17 @@ pub(crate) const WAITS: Duration = Duration::from_secs(120);
 /// How often a wait looks up to see whether it has ended.
 const SLICE: Duration = Duration::from_secs(1);
 
+/// Enough recent chats to cover registration races without keeping every
+/// conversation the process has ever closed.
+const ENDED_CONVERSATIONS: usize = 256;
+
 /// One winner for a question while its waiting thread catches up.
 #[derive(Default)]
 pub(crate) struct Decisions(Mutex<HashMap<String, Decision>>);
 
 enum Decision {
     Answered,
-    Cancelled { delivered: bool },
+    Cancelled,
 }
 
 impl Decisions {
@@ -46,33 +50,16 @@ impl Decisions {
         true
     }
 
-    /// Claims a cancellation even when its question thread has not opened yet.
+    /// Claims a cancellation only while its registered question still waits.
     pub(crate) fn cancel(&self, id: &str, cancel: impl FnOnce() -> bool) -> bool {
         let Ok(mut decided) = self.0.lock() else {
             return false;
         };
-        if decided.contains_key(id) {
+        if decided.contains_key(id) || !cancel() {
             return false;
         }
-        decided.insert(
-            id.to_owned(),
-            Decision::Cancelled {
-                delivered: cancel(),
-            },
-        );
+        decided.insert(id.to_owned(), Decision::Cancelled);
         true
-    }
-
-    /// Delivers a cancellation that arrived before the waiter opened.
-    pub(crate) fn wake_cancelled(&self, id: &str, cancel: impl FnOnce() -> bool) {
-        let Ok(mut decided) = self.0.lock() else {
-            return;
-        };
-        if let Some(Decision::Cancelled { delivered }) = decided.get_mut(id) {
-            if !*delivered {
-                *delivered = cancel();
-            }
-        }
     }
 
     /// Takes whether cancellation won; an ordinary answer remains available
@@ -81,7 +68,7 @@ impl Decisions {
         let Ok(mut decided) = self.0.lock() else {
             return false;
         };
-        if matches!(decided.get(id), Some(Decision::Cancelled { .. })) {
+        if matches!(decided.get(id), Some(Decision::Cancelled)) {
             decided.remove(id);
             return true;
         }
@@ -124,44 +111,86 @@ struct Open {
     /// Question to the conversation that asked it; none for a terminal's.
     asked_by: HashMap<String, Option<String>>,
     ended: HashSet<String>,
+    ended_conversations: VecDeque<String>,
+    app_ended: bool,
 }
 
 impl Ends {
-    pub(crate) fn open(&self, question_id: &str, conversation_id: Option<&str>) {
+    /// Registers a question and says whether its chat had already ended.
+    pub(crate) fn open(&self, question_id: &str, conversation_id: Option<&str>) -> bool {
         if let Ok(mut open) = self.0.lock() {
             open.asked_by
                 .insert(question_id.to_owned(), conversation_id.map(str::to_owned));
+            let ended = open.app_ended
+                || conversation_id
+                    .is_some_and(|id| open.ended_conversations.iter().any(|ended| ended == id));
+            if ended {
+                open.ended.insert(question_id.to_owned());
+            }
+            return ended;
         }
+        false
     }
 
-    /// Ends every question this conversation is waiting on. One with none
-    /// waiting is left as it was.
-    pub(crate) fn end(&self, conversation_id: &str) {
+    /// Ends every question this conversation is waiting on and remembers the
+    /// end for a prompt that was already in flight but has not registered yet.
+    pub(crate) fn end(&self, conversation_id: &str) -> Vec<String> {
         if let Ok(mut open) = self.0.lock() {
-            let Open { asked_by, ended } = &mut *open;
+            let Open {
+                asked_by, ended, ..
+            } = &mut *open;
             let its = asked_by
                 .iter()
                 .filter(|(_, by)| by.as_deref() == Some(conversation_id));
-            ended.extend(its.map(|(id, _)| id.clone()));
+            let its: Vec<String> = its.map(|(id, _)| id.clone()).collect();
+            ended.extend(its.iter().cloned());
+            open.ended_conversations
+                .retain(|ended| ended != conversation_id);
+            open.ended_conversations
+                .push_back(conversation_id.to_owned());
+            if open.ended_conversations.len() > ENDED_CONVERSATIONS {
+                open.ended_conversations.pop_front();
+            }
+            return its;
         }
+        Vec::new()
     }
 
     /// Ends every question waiting: the app is closing.
-    pub(crate) fn end_all(&self) {
+    pub(crate) fn end_all(&self) -> Vec<String> {
         if let Ok(mut open) = self.0.lock() {
-            let Open { asked_by, ended } = &mut *open;
-            ended.extend(asked_by.keys().cloned());
+            let ids: Vec<String> = open.asked_by.keys().cloned().collect();
+            open.ended.extend(ids.iter().cloned());
+            open.app_ended = true;
+            return ids;
         }
+        Vec::new()
     }
 
     /// Ends what this way of going leaves nobody to answer: a chat's own
     /// questions, or every one when the app quits. Never a deadline.
-    pub(crate) fn over(&self, gone: Over<'_>) {
+    pub(crate) fn over(&self, gone: Over<'_>) -> Vec<String> {
         match gone {
             Over::Closed(id) | Over::Interrupted(id) | Over::Exited(id) | Over::TurnEnded(id) => {
                 self.end(id)
             }
             Over::AppQuit => self.end_all(),
+        }
+    }
+
+    /// Marks the end and denies its open questions before another answer can
+    /// take their senders.
+    pub(crate) fn settle(&self, gone: Over<'_>, asking: &crate::asking::Asking) {
+        for id in self.over(gone) {
+            asking.end(&id);
+        }
+    }
+
+    /// A new turn is allowed to ask again in the same conversation.
+    pub(crate) fn started(&self, conversation_id: &str) {
+        if let Ok(mut open) = self.0.lock() {
+            open.ended_conversations
+                .retain(|ended| ended != conversation_id);
         }
     }
 

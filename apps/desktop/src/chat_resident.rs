@@ -656,7 +656,11 @@ pub(crate) fn quit_all(app: &AppHandle) {
 /// (`asking_wait`): nothing else ends their wait.
 pub(crate) fn over(app: &AppHandle, gone: Over<'_>) {
     if let Some(ends) = app.try_state::<crate::asking_wait::Ends>() {
-        ends.over(gone);
+        if let Some(asking) = app.try_state::<crate::asking::Asking>() {
+            ends.settle(gone, &asking);
+        } else {
+            ends.over(gone);
+        }
     }
 }
 

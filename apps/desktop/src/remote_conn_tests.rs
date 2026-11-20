@@ -78,7 +78,7 @@ fn a_pick_from_a_device_that_may_answer_reaches_the_question() {
 }
 
 #[test]
-fn a_pick_of_the_wrong_length_is_refused() {
+fn a_remote_pick_with_the_wrong_number_of_choices_is_refused() {
     let asking = crate::asking::Asking::default();
     let picks = crate::asking_picks::Picks::default();
     let hear = asking.opened("q_two");
@@ -95,6 +95,29 @@ fn a_pick_of_the_wrong_length_is_refused() {
     assert!(error.contains("needs 2 answers"), "{error}");
     assert!(asking.answer("q_two", crate::asking::Answer::Deny));
     assert_eq!(asking.wait("q_two", hear), crate::asking::Answer::Deny);
+}
+
+#[test]
+fn a_losing_pick_writes_no_note() {
+    let asking = crate::asking::Asking::default();
+    let picks = crate::asking_picks::Picks::default();
+    let root = tempfile::tempdir().expect("remote home");
+
+    let error = pick_for_device(
+        root.path(),
+        &answering_device(),
+        &asking,
+        &picks,
+        Some(&choice_question("q_gone", 1)),
+        vec![vec!["Green".into()]],
+    )
+    .expect_err("lost pick");
+
+    assert!(error.contains("no longer waiting"), "{error}");
+    assert!(
+        !root.path().join("remote-log.jsonl").exists(),
+        "a losing pick was recorded"
+    );
 }
 
 #[test]

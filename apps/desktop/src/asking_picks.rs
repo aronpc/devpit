@@ -3,7 +3,7 @@
 //! (`asking_plan`) — the hook never holds it — and the picks kept here are
 //! the person's answers.
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::sync::Mutex;
 
 use devpit_rpc::{ErrorCode, RpcError};
@@ -18,21 +18,23 @@ pub fn to_the_person(tool: &str) -> bool {
     TO_THE_PERSON.contains(&tool)
 }
 
-/// The sessions chats draw, and the picks waiting for a reply.
+/// The picks waiting for a reply.
 #[derive(Default)]
 pub struct Picks {
-    drawn: Mutex<HashSet<String>>,
     chosen: Mutex<HashMap<String, Vec<Vec<String>>>>,
+    expected: Mutex<HashMap<String, usize>>,
     /// Why the person refused, for the agent to read.
     reasons: Mutex<HashMap<String, String>>,
     decisions: crate::asking_wait::Decisions,
 }
 
 impl Picks {
-    /// A chat turn's session, once its stream names it.
-    pub fn draw(&self, session_id: &str) {
-        if let Ok(mut drawn) = self.drawn.lock() {
-            drawn.insert(session_id.to_owned());
+    pub(crate) fn opened(&self, question: &crate::asking::Question) {
+        let Some(devpit_rpc::Touch::Ask { questions }) = question.touch.as_ref() else {
+            return;
+        };
+        if let Ok(mut expected) = self.expected.lock() {
+            expected.insert(question.id.clone(), questions.len());
         }
     }
 
@@ -55,6 +57,15 @@ impl Picks {
 /// Keeps the picks, then allows the question; nothing is kept for one that
 /// no longer waits.
 pub(crate) fn pick(asking: &Asking, picks: &Picks, id: &str, chosen: Vec<Vec<String>>) -> bool {
+    if picks
+        .expected
+        .lock()
+        .ok()
+        .and_then(|expected| expected.get(id).copied())
+        .is_some_and(|expected| validate_choice_count(expected, &chosen).is_err())
+    {
+        return false;
+    }
     picks.decisions.answer(id, || {
         picks.picked(id, chosen);
         let answered = asking.answer(id, Answer::Allow);
@@ -91,19 +102,21 @@ pub(crate) fn cancel(asking: &Asking, picks: &Picks, id: &str) -> bool {
         .cancel(id, || asking.answer(id, Answer::Deny))
 }
 
-/// Delivers a cancellation that raced ahead of the question's waiting thread.
-pub(crate) fn wake_cancelled(asking: &Asking, picks: &Picks, id: &str) {
-    picks
-        .decisions
-        .wake_cancelled(id, || asking.answer(id, Answer::Deny));
-}
-
 pub(crate) fn cancelled(picks: &Picks, id: &str) -> bool {
-    picks.decisions.cancelled(id)
+    let cancelled = picks.decisions.cancelled(id);
+    if cancelled {
+        if let Ok(mut expected) = picks.expected.lock() {
+            expected.remove(id);
+        }
+    }
+    cancelled
 }
 
 pub(crate) fn finished(picks: &Picks, id: &str) {
     picks.decisions.finished(id);
+    if let Ok(mut expected) = picks.expected.lock() {
+        expected.remove(id);
+    }
 }
 
 /// A refusal in the person's words, which the CLI hands the agent as the
@@ -118,23 +131,40 @@ fn refused_because(why: &str) -> String {
 }
 
 /// The tool's input as the CLI sent it, with the person's answers in: keyed
-/// by each question's own words, several choices joined by ", ". None when
-/// the input is not a question's shape. The hook's reply and the prompt's
-/// answer both build on it, so the two never drift apart.
-pub(crate) fn answered_input(input: &str, chosen: Vec<Vec<String>>) -> Option<serde_json::Value> {
-    let mut input = serde_json::from_str::<serde_json::Value>(input).ok()?;
-    let asked = input
+/// by each question's own words, several choices joined by ", ". Invalid input
+/// or a mismatched number of choices is an error. The hook's reply and the
+/// prompt's answer both build on it, so the two never drift apart.
+pub(crate) fn answered_input(
+    input: &str,
+    chosen: Vec<Vec<String>>,
+) -> Result<serde_json::Value, String> {
+    let mut input = serde_json::from_str::<serde_json::Value>(input)
+        .map_err(|_| "that question's input is not valid JSON".to_owned())?;
+    let asked: Vec<&str> = input
         .get("questions")
         .and_then(serde_json::Value::as_array)
         .into_iter()
         .flatten()
-        .filter_map(|one| one.get("question")?.as_str());
+        .filter_map(|one| one.get("question")?.as_str())
+        .collect();
+    validate_choice_count(asked.len(), &chosen)?;
     let answers: serde_json::Map<String, serde_json::Value> = asked
+        .into_iter()
         .zip(chosen)
         .map(|(question, labels)| (question.to_owned(), labels.join(", ").into()))
         .collect();
     input["answers"] = answers.into();
-    Some(input)
+    Ok(input)
+}
+
+pub(crate) fn validate_choice_count(expected: usize, chosen: &[Vec<String>]) -> Result<(), String> {
+    if chosen.len() == expected {
+        return Ok(());
+    }
+    Err(format!(
+        "this question needs {expected} answers, but {} were sent",
+        chosen.len()
+    ))
 }
 
 /// The hook's reply. Allowed with picks, they go in as the tool's `answers`,
@@ -151,7 +181,7 @@ pub fn reply_for(picks: &Picks, id: &str, input: &str, answer: Answer) -> String
     let chosen = picks.taken(id);
     let Some(updated) = chosen
         .filter(|_| answer == Answer::Allow)
-        .and_then(|chosen| answered_input(input, chosen))
+        .and_then(|chosen| answered_input(input, chosen).ok())
     else {
         finished(picks, id);
         return decision(answer);
