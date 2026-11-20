@@ -5725,7 +5725,12 @@ handle?: number | null } |
 /**  Into a lane without a step. Only a device allowed to type. */
 { t: "cardMove"; project: string; card: string; column: string } | { t: "waiting" } | 
 /**  A question an agent is waiting on. Only a device allowed to answer. */
-{ t: "answer"; id: string; allow: boolean } | { t: "chats"; project: string } | { t: "chat"; project: string; conversation: string } | 
+{ t: "answer"; id: string; allow: boolean } | 
+/**
+ *  The person's choices for a question, one list per question. Only a
+ *  device allowed to answer.
+ */
+{ t: "pick"; id: string; chosen: string[][] } | { t: "chats"; project: string } | { t: "chat"; project: string; conversation: string } | 
 /**  The replies orchestrators drafted for the person to send. */
 { t: "drafts" } | 
 /**  Types a draft into its session's terminal. Only a device allowed to type. */
@@ -5859,6 +5864,7 @@ export type RemoteQuestion = {
 	project: string | null,
 	tool: string,
 	input: string,
+	touch: Touch | null,
 };
 
 /**  The relay, as this machine sees it. */

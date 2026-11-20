@@ -15,7 +15,7 @@ use std::time::{Duration, Instant};
 
 use base64::engine::general_purpose::STANDARD as BASE64;
 use base64::Engine as _;
-use devpit_rpc::{RemoteIn, RemoteOut, RemoteProject, RemoteTerminal};
+use devpit_rpc::{RemoteIn, RemoteOut, RemoteProject, RemoteQuestion, RemoteTerminal, Touch};
 use tauri::Manager as _;
 use tungstenite::{Message, WebSocket};
 
@@ -27,6 +27,8 @@ use crate::remote_talk::Talk;
 pub(crate) const HELLO_WITHIN: Duration = Duration::from_secs(10);
 /// The most a message from a viewer may be.
 pub(crate) const MOST_MESSAGE: usize = 256 * 1024;
+const MOST_PICK_QUESTIONS: usize = 32;
+const MOST_PICK_LABELS: usize = 32;
 /// A connection that says nothing for this long is closed.
 const IDLE: Duration = Duration::from_secs(90);
 /// The longest one read waits: what a pane prints waits at most this long
@@ -471,6 +473,10 @@ fn answer(
             if !device.answering {
                 return failed("this device may not answer — allow it on the machine");
             }
+            let question = crate::remote_hub::question(&id);
+            if let Err(why) = validate_answer(allow, question.as_ref()) {
+                return failed(why);
+            }
             crate::remote::note(
                 root,
                 device,
@@ -480,7 +486,34 @@ fn answer(
                     "denied a tool"
                 },
             );
+            if question.as_ref().is_some_and(asks_for_choice) {
+                let Some(asking) = app.try_state::<crate::asking::Asking>() else {
+                    return failed("nothing is asking");
+                };
+                let Some(picks) = app.try_state::<crate::asking_picks::Picks>() else {
+                    return failed("nothing is asking");
+                };
+                return refuse_choice(&asking, &picks, &id).err().and_then(failed);
+            }
             settle(app, &id, allow).err().and_then(failed)
+        }
+        RemoteIn::Pick { id, chosen } => {
+            let Some(asking) = app.try_state::<crate::asking::Asking>() else {
+                return failed("nothing is asking");
+            };
+            let Some(picks) = app.try_state::<crate::asking_picks::Picks>() else {
+                return failed("nothing is asking");
+            };
+            pick_for_device(
+                root,
+                device,
+                &asking,
+                &picks,
+                crate::remote_hub::question(&id).as_ref(),
+                chosen,
+            )
+            .err()
+            .and_then(failed)
         }
         RemoteIn::Chats { project } => Some(match crate::threads::chat_list_now(project.clone()) {
             Ok(conversations) => RemoteOut::Chats {
@@ -730,6 +763,65 @@ fn settle(app: &tauri::AppHandle, id: &str, allow: bool) -> Result<(), String> {
         .ok_or("nothing is asking")?;
     asking
         .answer(id, answer)
+        .then_some(())
+        .ok_or_else(|| "that question is no longer waiting".to_owned())
+}
+
+fn choice_count(question: &RemoteQuestion) -> Option<usize> {
+    match question.touch.as_ref()? {
+        Touch::Ask { questions } => Some(questions.len()),
+        _ => None,
+    }
+}
+
+fn asks_for_choice(question: &RemoteQuestion) -> bool {
+    crate::asking_picks::to_the_person(&question.tool)
+}
+
+fn validate_answer(allow: bool, question: Option<&RemoteQuestion>) -> Result<(), String> {
+    if allow && question.is_some_and(asks_for_choice) {
+        return Err("this question asks for a choice".to_owned());
+    }
+    Ok(())
+}
+
+fn refuse_choice(
+    asking: &crate::asking::Asking,
+    picks: &crate::asking_picks::Picks,
+    id: &str,
+) -> Result<(), String> {
+    crate::asking_picks::refuse(asking, picks, id, "")
+        .then_some(())
+        .ok_or_else(|| "that question is no longer waiting".to_owned())
+}
+
+fn pick_for_device(
+    root: &std::path::Path,
+    device: &Device,
+    asking: &crate::asking::Asking,
+    picks: &crate::asking_picks::Picks,
+    question: Option<&RemoteQuestion>,
+    chosen: Vec<Vec<String>>,
+) -> Result<(), String> {
+    if !device.answering {
+        return Err("this device may not answer — allow it on the machine".to_owned());
+    }
+    let question = question.ok_or("that question is no longer waiting")?;
+    let expected = choice_count(question).ok_or("that question does not ask for choices")?;
+    if expected > MOST_PICK_QUESTIONS || chosen.len() > MOST_PICK_QUESTIONS {
+        return Err("that answer has too many questions".to_owned());
+    }
+    if chosen.iter().any(|labels| labels.len() > MOST_PICK_LABELS) {
+        return Err("that answer has too many choices".to_owned());
+    }
+    if chosen.len() != expected {
+        return Err(format!(
+            "this question needs {expected} answers, but {} were sent",
+            chosen.len()
+        ));
+    }
+    crate::remote::note(root, device, "answered a question");
+    crate::asking_picks::pick(asking, picks, &question.id, chosen)
         .then_some(())
         .ok_or_else(|| "that question is no longer waiting".to_owned())
 }

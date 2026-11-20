@@ -74,6 +74,12 @@ pub enum RemoteIn {
         id: String,
         allow: bool,
     },
+    /// The person's choices for a question, one list per question. Only a
+    /// device allowed to answer.
+    Pick {
+        id: String,
+        chosen: Vec<Vec<String>>,
+    },
     Chats {
         project: String,
     },
@@ -353,6 +359,7 @@ pub struct RemoteQuestion {
     pub project: Option<String>,
     pub tool: String,
     pub input: String,
+    pub touch: Option<crate::Touch>,
 }
 
 /// Every message shape, for the generated contract the viewer is typed by.
