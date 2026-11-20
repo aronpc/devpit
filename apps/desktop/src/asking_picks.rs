@@ -25,6 +25,7 @@ pub struct Picks {
     chosen: Mutex<HashMap<String, Vec<Vec<String>>>>,
     /// Why the person refused, for the agent to read.
     reasons: Mutex<HashMap<String, String>>,
+    decisions: crate::asking_wait::Decisions,
 }
 
 impl Picks {
@@ -54,12 +55,14 @@ impl Picks {
 /// Keeps the picks, then allows the question; nothing is kept for one that
 /// no longer waits.
 pub(crate) fn pick(asking: &Asking, picks: &Picks, id: &str, chosen: Vec<Vec<String>>) -> bool {
-    picks.picked(id, chosen);
-    let answered = asking.answer(id, Answer::Allow);
-    if !answered {
-        picks.taken(id);
-    }
-    answered
+    picks.decisions.answer(id, || {
+        picks.picked(id, chosen);
+        let answered = asking.answer(id, Answer::Allow);
+        if !answered {
+            picks.taken(id);
+        }
+        answered
+    })
 }
 
 /// The longest reason kept: the agent reads a sentence, not a document.
@@ -69,14 +72,38 @@ const MOST_REASON: usize = 2000;
 /// longer waits.
 pub(crate) fn refuse(asking: &Asking, picks: &Picks, id: &str, reason: &str) -> bool {
     let why: String = reason.trim().chars().take(MOST_REASON).collect();
-    if let Ok(mut all) = picks.reasons.lock() {
-        all.insert(id.to_owned(), why);
-    }
-    let answered = asking.answer(id, Answer::Deny);
-    if let (false, Ok(mut all)) = (answered, picks.reasons.lock()) {
-        all.remove(id);
-    }
-    answered
+    picks.decisions.answer(id, || {
+        if let Ok(mut all) = picks.reasons.lock() {
+            all.insert(id.to_owned(), why);
+        }
+        let answered = asking.answer(id, Answer::Deny);
+        if let (false, Ok(mut all)) = (answered, picks.reasons.lock()) {
+            all.remove(id);
+        }
+        answered
+    })
+}
+
+/// Settles a question the CLI answered elsewhere, without replying on stdin.
+pub(crate) fn cancel(asking: &Asking, picks: &Picks, id: &str) -> bool {
+    picks
+        .decisions
+        .cancel(id, || asking.answer(id, Answer::Deny))
+}
+
+/// Delivers a cancellation that raced ahead of the question's waiting thread.
+pub(crate) fn wake_cancelled(asking: &Asking, picks: &Picks, id: &str) {
+    picks
+        .decisions
+        .wake_cancelled(id, || asking.answer(id, Answer::Deny));
+}
+
+pub(crate) fn cancelled(picks: &Picks, id: &str) -> bool {
+    picks.decisions.cancelled(id)
+}
+
+pub(crate) fn finished(picks: &Picks, id: &str) {
+    picks.decisions.finished(id);
 }
 
 /// A refusal in the person's words, which the CLI hands the agent as the
@@ -116,7 +143,9 @@ pub fn reply_for(picks: &Picks, id: &str, input: &str, answer: Answer) -> String
     let why = picks.reason(id);
     if let (Answer::Deny, Some(why)) = (answer, why.filter(|why| !why.is_empty())) {
         picks.taken(id);
-        return refused_because(&why);
+        let reply = refused_because(&why);
+        finished(picks, id);
+        return reply;
     }
     // The picks go out with the answer, whichever it is: kept for no one.
     let chosen = picks.taken(id);
@@ -124,15 +153,18 @@ pub fn reply_for(picks: &Picks, id: &str, input: &str, answer: Answer) -> String
         .filter(|_| answer == Answer::Allow)
         .and_then(|chosen| answered_input(input, chosen))
     else {
+        finished(picks, id);
         return decision(answer);
     };
-    serde_json::json!({ "hookSpecificOutput": {
+    let reply = serde_json::json!({ "hookSpecificOutput": {
         "hookEventName": "PreToolUse",
         "permissionDecision": "allow",
         "permissionDecisionReason": "answered in devpit",
         "updatedInput": updated,
     }})
-    .to_string()
+    .to_string();
+    finished(picks, id);
+    reply
 }
 
 /// `permission.pick` — the person's choices to an `AskUserQuestion`: one

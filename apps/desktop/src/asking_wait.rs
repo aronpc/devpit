@@ -23,6 +23,78 @@ pub(crate) const WAITS: Duration = Duration::from_secs(120);
 /// How often a wait looks up to see whether it has ended.
 const SLICE: Duration = Duration::from_secs(1);
 
+/// One winner for a question while its waiting thread catches up.
+#[derive(Default)]
+pub(crate) struct Decisions(Mutex<HashMap<String, Decision>>);
+
+enum Decision {
+    Answered,
+    Cancelled { delivered: bool },
+}
+
+impl Decisions {
+    /// Runs one answer while holding the claim. The answer stores its payload
+    /// before waking the waiter, so another contender cannot replace it.
+    pub(crate) fn answer(&self, id: &str, answer: impl FnOnce() -> bool) -> bool {
+        let Ok(mut decided) = self.0.lock() else {
+            return false;
+        };
+        if decided.contains_key(id) || !answer() {
+            return false;
+        }
+        decided.insert(id.to_owned(), Decision::Answered);
+        true
+    }
+
+    /// Claims a cancellation even when its question thread has not opened yet.
+    pub(crate) fn cancel(&self, id: &str, cancel: impl FnOnce() -> bool) -> bool {
+        let Ok(mut decided) = self.0.lock() else {
+            return false;
+        };
+        if decided.contains_key(id) {
+            return false;
+        }
+        decided.insert(
+            id.to_owned(),
+            Decision::Cancelled {
+                delivered: cancel(),
+            },
+        );
+        true
+    }
+
+    /// Delivers a cancellation that arrived before the waiter opened.
+    pub(crate) fn wake_cancelled(&self, id: &str, cancel: impl FnOnce() -> bool) {
+        let Ok(mut decided) = self.0.lock() else {
+            return;
+        };
+        if let Some(Decision::Cancelled { delivered }) = decided.get_mut(id) {
+            if !*delivered {
+                *delivered = cancel();
+            }
+        }
+    }
+
+    /// Takes whether cancellation won; an ordinary answer remains available
+    /// to the picks until its reply has been built.
+    pub(crate) fn cancelled(&self, id: &str) -> bool {
+        let Ok(mut decided) = self.0.lock() else {
+            return false;
+        };
+        if matches!(decided.get(id), Some(Decision::Cancelled { .. })) {
+            decided.remove(id);
+            return true;
+        }
+        false
+    }
+
+    pub(crate) fn finished(&self, id: &str) {
+        if let Ok(mut decided) = self.0.lock() {
+            decided.remove(id);
+        }
+    }
+}
+
 /// The time a wait reads, so a test can let ten minutes pass in a moment.
 pub(crate) trait Clock {
     fn now(&self) -> Instant;

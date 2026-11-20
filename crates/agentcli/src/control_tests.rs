@@ -68,6 +68,23 @@ fn a_staying_turn_is_over_at_its_result_even_with_a_task_running() {
 /// mode does not allow and no hook decided.
 const ASKED: &str = r#"{"type":"control_request","request_id":"37497bcb","request":{"subtype":"can_use_tool","tool_name":"Bash","input":{"command":"python3 -c \"print(6*7)\""},"decision_reason":"This command requires approval","tool_use_id":"toolu_01"}}"#;
 
+const CANCELLED: &str = r#"{"type":"control_cancel_request","request_id":"37497bcb","request":{"subtype":"can_use_tool"}}"#;
+
+#[test]
+fn a_cancel_for_a_pending_prompt_reaches_the_asker() {
+    let control = Control::new();
+    let cancelled = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
+    let seen = cancelled.clone();
+    control.asks_with(std::sync::Arc::new(|_, _| true));
+    control.on_cancel(std::sync::Arc::new(move |id| {
+        seen.lock().expect("cancelled").push(id.to_owned());
+    }));
+
+    assert!(control.prompted(ASKED, None));
+    assert!(control.prompted(CANCELLED, None));
+    assert_eq!(*cancelled.lock().expect("cancelled"), ["37497bcb"]);
+}
+
 /// Refused as a printing turn without a prompt tool refuses it, in the
 /// CLI's own words, so the agent hears what it heard before.
 #[test]

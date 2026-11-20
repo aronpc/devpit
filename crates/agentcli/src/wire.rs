@@ -8,7 +8,8 @@
 use serde_json::Value;
 
 use crate::control::{
-    interrupt_request, prompt_of, refusal, steer_line, stop_task_request, user_line, Prompt,
+    cancelled_prompt, interrupt_request, prompt_of, refusal, steer_line, stop_task_request,
+    user_line, Prompt,
 };
 use crate::talk::Say;
 
@@ -66,6 +67,11 @@ pub trait Wire: Send + Sync {
     /// The permission prompt on `line`, if it is one.
     fn asked(&self, line: &str, session_id: Option<&str>) -> Option<Asked>;
 
+    /// The request id of a permission prompt cancelled outside devpit.
+    fn cancelled(&self, _line: &str) -> Option<String> {
+        None
+    }
+
     /// devpit's answer to a prompt — `{behavior: "allow"}` or
     /// `{behavior: "deny", message}` — in the CLI's own shape.
     fn answer(&self, request_id: &str, response: Value) -> Option<String>;
@@ -114,6 +120,10 @@ impl Wire for Claude {
             refusal: refusal(line)?,
             prompt: prompt_of(line, session_id),
         })
+    }
+
+    fn cancelled(&self, line: &str) -> Option<String> {
+        cancelled_prompt(line)
     }
 
     fn answer(&self, request_id: &str, response: Value) -> Option<String> {
