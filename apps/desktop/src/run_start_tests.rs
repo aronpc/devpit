@@ -104,6 +104,18 @@ fn run_row_contains(store: &Store, run_id: &str, text: &str) -> bool {
 }
 
 #[test]
+fn a_preview_uses_the_same_profile_check_as_a_run_start() {
+    let available = sources(&[("work", "signed-in", true)]);
+    let ready = available.preview("work", Some("sonnet"));
+    assert_eq!(ready.profile, "work");
+    assert_eq!(ready.model.as_deref(), Some("sonnet"));
+    assert_eq!(ready.check, "Ready");
+
+    let blocked = sources(&[("off", "signed-in", false)]).preview("off", Some("opus"));
+    assert_eq!(blocked.check, "off is switched off");
+}
+
+#[test]
 fn run_start_records_the_snapshot_and_models_before_launching_the_fixed_agent() {
     let (_dir, store, card, step) = seeded();
     let token = "sk-fake-never-store-this";

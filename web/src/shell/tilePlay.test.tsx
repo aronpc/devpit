@@ -18,6 +18,7 @@ const run: Run = {
   durationMs: null,
   profile: null,
   model: null,
+  attempt: { number: null, modelIsRequested: false },
   startedAt: 0,
 }
 

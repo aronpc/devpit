@@ -20,6 +20,7 @@ pub struct RunRow {
     pub pinned: Option<String>,
     pub requested_model: Option<String>,
     pub effective_model: Option<String>,
+    pub attempt: Option<i64>,
     pub started_at: i64,
 }
 
@@ -212,7 +213,7 @@ impl Store {
         let output = if with_output { "output" } else { "NULL" };
         let mut stmt = self.conn.prepare(&format!(
             "SELECT id, card_id, step_id, state, {output}, exit_code, cost_usd, duration_ms, \
-             pinned, requested_model, effective_model, started_at FROM run WHERE card_id = ?1 \
+             pinned, requested_model, effective_model, attempt, started_at FROM run WHERE card_id = ?1 \
              ORDER BY started_at DESC, rowid DESC"
         ))?;
         let rows = stmt
@@ -229,7 +230,8 @@ impl Store {
                     pinned: row.get(8)?,
                     requested_model: row.get(9)?,
                     effective_model: row.get(10)?,
-                    started_at: row.get(11)?,
+                    attempt: row.get(11)?,
+                    started_at: row.get(12)?,
                 })
             })?
             .collect::<Result<Vec<_>, _>>()?;

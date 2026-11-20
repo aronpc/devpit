@@ -7,6 +7,7 @@ import { Confirm } from './Confirm'
 import { StepNew } from './StepNew'
 import { useAway } from './away'
 import { stepFields } from './stepConfig'
+import { identityWords } from './wouldRun'
 
 /* Presses inside stay here: the lane head around this is its drag handle. */
 const stay = (event: React.SyntheticEvent): void => event.stopPropagation()
@@ -56,7 +57,9 @@ export function LaneStep({
   useAway(box, () => setOpen(false), open)
   // Said on the lane and not only when the form opens: a step nothing can read
   // is a lane that will fail when a card lands on it.
-  const unreadable = step !== null && stepFields(step.kind, step.config) === null
+  const fields = step === null ? null : stepFields(step.kind, step.config)
+  const unreadable = step !== null && fields === null
+  const fixed = identityWords(fields?.profile ?? null, fields?.model ?? null)
 
   return (
     <div className="lstep" ref={box}>
@@ -71,6 +74,7 @@ export function LaneStep({
           <rect x="7" y="12" width="10" height="9" rx="2" />
         </svg>
         {step?.name ?? 'no step'}
+        {fixed && ` · ${fixed}`}
         {/* Said on the lane, not hidden in its menu: a lane that moves cards
             without being asked should look different from one that does not. */}
         {step && autonomy === 'auto' && <span className="lstep__auto">auto</span>}

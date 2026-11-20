@@ -4,7 +4,11 @@ import type { Run, RunSwitchOptions } from '../gen/bindings'
 import { ask, commands } from './live'
 
 export function RunIdentity({ run }: { run: Run }): React.JSX.Element | null {
-  const said = [run.profile, run.model].filter(Boolean).join(' · ')
+  const model = run.model
+    ? `${run.model}${run.attempt.modelIsRequested ? ' (requested)' : ''}`
+    : null
+  const attempt = run.attempt.number === null ? null : `attempt ${run.attempt.number}`
+  const said = [run.profile, model, attempt].filter(Boolean).join(' · ')
   return said ? <span className="crun__a">{said}</span> : null
 }
 

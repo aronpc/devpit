@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 
 use crate::tile::Card;
+use crate::RunAttempt;
 
 /// What a column runs when a card arrives in it.
 ///
@@ -101,6 +102,7 @@ pub struct Run {
     pub profile: Option<String>,
     /// The effective model when known, otherwise the one requested.
     pub model: Option<String>,
+    pub attempt: RunAttempt,
     pub started_at: f64,
 }
 

@@ -220,6 +220,11 @@ pub struct WouldRun {
     /// The **names** of what devpit would declare, never the values.
     pub declared_env: Vec<String>,
     pub timeout_seconds: Option<f64>,
+    /// The account label and requested model, when this is a profiled agent step.
+    pub profile: Option<String>,
+    pub model: Option<String>,
+    /// `Ready`, or the same reason that would pause the attempt.
+    pub check: Option<String>,
 }
 
 #[cfg(test)]

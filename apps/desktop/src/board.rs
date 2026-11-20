@@ -124,25 +124,15 @@ pub(crate) fn runs_of(store: &Store, card_id: &str, steps: &[Step]) -> Result<Ve
     runs_from(store.runs(card_id)?, steps)
 }
 
-pub(crate) fn identity(
-    pinned: Option<&str>,
-    requested: Option<String>,
-    effective: Option<String>,
-) -> (Option<String>, Option<String>) {
-    let profile = pinned
-        .and_then(|json| serde_json::from_str::<crate::run_pin::PinnedProfile>(json).ok())
-        .map(|profile| profile.label);
-    (profile, effective.or(requested))
-}
-
 fn runs_from(rows: Vec<devpit_core::RunRow>, steps: &[Step]) -> Result<Vec<Run>, RpcError> {
     Ok(rows
         .into_iter()
         .map(|row| {
-            let (profile, model) = identity(
+            let (profile, model, attempt) = crate::run_identity::read(
                 row.pinned.as_deref(),
                 row.requested_model,
                 row.effective_model,
+                row.attempt,
             );
             Run {
                 step_name: steps
@@ -161,6 +151,7 @@ fn runs_from(rows: Vec<devpit_core::RunRow>, steps: &[Step]) -> Result<Vec<Run>,
                 duration_ms: row.duration_ms.map(|ms| ms as f64),
                 profile,
                 model,
+                attempt,
                 started_at: row.started_at as f64,
             }
         })

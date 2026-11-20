@@ -16,6 +16,12 @@ pub(crate) struct BegunAgent {
     pub(crate) paused: bool,
 }
 
+pub(crate) struct AgentPreview {
+    pub(crate) profile: String,
+    pub(crate) model: Option<String>,
+    pub(crate) check: String,
+}
+
 pub(crate) struct Sources {
     pub(crate) home: String,
     pub(crate) declared: Vec<devpit_rpc::Declared>,
@@ -58,6 +64,26 @@ impl Sources {
                 .as_ref()
                 .and_then(|profile| profile.requested_model.clone()),
             pinned: pinned.and_then(|profile| serde_json::to_string(&profile).ok()),
+        }
+    }
+
+    pub(crate) fn preview(&self, profile_id: &str, model: Option<&str>) -> AgentPreview {
+        let carry = self.current(profile_id, model);
+        let pinned = carry
+            .pinned
+            .as_deref()
+            .and_then(|json| serde_json::from_str::<crate::run_pin::PinnedProfile>(json).ok());
+        let profile = pinned
+            .as_ref()
+            .map_or_else(|| profile_id.to_owned(), |profile| profile.label.clone());
+        let check = self
+            .fixed(&carry)
+            .map(|_| "Ready".to_owned())
+            .unwrap_or_else(|reason| reason);
+        AgentPreview {
+            profile,
+            model: carry.requested_model,
+            check,
         }
     }
 
