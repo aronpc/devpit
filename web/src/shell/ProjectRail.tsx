@@ -96,6 +96,8 @@ export function ProjectRail({ onAddProject, onRemove }: { onAddProject: () => vo
       void regroup(moving, spot.key)
       return
     }
+    /* Orchestrators are not this list's to move. */
+    if (grab.kind === 'orchestrator') return
     /* A group lands beside the group of whatever it was dropped on. */
     const target = spot.kind === 'group' ? spot.key : list.find((one) => one.id === spot.key)?.group
     if (!target || target === grab.name) return
