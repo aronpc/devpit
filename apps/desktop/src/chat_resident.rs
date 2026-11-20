@@ -638,6 +638,9 @@ pub(crate) fn force(app: &AppHandle, conversation_id: &str) -> Option<u32> {
 /// Lets every chat's process go as devpit quits: one that does not exit on
 /// its own is ended now, since nothing is left to end it later.
 pub(crate) fn quit_all(app: &AppHandle) {
+    if let Some(ends) = app.try_state::<crate::asking_wait::Ends>() {
+        ends.end_all();
+    }
     let all = app.try_state::<Residents>().and_then(|residents| {
         residents
             .0
@@ -663,6 +666,9 @@ pub(crate) fn stop_waiting(app: &AppHandle, conversation_id: &str) -> bool {
 /// Ends this conversation's process, if it has one: a chat no longer
 /// reachable goes back to a process per turn.
 pub(crate) fn close(app: &AppHandle, conversation_id: &str) {
+    if let Some(ends) = app.try_state::<crate::asking_wait::Ends>() {
+        ends.end(conversation_id);
+    }
     let gone = app.try_state::<Residents>().and_then(|residents| {
         residents
             .0
