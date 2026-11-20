@@ -1,16 +1,23 @@
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import type { ForwardedRequest } from '../gen/bindings'
+import type { ForwardedRequest, Project, Thread } from '../gen/bindings'
 import { ForwardedDrafts } from './ForwardedDrafts'
 import { ForwardedMark } from './ForwardedMark'
+import { RailOrchestrators } from './RailOrchestrators'
 
 let kept: ForwardedRequest[] = []
+let history: Thread[] = []
+const destination = { id: 'prj_1', name: 'destination', rootPath: '/tmp/destination', orchestrator: 'prof_1' } as Project
+let currentProject: Project | null = null
 const dropped = vi.fn(async (_project: string, from: string, id: string) => {
   kept = kept.filter((one) => !(one.from === from && one.id === id))
 })
 const said = vi.fn()
 const sent = vi.fn()
+const shown = vi.fn()
+const chatList = vi.fn(async () => ({ conversations: history }))
+const forwardedList = vi.fn(async () => ({ requests: kept }))
 const forwardedSend = vi.fn(async (..._args: unknown[]): Promise<{ conversation: string }> => ({ conversation: 'conv_1' }))
 const heard: Array<(id: string) => void> = []
 
@@ -23,12 +30,23 @@ vi.mock('./live', () => ({
     }
   },
   commands: {
-    forwardedList: async () => ({ requests: kept }),
+    forwardedList: () => forwardedList(),
+    chatList: () => chatList(),
     forwardedDrop: (...args: [string, string, string]) => dropped(...args),
     forwardedSend: (...args: unknown[]) => forwardedSend(...args),
     chatSay: (...args: unknown[]) => said(...args),
     orchestratorReply: (...args: unknown[]) => sent(...args),
   },
+}))
+vi.mock('./useShell', () => ({
+  useShell: () => ({
+    projects: [destination],
+    project: currentProject,
+    setProject: (id: string) => (currentProject = id === destination.id ? destination : null),
+    show: shown,
+    open: [],
+    reloadProjects: vi.fn(),
+  }),
 }))
 vi.mock('./window', () => ({
   onCarried: (_name: string, then: (id: string) => void) => {
@@ -41,12 +59,49 @@ afterEach(() => {
   cleanup()
   vi.clearAllMocks()
   kept = []
+  history = []
+  currentProject = null
   heard.length = 0
 })
 
 const request = (from: string, id: string, text: string, conversation = 'conv_1'): ForwardedRequest => ({ from, id, text, conversation })
 
+async function openDestination(): Promise<void> {
+  const view = render(<RailOrchestrators onMenu={vi.fn()} onRemove={vi.fn()} onEdit={vi.fn()} />)
+  fireEvent.click(screen.getByTitle('/tmp/destination'))
+  view.rerender(<RailOrchestrators onMenu={vi.fn()} onRemove={vi.fn()} onEdit={vi.fn()} />)
+  await waitFor(() => expect(shown).toHaveBeenCalled())
+}
+
 describe('requests forwarded to an orchestrator', () => {
+  it("a destination with no history opens the request's conversation", async () => {
+    kept = [request('orchestrator-a', 'r1', 'please look', 'conv_waiting')]
+    await openDestination()
+    expect(shown).toHaveBeenLastCalledWith('chat', { id: 'conv_waiting' })
+    render(<ForwardedDrafts projectId="prj_1" conversation="conv_waiting" />)
+    expect(await screen.findByDisplayValue('please look')).toBeTruthy()
+  })
+
+  it('opening sends nothing and starts no turn', async () => {
+    kept = [request('orchestrator-a', 'r1', 'please look', 'conv_waiting')]
+    await openDestination()
+    expect(chatList).toHaveBeenCalledTimes(1)
+    expect(forwardedList).toHaveBeenCalled()
+    expect(forwardedSend).not.toHaveBeenCalled()
+    expect(said).not.toHaveBeenCalled()
+    expect(sent).not.toHaveBeenCalled()
+    expect(dropped).not.toHaveBeenCalled()
+  })
+
+  it('a destination with history opens its own conversation', async () => {
+    history = [{ id: 'conv_history', title: 'Earlier work', profile: 'prof_1', model: null, costUsd: 0, lastAt: 10 }]
+    kept = [request('orchestrator-a', 'r1', 'please look', 'conv_history')]
+    await openDestination()
+    expect(shown).toHaveBeenLastCalledWith('chat', { id: 'conv_history' })
+    render(<ForwardedDrafts projectId="prj_1" conversation="conv_history" />)
+    expect(await screen.findByDisplayValue('please look')).toBeTruthy()
+  })
+
   it('two requests are two cards, each with its origin and editable words', async () => {
     kept = [request('orchestrator-a', '1', 'look at the board'), request('orchestrator-b', '1', 'same id, other sender')]
     render(<ForwardedDrafts projectId="prj_1" conversation="conv_1" />)
