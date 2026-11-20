@@ -216,6 +216,14 @@ pub struct ForwardedRequests {
     pub requests: Vec<ForwardedRequest>,
 }
 
+/// Where the turn of a forwarded request the person sent on runs.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct ForwardedSent {
+    /// The conversation the turn started in, found again at the click.
+    pub conversation: String,
+}
+
 /// What the person's click on the stops asked did.
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]

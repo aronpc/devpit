@@ -160,6 +160,7 @@ pub(super) fn loaded(builder: Builder<tauri::Wry>) -> Builder<tauri::Wry> {
         reply_drafts::orchestrator_draft_drop,
         forwarded::forwarded_list,
         forwarded::forwarded_drop,
+        forwarded::forwarded_send,
         stop_asked::orchestrator_stops_asked,
         stop_asked::orchestrator_stops_confirm,
         stop_asked::orchestrator_stops_drop,

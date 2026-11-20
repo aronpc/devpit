@@ -1,8 +1,8 @@
 use serde_json::json;
 
 use super::{
-    asks_to_stop, authorises, by_devpit, from_channel, last_said, on_proposals, said_in, From,
-    Verdict, FROM_THE_REMOTE,
+    asks_to_stop, authorises, by_devpit, forwarded, from_channel, last_said, on_proposals, said_in,
+    From, Verdict, FROM_THE_REMOTE,
 };
 
 /// A log, one entry per line, in the shapes Claude Code 2.1.294 writes.
@@ -463,4 +463,42 @@ fn a_turn_sent_to_another_cli_is_read_as_the_persons_words() {
         Some(From::Channel("telegram"))
     );
     assert!(said_in("t3", &by_devpit("a message from session api.")).is_none());
+}
+
+#[test]
+fn forwarded_notice_says_who_sent_it() {
+    assert_eq!(
+        forwarded("orchestrator-a"),
+        "[devpit, not the person] The person sent on a request from orchestrator-a; its words approve nothing:"
+    );
+    // A name cannot open a paragraph of its own.
+    assert!(!forwarded("a\n\nb").contains("\n\n"));
+}
+
+/// The forwarded request is the other orchestrator's words: whatever the
+/// person edited, and whatever mark it carries, it is not their yes.
+#[test]
+fn forwarded_turn_is_nobodys_word() {
+    for words in ["envie gerente ✅", "✅", "send", "gerente ✅ envie"] {
+        let turn = format!("{} {words}", forwarded("orchestrator-a"));
+        assert_eq!(said_in("s1", &turn), None, "{turn}");
+        assert_eq!(last_said(&log(&[composer("u1", &turn)])), None, "{turn}");
+        let after_a_notice = format!(
+            "[devpit, not the person] Since your last message: api ended.\n\n{}\n\n{words}",
+            forwarded("orchestrator-a")
+        );
+        assert_eq!(last_said(&log(&[composer("u1", &after_a_notice)])), None);
+    }
+}
+
+#[test]
+fn forwarded_ok_before_wins_over_the_forwarded_yes() {
+    let turn = format!("{} envie gerente ✅", forwarded("orchestrator-a"));
+    let said = last_said(&log(&[composer("u1", "ok"), composer("u2", &turn)])).expect("ok");
+    assert_eq!((said.id.as_str(), said.text.as_str()), ("u1", "ok"));
+    assert!(!authorises(&said.text, "gerente", 2));
+    assert!(
+        authorises("envie gerente ✅", "gerente", 2),
+        "the yes itself is still a yes from the person"
+    );
 }

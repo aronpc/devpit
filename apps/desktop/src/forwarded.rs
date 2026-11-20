@@ -12,9 +12,13 @@
 //! leave one request behind.
 
 use std::collections::HashMap;
+use std::future::Future;
+use std::sync::Arc;
 use std::sync::{Mutex, OnceLock};
 
-use devpit_rpc::{ForwardedRequest, ForwardedRequests, Project, RpcError, Thread};
+use devpit_rpc::{
+    ErrorCode, ForwardedRequest, ForwardedRequests, ForwardedSent, Project, RpcError, Thread,
+};
 use serde_json::{json, Value};
 use tauri::{AppHandle, Emitter};
 
@@ -140,6 +144,132 @@ pub async fn forwarded_drop(
         Ok(())
     })
     .await
+}
+
+/// What the turn of request `id` from `from` says, under the notice that it
+/// is another orchestrator's: `text` is what the person sends, as edited.
+pub(crate) fn prompt_of(from: &str, text: &str) -> String {
+    format!(
+        "{} {}",
+        devpit_agentcli::person::forwarded(from),
+        text.trim()
+    )
+}
+
+/// The prompt of the turn that sends request `id` from `from` waiting for
+/// `destination`, with `text` as the person left it: nothing when it is no
+/// longer there (sent already, or let go) or `text` may not be sent.
+pub(crate) fn to_send(
+    destination: &str,
+    from: &str,
+    id: &str,
+    text: &str,
+) -> Result<String, RpcError> {
+    if !listed(destination)
+        .requests
+        .iter()
+        .any(|one| one.from == from && one.id == id)
+    {
+        return Err(RpcError::new(
+            ErrorCode::NotFound,
+            "that request is not waiting any more".to_owned(),
+        ));
+    }
+    let (_, text) = checked(id, text).map_err(|why| RpcError::new(ErrorCode::Invalid, why))?;
+    Ok(prompt_of(from, text))
+}
+
+/// Runs the turn of a request with `run`, which is given what to say when the
+/// turn starts: only then does the request leave the store and `told` hear of
+/// it. A turn that does not start (`Conflict`, `Busy`, anything) leaves the
+/// request where it was and the error goes back to the person's click.
+pub(crate) async fn launched<Run, Turn>(
+    destination: &str,
+    from: &str,
+    id: &str,
+    told: impl Fn() + Send + Sync + 'static,
+    run: Run,
+) -> Result<(), RpcError>
+where
+    Run: FnOnce(Arc<dyn Fn() + Send + Sync>) -> Turn,
+    Turn: Future<Output = Result<(), RpcError>> + Send + 'static,
+{
+    let (tell, heard) = tokio::sync::oneshot::channel();
+    let tell = Arc::new(Mutex::new(Some(tell)));
+    let (key, answer) = (
+        (destination.to_owned(), from.to_owned(), id.to_owned()),
+        tell.clone(),
+    );
+    let started: Arc<dyn Fn() + Send + Sync> = Arc::new(move || {
+        dropped(&key.0, &key.1, &key.2);
+        told();
+        if let Some(tell) = answer.lock().ok().and_then(|mut tell| tell.take()) {
+            let _ = tell.send(Ok(()));
+        }
+    });
+    let turn = run(started);
+    tauri::async_runtime::spawn(async move {
+        let ended = turn.await;
+        if let Some(tell) = tell.lock().ok().and_then(|mut tell| tell.take()) {
+            let _ = tell.send(ended);
+        }
+    });
+    heard.await.unwrap_or_else(|_| {
+        Err(RpcError::new(
+            ErrorCode::Internal,
+            "the turn was lost".to_owned(),
+        ))
+    })
+}
+
+/// `forwarded.send` — the person sends a request on, with the words they
+/// left in it: a turn in the destination's conversation, found again now,
+/// under a notice that the words are another orchestrator's and approve
+/// nothing. The request leaves when the turn starts.
+#[tauri::command]
+#[specta::specta]
+pub async fn forwarded_send(
+    app: AppHandle,
+    project_id: String,
+    from: String,
+    id: String,
+    text: String,
+) -> Result<ForwardedSent, RpcError> {
+    let at = project_id.clone();
+    let (conversation, from, id, ask) = crate::off_main::blocking(move || {
+        let prompt = to_send(&at, &from, &id, &text)?;
+        let project = crate::projects::project_list_now()
+            .map_err(|err| RpcError::new(ErrorCode::Internal, err.message))?
+            .projects
+            .into_iter()
+            .find(|one| one.id == at && one.orchestrator.is_some())
+            .ok_or_else(|| RpcError::new(ErrorCode::NotFound, "no such orchestrator".to_owned()))?;
+        let conversation =
+            conversation_of(&project).map_err(|why| RpcError::new(ErrorCode::Invalid, why))?;
+        let ask = crate::remote_talk::devpits_turn(&at, &conversation, &prompt)
+            .map_err(|why| RpcError::new(ErrorCode::Invalid, why))?;
+        Ok((conversation, from, id, ask))
+    })
+    .await?;
+    let (told, turn_app, at) = (app.clone(), app, conversation.clone());
+    launched(
+        &project_id,
+        &from,
+        &id,
+        {
+            let project = project_id.clone();
+            move || {
+                let _ = told.emit(FORWARDED, &project);
+            }
+        },
+        |started| async move {
+            crate::channel_talk::turn_in_started(&turn_app, &at, ask, move || started())
+                .await
+                .map(|_| ())
+        },
+    )
+    .await?;
+    Ok(ForwardedSent { conversation })
 }
 
 /// The conversation of the destination a request is kept for: the one its

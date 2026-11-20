@@ -458,10 +458,22 @@ pub(crate) async fn turn_in(
     conversation: &str,
     ask: devpit_rpc::Ask,
 ) -> Result<devpit_rpc::TurnEnd, devpit_rpc::RpcError> {
+    turn_in_started(app, conversation, ask, || ()).await
+}
+
+/// [`turn_in`], saying `started` when the turn is there: its first frame,
+/// which a turn refused (`Conflict`, `Busy`) never has.
+pub(crate) async fn turn_in_started(
+    app: &tauri::AppHandle,
+    conversation: &str,
+    ask: devpit_rpc::Ask,
+    started: impl Fn() + Send + Sync + 'static,
+) -> Result<devpit_rpc::TurnEnd, devpit_rpc::RpcError> {
     let first = AtomicBool::new(true);
     let (woke, said) = (app.clone(), conversation.to_owned());
     let trigger = Channel::new(move |_: InvokeResponseBody| {
         if first.swap(false, Ordering::SeqCst) {
+            started();
             let (app, conversation) = (woke.clone(), said.clone());
             tauri::async_runtime::spawn(async move {
                 let _ = app.emit(crate::chat_resident::WOKE, &conversation);
