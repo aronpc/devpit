@@ -15,7 +15,6 @@ apps/desktop/src/panes.rs 300
 apps/desktop/src/prime.rs 150
 apps/desktop/src/prime_tests.rs 150
 apps/desktop/src/projects.rs 450
-apps/desktop/src/runs.rs 150
 apps/desktop/src/sessions.rs 450
 apps/desktop/src/steps/agent.rs 200
 apps/desktop/src/steps/mod.rs 150
