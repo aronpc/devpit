@@ -9,6 +9,8 @@ import { OrchestratorDialog } from './OrchestratorDialog'
 import { ProjectMark } from './ProjectMark'
 import type { RailItem } from './RailMenu'
 import { menuPoint } from './menuRules'
+import { orchestratorsInOrder, placed, saveOrchestrators, savedOrchestrators } from './rail'
+import { useRailDrag, type Grab, type Spot } from './useRailDrag'
 import { useShell } from './useShell'
 
 /*
@@ -51,26 +53,42 @@ function savedFolded(): boolean {
 
 type Menu = (at: { x: number; y: number }, items: readonly RailItem[]) => void
 
-/** Oldest first, whatever order the list arrived in. */
-export const byAge = (all: readonly Project[]): readonly Project[] => [...all].sort((a, b) => a.id.localeCompare(b.id))
-
 export function RailOrchestrators({
   onMenu,
   onRemove,
   onEdit,
+  onHold,
 }: {
   onMenu: Menu
   onRemove: (id: string) => void
   /** Name, icon and colour, in the dialog every project uses. */
   onEdit: (project: Project) => void
+  /** Told while an orchestrator is being dragged, so the rail stays open. */
+  onHold: (held: boolean) => void
 }): React.JSX.Element {
   const { projects, project, setProject, show, open, reloadProjects } = useShell()
   const [making, setMaking] = useState(false)
   const [account, setAccount] = useState<Project | null>(null)
   const [folded, setFolded] = useState(savedFolded)
+  const [order, setOrder] = useState<readonly string[]>(savedOrchestrators)
   const arriving = useRef<string | null>(null)
-  /* Made order: the list arrives last-opened first. */
-  const mine = useMemo(() => byAge(projects.filter((one) => one.orchestrator)), [projects])
+  const rows = useRef<HTMLDivElement>(null)
+  /* In the person's order, the ones not placed yet after by age. The list
+     comes back last-opened first, and opening one must not move it. */
+  const mine = useMemo(() => orchestratorsInOrder(projects.filter((one) => one.orchestrator), order), [projects, order])
+
+  /* The hook lets an orchestrator land only on another one. */
+  const drop = (grab: Grab, spot: Spot): void => {
+    if (grab.kind !== 'orchestrator') return
+    const next = placed(mine.map((one) => one.id), grab.id, spot.key, spot.after)
+    setOrder(next)
+    saveOrchestrators(next)
+  }
+  const drag = useRailDrag(rows, drop)
+  const held = drag.grab !== null
+  useEffect(() => onHold(held), [held, onHold])
+  const overOf = (key: string): string | undefined =>
+    drag.grab && drag.spot?.key === key ? (drag.spot.after ? 'after' : 'before') : undefined
 
   useEffect(() => {
     if (!project || project.id !== arriving.current || open.length > 0) return
@@ -123,14 +141,20 @@ export function RailOrchestrators({
           <Plus size={12} />
         </button>
       </div>
-      {!folded &&
-        mine.map((one) => (
+      {!folded && (
+        <div ref={rows}>
+          {mine.map((one) => (
           <button
             key={one.id}
             className="rail__i"
             aria-current={one.id === project?.id ? 'true' : undefined}
+            data-dragging={drag.grab?.kind === 'orchestrator' && drag.grab.id === one.id ? 'true' : undefined}
+            data-over={overOf(one.id)}
+            data-drop="orchestrator"
+            data-key={one.id}
             title={one.rootPath}
-            onClick={() => enter(one)}
+            onPointerDown={drag.press({ kind: 'orchestrator', id: one.id })}
+            onClick={() => drag.clicked() && enter(one)}
             onContextMenu={(event) => {
               event.preventDefault()
               event.stopPropagation()
@@ -153,7 +177,9 @@ export function RailOrchestrators({
             </span>
             <ForwardedMark projectId={one.id} />
           </button>
-        ))}
+          ))}
+        </div>
+      )}
       {!folded && (
         <button className="rail__i rail__orchnew" data-first={mine.length === 0 ? 'true' : undefined} onClick={() => setMaking(true)} title={t('workspace.railOrchestrators.new')}>
           <span className="rail__pill" />
