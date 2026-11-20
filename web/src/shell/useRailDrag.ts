@@ -11,13 +11,37 @@ import { useEffect, useRef, useState } from 'react'
  * under the pointer as the target, read from the DOM (`data-drop`).
  */
 
-export type Grab = { kind: 'project'; id: string } | { kind: 'group'; name: string }
+export type Grab = { kind: 'project'; id: string } | { kind: 'group'; name: string } | { kind: 'orchestrator'; id: string }
 
 /** The row a drop would land on, and on which side of it. */
 export interface Spot {
-  readonly kind: 'project' | 'group'
+  readonly kind: 'project' | 'group' | 'orchestrator'
   readonly key: string
   readonly after: boolean
+}
+
+const KINDS: readonly Spot['kind'][] = ['project', 'group', 'orchestrator']
+
+/**
+ * The spot a row under the pointer at `y` offers, or null when the row is not
+ * one the rail drops on: an unknown `data-drop` is nobody's row, not a project.
+ */
+export function spotOf(row: HTMLElement, y: number): Spot | null {
+  const kind = KINDS.find((one) => one === row.dataset.drop)
+  const key = row.dataset.key
+  if (!kind || !key) return null
+  const box = row.getBoundingClientRect()
+  return { kind, key, after: y > box.top + box.height / 2 }
+}
+
+/*
+ * Whether a grab may land on a spot. Orchestrators keep to themselves:
+ * one lands only on another, and projects and groups never land on one.
+ * The rule lives here, not in each list's drop, because every rail list's
+ * hook listens on the same window and sees the others' rows.
+ */
+export function lands(grab: Grab, spot: Spot): boolean {
+  return (grab.kind === 'orchestrator') === (spot.kind === 'orchestrator')
 }
 
 /* Travel before a press becomes a drag: less and a shaky click drags. */
@@ -65,17 +89,16 @@ export function useRailDrag(list: React.RefObject<HTMLElement | null>, onDrop: (
       }
       event.preventDefault()
       const row = document.elementFromPoint(event.clientX, event.clientY)?.closest<HTMLElement>('[data-drop]')
-      if (row?.dataset.drop && row.dataset.key) {
-        const box = row.getBoundingClientRect()
-        const next: Spot = {
-          kind: row.dataset.drop === 'group' ? 'group' : 'project',
-          key: row.dataset.key,
-          after: event.clientY > box.top + box.height / 2,
+      const next = row ? spotOf(row, event.clientY) : null
+      if (next && !lands(active, next)) {
+        /* A row it may not land on: no mark left on the last one, no drop. */
+        if (at) {
+          at = null
+          setSpot(null)
         }
-        if (next.kind !== at?.kind || next.key !== at.key || next.after !== at.after) {
-          at = next
-          setSpot(next)
-        }
+      } else if (next && (next.kind !== at?.kind || next.key !== at.key || next.after !== at.after)) {
+        at = next
+        setSpot(next)
       }
       const scroller = list.current
       if (scroller) {
