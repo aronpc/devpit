@@ -36,44 +36,52 @@ pub(crate) fn plans(app: &tauri::AppHandle, asks: bool, conversation_id: &str) -
         if !takes(&prompt.tool, asks) {
             return false;
         }
+        use tauri::Manager;
         let (app, control, conversation) = (app.clone(), control.clone(), conversation.clone());
-        std::thread::spawn(move || put(&app, &control, prompt, conversation));
+        let question = question(&prompt, conversation);
+        if already_allowed(&app.state::<crate::asking_kept::Kept>(), &question) {
+            control.answer(&prompt.request_id, json!({ "behavior": "allow" }));
+            return true;
+        }
+        let asking = app.state::<Asking>();
+        let hear = asking.opened(&question.id);
+        app.state::<Picks>().opened(&question);
+        if app
+            .state::<crate::asking_wait::Ends>()
+            .open(&question.id, question.conversation_id.as_deref())
+        {
+            asking.end(&question.id);
+        }
+        std::thread::spawn(move || put(&app, &control, prompt, question, hear));
         true
     })
 }
 
 /// Connects both ways a prompt can settle before a chat turn starts.
 pub(crate) fn listen(app: &tauri::AppHandle, control: &Control, asks: bool, conversation_id: &str) {
+    use tauri::Manager;
+    app.state::<crate::asking_wait::Ends>()
+        .started(conversation_id);
     control.asks_with(plans(app, asks, conversation_id));
     let app = app.clone();
     control.on_cancel(Arc::new(move |id| {
-        use tauri::Manager;
         crate::asking_picks::cancel(&app.state::<Asking>(), &app.state::<Picks>(), id);
     }));
 }
 
 /// Waits for the person, as a question the hook holds does, then answers on stdin.
-fn put(app: &tauri::AppHandle, control: &Control, prompt: Prompt, conversation: String) {
+fn put(
+    app: &tauri::AppHandle,
+    control: &Control,
+    prompt: Prompt,
+    question: Question,
+    hear: std::sync::mpsc::Receiver<Answer>,
+) {
     use tauri::{Emitter, Manager};
-    let question = Question {
-        id: prompt.request_id.clone(),
-        session_id: prompt.session_id.clone().unwrap_or_default(),
-        tool: prompt.tool.clone(),
-        input: prompt.input.to_string(),
-        cwd: String::new(),
-        touch: devpit_agentcli::touch_of(&prompt.tool, &prompt.input),
-        conversation_id: Some(conversation),
-    };
     let plan = prompt.tool == PLAN;
     let person = to_the_person(&prompt.tool);
-    if already_allowed(&app.state::<crate::asking_kept::Kept>(), &question) {
-        control.answer(&prompt.request_id, json!({ "behavior": "allow" }));
-        return;
-    }
     let asking = app.state::<Asking>();
-    let hear = asking.opened(&question.id);
     let picks = app.state::<Picks>();
-    crate::asking_picks::wake_cancelled(&asking, &picks, &question.id);
     held_for_a_late_window(
         &app.state::<Waiting>(),
         &question,
@@ -102,6 +110,18 @@ fn put(app: &tauri::AppHandle, control: &Control, prompt: Prompt, conversation: 
             let _ = app.emit("permission:settled", id);
         },
     );
+}
+
+fn question(prompt: &Prompt, conversation: String) -> Question {
+    Question {
+        id: prompt.request_id.clone(),
+        session_id: prompt.session_id.clone().unwrap_or_default(),
+        tool: prompt.tool.clone(),
+        input: prompt.input.to_string(),
+        cwd: String::new(),
+        touch: devpit_agentcli::touch_of(&prompt.tool, &prompt.input),
+        conversation_id: Some(conversation),
+    }
 }
 
 /// Answers only when devpit won the prompt; a remote cancellation already
@@ -174,7 +194,7 @@ pub(crate) fn person_reply(picks: &Picks, id: &str, input: &str, answer: Answer)
         return json!({ "behavior": "deny", "message": message });
     }
     let chosen = picks.taken(id).unwrap_or_default();
-    let answered = answered_input(input, chosen).unwrap_or_else(|| json!({}));
+    let answered = answered_input(input, chosen).unwrap_or_else(|_| json!({}));
     json!({ "behavior": "allow", "updatedInput": answered })
 }
 

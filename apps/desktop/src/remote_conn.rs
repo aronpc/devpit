@@ -814,16 +814,12 @@ fn pick_for_device(
     if chosen.iter().any(|labels| labels.len() > MOST_PICK_LABELS) {
         return Err("that answer has too many choices".to_owned());
     }
-    if chosen.len() != expected {
-        return Err(format!(
-            "this question needs {expected} answers, but {} were sent",
-            chosen.len()
-        ));
-    }
-    crate::remote::note(root, device, "answered a question");
+    crate::asking_picks::validate_choice_count(expected, &chosen)?;
     crate::asking_picks::pick(asking, picks, &question.id, chosen)
         .then_some(())
-        .ok_or_else(|| "that question is no longer waiting".to_owned())
+        .ok_or_else(|| "that question is no longer waiting".to_owned())?;
+    crate::remote::note(root, device, "answered a question");
+    Ok(())
 }
 
 /// Where an open pane is typed into: its tmux window, by the session it runs

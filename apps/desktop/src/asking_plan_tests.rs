@@ -1,4 +1,4 @@
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Barrier, Mutex};
 use std::time::{Duration, Instant};
 
 use serde_json::json;
@@ -364,6 +364,63 @@ impl Held {
     }
 }
 
+fn settled_after_early_end(gone: Over<'static>) {
+    let ends = Arc::new(Ends::default());
+    let clock = Arc::new(Ticking::by(Duration::from_secs(30)));
+    let waiting = Arc::new(Waiting::default());
+    let settled: Arc<Mutex<Vec<String>>> = Arc::default();
+    let ready = Arc::new(Barrier::new(2));
+    let proceed = Arc::new(Barrier::new(2));
+    let question = asked("q1", "AskUserQuestion", Some("conv_a"));
+    let (tell, hear) = std::sync::mpsc::channel();
+    let (thread_ends, thread_clock, thread_waiting, thread_settled) = (
+        ends.clone(),
+        clock.clone(),
+        waiting.clone(),
+        settled.clone(),
+    );
+    let (thread_ready, thread_proceed) = (ready.clone(), proceed.clone());
+    let wait = std::thread::spawn(move || {
+        let mut answer = None;
+        held_for_a_late_window(
+            &thread_waiting,
+            &question,
+            |_| {
+                thread_ready.wait();
+                thread_proceed.wait();
+            },
+            || waits(&hear, &question, &thread_ends, &*thread_clock),
+            |heard| answer = Some(heard),
+            |id| thread_settled.lock().unwrap().push(id.to_owned()),
+        );
+        answer.expect("the question was answered")
+    });
+
+    ready.wait();
+    ends.over(gone);
+    proceed.wait();
+
+    let real = Instant::now();
+    while !wait.is_finished() {
+        assert!(
+            real.elapsed() < Duration::from_secs(5),
+            "the wait did not end"
+        );
+        std::thread::sleep(Duration::from_millis(1));
+    }
+    assert_eq!(wait.join().expect("the wait panicked"), Answer::Deny);
+    assert!(waiting.of("ses_orch", "conv_a").is_empty());
+    assert_eq!(*settled.lock().unwrap(), ["q1"]);
+    drop(tell);
+}
+
+#[test]
+fn a_question_whose_chat_ended_before_it_opened_is_denied_end_before_open() {
+    settled_after_early_end(Over::Closed("conv_a"));
+    settled_after_early_end(Over::Interrupted("conv_a"));
+    settled_after_early_end(Over::AppQuit);
+}
+
 /// A question to the person waiting a minute in `conv_a`, another in `conv_b`:
 /// `gone` denies the first, out of the Waiting and told settled, and leaves
 /// the other chat's question waiting.
@@ -411,20 +468,28 @@ fn settled_by(gone: impl FnOnce(&Ends)) {
 
 #[test]
 fn a_question_is_settled_when_its_chat_closes() {
-    settled_by(|ends| ends.over(Over::Closed("conv_a")));
+    settled_by(|ends| {
+        ends.over(Over::Closed("conv_a"));
+    });
 }
 
 /// Interrupting keeps the process, but the turn that asked is gone.
 #[test]
 fn a_question_is_settled_when_its_turn_is_interrupted() {
-    settled_by(|ends| ends.over(Over::Interrupted("conv_a")));
+    settled_by(|ends| {
+        ends.over(Over::Interrupted("conv_a"));
+    });
 }
 
 /// The resident process exits, or the turn's own process is done.
 #[test]
 fn a_question_is_settled_when_its_process_exits() {
-    settled_by(|ends| ends.over(Over::Exited("conv_a")));
-    settled_by(|ends| ends.over(Over::TurnEnded("conv_a")));
+    settled_by(|ends| {
+        ends.over(Over::Exited("conv_a"));
+    });
+    settled_by(|ends| {
+        ends.over(Over::TurnEnded("conv_a"));
+    });
 }
 
 /// Every question settles as the app quits, a terminal's too: no thread is
