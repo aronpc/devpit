@@ -195,6 +195,16 @@ DEVPIT_APP_DIR=../devpit-app DATABASE_URL=postgres://…/devpit_app_test \
 
 ## Not yet
 
+- **The Local board.** The SQLite board is the next namespace, one per project
+  (`board:<record>`, named through the key like the others), and the round
+  already merges what it needs: a card a record, a field per thing a card
+  holds, a cleared field as a tombstone. What is still to decide before it
+  syncs is what makes it safe: matching columns that each machine seeded on
+  its own, a card's place among positions written apart, a card moved into a
+  lane with a step on the other machine (it must not run there), dates that
+  would remind on both machines, and which of a card's edges and comments
+  travel. Until those are settled and tested, the Local board stays on each
+  machine.
 - **A project's memory** arrives the same way: a namespace per project, its
   blob named through the key, and nothing else to build in the round or on
   devpit.app.
