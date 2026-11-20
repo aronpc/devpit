@@ -17,11 +17,13 @@ use devflow_engine::folder::State;
 use devflow_engine::gate::{self, Event, Gate, Hook, Judged, Looked, Review, Run, Said, Streak};
 use devflow_engine::runs::{self, Runs};
 use devflow_engine::Config;
+use devpit_core::locale::Locale;
 use devpit_core::Store;
 use devpit_rpc::{Board, Project};
 use serde_json::{json, Value};
 use tauri::{AppHandle, Emitter};
 
+use crate::devflow_dialect::dialect_in;
 use crate::devflow_evidence::{checkout, SIGNED};
 use crate::devflow_jev::Jev;
 
@@ -40,6 +42,7 @@ fn gating<'a>(store: &Store, project: &Project, state: &'a State) -> Option<&'a 
 }
 
 pub(crate) fn respond(
+    locale: Locale,
     app: Option<&AppHandle>,
     store: &Store,
     project: &Project,
@@ -47,13 +50,14 @@ pub(crate) fn respond(
     cwd: &Path,
     params: &Value,
 ) -> Result<Value, String> {
-    let asked = gate::asked_in(&crate::devflow_dialect::DEVPIT, params)?;
+    let asked = gate::asked_in(dialect_in(locale), params)?;
     let config = gating(store, project, state);
     if let Some(hook) = &asked.hook {
         // Where the gate is off — Devflow switched off since the session
         // began — the hook says nothing and the turn ends as it would have.
         let said = config.map_or(Said::Let, |config| {
             stopped(
+                locale,
                 app,
                 store,
                 project,
@@ -70,6 +74,7 @@ pub(crate) fn respond(
     )?;
     let card = asked.card.as_deref().unwrap_or_default();
     judged_for_agent(
+        locale,
         app,
         store,
         project,
@@ -193,13 +198,14 @@ fn unreviewed_since(root: &Path, findings: &Value) -> Option<String> {
 }
 
 fn looked<'a>(
+    locale: Locale,
     config: &'a Config,
     card: &'a str,
     criteria: &'a [String],
     read: &'a Read,
 ) -> Looked<'a> {
     Looked {
-        dialect: &crate::devflow_dialect::DEVPIT,
+        dialect: dialect_in(locale),
         config,
         card,
         criteria,
@@ -228,7 +234,9 @@ fn criteria_of(body: &str) -> Vec<String> {
 /// The gate, Decisions asked only once the checks pass — a card they hold
 /// is not worth a question — and, for a hook, only where its answer can
 /// hold the turn: in `shadow` the agent's own call records it.
+#[allow(clippy::too_many_arguments)]
 fn gated(
+    locale: Locale,
     store: &Store,
     project: &Project,
     config: &Config,
@@ -238,7 +246,7 @@ fn gated(
     for_a_hook: bool,
 ) -> (Gate, Option<Jev>) {
     let criteria = criteria_of(&card.body);
-    let checked = gate::checked(&looked(config, &card.id, &criteria, read));
+    let checked = gate::checked(&looked(locale, config, &card.id, &criteria, read));
     let asked = checked.missing.is_empty()
         && (!for_a_hook
             || crate::devflow_jev::mode_of(store, &project.id, config) == Mode::Enforce);
@@ -259,7 +267,9 @@ fn with_standing(answer: &mut Value, standing: Value) {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn judged_for_agent(
+    locale: Locale,
     app: Option<&AppHandle>,
     store: &Store,
     project: &Project,
@@ -274,7 +284,7 @@ fn judged_for_agent(
     let runs = crate::devflow_evidence::runs_of(&project.id, &root)?;
     let mut read = read(&runs, &card.id, config);
     read.no_code = no_code(&card, kind, &root);
-    let (gate, asked) = gated(store, project, config, &card, &root, &read, false);
+    let (gate, asked) = gated(locale, store, project, config, &card, &root, &read, false);
     // Not asked, held by the checks: the project's last call says how it stands.
     let jev = asked.or_else(|| Jev::of(project, config, &root, Some(&card.id), &[]));
     let file = kept(project, &runs, &card.id, &gate)?;
@@ -435,7 +445,9 @@ fn began(transcript: Option<&str>) -> Option<String> {
 
 /// A stop answered: let go, sent back with what is missing, or — past the
 /// streak — let go with the card and the person told.
+#[allow(clippy::too_many_arguments)]
 fn stopped(
+    locale: Locale,
     app: Option<&AppHandle>,
     store: &Store,
     project: &Project,
@@ -471,7 +483,7 @@ fn stopped(
     {
         return Said::Let;
     }
-    let (gate, _) = gated(store, project, config, &card, &root, &read, true);
+    let (gate, _) = gated(locale, store, project, config, &card, &root, &read, true);
     let failed = (!gate.passed()).then(|| (gate.fingerprint(), gate.reason()));
     let key = format!(
         "{}/{}",
@@ -622,7 +634,12 @@ pub(crate) fn context(
 /// `devpit_finish_card` on a card the gate holds: refused until the gate
 /// passed on the newest run and nothing changed since. A card cut from the
 /// plan closes without evidence, and one merged into another on that card's.
-pub(crate) fn may_finish(project: &Project, card_id: &str, cwd: &Path) -> Result<(), String> {
+pub(crate) fn may_finish(
+    locale: Locale,
+    project: &Project,
+    card_id: &str,
+    cwd: &Path,
+) -> Result<(), String> {
     let store = crate::projects::store().map_err(|err| err.message)?;
     let state = crate::devflow::read(Path::new(&project.root_path));
     let Some(config) = gating(&store, project, &state) else {
@@ -630,13 +647,14 @@ pub(crate) fn may_finish(project: &Project, card_id: &str, cwd: &Path) -> Result
     };
     match judged_on(&store, card_id) {
         None => Ok(()),
-        Some(on) if on == card_id => gate_passed_on(&store, project, config, &on, cwd),
-        Some(on) => gate_passed_on(&store, project, config, &on, cwd)
+        Some(on) if on == card_id => gate_passed_on(locale, &store, project, config, &on, cwd),
+        Some(on) => gate_passed_on(locale, &store, project, config, &on, cwd)
             .map_err(|why| format!("its work went into {on}, whose gate it finishes on: {why}")),
     }
 }
 
 fn gate_passed_on(
+    locale: Locale,
     store: &Store,
     project: &Project,
     config: &Config,
@@ -663,7 +681,7 @@ fn gate_passed_on(
         .is_some_and(|last| last["no_code"] == true)
         .then_some("evidence");
     read.no_code = no_code(&card, told, &root);
-    let checked = gate::checked(&looked(config, &card.id, &criteria, &read));
+    let checked = gate::checked(&looked(locale, config, &card.id, &criteria, &read));
     let gate = Gate::new(checked, None, "");
     if !gate.passed() {
         return Err(format!(

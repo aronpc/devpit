@@ -22,6 +22,7 @@
 
 use std::path::{Path, PathBuf};
 
+use devpit_core::locale::Locale;
 use devpit_rpc::{Board, Card, Column, Project, RpcError};
 use serde::Deserialize;
 use serde_json::{json, Value};
@@ -42,6 +43,20 @@ pub(crate) struct Asked {
     /// The asking session's `CLAUDE_CONFIG_DIR`, when it has one.
     #[serde(default, rename = "configDir")]
     pub config_dir: Option<String>,
+    /// The asking session's language, as its MCP server carries it; absent
+    /// from an older server, which is English.
+    #[serde(default)]
+    pub locale: Option<String>,
+}
+
+impl Asked {
+    /// The language the asking session was born in.
+    pub(crate) fn session_locale(&self) -> Locale {
+        match self.locale.as_deref() {
+            Some("pt-BR") => Locale::PtBr,
+            _ => Locale::En,
+        }
+    }
 }
 
 /// The methods this build answers, for an agent asking what it can do.
@@ -240,6 +255,7 @@ fn respond_in(
         cwd: asked.cwd.clone(),
         author: asked.author.clone(),
         config_dir: asked.config_dir.clone(),
+        locale: asked.locale.clone(),
     };
     let text = |name: &str| {
         asked
@@ -518,6 +534,7 @@ fn respond_in(
         cwd: asked.cwd.clone(),
         author: asked.author.clone(),
         config_dir: asked.config_dir.clone(),
+        locale: asked.locale.clone(),
     };
     let text = |name: &str| {
         asked
@@ -533,6 +550,7 @@ fn respond_in(
             }
         }
         return crate::devflow::respond_from(
+            asked.session_locale(),
             app,
             &asked.method,
             project,
@@ -749,7 +767,12 @@ fn respond_in(
         }
         "finish_card" => {
             on_board(&board, &card_id)?;
-            crate::devflow_gate::may_finish(project, &card_id, Path::new(&asked.cwd))?;
+            crate::devflow_gate::may_finish(
+                asked.session_locale(),
+                project,
+                &card_id,
+                Path::new(&asked.cwd),
+            )?;
             let mut done = crate::card_follows::finish(
                 app,
                 &board,

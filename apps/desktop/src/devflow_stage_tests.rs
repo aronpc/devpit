@@ -42,7 +42,15 @@ fn flow_gated(dir: &Path, gate: &str, publish: &str, extra: &str) -> (Store, Pro
 }
 
 fn ask(project: &Project, root: &Path, method: &str, params: Value) -> Result<Value, String> {
-    crate::devflow::respond_from(None, method, project, root, None, &params)
+    crate::devflow::respond_from(
+        devpit_core::locale::Locale::En,
+        None,
+        method,
+        project,
+        root,
+        None,
+        &params,
+    )
 }
 
 #[test]

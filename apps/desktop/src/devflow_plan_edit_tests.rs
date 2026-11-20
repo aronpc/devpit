@@ -32,7 +32,13 @@ fn three_cards(dir: &Path) -> (Store, Project, Vec<String>) {
 }
 
 fn plan(project: &Project, params: Value) -> Result<Value, String> {
-    crate::devflow_plan::respond(None, "devflow_plan", project, &params)
+    crate::devflow_plan::respond(
+        devpit_core::locale::Locale::En,
+        None,
+        "devflow_plan",
+        project,
+        &params,
+    )
 }
 
 #[test]

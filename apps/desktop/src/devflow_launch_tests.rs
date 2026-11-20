@@ -66,8 +66,16 @@ fn a_project_without_devflow_gets_none_of_it_and_one_with_it_keeps_it() {
     let id = store.add_project(&root, None).expect("project");
     let here = crate::devflow_screen::project_here(&store, &id).expect("project");
     let offer = || {
-        crate::devflow::respond_from(None, "devflow_offer", &here, &root, None, &json!({}))
-            .expect("offer")["offer"]
+        crate::devflow::respond_from(
+            devpit_core::locale::Locale::En,
+            None,
+            "devflow_offer",
+            &here,
+            &root,
+            None,
+            &json!({}),
+        )
+        .expect("offer")["offer"]
             .clone()
     };
     assert_eq!(offer(), "off");
@@ -135,7 +143,16 @@ fn a_devflow_folder_from_before_the_engine_stays_on_without_a_migration() {
     std::fs::write(&file, BEFORE_THE_ENGINE).expect("yaml");
     crate::devflow_asks::remember(&store, &id, Ask::Enable, true).expect("clicked");
     let ask = |method: &str| {
-        crate::devflow::respond_from(None, method, &here, &root, None, &json!({})).expect(method)
+        crate::devflow::respond_from(
+            devpit_core::locale::Locale::En,
+            None,
+            method,
+            &here,
+            &root,
+            None,
+            &json!({}),
+        )
+        .expect(method)
     };
 
     assert_eq!(ask("devflow_offer")["offer"], "active");

@@ -77,7 +77,6 @@ pub(crate) static DEVPIT: LazyLock<Dialect> = LazyLock::new(|| Dialect {
 /// so do the skills, the plugin and the `devflow.yaml` header, which go into
 /// the person's repository and are shared with a team: they say the same
 /// thing whoever installed them. In English it is [`DEVPIT`] itself.
-#[cfg_attr(not(test), allow(dead_code))]
 pub(crate) fn dialect_in(locale: Locale) -> &'static Dialect {
     static PORTUGUESE: LazyLock<Dialect> = LazyLock::new(|| {
         let say = |key: &str| -> &'static str {
