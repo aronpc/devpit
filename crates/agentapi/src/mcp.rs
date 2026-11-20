@@ -273,9 +273,10 @@ pub(crate) const TOOLS: [Tool; 38] = [
     Tool {
         name: "devpit_session_message",
         method: "session_message",
-        description: "Message a session through devpit, whatever CLI it runs on, beside SendMessage and never in its place. An orchestrator writes to a session of a linked project by its name, as devpit_sessions gives it, or by the pane id devpit_card lists for it; a session writes to its orchestrator, `to` left out for the one that last wrote to it. A terminal session gets the words typed at its next idle prompt, never mid-turn; an orchestrator gets them as a turn in its chat marked as not from the person. Each message says who sent it, and a session's message approves nothing for the person.",
+        description: "Message a session through devpit, whatever CLI it runs on, beside SendMessage and never in its place. An orchestrator writes to a session of a linked project by its name, as devpit_sessions gives it, or by the pane id devpit_card lists for it; a session writes to its orchestrator, `to` left out for the one that last wrote to it. A terminal session gets the words typed at its next idle prompt, never mid-turn; a session's words to an orchestrator arrive as a turn in its chat marked as not from the person. An orchestrator forwarding a request to another sends it with `to: \"orchestrator-<folder>\"` and an `id` of 1 to 100 characters, required on that route: the request waits in the other's conversation as a draft for the person to send or discard, no turn starts there and its words approve nothing; sent again with the same id, it stays the one request. A request not yet sent is lost when the app closes. Each message says who sent it, and a session's message approves nothing for the person.",
         input: || json!({ "type": "object", "properties": {
             "to": { "type": "string", "description": "A session's name or pane id, or an orchestrator's name (orchestrator-…). A session may leave it out to answer the orchestrator that last wrote to it." },
+            "id": { "type": "string", "maxLength": 100, "description": "Forwarding to another orchestrator only: the request's id. Sending the same id again leaves the one request." },
             "text": { "type": "string", "description": "The message. At most 4000 characters." }
         }, "required": ["text"] }),
     },

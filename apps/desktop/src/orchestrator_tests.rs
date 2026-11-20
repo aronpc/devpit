@@ -205,6 +205,22 @@ fn an_orchestrator_runs_on_any_cli_that_holds_a_chat() {
     assert!(refused.contains("Settings → Providers"), "{refused}");
 }
 
+/// Forwarding work to another orchestrator: when it is theirs to see
+/// through, that nothing runs there until the person sends it, and what an
+/// error asks for — the same id again.
+#[test]
+fn the_brief_says_how_to_forward_to_another_orchestrator() {
+    let brief = brief();
+    for kept in [
+        "## Forwarding to another orchestrator",
+        "another orchestrator's to see through",
+        "nothing runs there until the person sends it",
+        "send the same request again with the same id",
+    ] {
+        assert!(brief.contains(kept), "{kept}");
+    }
+}
+
 /// An orchestrator on a CLI without SendMessage is pointed at the bus for
 /// every session, and starts sessions on any CLI.
 #[test]

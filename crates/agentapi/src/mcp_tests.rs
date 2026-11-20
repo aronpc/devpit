@@ -550,6 +550,55 @@ fn the_message_bus_tools_take_a_name_and_words() {
     assert_eq!(said["result"]["isError"], false);
 }
 
+/// Forwarding a request to another orchestrator: the address's shape, the
+/// id that route requires and what a second send with it does, and what
+/// arrives — a draft that starts no turn and approves nothing.
+#[test]
+fn session_message_says_how_to_forward_to_an_orchestrator() {
+    let said = TOOLS
+        .iter()
+        .find(|tool| tool.name == "devpit_session_message")
+        .expect("the tool")
+        .description;
+    for kept in [
+        "orchestrator-<folder>",
+        "an `id` of 1 to 100 characters, required on that route",
+        "as a draft for the person to send or discard",
+        "no turn starts there",
+        "its words approve nothing",
+        "sent again with the same id, it stays the one request",
+    ] {
+        assert!(said.contains(kept), "{kept}");
+    }
+}
+
+/// The id a forwarded request carries is declared with the ceiling
+/// `forwarded.rs` holds it to, and required only on that route: a message
+/// to a session needs none.
+#[test]
+fn session_message_declares_a_bounded_id() {
+    let schema = (TOOLS
+        .iter()
+        .find(|tool| tool.name == "devpit_session_message")
+        .expect("the tool")
+        .input)();
+    assert_eq!(schema["properties"]["id"]["type"], "string");
+    assert_eq!(schema["properties"]["id"]["maxLength"], 100);
+    assert_eq!(schema["required"], json!(["text"]));
+}
+
+/// A forwarded request is kept in memory: one nobody has sent is gone when
+/// the app closes, and the tool says so.
+#[test]
+fn session_message_warns_a_request_is_lost_when_the_app_closes() {
+    let said = TOOLS
+        .iter()
+        .find(|tool| tool.name == "devpit_session_message")
+        .expect("the tool")
+        .description;
+    assert!(said.contains("A request not yet sent is lost when the app closes"));
+}
+
 /// A session may start on a host the project is linked to, production only
 /// with the person's yes passed on; neither is needed for one started here.
 #[test]
