@@ -29,6 +29,7 @@ pub(crate) const TOPICS: &[&str] = &[
     "learning:asked",
     "lessons:proposed",
     "notice:rang",
+    "orchestrator:forwarded",
     "orchestrator:proposed",
     "panes:changed",
     "pause:changed",
