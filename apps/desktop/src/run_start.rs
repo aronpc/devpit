@@ -6,6 +6,7 @@ use devpit_core::Store;
 use devpit_rpc::{Credentials, Profile, RpcError, Step};
 
 pub(crate) struct FixedAgent {
+    pub(crate) profile: String,
     pub(crate) runner: Runner,
     pub(crate) model: Option<String>,
 }
@@ -118,6 +119,7 @@ impl Sources {
                     ));
                 }
                 Ok(FixedAgent {
+                    profile: pinned.id,
                     runner: devpit_agentcli::running::runner(profile),
                     model: carry.requested_model.clone(),
                 })

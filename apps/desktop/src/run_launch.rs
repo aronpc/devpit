@@ -21,6 +21,29 @@ pub(crate) fn starting_refused(app: &AppHandle) -> Result<(), RpcError> {
     Ok(())
 }
 
+pub(crate) fn record_whose_run(
+    store: &Store,
+    run_id: &str,
+    step: &Step,
+    asked: devpit_core::store::Asked,
+    asked_from: Option<String>,
+    fixed: Option<&crate::run_start::FixedAgent>,
+) -> Result<(), devpit_core::store::StoreError> {
+    store.record_whose_run(
+        run_id,
+        &WhoseRun {
+            asked,
+            asked_from,
+            carried: match step.kind {
+                StepKind::Agent => Carried::Agent {
+                    profile: fixed.map(|agent| agent.profile.clone()),
+                },
+                StepKind::Command | StepKind::Session => Carried::Process,
+            },
+        },
+    )
+}
+
 pub(crate) fn launch(
     app: AppHandle,
     in_flight: Arc<InFlight>,
@@ -41,18 +64,13 @@ pub(crate) fn launch(
         store.set_run_session(&run_id, &session_id)?;
     }
 
-    if let Err(err) = store.record_whose_run(
+    if let Err(err) = record_whose_run(
+        store,
         &run_id,
-        &WhoseRun {
-            asked,
-            asked_from: came_from.map(str::to_owned),
-            carried: match step.kind {
-                StepKind::Agent => Carried::Agent {
-                    profile: crate::steps::agent_config::profile_of(&step.config),
-                },
-                StepKind::Command | StepKind::Session => Carried::Process,
-            },
-        },
+        step,
+        asked,
+        came_from.map(str::to_owned),
+        begun.fixed.as_ref(),
     ) {
         devpit_core::reports::background(
             "run registration",

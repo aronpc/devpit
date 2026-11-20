@@ -176,6 +176,37 @@ fn run_start_keeps_a_profile_token_out_of_every_run_column() {
 }
 
 #[test]
+fn run_start_keeps_a_query_token_out_of_the_snapshot_and_every_run_column() {
+    let (_dir, store, card, step) = seeded();
+    let token = "sk-query-column-sentinel-5018";
+    let mut available = sources(&[("work", "signed-in", true)]);
+    available.declared[0].env.push(EnvVar {
+        name: "ANTHROPIC_BASE_URL".to_owned(),
+        value: format!("https://gw.example/v1?api-key={token}"),
+    });
+    let begun = begin_profiled(
+        &store,
+        &card,
+        &step,
+        None,
+        "work",
+        Some("sonnet"),
+        &available,
+    )
+    .expect("begin");
+
+    let attempt = store
+        .attempt_of(&begun.run_id)
+        .expect("read")
+        .expect("attempt");
+    assert!(!attempt.pinned.expect("snapshot").contains(token));
+    assert!(
+        !run_row_contains(&store, &begun.run_id, token),
+        "the query token reached a run column"
+    );
+}
+
+#[test]
 fn run_start_pauses_a_blocked_attempt_without_launching_or_reopening_the_previous_one() {
     let (_dir, store, card, step) = seeded();
     let available = sources(&[("first", "", true), ("blocked", "", false)]);

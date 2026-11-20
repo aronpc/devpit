@@ -35,29 +35,17 @@ fn shared_value(declared: &Declared, wants: impl Fn(&str) -> bool) -> Option<&st
         .find(|var| wants(&var.name) && devpit_sync::profiles::shared(&var.name))
         .map(|var| var.value.as_str())
         .filter(|value| !value.is_empty())
+        .filter(|value| devpit_sync::profiles::safe_to_share(value))
 }
 
 /// A path with the home directory written as `~`.
-fn tilde(path: &str, home: &str) -> String {
+fn tilde(path: &str, home: &str) -> Option<String> {
     let home = home.trim_end_matches('/');
     match path.strip_prefix(home) {
-        Some("") if !home.is_empty() => "~".to_owned(),
-        Some(rest) if rest.starts_with('/') => format!("~{rest}"),
-        _ => path.to_owned(),
+        Some("") if !home.is_empty() => Some("~".to_owned()),
+        Some(rest) if rest.starts_with('/') => Some(format!("~{rest}")),
+        _ => None,
     }
-}
-
-/// A URL without the `user:password@` part of its authority.
-fn without_credentials(url: &str) -> String {
-    let Some((scheme, rest)) = url.split_once("://") else {
-        return url.to_owned();
-    };
-    let end = rest.find(['/', '?', '#']).unwrap_or(rest.len());
-    let (authority, tail) = rest.split_at(end);
-    let host = authority
-        .rsplit_once('@')
-        .map_or(authority, |(_, host)| host);
-    format!("{scheme}://{host}{tail}")
 }
 
 /// The snapshot for one step: `step_model` wins over the profile's own.
@@ -67,9 +55,8 @@ pub(crate) fn pin(declared: &Declared, step_model: Option<&str>, home: &str) -> 
         label: declared.label.clone(),
         agent: declared.base.clone(),
         config_dir: shared_value(declared, |name| name == "CLAUDE_CONFIG_DIR")
-            .map(|dir| tilde(dir, home)),
-        base_url: shared_value(declared, |name| name.ends_with("_BASE_URL"))
-            .map(without_credentials),
+            .and_then(|dir| tilde(dir, home)),
+        base_url: shared_value(declared, |name| name.ends_with("_BASE_URL")).map(str::to_owned),
         requested_model: step_model
             .filter(|model| !model.is_empty())
             .or_else(|| shared_value(declared, |name| name == "ANTHROPIC_MODEL"))

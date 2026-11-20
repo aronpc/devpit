@@ -186,6 +186,11 @@ fn credentialed(value: &str) -> bool {
     })
 }
 
+/// Whether a shared variable's value is safe to carry to another machine.
+pub fn safe_to_share(value: &str) -> bool {
+    clean(value, 4096) && !credentialed(value)
+}
+
 fn list_of(value: &str) -> Option<Vec<String>> {
     let list: Vec<String> = serde_json::from_str(value).ok()?;
     (list.len() <= 64 && list.iter().all(|one| clean(one, 256))).then_some(list)
@@ -206,7 +211,7 @@ pub fn fits(field: &str, value: Option<&str>) -> bool {
         return env_name(name)
             && match value {
                 None => true,
-                Some(value) if shared(name) => clean(value, 4096) && !credentialed(value),
+                Some(value) if shared(name) => safe_to_share(value),
                 Some(value) => value.is_empty(),
             };
     }
