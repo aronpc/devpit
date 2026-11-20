@@ -4,8 +4,45 @@ use std::time::Duration;
 
 use devpit_agentcli::resident::Heard;
 
-use super::{close_marked, evicted, give_way, publish_expecting, speaks_to};
-use crate::chat_listening::{Claim, Ear};
+use super::{
+    close_marked, evicted, give_way, listening_conversations, publish_expecting, speaks_to,
+};
+use crate::chat_listening::{Claim, Displaced, Ear};
+
+#[test]
+fn a_displaced_resident_is_not_the_listener() {
+    let displaced = Ear::default();
+    displaced.expect();
+    assert_eq!(displaced.displace(|| {}), Displaced::Later);
+    let listener = Ear::default();
+    let residents = [
+        ("a-displaced", "orchestrator", true, &displaced),
+        ("b-listener", "orchestrator", true, &listener),
+    ];
+
+    assert_eq!(
+        listening_conversations(residents.into_iter(), "orchestrator"),
+        ["b-listener"]
+    );
+}
+
+#[test]
+fn the_listener_wins_over_a_displaced_resident() {
+    let displaced = Ear::default();
+    displaced.expect();
+    assert_eq!(displaced.displace(|| {}), Displaced::Later);
+    let listener = Ear::default();
+    let residents = [
+        ("a-displaced", "orchestrator", true, &displaced),
+        ("b-listener", "orchestrator", true, &listener),
+    ];
+    let listening = listening_conversations(residents.into_iter(), "orchestrator");
+
+    assert_eq!(
+        crate::forwarded::chosen(&listening, Vec::new(), None).as_deref(),
+        Some("b-listener")
+    );
+}
 
 #[test]
 fn a_reachable_chat_is_not_closed_by_another_conversation() {

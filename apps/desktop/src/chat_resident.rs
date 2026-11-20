@@ -160,10 +160,28 @@ pub(crate) fn conversations_of(app: &AppHandle, project_id: &str) -> Vec<String>
     let Ok(all) = residents.0.lock() else {
         return Vec::new();
     };
-    let mut found: Vec<String> = all
-        .iter()
-        .filter(|(_, live)| live.project_id == project_id)
-        .map(|(conversation, _)| conversation.clone())
+    listening_conversations(
+        all.iter().map(|(conversation, live)| {
+            (
+                conversation.as_str(),
+                live.project_id.as_str(),
+                live.listens,
+                live.ear.as_ref(),
+            )
+        }),
+        project_id,
+    )
+}
+
+fn listening_conversations<'a>(
+    residents: impl Iterator<Item = (&'a str, &'a str, bool, &'a Ear)>,
+    project_id: &str,
+) -> Vec<String> {
+    let mut found: Vec<String> = residents
+        .filter(|(_, resident_project, listens, ear)| {
+            *resident_project == project_id && *listens && !ear.displaced()
+        })
+        .map(|(conversation, _, _, _)| conversation.to_owned())
         .collect();
     found.sort();
     found
