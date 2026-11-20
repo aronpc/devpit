@@ -257,6 +257,7 @@ pub async fn chat_send(
     };
     // Before the answer is looked at: a turn that failed is not still working.
     crate::card_chat::turn_heard(&app, &conversation_id, Doing::Done);
+    crate::chat_resident::over(&app, crate::asking_wait::Over::TurnEnded(&conversation_id));
     let said = said.map_err(|err| RpcError::internal(err.to_string()));
     let said = said.and_then(|said| said.map_err(crate::chat_resident::turn_refused));
     if said.is_err() {
