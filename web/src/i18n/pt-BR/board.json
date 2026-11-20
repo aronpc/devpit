@@ -295,5 +295,101 @@
   "card.doing.done": "Um agente terminou",
   "card.doing.doneUnread": "Um agente terminou, e ninguém olhou ainda",
   "card.doing.failed": "Uma execução neste cartão falhou",
-  "card.doing.gone": "A sessão deste cartão terminou"
+  "card.doing.gone": "A sessão deste cartão terminou",
+  "acts.kind.think": "Pensar",
+  "acts.kind.run": "Executar",
+  "acts.kind.edit": "Editar",
+  "acts.kind.read": "Ler",
+  "acts.kind.find": "Buscar",
+  "acts.kind.list": "Listar",
+  "acts.kind.plan": "Plano",
+  "acts.kind.agent": "Agente",
+  "acts.kind.tool": "Ferramenta",
+  "acts.thoughtFor": "Pensou por {time}",
+  "acts.state.working": "Trabalhando",
+  "acts.state.done": "Concluído",
+  "acts.state.failed": "Falhou",
+  "acts.state.stopped": "Interrompido",
+  "acts.summary.now": "Em execução: {what}",
+  "acts.summary.ran": "Executou {what}",
+  "acts.doing.thinking": "Pensando",
+  "acts.doing.writing": "Escrevendo",
+  "acts.doing.working": "Trabalhando",
+  "acts.doing.waiting": {
+    "one": "Esperando {count} subagente",
+    "other": "Esperando {count} subagentes"
+  },
+  "acts.group.think": {
+    "one": "{count} pensamento",
+    "other": "{count} pensamentos"
+  },
+  "acts.group.run": {
+    "one": "{count} comando",
+    "other": "{count} comandos"
+  },
+  "acts.group.edit": {
+    "one": "{count} arquivo",
+    "other": "{count} arquivos"
+  },
+  "acts.group.read": {
+    "one": "{count} arquivo",
+    "other": "{count} arquivos"
+  },
+  "acts.group.find": {
+    "one": "{count} busca",
+    "other": "{count} buscas"
+  },
+  "acts.group.list": {
+    "one": "{count} pasta",
+    "other": "{count} pastas"
+  },
+  "acts.group.plan": {
+    "one": "{count} etapa",
+    "other": "{count} etapas"
+  },
+  "acts.group.agent": {
+    "one": "{count} subagente",
+    "other": "{count} subagentes"
+  },
+  "acts.group.tool": {
+    "one": "{count} chamada",
+    "other": "{count} chamadas"
+  },
+  "acts.group.someWorking": "{counted} · {working} trabalhando",
+  "acts.tally.think": {
+    "one": "{count} pensamento",
+    "other": "{count} pensamentos"
+  },
+  "acts.tally.run": {
+    "one": "{count} comando",
+    "other": "{count} comandos"
+  },
+  "acts.tally.edit": {
+    "one": "{count} edição de arquivo",
+    "other": "{count} edições de arquivo"
+  },
+  "acts.tally.read": {
+    "one": "{count} leitura de arquivo",
+    "other": "{count} leituras de arquivo"
+  },
+  "acts.tally.find": {
+    "one": "{count} busca",
+    "other": "{count} buscas"
+  },
+  "acts.tally.list": {
+    "one": "{count} listagem de arquivo",
+    "other": "{count} listagens de arquivo"
+  },
+  "acts.tally.plan": {
+    "one": "{count} etapa de plano",
+    "other": "{count} etapas de plano"
+  },
+  "acts.tally.agent": {
+    "one": "{count} subagente",
+    "other": "{count} subagentes"
+  },
+  "acts.tally.tool": {
+    "one": "{count} chamada de ferramenta",
+    "other": "{count} chamadas de ferramenta"
+  }
 }

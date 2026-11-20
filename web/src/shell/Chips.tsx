@@ -1,6 +1,6 @@
 import { t } from '../i18n'
 import { ControlMenu, type Choice } from './ControlMenu'
-import { effortName, MODES, modeName } from './chat'
+import { effortName, modeName, modes } from './chat'
 import { ModelPicker } from './ModelPicker'
 import type { useChat } from './useChat'
 
@@ -23,7 +23,7 @@ export function Chips({
   const efforts = chat.profiles.find((one) => one.id === chat.profileId)?.efforts ?? []
   const fallback = chat.profiles.find((one) => one.id === chat.profileId)?.effortDefault ?? null
 
-  const modes: Choice[] = MODES.map((mode) => ({
+  const permissionChoices: Choice[] = modes().map((mode) => ({
     id: mode.id,
     label: mode.label,
     what: mode.what,
@@ -33,8 +33,8 @@ export function Chips({
   const levels: Choice[] = efforts.map((effort) => ({
     id: effort,
     label: effortName(effort),
-    section: 'Reasoning',
-    suffix: effort === fallback ? 'Default' : undefined,
+    section: t('workspace.chips.reasoning'),
+    suffix: effort === fallback ? t('workspace.chips.default') : undefined,
     selected: effort === (chat.effort ?? fallback),
   }))
 
@@ -69,7 +69,7 @@ export function Chips({
       <ControlMenu
         label={modeName(chat.permission)}
         title={t('workspace.chips.mayDo')}
-        choices={modes}
+        choices={permissionChoices}
         onPick={(mode) => {
           chat.setPermission(mode)
           refocus()

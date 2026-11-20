@@ -21,7 +21,7 @@ describe('the one button at the top', () => {
     // just edited is the mistake this ordering prevents.
     const said = primary(many(3, false), '')
     expect(said.doing).toBe('stage')
-    expect(said.label).toBe('Stage All')
+    expect(said.label).toBe('Stage all')
     expect(said.disabled).toBe(false)
   })
 

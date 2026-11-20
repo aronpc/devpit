@@ -12,7 +12,7 @@ import {
   clock,
   fixedTo,
   effortName,
-  MODES,
+  modes,
   modeName,
   money,
   ready,
@@ -205,7 +205,7 @@ describe('what the agent is actually sent', () => {
 
 describe('what the agent may do without asking', () => {
   it('offers the mode that stops to ask, now that there is somewhere to answer', () => {
-    expect(MODES.map((mode) => mode.id)).toContain('manual')
+    expect(modes().map((mode) => mode.id)).toContain('manual')
   })
 
   it('knows which mode stops to ask', () => {
@@ -219,7 +219,7 @@ describe('what a permission mode says it does', () => {
   /* "Ask" names nothing on its own; the row exists so you know what you are
      agreeing to. */
   it('every mode explains itself', () => {
-    for (const mode of MODES) {
+    for (const mode of modes()) {
       expect(mode.what.length).toBeGreaterThan(10)
     }
   })

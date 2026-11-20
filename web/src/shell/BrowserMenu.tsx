@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 
 import type { Kept, Store, Taken } from '../gen/bindings'
-import { type Family, grouped, hostOf, type Viewport, VIEWPORTS } from './browsing'
+import { type Family, grouped, hostOf, type Viewport, viewportLabel, VIEWPORTS } from './browsing'
 import { ask, commands } from './live'
 import { t } from '../i18n'
 
@@ -326,7 +326,7 @@ export function BrowserMenu({
 
       <div className="bmenu__rule" />
 
-      <Flyout label={t('workspace.browserMenu.pageWidth')} what={viewport?.label ?? t('workspace.browserMenu.wholePane')}>
+      <Flyout label={t('workspace.browserMenu.pageWidth')} what={viewport ? viewportLabel(viewport) : t('workspace.browserMenu.wholePane')}>
         <Row
           label={t('workspace.browserMenu.wholePane')}
           chosen={viewport === null}
@@ -339,7 +339,7 @@ export function BrowserMenu({
         {VIEWPORTS.map((one) => (
           <Row
             key={one.id}
-            label={one.label}
+            label={viewportLabel(one)}
             what={`${one.width} × ${one.height}`}
             chosen={viewport?.id === one.id}
             onPick={() => {

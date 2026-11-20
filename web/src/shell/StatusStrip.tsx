@@ -1,5 +1,6 @@
 import { useState } from 'react'
 
+import { t } from '../i18n'
 import { AgentChip } from './AgentChip'
 import { McpChip } from './McpChip'
 import { Monitor } from './Monitor'
@@ -72,8 +73,8 @@ export function StatusStrip(): React.JSX.Element | null {
         )}
         <span className="strip__c">
           {usage.panes.length === 0
-            ? 'No terminals'
-            : `${usage.panes.length} terminal${usage.panes.length === 1 ? '' : 's'}`}
+            ? t('workspace.status.noTerminals')
+            : t('workspace.status.terminals', { count: usage.panes.length })}
         </span>
       </button>
     </div>

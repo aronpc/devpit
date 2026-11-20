@@ -7,14 +7,12 @@ import type { Fields } from './stepConfig'
 
 export interface Recipe {
   readonly id: 'tests' | 'review' | 'prove'
-  readonly label: string
-  readonly hint: string
 }
 
 export const RECIPES: readonly Recipe[] = [
-  { id: 'tests', label: 'Tests', hint: "The project's tests, with their report read: Passed when they pass." },
-  { id: 'review', label: 'Review', hint: "An agent reviews the card's change and files findings; a blocker sends the card back." },
-  { id: 'prove', label: 'Prove-It', hint: "A bug's test must fail on the card's base and pass on its checkout." },
+  { id: 'tests' },
+  { id: 'review' },
+  { id: 'prove' },
 ]
 
 /* The answer a review must give: findings as the diff draws them, and a verdict. */

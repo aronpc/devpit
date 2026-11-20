@@ -1,3 +1,4 @@
+import { t } from '../i18n'
 import { useCopied } from './useCopied'
 
 /* The CLI's id for this conversation, one click from the clipboard: it is what
@@ -7,7 +8,7 @@ export function CopySession({ id }: { id: string }): React.JSX.Element {
   return (
     <button
       className="sq26"
-      aria-label={copied ? 'Copied session ID' : 'Copy session ID'}
+      aria-label={copied ? t('sessions.chat.copiedId') : t('sessions.chat.copyId')}
       title={id}
       onClick={() => copy(id)}
     >

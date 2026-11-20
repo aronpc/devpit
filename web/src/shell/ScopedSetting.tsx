@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 
 import type { Project, ProjectSettings, Scoped } from '../gen/bindings'
-import { MODES, modeName } from './chat'
+import { modeName, modes } from './chat'
 import { t } from '../i18n'
 import { ask, commands } from './live'
 import { PrefRow } from './PrefRow'
@@ -33,7 +33,7 @@ function inherited(shown: ProjectSettings, field: Field, project: boolean): stri
   if (repo) return t('workspace.scoped.fromRepo', { value: named(field, repo) })
   const machine = project ? shown.machine[field] : null
   if (machine) return t('workspace.scoped.fromAll', { value: named(field, machine) })
-  return field === 'permissionMode' ? MODES[0].label : t(NONE[field])
+  return field === 'permissionMode' ? modes()[0].label : t(NONE[field])
 }
 
 function named(field: Field, value: string): string {
@@ -90,7 +90,7 @@ export function ScopedSetting({ field }: { field: Field }): React.JSX.Element {
       {field === 'permissionMode' ? (
         <select aria-label={t(TITLE[field])} value={value} disabled={!editable} onChange={(event) => save(event.target.value)}>
           <option value="">{t('workspace.scoped.as', { fallback })}</option>
-          {MODES.map((mode) => (
+          {modes().map((mode) => (
             <option key={mode.id} value={mode.id}>
               {mode.label}
             </option>

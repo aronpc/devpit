@@ -121,5 +121,7 @@
   "remote.mic.byMachine": "Ouvido pelo motor de voz da máquina",
   "remote.mic.byPhone": "Ouvido por este celular",
   "remote.mic.stop": "Parar",
-  "remote.mic.mic": "Mic"
+  "remote.mic.mic": "Mic",
+  "remote.device.browser": "Navegador {name}",
+  "remote.device.aBrowser": "Um navegador"
 }

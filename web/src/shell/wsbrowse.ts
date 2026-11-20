@@ -1,4 +1,5 @@
 import type { WorkspaceEntry } from '../gen/bindings'
+import { t } from '../i18n'
 import { bytes } from './disk'
 import { since } from './projects'
 
@@ -27,7 +28,7 @@ export interface Named {
 
 /** The trail from the workspace root down to `path`, root first. */
 export function crumbs(path: string, project: Named | null): readonly Crumb[] {
-  const trail: Crumb[] = [{ label: 'Workspace', path: '' }]
+  const trail: Crumb[] = [{ label: t('workspace.workspacePane.title'), path: '' }]
   let walked = ''
   for (const segment of path.split('/').filter(Boolean)) {
     walked = walked ? `${walked}/${segment}` : segment

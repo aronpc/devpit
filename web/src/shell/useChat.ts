@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { Ask, Attachment, Context, Message, Profile, Question } from '../gen/bindings'
 import type { Said } from './Asked'
 import type { Chosen } from './choices'
-import { appended, appliedAll, ASKS, batched, failedOn, prepended, retaken, fixedTo, MODES, opening, rejoin, saidText, send, settled, steered, withFiles, type Opening } from './chat'
+import { appended, appliedAll, ASKS, batched, failedOn, prepended, retaken, fixedTo, modes, opening, rejoin, saidText, send, settled, steered, withFiles, type Opening } from './chat'
 import { chatMessages, type ChatMessages } from './chatMessages'
 import { conversationKey, remember, reopened, type Modes } from './chatModes'
 import { ask, commands } from './live'
@@ -124,7 +124,7 @@ export function useChat(conversationId: string): Chat {
   const [model, setModel] = useState<string | null>(null)
   const [cost, setCost] = useState(0)
   const [context, setContext] = useState<Context | null>(null)
-  const [permission, setPermission] = useState(MODES[0].id)
+  const [permission, setPermission] = useState(modes()[0].id)
   const [effort, setEffort] = useState<string | null>(null)
   const [folder, setFolder] = useState<string | null>(null)
   /* Attached and not yet sent, kept with the draft so a reload does not lose them. */
@@ -256,7 +256,7 @@ export function useChat(conversationId: string): Chat {
         if (!now.open()) return
         const applied = said.data?.applied
         if (applied?.model) setModel(applied.model)
-        const mode = MODES.find((one) => one.id === applied?.permissionMode)?.id ?? null
+        const mode = modes().find((one) => one.id === applied?.permissionMode)?.id ?? null
         // An orchestrator keeps the mode it listens in between turns.
         startsIn.current = project.orchestrator ? null : mode
         if (startsIn.current) setPermission(startsIn.current)
@@ -380,7 +380,7 @@ export function useChat(conversationId: string): Chat {
          row that lingers invites a second click that has nothing to answer. */
       setAsked((was) => was.filter((one) => one.id !== id))
       /* An approved plan moves the session to Supervised; the next turns follow it. */
-      if (allow && question?.tool === 'ExitPlanMode' && permission === 'plan') choosePermission(MODES[0].id)
+      if (allow && question?.tool === 'ExitPlanMode' && permission === 'plan') choosePermission(modes()[0].id)
       /* The answer is in the thread already, as the tool's result. */
       if (chosen && allow) return void ask(() => commands.permissionPick(id, chosen.map((one) => [...one])))
       const call =

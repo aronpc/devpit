@@ -1,4 +1,5 @@
 import type { Installation, OutsideSession, Profile } from '../gen/bindings'
+import { t } from '../i18n'
 
 /*
  * Which profile opens a session started outside devpit.
@@ -94,4 +95,4 @@ export const sessionInScope = (installation: string, scope: Scope | null): boole
   !scope || installation === scope.directory
 
 /* What a session is called in the list: the CLI's title, or that it has none. */
-export const titled = (session: OutsideSession): string => session.title ?? 'Untitled session'
+export const titled = (session: OutsideSession): string => session.title ?? t('sessions.outside.untitled')

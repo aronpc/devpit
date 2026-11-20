@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import type { LayoutNode } from '../gen/bindings'
+import { t } from '../i18n'
 import { ask, commands } from './live'
 import { profileForInstallation } from './outside'
 import { leaves } from './splits'
@@ -106,7 +107,7 @@ export function usePaneActions({
     })()
   }, [project, known, onNotice, several, closeLeaf, closeNow, tab.id, tab.cardId, show])
 
-  const closeLabel = armed && busy ? `Press again to stop ${busy.label}` : several ? 'Close pane' : 'Close terminal'
+  const closeLabel = armed && busy ? t('workspace.pane.pressAgain', { label: busy.label }) : several ? t('workspace.terminal.closePane') : t('workspace.pane.closeTerminal')
 
   return { closePane, closeLabel, armed, toChat: known ? toChat : null, separate: several ? separate : null }
 }

@@ -1,5 +1,6 @@
 import { useRef } from 'react'
 
+import { t } from '../i18n'
 import { dragged, held, LEAST, MOST, WIDE, type Panel } from './sizing'
 
 /*
@@ -53,7 +54,7 @@ export function Grip({
       role="separator"
       tabIndex={0}
       aria-orientation="vertical"
-      aria-label={panel === 'sidebar' ? 'Resize the sidebar' : 'Resize the side panel'}
+      aria-label={panel === 'sidebar' ? t('workspace.split.resizeSidebar') : t('workspace.split.resizeSidePanel')}
       aria-valuenow={width}
       aria-valuemin={LEAST[panel]}
       aria-valuemax={MOST[panel]}

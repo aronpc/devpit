@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useRef, useState } from 'react'
 
 import { imagesOf, isCut, namedImages, textOf, WholeContext } from './cutOutput'
 import { ask, commands } from './live'
-import { acts, actionLabel, grouped, groupTarget, headline, isGroup, ranAs, rowLabel, type Act, type Group, type Kind } from './acts'
+import { acts, actionLabel, grouped, groupTarget, headline, isGroup, ranState, rowLabel, type Act, type Group, type Kind } from './acts'
 import { shownRows, useActivity } from './activity'
 import type { Part } from '../gen/bindings'
 import { t } from '../i18n'
@@ -174,13 +174,15 @@ function LeafRow({ act }: { act: Act }): React.JSX.Element {
   )
 }
 
-/* A subagent's state and the CLI's count of how long it ran. */
+/* A subagent's state and the CLI's count of how long it ran. The state the
+   style reads is an id; the word beside it is the catalog's. */
 function Ran({ act }: { act: Act }): React.JSX.Element | null {
   if (act.kind !== 'agent') return null
-  const state = ranAs(act)
+  const state = ranState(act)
+  const said = t(`acts.state.${state}`)
   return (
-    <span className="arow__t" data-state={state.toLowerCase()}>
-      {act.durationMs != null ? `${state} · ${took(act.durationMs)}` : state}
+    <span className="arow__t" data-state={state}>
+      {act.durationMs != null ? `${said} · ${took(act.durationMs)}` : said}
     </span>
   )
 }

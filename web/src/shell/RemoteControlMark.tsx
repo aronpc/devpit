@@ -1,11 +1,12 @@
 import type { RemoteState } from '../gen/bindings'
+import { t } from '../i18n'
 import { ask, commands } from './live'
 import { went } from './problems'
 
 /** Remote Control's state, in words. */
 export function remoteSays(remote: RemoteState): string {
-  if (!remote.on) return 'Remote Control off'
-  return remote.url ? 'Remote Control on' : 'Remote Control on — no page on claude.ai to open'
+  if (!remote.on) return t('workspace.remoteControl.off')
+  return remote.url ? t('workspace.remoteControl.on') : t('workspace.remoteControl.onNoPage')
 }
 
 /*
@@ -20,13 +21,13 @@ export function RemoteControlMark({ remote, name }: { remote: RemoteState; name:
   if (remote.on && remote.url) {
     const url = remote.url
     return (
-      <button className="sess__icon rctl" data-on="true" title={`${said} — open ${url}`} aria-label={`Open ${name} on claude.ai`} onClick={() => void ask(() => commands.urlOpen(url)).then(went)}>
+      <button className="sess__icon rctl" data-on="true" title={t('workspace.remoteControl.openTitle', { said, url })} aria-label={t('workspace.remoteControl.openLabel', { name })} onClick={() => void ask(() => commands.urlOpen(url)).then(went)}>
         {icon}
       </button>
     )
   }
   return (
-    <span className="rcmark rctl" data-on={remote.on ? 'true' : undefined} role="img" title={said} aria-label={`${said} for ${name}`}>
+    <span className="rcmark rctl" data-on={remote.on ? 'true' : undefined} role="img" title={said} aria-label={t('workspace.remoteControl.for', { said, name })}>
       {icon}
     </span>
   )

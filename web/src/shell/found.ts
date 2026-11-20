@@ -1,4 +1,5 @@
 import type { Found, Severity, Standing } from '../gen/bindings'
+import { t } from '../i18n'
 
 /*
  * What a review found, in words.
@@ -14,11 +15,11 @@ import type { Found, Severity, Standing } from '../gen/bindings'
 export function severityWord(severity: Severity): string {
   switch (severity) {
     case 'blocking':
-      return 'Blocking'
+      return t('workspace.found.blocking')
     case 'worth':
-      return 'Worth fixing'
+      return t('workspace.found.worth')
     case 'noted':
-      return 'Noted'
+      return t('workspace.found.noted')
   }
 }
 
@@ -49,19 +50,15 @@ export function standingWords(standing: Standing, found: Found): string | null {
     case 'current':
       return null
     case 'outdated':
-      return `These lines mean ${short(found.atRevision)}. The code is at ${short(
-        found.now,
-      )} now, so a line may have moved. devpit does not follow it: guessing where it went would point you somewhere it is not, and say so with confidence.`
+      return t('workspace.found.outdated', { at: short(found.atRevision), now: short(found.now) })
     case 'unanchored':
-      return found.findings.length === 0
-        ? null
-        : 'Nothing recorded which revision this was made against, so these lines cannot be checked against the code in front of you.'
+      return found.findings.length === 0 ? null : t('workspace.found.unanchored')
   }
 }
 
 /** A commit as it is read and quoted. */
 const short = (revision: string | null): string =>
-  revision === null ? 'an unknown commit' : revision.slice(0, 10)
+  revision === null ? t('workspace.diffFiles.unknownCommit') : revision.slice(0, 10)
 
 /** Whether there is a review here at all, as against one that found nothing. */
 export const leftNoReview = (found: Found): boolean =>

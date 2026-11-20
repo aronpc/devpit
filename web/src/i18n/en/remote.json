@@ -121,5 +121,7 @@
   "remote.mic.byMachine": "Heard by the machine’s voice engine",
   "remote.mic.byPhone": "Heard by this phone",
   "remote.mic.stop": "Stop",
-  "remote.mic.mic": "Mic"
+  "remote.mic.mic": "Mic",
+  "remote.device.browser": "{name} browser",
+  "remote.device.aBrowser": "A browser"
 }

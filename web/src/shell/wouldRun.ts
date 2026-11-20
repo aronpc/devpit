@@ -1,4 +1,5 @@
 import type { WouldRun } from '../gen/bindings'
+import { t } from '../i18n'
 
 /*
  * What a check would do, in words.
@@ -18,12 +19,10 @@ export interface Said {
 
 export function wouldRunWords(would: WouldRun): Said {
   return {
-    noCommand: 'Nothing on a command line — this step is an agent turn or a shell.',
-    noDirectory: would.inAWorktree
-      ? 'A checkout of this card’s own, made the first time something needs it.'
-      : 'The project folder.',
+    noCommand: t('workspace.wouldRunCard.noCommand'),
+    noDirectory: would.inAWorktree ? t('workspace.wouldRunCard.checkout') : t('workspace.wouldRunCard.projectFolder'),
     timeout: timeoutWords(would.timeoutSeconds),
-    irreversible: 'This step is marked as having no undo. devpit asks twice before firing it.',
+    irreversible: t('workspace.wouldRunCard.irreversible'),
   }
 }
 
@@ -36,8 +35,8 @@ export function wouldRunWords(would: WouldRun): Said {
  * should read that as the open-ended thing it is.
  */
 export function timeoutWords(seconds: number | null): string {
-  if (seconds === null) return 'Nothing set a limit — it runs until it ends or you stop it.'
-  if (seconds < 60) return `${seconds} seconds.`
+  if (seconds === null) return t('workspace.wouldRunCard.timeoutNone')
+  if (seconds < 60) return t('workspace.wouldRunCard.seconds', { count: seconds })
   const minutes = Math.round(seconds / 60)
-  return `${minutes} ${minutes === 1 ? 'minute' : 'minutes'}.`
+  return t('workspace.wouldRunCard.minutes', { count: minutes })
 }

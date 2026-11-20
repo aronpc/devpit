@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { t } from '../i18n'
 import { KEYS_SHEET } from './keysSheet'
 import { useRebound } from './rebound'
-import { keysLabels, SCOPES, SHORTCUT_LIST } from './shortcuts'
+import { keysLabels, doesOf, SCOPES, scopeTitle, SHORTCUT_LIST } from './shortcuts'
 import { useShellPick } from './shellStore'
 import { abandoned } from './typing'
 import { useShortcut } from './useShortcut'
@@ -31,12 +31,12 @@ export function KeysSheet(): React.JSX.Element {
   useRebound()
   return (
     <div className="ksheet__cols">
-      {SCOPES.map(({ scope, title }) => (
-        <section key={scope} className="ksheet__g" aria-label={title}>
-          <h3 className="ksheet__gt">{title}</h3>
+      {SCOPES.map(({ scope }) => (
+        <section key={scope} className="ksheet__g" aria-label={scopeTitle(scope)}>
+          <h3 className="ksheet__gt">{scopeTitle(scope)}</h3>
           {SHORTCUT_LIST.filter((one) => one.scope === scope).map((one) => (
             <div key={one.id} className="ksheet__r">
-              <span className="ksheet__d">{one.does}</span>
+              <span className="ksheet__d">{doesOf(one)}</span>
               <Keys labels={keysLabels(one.id)} />
             </div>
           ))}

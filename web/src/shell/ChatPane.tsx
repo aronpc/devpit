@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { ActivityContext, activityOf, keepActivity, seen, type Activity } from './activity'
 import { ASKS, CONTINUE, putBackFrom } from './chat'
+import { t } from '../i18n'
 import { ChatHead } from './ChatHead'
 import { markdownOf, type Exported } from './chatMarkdown'
 import type { Extras } from './queueing'
@@ -126,7 +127,7 @@ export function ChatPane({ tab }: { tab: Tab }): React.JSX.Element {
   }, [mine, markedUnread, mark, tab.id])
 
   useThreadKeys(mine, chat.messages, follow.box, reveal)
-  const title = tab.title ?? 'New chat'
+  const title = tab.title ?? t('workspace.corner.newChat')
   const renamed = useCallback((next: string) => {
     rename(tab.id, next)
     mark(tab.id, { name: next })

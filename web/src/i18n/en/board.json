@@ -295,5 +295,101 @@
   "card.doing.done": "An agent finished",
   "card.doing.doneUnread": "An agent finished, and nobody has looked yet",
   "card.doing.failed": "A run on this card failed",
-  "card.doing.gone": "The session on this card ended"
+  "card.doing.gone": "The session on this card ended",
+  "acts.kind.think": "Think",
+  "acts.kind.run": "Run",
+  "acts.kind.edit": "Edit",
+  "acts.kind.read": "Read",
+  "acts.kind.find": "Search",
+  "acts.kind.list": "List",
+  "acts.kind.plan": "Plan",
+  "acts.kind.agent": "Agent",
+  "acts.kind.tool": "Tool",
+  "acts.thoughtFor": "Thought for {time}",
+  "acts.state.working": "Working",
+  "acts.state.done": "Done",
+  "acts.state.failed": "Failed",
+  "acts.state.stopped": "Stopped",
+  "acts.summary.now": "Running {what}",
+  "acts.summary.ran": "Ran {what}",
+  "acts.doing.thinking": "Thinking",
+  "acts.doing.writing": "Writing",
+  "acts.doing.working": "Working",
+  "acts.doing.waiting": {
+    "one": "Waiting on {count} subagent",
+    "other": "Waiting on {count} subagents"
+  },
+  "acts.group.think": {
+    "one": "{count} thought",
+    "other": "{count} thoughts"
+  },
+  "acts.group.run": {
+    "one": "{count} command",
+    "other": "{count} commands"
+  },
+  "acts.group.edit": {
+    "one": "{count} file",
+    "other": "{count} files"
+  },
+  "acts.group.read": {
+    "one": "{count} file",
+    "other": "{count} files"
+  },
+  "acts.group.find": {
+    "one": "{count} search",
+    "other": "{count} searches"
+  },
+  "acts.group.list": {
+    "one": "{count} folder",
+    "other": "{count} folders"
+  },
+  "acts.group.plan": {
+    "one": "{count} step",
+    "other": "{count} steps"
+  },
+  "acts.group.agent": {
+    "one": "{count} subagent",
+    "other": "{count} subagents"
+  },
+  "acts.group.tool": {
+    "one": "{count} call",
+    "other": "{count} calls"
+  },
+  "acts.group.someWorking": "{counted} · {working} working",
+  "acts.tally.think": {
+    "one": "{count} thought",
+    "other": "{count} thoughts"
+  },
+  "acts.tally.run": {
+    "one": "{count} command",
+    "other": "{count} commands"
+  },
+  "acts.tally.edit": {
+    "one": "{count} file edit",
+    "other": "{count} file edits"
+  },
+  "acts.tally.read": {
+    "one": "{count} file read",
+    "other": "{count} file reads"
+  },
+  "acts.tally.find": {
+    "one": "{count} search",
+    "other": "{count} searches"
+  },
+  "acts.tally.list": {
+    "one": "{count} file list",
+    "other": "{count} file lists"
+  },
+  "acts.tally.plan": {
+    "one": "{count} plan step",
+    "other": "{count} plan steps"
+  },
+  "acts.tally.agent": {
+    "one": "{count} subagent",
+    "other": "{count} subagents"
+  },
+  "acts.tally.tool": {
+    "one": "{count} tool call",
+    "other": "{count} tool calls"
+  }
 }

@@ -5,6 +5,8 @@
  * a Linux laptop and a Chromebook both came out as "A device".
  */
 
+import { t } from '../i18n'
+
 const BROWSERS: readonly [RegExp, string][] = [
   [/Edg\//, 'Edge'],
   [/Firefox\/|FxiOS\//, 'Firefox'],
@@ -32,5 +34,5 @@ export function deviceName(agent: string, touchPoints = 0): string {
   const system = systemOf(agent, touchPoints)
   if (system) return system
   const browser = BROWSERS.find(([pattern]) => pattern.test(agent))
-  return browser ? `${browser[1]} browser` : 'A browser'
+  return browser ? t('remote.device.browser', { name: browser[1] }) : t('remote.device.aBrowser')
 }

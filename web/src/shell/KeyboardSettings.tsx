@@ -4,6 +4,7 @@ import { t } from '../i18n'
 import { Keys } from './CheatSheet'
 import { useRebound } from './rebound'
 import {
+  doesOf,
   firesInTerminal,
   isRebound,
   keysLabels,
@@ -11,6 +12,7 @@ import {
   resetAllKeys,
   resetKeys,
   SCOPES,
+  scopeTitle,
   SHORTCUT_LIST,
   whenOf,
   type Shortcut,
@@ -25,13 +27,13 @@ import { abandoned, composing } from './typing'
  * and the refusal names that shortcut.
  */
 
-const titleOf = (one: Shortcut): string => SCOPES.find((scope) => scope.scope === one.scope)?.title ?? ''
+const titleOf = (one: Shortcut): string => scopeTitle(one.scope)
 
 /** The rows a search keeps: by what they do, where they work, or their keys. */
 function shortcutsMatching(query: string): readonly Shortcut[] {
   const wanted = query.trim().toLowerCase()
   if (!wanted) return SHORTCUT_LIST
-  return SHORTCUT_LIST.filter((one) => [one.does, titleOf(one), whenOf(one) ?? '', ...keysLabels(one.id)].join(' ').toLowerCase().includes(wanted))
+  return SHORTCUT_LIST.filter((one) => [doesOf(one), titleOf(one), whenOf(one) ?? '', ...keysLabels(one.id)].join(' ').toLowerCase().includes(wanted))
 }
 
 /* What a row says under its name: where it does not fire, which is the
@@ -101,13 +103,13 @@ export function KeyboardSettings({ onGeneral }: { onGeneral: () => void }): Reac
         <input className="prefs__q" value={query} placeholder={t('workspace.keyboard.searchPlaceholder')} spellCheck={false} aria-label={t('workspace.keyboard.searchLabel')} onChange={(event) => setQuery(event.target.value)} />
       </label>
 
-      {SCOPES.map(({ scope, title }) => {
+      {SCOPES.map(({ scope }) => {
         const rows = shown.filter((one) => one.scope === scope)
         if (rows.length === 0) return null
         return (
           <Fragment key={scope}>
-            <div className="acc__sub">{title}</div>
-            <div className="kmap" role="list" aria-label={title}>
+            <div className="acc__sub">{scopeTitle(scope)}</div>
+            <div className="kmap" role="list" aria-label={scopeTitle(scope)}>
               {rows.map((one) => {
                 const live = recording === one.id
                 const why = refused?.id === one.id ? refused.why : null
@@ -115,7 +117,7 @@ export function KeyboardSettings({ onGeneral }: { onGeneral: () => void }): Reac
                 return (
                   <div key={one.id} className="kmap__row" role="listitem" data-recording={live ? 'true' : undefined}>
                     <span className="kmap__body">
-                      <span className="kmap__t">{one.does}</span>
+                      <span className="kmap__t">{doesOf(one)}</span>
                       {note && <span className="kmap__d" data-refused={why ? 'true' : undefined}>{note}</span>}
                     </span>
                     {live ? <span className="kmap__wait">{t('workspace.keyboard.press')}</span> : <Keys labels={keysLabels(one.id)} />}

@@ -61,7 +61,7 @@ export function FilePane({ tab }: { tab: Tab }): React.JSX.Element {
         <span className="drag" />
         {kind === 'markdown' && (
           <button className="chip" onClick={() => setPreview((was) => !was)}>
-            {preview ? 'Source' : 'Preview'}
+            {preview ? t('workspace.workspaceFile.source') : t('workspace.workspaceFile.preview')}
           </button>
         )}
         {edit.dirty && (
