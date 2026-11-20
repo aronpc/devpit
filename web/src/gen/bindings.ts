@@ -6033,7 +6033,7 @@ export type RunCursor = {
 };
 
 /**  How a run ended, or that it has not. */
-export type RunState = "running" | "ok" | "failed" | "cancelled" | "lost";
+export type RunState = "running" | "ok" | "failed" | "cancelled" | "lost" | "paused";
 
 export type RunsPage = {
 	runs: ProjectRun[],

@@ -14,6 +14,7 @@ fn word(state: RunState) -> &'static str {
         RunState::Failed => "failed",
         RunState::Cancelled => "cancelled",
         RunState::Lost => "lost",
+        RunState::Paused => "paused",
     }
 }
 

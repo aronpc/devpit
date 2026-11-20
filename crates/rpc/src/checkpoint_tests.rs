@@ -68,6 +68,18 @@ fn stopping_and_still_going_are_both_not_run() {
     assert_eq!(verdict(RunState::Running, None), Verdict::NotRun);
 }
 
+/// Sabotage: make `Paused` answer `Inconclusive` and this fails. A pause is a
+/// question, not a result: nothing ran while it waited.
+#[test]
+fn a_run_waiting_out_a_pause_is_not_run() {
+    assert_eq!(verdict(RunState::Paused, None), Verdict::NotRun);
+    assert_eq!(
+        verdict(RunState::Paused, read(29, 0)),
+        Verdict::NotRun,
+        "a report that reached a pause was taken as a result"
+    );
+}
+
 fn at(revision: &str, changes: &str) -> Fingerprint {
     Fingerprint {
         revision: Some(revision.to_owned()),

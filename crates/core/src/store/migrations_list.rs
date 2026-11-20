@@ -866,4 +866,97 @@ CREATE TABLE project_host (
 );
 "#,
     },
+    // Migration 036 — a run keeps its attempt: the retrato, both models, the
+    // chain and the pause.
+    //
+    // One migration for the whole of it because a migration over real data is
+    // the part that goes wrong, and doing it once is better than twice.
+    Migration {
+        version: 36,
+        sql: r#"
+-- A step on a card can be tried more than once: an account runs dry and the
+-- run pauses, a person switches to another and it goes again. Each try is an
+-- attempt, numbered within the step, chained to the one it continues.
+--
+-- SQLite cannot change a CHECK in place, so the table is rebuilt, the way
+-- migration 10 rebuilt it for `lost`. `finding_dismissal` references `run`
+-- with a CASCADE: with foreign keys on, dropping a table deletes rows
+-- through that cascade, so its rows are parked and put back before the drop.
+CREATE TABLE run_new (
+    id          TEXT PRIMARY KEY,
+    card_id     TEXT NOT NULL REFERENCES card(id) ON DELETE CASCADE,
+    step_id     TEXT NOT NULL REFERENCES step(id) ON DELETE RESTRICT,
+    state       TEXT NOT NULL
+                CHECK (state IN ('running','ok','failed','cancelled','lost','paused')),
+    output      TEXT,
+    exit_code   INTEGER,
+    cost_usd    REAL,
+    duration_ms INTEGER,
+    started_at  INTEGER NOT NULL,
+    ended_at    INTEGER,
+    from_column TEXT REFERENCES board_column(id) ON DELETE SET NULL,
+    session_id  TEXT,
+    cwd         TEXT,
+    ran_command TEXT,
+    ran_in      TEXT,
+    declared_env TEXT,
+    base_revision TEXT,
+    head_revision TEXT,
+    in_a_worktree INTEGER,
+    evidence TEXT,
+    evidence_version INTEGER,
+    saw_changes TEXT,
+    asked_by TEXT,
+    asked_from TEXT,
+    carried_by TEXT,
+    carried_profile TEXT,
+    -- The account the attempt ran under, as it stood then: profiles are
+    -- edited and deleted, and a run's record outlives both.
+    pinned TEXT,
+    -- What devpit asked the CLI for, and what the CLI says it used once it
+    -- has said. Apart, because they differ is exactly the fact worth keeping.
+    requested_model TEXT,
+    effective_model TEXT,
+    -- 1-based, within this step's tries on this card. NULL on rows an older
+    -- devpit wrote, which the reader counts as the first.
+    attempt INTEGER,
+    previous_attempt TEXT REFERENCES run(id) ON DELETE SET NULL,
+    -- Which event asked: 'start', 'retry', 'click' or 'automatic'. Separate
+    -- from `paused_because`, because why it was asked and what stopped it are
+    -- different questions.
+    cause TEXT CHECK (cause IN ('start','retry','click','automatic')),
+    paused_because TEXT
+);
+INSERT INTO run_new (id, card_id, step_id, state, output, exit_code, cost_usd,
+                     duration_ms, started_at, ended_at, from_column, session_id, cwd,
+                     ran_command, ran_in, declared_env, base_revision, head_revision,
+                     in_a_worktree, evidence, evidence_version, saw_changes,
+                     asked_by, asked_from, carried_by, carried_profile)
+    SELECT id, card_id, step_id, state, output, exit_code, cost_usd,
+           duration_ms, started_at, ended_at, from_column, session_id, cwd,
+           ran_command, ran_in, declared_env, base_revision, head_revision,
+           in_a_worktree, evidence, evidence_version, saw_changes,
+           asked_by, asked_from, carried_by, carried_profile FROM run;
+CREATE TABLE dismissal_parked AS SELECT * FROM finding_dismissal;
+DROP TABLE finding_dismissal;
+DROP TABLE run;
+ALTER TABLE run_new RENAME TO run;
+CREATE TABLE finding_dismissal (
+    run_id       TEXT NOT NULL REFERENCES run(id) ON DELETE CASCADE,
+    at           INTEGER NOT NULL,
+    dismissed_at INTEGER NOT NULL,
+    PRIMARY KEY (run_id, at)
+);
+INSERT INTO finding_dismissal SELECT * FROM dismissal_parked;
+DROP TABLE dismissal_parked;
+CREATE INDEX run_card ON run(card_id, started_at DESC);
+CREATE INDEX run_unfinished ON run(state) WHERE ended_at IS NULL;
+CREATE INDEX run_started ON run(started_at DESC, id DESC);
+CREATE UNIQUE INDEX run_one_running ON run(card_id) WHERE state = 'running';
+-- The chain is a line, not a tree: one attempt, one successor, held by the
+-- database so two asks that read the same last attempt cannot both write it.
+CREATE UNIQUE INDEX run_one_successor ON run(previous_attempt)
+    WHERE previous_attempt IS NOT NULL;
+"#,
+    },
 ];

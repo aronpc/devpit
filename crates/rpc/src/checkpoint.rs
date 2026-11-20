@@ -72,6 +72,9 @@ pub fn verdict(state: RunState, report: Option<Report>) -> Verdict {
         // A person stopping work is not the work failing, and it is not the
         // work passing either.
         RunState::Cancelled => Verdict::NotRun,
+        // Waiting out a pause is not a result either: nothing ran, and a
+        // verdict over a pause would approve work that never happened.
+        RunState::Paused => Verdict::NotRun,
         // The process vanished. Whatever its last line said, nobody watched it
         // end, so nobody knows.
         RunState::Lost => Verdict::Inconclusive,
