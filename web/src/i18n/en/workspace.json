@@ -677,6 +677,7 @@
   "workspace.changes.discardAria": "Discard everything {group}",
   "workspace.changes.unstageAll": "Unstage all",
   "workspace.changes.stageAll": "Stage all",
+  "workspace.changes.stageAllButton": "Stage All",
   "workspace.changes.unstageAria": "Unstage everything {group}",
   "workspace.changes.stageAria": "Stage everything {group}",
   "workspace.changes.branchFallback": "Changes",

@@ -677,6 +677,7 @@
   "workspace.changes.discardAria": "Descartar tudo em {group}",
   "workspace.changes.unstageAll": "Remover tudo da preparação",
   "workspace.changes.stageAll": "Preparar tudo",
+  "workspace.changes.stageAllButton": "Preparar tudo",
   "workspace.changes.unstageAria": "Remover da preparação tudo em {group}",
   "workspace.changes.stageAria": "Preparar tudo em {group}",
   "workspace.changes.branchFallback": "Alterações",

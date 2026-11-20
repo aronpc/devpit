@@ -42,7 +42,7 @@ export function primary(changes: readonly Change[], message: string): Primary {
      thing to do — and the panel says how many are left out, in a row directly
      under the button, which is where that warning belongs. */
   if (staged === 0) {
-    return { doing: 'stage', label: t('workspace.changes.stageAll'), why: null, disabled: false, files: loose }
+    return { doing: 'stage', label: t('workspace.changes.stageAllButton'), why: null, disabled: false, files: loose }
   }
 
   if (message.trim().length === 0) {
