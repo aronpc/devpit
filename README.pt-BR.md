@@ -41,7 +41,21 @@ chamada de agente.
 - **Um orquestrador**: um chat que vê todos os projetos e entrega trabalho a sessões.
 - **Um pane de navegador** para a página que o projeto serve.
 - **Árvore de arquivos e diffs** ao lado do terminal.
-- **Local primeiro**: tudo fica em `~/.devpit`; a conta é opcional.
+- **Quadros locais ou online**: mantenha o trabalho nesta máquina ou leve um
+  quadro pelo devpit.app; a conta é opcional.
+
+## Onde ficam os dados
+
+Um quadro Online guarda no devpit.app o quadro, as colunas, os cards (título,
+descrição e plano), comentários, critérios de aceite, vínculos, histórico com
+autor e data e anexos, que o servidor consegue ler. O app chega a ele pela API
+de quadros e pelo MCP. Os anexos têm limites por arquivo, por conta e em todo o
+serviço.
+
+O sync pessoal é separado: preferências, configurações de projeto e arquivos
+que você escolher continuam selados com uma chave que só as suas máquinas têm,
+por isso o servidor nunca abre esses blobs. Um quadro Local em SQLite, projetos,
+conversas e histórico de terminal nunca saem desta máquina.
 
 ## Instalar
 
