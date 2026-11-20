@@ -75,11 +75,12 @@ export function enabledCount(plugins: readonly PluginState[] | null): number | n
 /** Which capabilities the pane shows. */
 export type CapabilityFilter = 'all' | 'on' | 'installed' | 'available'
 
-export const CAPABILITY_FILTERS: readonly { readonly id: CapabilityFilter; readonly label: string }[] = [
-  { id: 'all', label: 'All' },
-  { id: 'on', label: 'On' },
-  { id: 'installed', label: 'Installed' },
-  { id: 'available', label: 'Not installed' },
+/** Each tab names itself through the catalog, read when it is drawn. */
+export const CAPABILITY_FILTERS: readonly { readonly id: CapabilityFilter; readonly labelKey: string }[] = [
+  { id: 'all', labelKey: 'workspace.plugins.filterAll' },
+  { id: 'on', labelKey: 'workspace.plugins.filterOn' },
+  { id: 'installed', labelKey: 'workspace.plugins.filterInstalled' },
+  { id: 'available', labelKey: 'workspace.plugins.filterAvailable' },
 ]
 
 /** The capabilities a search and a filter keep: the query is looked for in the name and the description, in any case. */

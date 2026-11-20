@@ -126,7 +126,7 @@ export function PluginsPane(): React.JSX.Element {
                       aria-selected={filter === one.id}
                       onClick={() => setFilter(one.id)}
                     >
-                      {one.label}
+                      {t(one.labelKey)}
                     </button>
                   ))}
                 </div>

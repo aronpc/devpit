@@ -55,6 +55,13 @@ describe("a commit's day in the chosen language", () => {
     expect(dayOf(at(new Date(2026, 8, 1, 12)), now)).toMatch(/^1 de set\.?$/)
   })
 
+  it('says today, yesterday and no date in pt-BR too', () => {
+    setLocale('pt-BR')
+    expect(dayOf(at(new Date(2026, 8, 23, 1, 0)), now)).toBe('Hoje')
+    expect(dayOf(at(new Date(2026, 8, 22, 23, 0)), now)).toBe('Ontem')
+    expect(dayOf(null, now)).toBe('Sem data')
+  })
+
   it('reads in English when English is chosen', () => {
     expect(dayOf(at(new Date(2026, 8, 20, 12)), now)).toBe('Sunday')
     expect(dayOf(at(new Date(2026, 8, 1, 12)), now)).toBe('Sep 1')
