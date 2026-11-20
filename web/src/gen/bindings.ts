@@ -246,6 +246,8 @@ export const commands = {
 	 */
 	chatEditFrom: (projectId: string, conversationId: string, turnId: string, putBack: boolean) => typedError<string, RpcError>(__TAURI_INVOKE("chat_edit_from", { projectId, conversationId, turnId, putBack })),
 	runsList: (query: RunsQuery) => typedError<RunsPage, RpcError>(__TAURI_INVOKE("runs_list", { query })),
+	runSwitchOptions: (runId: string) => typedError<RunSwitchOptions, RpcError>(__TAURI_INVOKE("run_switch_options", { runId })),
+	runSwitch: (runId: string, profileId: string) => typedError<Run, RpcError>(__TAURI_INVOKE("run_switch", { runId, profileId })),
 	/**
 	 *  `sessions.search` — hits for a query in one project's conversations, or in
 	 *  every project's when none is named.
@@ -6023,6 +6025,10 @@ export type Run = {
 	 *  `Commit::committed_at` for the same reason stated once.
 	 */
 	durationMs: number | null,
+	/**  The account snapshot kept when this attempt began. */
+	profile: string | null,
+	/**  The effective model when known, otherwise the one requested. */
+	model: string | null,
 	startedAt: number | null,
 };
 
@@ -6034,6 +6040,18 @@ export type RunCursor = {
 
 /**  How a run ended, or that it has not. */
 export type RunState = "running" | "ok" | "failed" | "cancelled" | "lost" | "paused";
+
+/**  Response of `run.switch_options`; an object so the pause can grow facts. */
+export type RunSwitchOptions = {
+	reason: string,
+	profiles: RunSwitchProfile[],
+};
+
+export type RunSwitchProfile = {
+	id: string,
+	label: string,
+	model: string | null,
+};
 
 export type RunsPage = {
 	runs: ProjectRun[],

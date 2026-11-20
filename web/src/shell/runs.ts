@@ -8,7 +8,7 @@ export type RunFilters = {
   readonly to: string
 }
 
-export const STATES: readonly RunState[] = ['running', 'ok', 'failed', 'cancelled', 'lost']
+export const STATES: readonly RunState[] = ['running', 'ok', 'failed', 'cancelled', 'lost', 'paused']
 
 /* The unix second a `YYYY-MM-DD` day starts on, here, `plus` days later.
    Built from the parts rather than parsed: `new Date('2026-09-01')` is UTC

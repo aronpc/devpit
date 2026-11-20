@@ -17,6 +17,9 @@ pub struct RunRow {
     pub exit_code: Option<i64>,
     pub cost_usd: Option<f64>,
     pub duration_ms: Option<i64>,
+    pub pinned: Option<String>,
+    pub requested_model: Option<String>,
+    pub effective_model: Option<String>,
     pub started_at: i64,
 }
 
@@ -101,6 +104,22 @@ impl Store {
             .query_row("SELECT card_id FROM run WHERE id = ?1", [run_id], |row| {
                 row.get(0)
             })
+            .optional()?)
+    }
+
+    /// The card, step and origin column a run was opened for.
+    pub fn run_context(
+        &self,
+        run_id: &str,
+    ) -> Result<Option<(String, String, Option<String>)>, StoreError> {
+        use rusqlite::OptionalExtension;
+        Ok(self
+            .conn
+            .query_row(
+                "SELECT card_id, step_id, from_column FROM run WHERE id = ?1",
+                [run_id],
+                |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
+            )
             .optional()?)
     }
 
@@ -193,7 +212,7 @@ impl Store {
         let output = if with_output { "output" } else { "NULL" };
         let mut stmt = self.conn.prepare(&format!(
             "SELECT id, card_id, step_id, state, {output}, exit_code, cost_usd, duration_ms, \
-             started_at FROM run WHERE card_id = ?1 \
+             pinned, requested_model, effective_model, started_at FROM run WHERE card_id = ?1 \
              ORDER BY started_at DESC, rowid DESC"
         ))?;
         let rows = stmt
@@ -207,7 +226,10 @@ impl Store {
                     exit_code: row.get(5)?,
                     cost_usd: row.get(6)?,
                     duration_ms: row.get(7)?,
-                    started_at: row.get(8)?,
+                    pinned: row.get(8)?,
+                    requested_model: row.get(9)?,
+                    effective_model: row.get(10)?,
+                    started_at: row.get(11)?,
                 })
             })?
             .collect::<Result<Vec<_>, _>>()?;

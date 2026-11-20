@@ -97,6 +97,10 @@ pub struct Run {
     /// number and that is what a JavaScript number is — see
     /// `Commit::committed_at` for the same reason stated once.
     pub duration_ms: Option<f64>,
+    /// The account snapshot kept when this attempt began.
+    pub profile: Option<String>,
+    /// The effective model when known, otherwise the one requested.
+    pub model: Option<String>,
     pub started_at: f64,
 }
 

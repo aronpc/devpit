@@ -78,6 +78,10 @@
 .crun__b { flex: 1; min-width: 0; }
 .crun__t { display: block; font-size: 13px; color: var(--text); }
 .crun__o { display: block; margin-top: 4px; font-family: var(--mono); font-size: 11px; color: var(--text-3); white-space: pre-wrap; max-height: 64px; overflow: hidden; }
+.crun__a { display: block; margin-top: 3px; font-size: 11px; color: var(--text-3); }
+.pstep { margin-top: 8px; }
+.pstep__why, .pstep__none { margin: 0; font-size: 12px; color: var(--text-3); }
+.pstep__profiles { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 7px; }
 .crun__s { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; color: var(--text-3); }
 .crun[data-state='lost'] .crun__s { color: var(--warning); }
 /* The board's runs, across every card.

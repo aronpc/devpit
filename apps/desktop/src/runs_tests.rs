@@ -1,6 +1,7 @@
 use devpit_rpc::RunState;
 
 use super::*;
+use devpit_rpc::StepKind;
 
 /// The run a command answers with carries the time on its row. It used to say
 /// zero, and the board drew a run started in 1970.
@@ -26,7 +27,7 @@ fn a_run_just_opened_says_when_it_started() {
         irreversible: false,
     };
 
-    let run = opened(&store, &card, &run_id, &step).expect("the run");
+    let run = crate::run_launch::opened(&store, &card, &run_id, &step).expect("the run");
     assert!(run.started_at > 0.0, "started_at {}", run.started_at);
     assert_eq!(run.state, RunState::Running);
     assert_eq!(run.step_name, "tests");

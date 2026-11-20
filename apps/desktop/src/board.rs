@@ -124,25 +124,45 @@ pub(crate) fn runs_of(store: &Store, card_id: &str, steps: &[Step]) -> Result<Ve
     runs_from(store.runs(card_id)?, steps)
 }
 
+pub(crate) fn identity(
+    pinned: Option<&str>,
+    requested: Option<String>,
+    effective: Option<String>,
+) -> (Option<String>, Option<String>) {
+    let profile = pinned
+        .and_then(|json| serde_json::from_str::<crate::run_pin::PinnedProfile>(json).ok())
+        .map(|profile| profile.label);
+    (profile, effective.or(requested))
+}
+
 fn runs_from(rows: Vec<devpit_core::RunRow>, steps: &[Step]) -> Result<Vec<Run>, RpcError> {
     Ok(rows
         .into_iter()
-        .map(|row| Run {
-            step_name: steps
-                .iter()
-                .find(|s| s.id == row.step_id)
-                .map(|s| s.name.clone())
-                // A step deleted after its run leaves the run standing. The
-                // history of what happened does not disappear with the recipe.
-                .unwrap_or_else(|| "a deleted step".to_owned()),
-            id: row.id,
-            step_id: row.step_id,
-            state: state_of(&row.state),
-            output: row.output,
-            exit_code: row.exit_code.map(|c| c as i32),
-            cost_usd: row.cost_usd,
-            duration_ms: row.duration_ms.map(|ms| ms as f64),
-            started_at: row.started_at as f64,
+        .map(|row| {
+            let (profile, model) = identity(
+                row.pinned.as_deref(),
+                row.requested_model,
+                row.effective_model,
+            );
+            Run {
+                step_name: steps
+                    .iter()
+                    .find(|s| s.id == row.step_id)
+                    .map(|s| s.name.clone())
+                    // A step deleted after its run leaves the run standing. The
+                    // history of what happened does not disappear with the recipe.
+                    .unwrap_or_else(|| "a deleted step".to_owned()),
+                id: row.id,
+                step_id: row.step_id,
+                state: state_of(&row.state),
+                output: row.output,
+                exit_code: row.exit_code.map(|c| c as i32),
+                cost_usd: row.cost_usd,
+                duration_ms: row.duration_ms.map(|ms| ms as f64),
+                profile,
+                model,
+                started_at: row.started_at as f64,
+            }
         })
         .collect())
 }

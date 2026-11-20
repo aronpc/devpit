@@ -7,6 +7,7 @@ import { Checked } from './CheckedView'
 import { ask, commands } from './live'
 import { asQuery, emptyBecause, STATES, type RunFilters } from './runs'
 import { abandoned } from './typing'
+import { RunIdentity } from './PausedStep'
 
 /*
  * Every run on the board, newest first.
@@ -139,6 +140,7 @@ export function RunsPane({
                 {run.stepName}
                 {run.startedAt !== null && ` · ${new Date(run.startedAt * 1000).toLocaleString()}`}
               </span>
+              <RunIdentity run={run} />
               {run.output && <span className="crun__o">{run.output}</span>}
               {opened === run.id && (
                 <Checked runId={run.id} cardId={cardId} stepId={run.stepId} />

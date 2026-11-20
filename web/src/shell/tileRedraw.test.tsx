@@ -32,6 +32,8 @@ const run: Run = {
   exitCode: null,
   costUsd: null,
   durationMs: null,
+  profile: null,
+  model: null,
   startedAt: 0,
 }
 

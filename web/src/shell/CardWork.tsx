@@ -9,6 +9,7 @@ import { offered, useKnownAgents } from './useKnownAgents'
 import { useOpeners } from './useOpeners'
 import { useShell } from './useShell'
 import { money } from './chat'
+import { PausedStep, RunIdentity } from './PausedStep'
 
 /*
  * Where this card's work happens, and how to start doing it.
@@ -146,7 +147,9 @@ export function CardWork({
             <div className="crun" key={run.id} data-state={run.state}>
               <span className="crun__b">
                 <span className="crun__t">{run.stepName}</span>
+                <RunIdentity run={run} />
                 {run.output && <span className="crun__o">{run.output.slice(0, 400)}</span>}
+                {run.state === 'paused' && <PausedStep run={run} onSwitched={onChanged} />}
               </span>
               <span className="crun__s">{run.state}</span>
               {/* A command step has no cost at all, so most runs would carry
