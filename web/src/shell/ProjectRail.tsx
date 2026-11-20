@@ -43,6 +43,7 @@ export function ProjectRail({ onAddProject, onRemove }: { onAddProject: () => vo
   const [editing, setEditing] = useState<Project | null>(null)
   const [renaming, setRenaming] = useState<string | null>(null)
   const [menu, setMenu] = useState<Menu | null>(null)
+  const [holding, setHolding] = useState(false)
   const memory = useMemoryWaiting()
   /* Orchestrators are drawn apart, above; they are not the person's projects. */
   const list = useMemo(() => ordered(projects.filter((one) => !one.orchestrator), order), [projects, order])
@@ -166,9 +167,9 @@ export function ProjectRail({ onAddProject, onRemove }: { onAddProject: () => vo
     /* Held open while something is dragged: WebKit drops `:hover` during a
        drag, and a rail that folds to icons under the pointer moves every
        target out from under it. */
-    <nav className="rail" aria-label={t('workspace.projectRail.label')} data-held={drag.grab || menu || editing ? 'true' : undefined}>
+    <nav className="rail" aria-label={t('workspace.projectRail.label')} data-held={drag.grab || holding || menu || editing ? 'true' : undefined}>
       <div className="rail__panel">
-        <RailOrchestrators onMenu={(at, items) => setMenu({ ...at, items })} onRemove={onRemove} onEdit={setEditing} />
+        <RailOrchestrators onMenu={(at, items) => setMenu({ ...at, items })} onRemove={onRemove} onEdit={setEditing} onHold={setHolding} />
         <div className="rail__list" ref={scroller}>
           {all.map((section) => {
             const folded = section.group !== null && shut.has(section.group)
