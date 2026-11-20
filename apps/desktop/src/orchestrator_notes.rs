@@ -303,8 +303,9 @@ pub(crate) fn briefed_on_host(
     briefed_with(locale, folder, prompt, project, None)
 }
 
-/// The address goes first, so the cut below can only ever take from the rules
-/// after it. Its heading is the session's language; "Rules for sessions" is
+/// The address and the rules are made room for first and never cut: past the
+/// ceiling the prompt gives up its tail, marked with "…", and a block that
+/// would leave it too little goes out whole. The address's heading is the session's language; "Rules for sessions" is
 /// the one the parser reads and stays as written in every language.
 fn briefed_with(
     locale: SessionLocale,
@@ -319,7 +320,6 @@ fn briefed_with(
     let preferences = log_file(folder, "preferences")
         .and_then(|file| std::fs::read_to_string(file).ok())
         .unwrap_or_default();
-    let mut brief = prompt.trim_end().to_owned();
     let added = [
         (t_for(locale.locale(), "brief.reportingBack", &[]), report),
         ("Rules for sessions".to_owned(), rules_in(&preferences)),
@@ -328,21 +328,31 @@ fn briefed_with(
             project.and_then(|one| project_rules_in(&preferences, one)),
         ),
     ];
-    for (heading, body) in added {
-        let Some(body) = body else { continue };
-        let used = brief.chars().count() + heading.chars().count() + 64;
-        let Some(room) = LONGEST_BRIEF.checked_sub(used).filter(|room| *room > 0) else {
-            break;
-        };
-        let body: String = body.chars().take(room).collect();
-        brief = format!("{brief}\n\n## {heading}\n\n{body}");
+    let mut blocks: Vec<String> = added
+        .into_iter()
+        .filter_map(|(heading, body)| Some(format!("\n\n## {heading}\n\n{}", body?)))
+        .collect();
+    if blocks.is_empty() {
+        return prompt.to_owned();
     }
-    if brief == prompt.trim_end() {
-        prompt.to_owned()
-    } else {
-        brief
+    // A block goes whole or not at all: the last ones give way only when
+    // they would leave the prompt less than its share.
+    let length = |blocks: &[String]| blocks.iter().map(|one| one.chars().count()).sum::<usize>();
+    while length(&blocks) > LONGEST_BRIEF - LEAST_PROMPT {
+        blocks.pop();
     }
+    let room = LONGEST_BRIEF - length(&blocks);
+    let prompt = prompt.trim_end();
+    let mut brief = match prompt.chars().count() > room {
+        true => prompt.chars().take(room - 1).chain(['…']).collect(),
+        false => prompt.to_owned(),
+    };
+    brief.extend(blocks);
+    brief
 }
+
+/// What of the prompt a brief keeps, however long the rules after it.
+const LEAST_PROMPT: usize = 2000;
 
 #[cfg(test)]
 #[path = "orchestrator_notes_tests.rs"]

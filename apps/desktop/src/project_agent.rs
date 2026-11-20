@@ -111,6 +111,8 @@ struct Agent {
 struct Live {
     resident: Resident,
     heard: Receiver<Heard>,
+    /// What the process was born in, and is spoken to in for its life.
+    locale: crate::session_locale::SessionLocale,
 }
 
 impl Default for Agents {
@@ -195,6 +197,15 @@ impl Agents {
         answer.map(|answer| (answer, QUESTIONS.saturating_sub(*asked)))
     }
 
+    /// The language `key`'s agent is spoken to in: the one its live process
+    /// was born in, and the settings' only for an agent still to be started.
+    pub(crate) fn locale_for(&self, key: &str) -> crate::session_locale::SessionLocale {
+        let agent = self.all.lock().ok().and_then(|all| all.get(key).cloned());
+        agent
+            .and_then(|agent| agent.lock().ok()?.live.as_ref().map(|live| live.locale))
+            .unwrap_or_else(crate::session_locale::SessionLocale::capture)
+    }
+
     /// Whether `key`'s agent is answering someone now.
     pub(crate) fn busy(&self, key: &str) -> bool {
         let agent = self.all.lock().ok().and_then(|all| all.get(key).cloned());
@@ -211,7 +222,20 @@ impl Agents {
 
 impl Agent {
     fn answer(&mut self, wake: &Wake, question: &str, within: Duration) -> Result<Answer, String> {
-        let (live, prompt, woke, proposed) = match self.live.take().filter(|live| !live.gone()) {
+        // A wake asking in another language than the process was born in
+        // (the agent idled out between `locale_for` and here) starts anew.
+        let held = self
+            .live
+            .take()
+            .filter(|live| !live.gone())
+            .and_then(|live| {
+                if live.locale == wake.locale {
+                    return Some(live);
+                }
+                live.resident.close();
+                None
+            });
+        let (live, prompt, woke, proposed) = match held {
             Some(live) => (live, question.to_owned(), false, 0),
             None => {
                 let day = today();
@@ -358,7 +382,11 @@ fn start(wake: &Wake, session: Option<&str>) -> Result<Live, String> {
         let _ = tell.send(heard);
     })
     .map_err(|err| format!("{NOT_STARTED}: {err}"))?;
-    Ok(Live { resident, heard })
+    Ok(Live {
+        resident,
+        heard,
+        locale: wake.locale,
+    })
 }
 
 /// The first message of a process: who it is, the project's own instructions,
@@ -577,8 +605,8 @@ pub(crate) fn from_session(
     }
     let question = text("question").ok_or("what to ask? pass `question`")?;
     let app = app.ok_or("devpit's window is not running")?;
-    let locale = crate::session_locale::SessionLocale::capture();
-    let (command, env, mcp) = waking(&linked_profile(projects, &here.id)?)?;
+    let locale = app.state::<Agents>().locale_for(&here.id);
+    let (command, env, mcp) = waking(&linked_profile(projects, &here.id)?, locale)?;
     let wake = Wake {
         command: &command,
         env: &env,
@@ -632,7 +660,10 @@ impl Said {
 pub(crate) type Waking = (String, Vec<(String, String)>, Option<String>);
 
 /// What an agent under `profile` is started with.
-pub(crate) fn waking(profile: &str) -> Result<Waking, String> {
+pub(crate) fn waking(
+    profile: &str,
+    locale: crate::session_locale::SessionLocale,
+) -> Result<Waking, String> {
     let (found, command) = crate::chat_turn::spawnable(profile).map_err(|err| err.message)?;
     if found.driver != "claude" {
         return Err(format!(
@@ -640,7 +671,6 @@ pub(crate) fn waking(profile: &str) -> Result<Waking, String> {
             found.driver
         ));
     }
-    let locale = crate::session_locale::SessionLocale::capture();
     let mut env = devpit_agentcli::running::runner(&found).env;
     env.push(locale.var());
     Ok((command, env, crate::agent_reach::chat_mcp(locale, &found)))
@@ -656,7 +686,7 @@ pub(crate) fn respond(
     params: &Value,
 ) -> Result<Value, String> {
     let app = app.ok_or("devpit's window is not running")?;
-    let locale = crate::session_locale::SessionLocale::capture();
+    let locale = app.state::<Agents>().locale_for(&project.id);
     let text = |name: &str| {
         params
             .get(name)
@@ -685,7 +715,7 @@ pub(crate) fn respond(
         let lessons = crate::project_memory::lessons(Path::new(&project.root_path));
         brief_prompt(locale, card.number, &card.title, &card.body, &lessons)
     };
-    let (command, env, mcp) = waking(profile)?;
+    let (command, env, mcp) = waking(profile, locale)?;
     let wake = Wake {
         command: &command,
         env: &env,
@@ -839,8 +869,8 @@ pub async fn project_agent_chat(
         let project = sidebar_project(&listed.projects, &project_id)?;
         labs_on(&crate::projects::store()?, &project)?;
         let profile = linked_profile(&listed.projects, &project.id).map_err(refused)?;
-        let locale = crate::session_locale::SessionLocale::capture();
-        let (command, env, mcp) = waking(&profile).map_err(refused)?;
+        let locale = app.state::<Agents>().locale_for(&project.id);
+        let (command, env, mcp) = waking(&profile, locale).map_err(refused)?;
         let wake = Wake {
             command: &command,
             env: &env,

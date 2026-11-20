@@ -12,8 +12,10 @@ use std::collections::{BTreeSet, HashMap};
 use std::path::Path;
 use std::sync::{Mutex, OnceLock};
 
-use devpit_core::i18n::t;
+use devpit_core::i18n::t_for;
 use devpit_rpc::{LiveSession, TurnFrom};
+
+use crate::session_locale::SessionLocale;
 
 /// How the sessions stood at a turn.
 #[derive(Debug, Clone, Default, PartialEq)]
@@ -49,9 +51,14 @@ fn seen() -> &'static Mutex<HashMap<String, Seen>> {
 }
 
 /// What changed between `before` and `now`, in a line, or nothing.
-pub(crate) fn notice(before: Option<&Seen>, now: &[LiveSession]) -> Option<String> {
+pub(crate) fn notice(
+    locale: SessionLocale,
+    before: Option<&Seen>,
+    now: &[LiveSession],
+) -> Option<String> {
     // The first turn has nothing to compare with.
     let before = before?;
+    let t = |key: &str, args: &[(&str, &str)]| t_for(locale.locale(), key, args);
     let mut said = Vec::new();
     for one in now {
         let new = !before.names.contains(&one.name);
@@ -78,7 +85,12 @@ pub(crate) type Noticed = (String, String, Option<TurnFrom>);
 /// `prompt`, with devpit's notices above it: where the person sent it from,
 /// and in an orchestrator's chat what changed since the last turn, under the
 /// person's preferences for a CLI no hook hands them to.
-pub(crate) fn with_notice(noticed: &Noticed, prompt: &str, now_ms: f64) -> String {
+pub(crate) fn with_notice(
+    locale: SessionLocale,
+    noticed: &Noticed,
+    prompt: &str,
+    now_ms: f64,
+) -> String {
     let (project_id, profile_id, from) = noticed;
     let root = crate::projects::store()
         .ok()
@@ -87,7 +99,7 @@ pub(crate) fn with_notice(noticed: &Noticed, prompt: &str, now_ms: f64) -> Strin
     let handoff = root
         .as_deref()
         .and_then(|root| crate::orchestrator_handoff::take(root, profile_id));
-    let since = since(project_id, profile_id, now_ms);
+    let since = since(locale, project_id, profile_id, now_ms);
     let devpits: Vec<String> = handoff.into_iter().chain(since).collect();
     let devpits = (!devpits.is_empty()).then(|| devpits.join("\n\n"));
     let said = notices(from.as_ref(), devpits.as_deref(), prompt);
@@ -115,7 +127,7 @@ pub(crate) fn notices(from: Option<&TurnFrom>, since: Option<&str>, prompt: &str
 
 /// What changed since the orchestrator's last turn, when the chat is an
 /// orchestrator's and something did.
-fn since(project_id: &str, profile_id: &str, now_ms: f64) -> Option<String> {
+fn since(locale: SessionLocale, project_id: &str, profile_id: &str, now_ms: f64) -> Option<String> {
     let here = crate::projects::project_list_now()
         .ok()?
         .projects
@@ -130,7 +142,7 @@ fn since(project_id: &str, profile_id: &str, now_ms: f64) -> Option<String> {
     // The person speaks: the round the orchestrator reads after a compaction.
     crate::round_state::keep(Path::new(&here.root_path), &here.id, profile_id, &sessions);
     let mut held = seen().lock().ok()?;
-    let said = notice(held.get(project_id), &sessions);
+    let said = notice(locale, held.get(project_id), &sessions);
     held.insert(project_id.to_owned(), Seen::of(&sessions, now_ms));
     said
 }

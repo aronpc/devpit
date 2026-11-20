@@ -55,9 +55,15 @@ fn the_rules_for_sessions_go_with_every_brief() {
         brief,
         "Fix the invoice total.\n\n## Reporting back\n\nThe orchestrator that started you is `orchestrator-workspace`: SendMessage to that name to report back. It keeps the name when its chat restarts.\n\n## Rules for sessions\n\n- Never push to main.\n- Write commit messages in English."
     );
-    // Too long already, it goes as it is rather than being refused.
+    // Too long already, the prompt gives up its tail to the rules, marked.
     let long = "x".repeat(7990);
-    assert_eq!(super::briefed(en(), &folder, &long, None, false), long);
+    let cut = super::briefed(en(), &folder, &long, None, false);
+    assert_eq!(cut.chars().count(), super::LONGEST_BRIEF);
+    assert!(cut.contains("x…\n\n## Reporting back\n\n"), "{cut}");
+    assert!(cut.ends_with("- Write commit messages in English."));
+    // Nothing to add, a long prompt goes as it is rather than being refused.
+    let bare = tempfile::tempdir().expect("bare");
+    assert_eq!(super::briefed_on_host(en(), bare.path(), &long, None), long);
 }
 
 /// A session reports to the orchestrator by a name taken from its folder, so
@@ -340,9 +346,42 @@ fn a_long_portuguese_brief_keeps_the_address_and_the_rules_whole() {
     assert!(brief.contains("\n\n## Rules for sessions\n\n"));
     assert!(brief.ends_with(rules.trim()), "the rules were cut");
 
-    // Past the ceiling the rules are cut, never the address before them.
+    // Past the ceiling the prompt is cut, never the address or the rules.
     let huge = "x".repeat(7_500);
     let tight = super::briefed(pt(), &folder, &huge, None, false);
     assert!(tight.chars().count() <= super::LONGEST_BRIEF);
     assert!(tight.contains("`orchestrator-workspace`"));
+    assert!(tight.ends_with(rules.trim()), "the rules were cut");
+    assert!(tight.contains("x…\n\n## "), "the cut prompt is not marked");
+}
+
+/// Near the ceiling the rules still go whole, down to the prohibition they
+/// end with: the prompt gives up its tail, with a mark that it did.
+#[test]
+fn near_the_ceiling_the_rules_go_whole_and_the_prompt_is_cut() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let folder = dir.path().join("orchestrator/claude/workspace");
+    std::fs::create_dir_all(folder.join("context")).expect("dirs");
+    let ban = "- NUNCA FAÇA DEPLOY SEM APROVAÇÃO EXPLÍCITA.";
+    let rules = format!(
+        "{}{ban}",
+        "- Commit messages in English, with no trailers.\n".repeat(20)
+    );
+    std::fs::write(
+        folder.join("context/preferences.md"),
+        format!("## Rules for sessions\n\n{rules}\n"),
+    )
+    .expect("write");
+    let prompt = "y".repeat(7_500);
+    for locale in [pt(), en()] {
+        let brief = super::briefed(locale, &folder, &prompt, None, false);
+        assert!(
+            brief.chars().count() <= super::LONGEST_BRIEF,
+            "{}",
+            brief.chars().count()
+        );
+        assert!(brief.contains("`orchestrator-workspace`"), "{brief}");
+        assert!(brief.ends_with(&format!("\n\n## Rules for sessions\n\n{rules}")));
+        assert!(brief.contains("y…\n\n## "), "the cut prompt is not marked");
+    }
 }
