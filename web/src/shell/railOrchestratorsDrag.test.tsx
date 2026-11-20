@@ -1,3 +1,7 @@
+import { readFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -24,6 +28,25 @@ const pointer = (type: string, x: number, y: number): Event =>
 
 const draw = (onHold: (held: boolean) => void = vi.fn()): ReturnType<typeof render> =>
   render(<RailOrchestrators onMenu={vi.fn()} onRemove={vi.fn()} onEdit={vi.fn()} onHold={onHold} />)
+
+/* The rail's own part of the stylesheet, found beside this file: the tests
+   run from the worktree root as well as from web/. From the file's path, not
+   `new URL(…, import.meta.url)`: under jsdom that URL is jsdom's, not file. */
+const RAIL_CSS = readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), 'styles/26-rail.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '')
+
+/** The declarations of the rule whose selector is exactly `selector`. */
+function rule(selector: string): Map<string, string> {
+  const found = RAIL_CSS.split('}').find((one) => one.split('{')[0]!.trim() === selector)
+  if (!found) throw new Error(`no rule for ${selector}`)
+  const body = found.split('{')[1]!
+  return new Map(
+    body
+      .split(';')
+      .map((one) => one.split(':').map((part) => part.trim()))
+      .filter((pair) => pair.length >= 2 && pair[0])
+      .map(([name, ...value]) => [name!, value.join(':')]),
+  )
+}
 
 const row = (name: string): HTMLElement => screen.getByText(name).closest('button')!
 const drawn = (): string[] => [...document.querySelectorAll<HTMLElement>('[data-drop="orchestrator"]')].map((one) => one.dataset.key!)
@@ -71,7 +94,7 @@ describe('dragging an orchestrator in the rail', () => {
     expect(first.dataset.key).toBe('prj_01M3A')
     const scroller = at(first.parentElement!, 0, 400)
     expect(row('Second').parentElement).toBe(scroller)
-    expect(scroller.querySelectorAll('button')).toHaveLength(2)
+    expect(scroller.querySelectorAll('[data-drop="orchestrator"]')).toHaveLength(2)
 
     const second = at(row('Second'), 200)
     document.elementFromPoint = () => second
@@ -114,5 +137,39 @@ describe('dragging an orchestrator in the rail', () => {
     expect(onHold).toHaveBeenLastCalledWith(false)
     fireEvent.click(row('First'))
     expect(setProject).not.toHaveBeenCalled()
+  })
+})
+
+describe('the orchestrators group with many of them', () => {
+  const ten = (): Project[] => Array.from({ length: 10 }, (_, n) => orchestrator(`prj_01M3${String.fromCharCode(65 + n)}`, `Orch ${n + 1}`))
+
+  it('ten orchestrators: every row and then the new button sit inside the group scroller', () => {
+    projects = ten()
+    draw()
+    const scroller = document.querySelector<HTMLElement>('.rail__orchrows')!
+    expect(scroller).not.toBeNull()
+    const inside = [...scroller.children] as HTMLElement[]
+    expect(inside).toHaveLength(11)
+    expect(inside.slice(0, 10).map((one) => one.dataset.key)).toEqual(drawn())
+    expect(drawn()).toHaveLength(10)
+    expect(inside.at(-1)!.classList.contains('rail__orchnew')).toBe(true)
+  })
+
+  it('scroller ceiling: the rows scroller has a max height and the group may shrink in the panel', () => {
+    draw()
+    expect(row('First').parentElement!.classList.contains('rail__orchrows')).toBe(true)
+    expect(rule('.rail__orchrows').get('max-height')).toMatch(/^\d/)
+    const group = rule('.rail__orch')
+    expect(group.get('min-height')).toBe('0')
+    expect(group.get('flex')).toMatch(/^\d+ [1-9]/)
+    /* The projects keep their own scroller below, never squeezed out. */
+    expect(rule('.rail__list').get('flex')).toBe('1')
+    expect(rule('.rail__list').get('min-height')).toBe('0')
+  })
+
+  it('scroller rule: the orchestrator rows scroll on their own', () => {
+    const rows = rule('.rail__orchrows')
+    expect(rows.get('overflow-y')).toBe('auto')
+    expect(rows.get('min-height')).toBe('0')
   })
 })

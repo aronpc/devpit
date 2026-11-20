@@ -110,6 +110,26 @@ describe('dragging in the rail', () => {
     expect(onDrop).not.toHaveBeenCalled()
   })
 
+  it('edge scroll: a drag near the bottom of the list scrolls it down, near the top scrolls it up', () => {
+    const { getByText, container } = render(<Rail onDrop={vi.fn()} onClick={vi.fn()} />)
+    /* jsdom lays nothing out: the list is a box 400px tall from 0. Edges are
+       within the hook's EDGE (28px) of either end; 200 is the middle. */
+    const list = container.firstElementChild as HTMLElement
+    list.getBoundingClientRect = () => ({ top: 0, height: 400, bottom: 400, left: 0, right: 0, width: 0, x: 0, y: 0, toJSON: () => ({}) })
+    list.scrollTop = 100
+    document.elementFromPoint = () => null
+
+    fireEvent.pointerDown(getByText('a'), { button: 0, clientX: 10, clientY: 200 })
+    act(() => void window.dispatchEvent(pointer('pointermove', 10, 210)))
+    expect(list.scrollTop).toBe(100)
+    act(() => void window.dispatchEvent(pointer('pointermove', 10, 390)))
+    const down = list.scrollTop
+    expect(down).toBeGreaterThan(100)
+    act(() => void window.dispatchEvent(pointer('pointermove', 10, 10)))
+    expect(list.scrollTop).toBeLessThan(down)
+    act(() => void window.dispatchEvent(pointer('pointerup', 10, 10)))
+  })
+
   it('refuses a project over an orchestrator row and lets go of the spot it had', () => {
     const onDrop = vi.fn()
     const spots: (Spot | null)[] = []

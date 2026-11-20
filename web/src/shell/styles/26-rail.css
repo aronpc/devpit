@@ -11,7 +11,7 @@
 .rail__list { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; display: flex; flex-direction: column; gap: 4px; scrollbar-width: thin; scrollbar-color: transparent transparent; }
 /* The scrollbar shows when the rail is in use, and not while it is a strip
    of icons. */
-:is(.rail:hover, .rail[data-held='true']) .rail__list { scrollbar-color: var(--scroll-thumb) transparent; }
+:is(.rail:hover, .rail[data-held='true']) :is(.rail__list, .rail__orchrows) { scrollbar-color: var(--scroll-thumb) transparent; }
 
 /* A group: its heading keeps one height whether the rail is narrow or wide,
    so nothing below it moves when the rail widens — narrow, the heading is a
@@ -84,7 +84,10 @@
 .pmark--add { width: 36px; height: 36px; color: var(--success); background: var(--overlay); }
 .rail__add:hover .pmark--add { color: #fff; background: color-mix(in srgb, var(--success) 70%, transparent); }
 /* The orchestrators, above the projects and ruled off from them. */
-.rail__orch { margin-bottom: 4px; }
+.rail__orch { flex: 0 1 auto; min-height: 0; margin-bottom: 4px; }
+/* The one group that scrolls on its own: with many orchestrators it stops at
+   a ceiling and scrolls, so the projects below keep their room. */
+.rail__orchrows { display: flex; flex-direction: column; gap: 4px; min-height: 0; max-height: 40vh; overflow-y: auto; overflow-x: hidden; scrollbar-width: thin; scrollbar-color: transparent transparent; }
 .rail__orchhead { position: relative; display: flex; align-items: center; }
 .rail__orchhead .rail__group { flex: 1; min-width: 0; }
 /* Small and quiet: once there is one, making another is the rarer act. */
