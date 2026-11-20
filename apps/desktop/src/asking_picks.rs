@@ -1,5 +1,7 @@
 //! What an agent asks the person rather than asks to do: `AskUserQuestion`,
-//! a plan to approve. A chat that draws the session answers it in any mode.
+//! a plan to approve. A chat's question goes to the CLI's own prompt
+//! (`asking_plan`) — the hook never holds it — and the picks kept here are
+//! the person's answers.
 
 use std::collections::{HashMap, HashSet};
 use std::sync::Mutex;
@@ -16,7 +18,7 @@ pub fn to_the_person(tool: &str) -> bool {
     TO_THE_PERSON.contains(&tool)
 }
 
-/// The sessions chats draw, and the picks waiting for their hook's reply.
+/// The sessions chats draw, and the picks waiting for a reply.
 #[derive(Default)]
 pub struct Picks {
     drawn: Mutex<HashSet<String>>,
@@ -31,16 +33,6 @@ impl Picks {
         if let Ok(mut drawn) = self.drawn.lock() {
             drawn.insert(session_id.to_owned());
         }
-    }
-
-    /// Whether this tool waits for the person: a question, in a session a
-    /// chat draws. A terminal's own is its terminal's to ask.
-    pub fn holds(&self, session_id: &str, tool: &str) -> bool {
-        to_the_person(tool)
-            && self
-                .drawn
-                .lock()
-                .is_ok_and(|drawn| drawn.contains(session_id))
     }
 
     pub(crate) fn picked(&self, id: &str, chosen: Vec<Vec<String>>) {

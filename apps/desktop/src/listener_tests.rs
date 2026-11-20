@@ -547,3 +547,62 @@ fn a_tool_that_fails_for_a_sign_in_says_what_fixes_it() {
         ["aws sso login --profile asc"]
     );
 }
+
+/// A `PreToolUse` the hook posted for `tool`: from a session a chat draws
+/// when `chat` names the conversation, and from a terminal's own or a
+/// board step's when it does not.
+fn posted_asking(tool: &str, chat: Option<&str>) -> Posted {
+    Posted {
+        body: format!(
+            r#"{{"hook_event_name":"PreToolUse","session_id":"s1","cwd":"/w","tool_use_id":"q1","tool_name":"{tool}","tool_input":{{}}}}"#
+        ),
+        pane: None,
+        secret: None,
+        agent: false,
+        chat: chat.map(str::to_owned),
+    }
+}
+
+/// A chat's question stays on the CLI prompt, outside the hook's curl budget.
+#[test]
+fn a_chats_question_to_the_person_is_never_held_by_the_hook() {
+    let asking = Asking::default();
+    assert!(
+        held_by_the_hook(&posted_asking("AskUserQuestion", Some("conv_01A")), &asking).is_none(),
+        "a chat's mode is not one that asks"
+    );
+    // A chat a person put in Supervised asks about its changes; its
+    // question to the person is still the prompt's, not the hook's.
+    asking.ask_from_now("s1", true);
+    assert!(
+        held_by_the_hook(&posted_asking("AskUserQuestion", Some("conv_01A")), &asking).is_none(),
+        "not even a Supervised chat's"
+    );
+}
+
+/// Supervised is unchanged: a change in a session that asks about changes
+/// is still held by the hook, and a read still is not.
+#[test]
+fn a_supervised_change_is_still_held_by_the_hook() {
+    let asking = Asking::default();
+    asking.ask_from_now("s1", true);
+    let held = held_by_the_hook(&posted_asking("Bash", Some("conv_01A")), &asking).expect("held");
+    assert_eq!(held.tool, "Bash");
+    assert!(
+        held_by_the_hook(&posted_asking("Read", Some("conv_01A")), &asking).is_none(),
+        "a read is the CLI's permission mode's to allow"
+    );
+    assert!(
+        held_by_the_hook(&posted_asking("ExitPlanMode", Some("conv_01A")), &asking).is_none(),
+        "a plan still goes to the CLI prompt"
+    );
+}
+
+/// Outside a chat the hook still answers empty: a session nobody put in
+/// Supervised — a terminal's own, a board step's — never waits on a window.
+#[test]
+fn outside_a_chat_the_hook_still_answers_empty() {
+    let asking = Asking::default();
+    assert!(held_by_the_hook(&posted_asking("Bash", None), &asking).is_none());
+    assert!(held_by_the_hook(&posted_asking("AskUserQuestion", None), &asking).is_none());
+}
