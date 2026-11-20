@@ -82,6 +82,17 @@ impl Ends {
         }
     }
 
+    /// Ends what this way of going leaves nobody to answer: a chat's own
+    /// questions, or every one when the app quits. Never a deadline.
+    pub(crate) fn over(&self, gone: Over<'_>) {
+        match gone {
+            Over::Closed(id) | Over::Interrupted(id) | Over::Exited(id) | Over::TurnEnded(id) => {
+                self.end(id)
+            }
+            Over::AppQuit => self.end_all(),
+        }
+    }
+
     pub(crate) fn ended(&self, question_id: &str) -> bool {
         self.0
             .lock()
@@ -95,6 +106,18 @@ impl Ends {
             open.ended.remove(question_id);
         }
     }
+}
+
+/// The ways a chat stops being there to hear an answer, by conversation.
+pub(crate) enum Over<'a> {
+    Closed(&'a str),
+    /// The process stays, but the turn that asked is stopped.
+    Interrupted(&'a str),
+    /// The conversation's resident process exited.
+    Exited(&'a str),
+    /// The turn's process is done, however it ended.
+    TurnEnded(&'a str),
+    AppQuit,
 }
 
 /// Waits as the question's tool says: the person's question without end, any

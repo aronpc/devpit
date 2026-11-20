@@ -1,8 +1,13 @@
+use std::sync::{Arc, Mutex};
+use std::time::{Duration, Instant};
+
 use serde_json::json;
 
 use super::*;
 use crate::asking::{Answer, Asking};
 use crate::asking_picks::{pick, refuse, Picks};
+use crate::asking_wait::tests::{asked, let_pass};
+use crate::asking_wait::{waits, Ends, Over, Ticking, WAITS};
 
 const PLAN: &str = "# Steps\n1. read";
 
@@ -200,4 +205,222 @@ fn a_settled_prompt_question_is_gone_before_the_window_hears_it_settled() {
             |_| assert!(waiting.of("ses_orch", "conv_a").is_empty()),
         );
     }
+}
+
+/// A question held as `put` holds it, on its own thread: what the window
+/// can still draw, and what it was told settled.
+struct Held {
+    tell: std::sync::mpsc::Sender<Answer>,
+    wait: std::thread::JoinHandle<Answer>,
+    waiting: Arc<Waiting>,
+    settled: Arc<Mutex<Vec<String>>>,
+}
+
+fn held(question: Question, ends: &Arc<Ends>, clock: &Arc<Ticking>) -> Held {
+    let (waiting, settled) = (Arc::new(Waiting::default()), Arc::default());
+    let (tell, hear) = std::sync::mpsc::channel();
+    let (ends, clock) = (ends.clone(), clock.clone());
+    let (held_in, told): (_, Arc<Mutex<Vec<String>>>) = (waiting.clone(), Arc::clone(&settled));
+    let wait = std::thread::spawn(move || {
+        let mut said = None;
+        held_for_a_late_window(
+            &held_in,
+            &question,
+            |_| (),
+            || waits(&hear, &question, &ends, &*clock),
+            |answer| said = Some(answer),
+            |id| told.lock().unwrap().push(id.to_owned()),
+        );
+        said.expect("the question was answered")
+    });
+    Held {
+        tell,
+        wait,
+        waiting,
+        settled,
+    }
+}
+
+impl Held {
+    fn drawn(&self, conversation: &str) -> Vec<String> {
+        let drawn = self.waiting.of("ses_orch", conversation);
+        drawn.into_iter().map(|one| one.id).collect()
+    }
+
+    /// Settled within a real few seconds, or the test fails rather than hangs.
+    fn settles(self, conversation: &str) -> (Answer, Vec<String>) {
+        let real = Instant::now();
+        while !self.wait.is_finished() {
+            assert!(
+                real.elapsed() < Duration::from_secs(5),
+                "the wait did not end"
+            );
+            std::thread::sleep(Duration::from_millis(1));
+        }
+        let drawn = self.drawn(conversation);
+        let answer = self.wait.join().expect("the wait panicked");
+        assert!(drawn.is_empty(), "still offered to the window");
+        let told = self.settled.lock().unwrap().clone();
+        (answer, told)
+    }
+}
+
+/// A question to the person waiting a minute in `conv_a`, another in `conv_b`:
+/// `gone` denies the first, out of the Waiting and told settled, and leaves
+/// the other chat's question waiting.
+fn settled_by(gone: impl FnOnce(&Ends)) {
+    let (ends, clock) = (
+        Arc::new(Ends::default()),
+        Arc::new(Ticking::by(Duration::from_secs(30))),
+    );
+    let other = held(
+        asked("q2", "AskUserQuestion", Some("conv_b")),
+        &ends,
+        &clock,
+    );
+    let mine = held(
+        asked("q1", "AskUserQuestion", Some("conv_a")),
+        &ends,
+        &clock,
+    );
+    let_pass(&clock, Duration::from_secs(60), &mine.wait);
+    let_pass(&clock, Duration::from_secs(60), &other.wait);
+    assert_eq!(mine.drawn("conv_a"), ["q1"]);
+
+    gone(&ends);
+    assert_eq!(
+        mine.settles("conv_a"),
+        (Answer::Deny, vec!["q1".to_owned()])
+    );
+    assert!(
+        !other.wait.is_finished(),
+        "another chat's question ended with it"
+    );
+    assert_eq!(other.drawn("conv_b"), ["q2"]);
+    other.tell.send(Answer::Allow).expect("still listening");
+}
+
+#[test]
+fn a_question_is_settled_when_its_chat_closes() {
+    settled_by(|ends| ends.over(Over::Closed("conv_a")));
+}
+
+/// Interrupting keeps the process, but the turn that asked is gone.
+#[test]
+fn a_question_is_settled_when_its_turn_is_interrupted() {
+    settled_by(|ends| ends.over(Over::Interrupted("conv_a")));
+}
+
+/// The resident process exits, or the turn's own process is done.
+#[test]
+fn a_question_is_settled_when_its_process_exits() {
+    settled_by(|ends| ends.over(Over::Exited("conv_a")));
+    settled_by(|ends| ends.over(Over::TurnEnded("conv_a")));
+}
+
+/// Every question settles as the app quits, a terminal's too: no thread is
+/// left waiting on a person who can no longer answer.
+#[test]
+fn no_wait_outlives_the_app_quitting() {
+    let (ends, clock) = (
+        Arc::new(Ends::default()),
+        Arc::new(Ticking::by(Duration::from_secs(30))),
+    );
+    let chats = [
+        held(
+            asked("q1", "AskUserQuestion", Some("conv_a")),
+            &ends,
+            &clock,
+        ),
+        held(
+            asked("q2", "AskUserQuestion", Some("conv_b")),
+            &ends,
+            &clock,
+        ),
+    ];
+    let terminal = held(asked("q3", "AskUserQuestion", None), &ends, &clock);
+    let_pass(&clock, Duration::from_secs(60), &terminal.wait);
+
+    ends.over(Over::AppQuit);
+    for (one, conversation) in chats.into_iter().zip(["conv_a", "conv_b"]) {
+        assert_eq!(one.settles(conversation).0, Answer::Deny);
+    }
+    assert_eq!(
+        terminal.settles("conv_a"),
+        (Answer::Deny, vec!["q3".to_owned()])
+    );
+}
+
+/// Ten minutes unanswered, and the question is still drawn and not settled;
+/// it leaves when the person answers, or when its chat ends.
+#[test]
+fn a_question_leaves_waiting_only_by_answer_or_end() {
+    let ten_minutes = Duration::from_secs(600);
+    for (said, end) in [(Some(Answer::Allow), false), (None, true)] {
+        let (ends, clock) = (
+            Arc::new(Ends::default()),
+            Arc::new(Ticking::by(Duration::from_secs(30))),
+        );
+        let question = held(
+            asked("q1", "AskUserQuestion", Some("conv_a")),
+            &ends,
+            &clock,
+        );
+        let_pass(&clock, ten_minutes, &question.wait);
+        assert_eq!(
+            question.drawn("conv_a"),
+            ["q1"],
+            "left after {:?}",
+            clock.passed()
+        );
+        assert!(question.settled.lock().unwrap().is_empty());
+
+        if let Some(said) = said {
+            question.tell.send(said).expect("still listening");
+        }
+        if end {
+            ends.over(Over::Closed("conv_a"));
+        }
+        let (answer, told) = question.settles("conv_a");
+        assert_eq!(answer, said.unwrap_or(Answer::Deny));
+        assert_eq!(told, ["q1"]);
+    }
+}
+
+/// A command, an edit and a plan still answer themselves at two minutes, and
+/// leave the Waiting then; only the question to the person outlasts them.
+#[test]
+fn only_the_question_to_the_person_waits_without_a_deadline() {
+    let ten_minutes = Duration::from_secs(600);
+    for tool in ["Bash", "Edit", "Write", "ExitPlanMode"] {
+        let (ends, clock) = (
+            Arc::new(Ends::default()),
+            Arc::new(Ticking::by(Duration::from_secs(10))),
+        );
+        let question = held(asked("q1", tool, Some("conv_a")), &ends, &clock);
+        let_pass(&clock, ten_minutes, &question.wait);
+        assert_eq!(
+            question.settles("conv_a"),
+            (Answer::Deny, vec!["q1".to_owned()])
+        );
+        assert_eq!(clock.passed(), WAITS, "{tool} waited the wrong time");
+    }
+
+    let (ends, clock) = (
+        Arc::new(Ends::default()),
+        Arc::new(Ticking::by(Duration::from_secs(10))),
+    );
+    let person = held(
+        asked("q1", "AskUserQuestion", Some("conv_a")),
+        &ends,
+        &clock,
+    );
+    let_pass(&clock, ten_minutes, &person.wait);
+    assert!(
+        !person.wait.is_finished(),
+        "gave up after {:?}",
+        clock.passed()
+    );
+    person.tell.send(Answer::Allow).expect("still listening");
+    assert_eq!(person.settles("conv_a").0, Answer::Allow);
 }

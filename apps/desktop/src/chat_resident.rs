@@ -31,6 +31,7 @@ use serde_json::{json, Value};
 use tauri::ipc::Channel;
 use tauri::{AppHandle, Emitter, Manager};
 
+use crate::asking_wait::Over;
 use crate::chat_listening::{Claim, Displaced, Ear, Woken};
 
 /// The event a woken turn is announced on, with its conversation id.
@@ -638,9 +639,7 @@ pub(crate) fn force(app: &AppHandle, conversation_id: &str) -> Option<u32> {
 /// Lets every chat's process go as devpit quits: one that does not exit on
 /// its own is ended now, since nothing is left to end it later.
 pub(crate) fn quit_all(app: &AppHandle) {
-    if let Some(ends) = app.try_state::<crate::asking_wait::Ends>() {
-        ends.end_all();
-    }
+    over(app, Over::AppQuit);
     let all = app.try_state::<Residents>().and_then(|residents| {
         residents
             .0
@@ -650,6 +649,14 @@ pub(crate) fn quit_all(app: &AppHandle) {
     });
     for live in all.into_iter().flat_map(HashMap::into_values) {
         live.resident.quit();
+    }
+}
+
+/// The questions to the person this end leaves unheard are denied now
+/// (`asking_wait`): nothing else ends their wait.
+pub(crate) fn over(app: &AppHandle, gone: Over<'_>) {
+    if let Some(ends) = app.try_state::<crate::asking_wait::Ends>() {
+        ends.over(gone);
     }
 }
 
@@ -666,9 +673,7 @@ pub(crate) fn stop_waiting(app: &AppHandle, conversation_id: &str) -> bool {
 /// Ends this conversation's process, if it has one: a chat no longer
 /// reachable goes back to a process per turn.
 pub(crate) fn close(app: &AppHandle, conversation_id: &str) {
-    if let Some(ends) = app.try_state::<crate::asking_wait::Ends>() {
-        ends.end(conversation_id);
-    }
+    over(app, Over::Closed(conversation_id));
     let gone = app.try_state::<Residents>().and_then(|residents| {
         residents
             .0
@@ -685,14 +690,23 @@ pub(crate) fn close(app: &AppHandle, conversation_id: &str) {
 /// turn stops waiting, and the woken turn goes on. False when this
 /// conversation has none, so the caller stops it the other way.
 pub(crate) fn interrupt(app: &AppHandle, conversation_id: &str) -> bool {
-    app.try_state::<Residents>()
+    let (stopped, its_turn) = app
+        .try_state::<Residents>()
         .and_then(|residents| {
             residents.0.lock().ok().and_then(|all| {
                 all.get(conversation_id)
-                    .map(|live| live.ear.stop_waiting() || live.resident.interrupt())
+                    .map(|live| match live.ear.stop_waiting() {
+                        // The woken turn goes on, and so do its questions.
+                        true => (true, false),
+                        false => (live.resident.interrupt(), true),
+                    })
             })
         })
-        .unwrap_or(false)
+        .unwrap_or((false, false));
+    if its_turn {
+        over(app, Over::Interrupted(conversation_id));
+    }
+    stopped
 }
 
 /// The flags only a new process takes. Model and mode are switched on the
@@ -832,6 +846,9 @@ fn start(staying: &Staying, turn: &Say<'_>, started_as: String) -> Result<Live, 
                 crate::chat_remote::answered(&answers, said);
             }
             return;
+        }
+        if matches!(heard, Heard::Gone) {
+            over(&app, Over::Exited(&conversation));
         }
         heard_by.hear(
             heard,
