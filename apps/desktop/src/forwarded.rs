@@ -35,11 +35,34 @@ const MOST: usize = 50;
 /// The most an id may be, in characters.
 const LONGEST_ID: usize = 100;
 
-/// What was kept for a request: its conversation and its words.
-type Kept = (String, String);
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum RequestState {
+    Pending,
+    Sending(u64),
+}
+
+#[derive(Clone)]
+struct Kept {
+    conversation: String,
+    text: String,
+    state: RequestState,
+}
 
 /// By the destination project, the sender's address and the request's id.
-type Requests = HashMap<(String, String, String), Kept>;
+type Key = (String, String, String);
+
+#[derive(Default)]
+struct Requests {
+    held: HashMap<Key, Kept>,
+    generation: u64,
+}
+
+impl Requests {
+    fn next_generation(&mut self) -> u64 {
+        self.generation += 1;
+        self.generation
+    }
+}
 
 fn requests() -> &'static Mutex<Requests> {
     static REQUESTS: OnceLock<Mutex<Requests>> = OnceLock::new();
@@ -62,20 +85,33 @@ pub(crate) fn keep(
         .lock()
         .map_err(|_| "the requests could not be read".to_owned())?;
     let key = (destination.to_owned(), origin.to_owned(), id.to_owned());
-    if let Some((_, kept)) = held.get(&key) {
-        return match kept == text {
+    if let Some(kept) = held.held.get(&key) {
+        return match kept.text == text {
             true => Ok(true),
             false => Err(format!(
                 "request {id} was sent already with other words and stays as it was: use another id for a different request"
             )),
         };
     }
-    if held.keys().filter(|(to, ..)| to == destination).count() >= MOST {
+    if held
+        .held
+        .keys()
+        .filter(|(to, ..)| to == destination)
+        .count()
+        >= MOST
+    {
         return Err(format!(
             "{MOST} requests wait for that orchestrator already: it has to deal with them before more come"
         ));
     }
-    held.insert(key, (conversation.to_owned(), text.to_owned()));
+    held.held.insert(
+        key,
+        Kept {
+            conversation: conversation.to_owned(),
+            text: text.to_owned(),
+            state: RequestState::Pending,
+        },
+    );
     Ok(false)
 }
 
@@ -95,18 +131,18 @@ fn checked<'a>(id: &'a str, text: &'a str) -> Result<(&'a str, &'a str), String>
 
 /// What waits for project `destination`, oldest sender first.
 pub(crate) fn listed(destination: &str) -> ForwardedRequests {
-    let held = requests()
-        .lock()
-        .map(|held| held.clone())
-        .unwrap_or_default();
+    let held = requests().lock();
     let mut requests: Vec<ForwardedRequest> = held
+        .as_deref()
+        .map(|held| held.held.iter())
         .into_iter()
+        .flatten()
         .filter(|((to, ..), _)| to == destination)
-        .map(|((_, from, id), (conversation, text))| ForwardedRequest {
-            from,
-            id,
-            conversation,
-            text,
+        .map(|((_, from, id), kept)| ForwardedRequest {
+            from: from.clone(),
+            id: id.clone(),
+            conversation: kept.conversation.clone(),
+            text: kept.text.clone(),
         })
         .collect();
     requests.sort_by(|a, b| (&a.from, &a.id).cmp(&(&b.from, &b.id)));
@@ -115,11 +151,25 @@ pub(crate) fn listed(destination: &str) -> ForwardedRequests {
 
 /// Lets go of request `id` from `origin` for project `destination`: the
 /// others stay. Answers whether there was one.
-pub(crate) fn dropped(destination: &str, origin: &str, id: &str) -> bool {
-    requests().lock().is_ok_and(|mut held| {
-        held.remove(&(destination.to_owned(), origin.to_owned(), id.to_owned()))
-            .is_some()
-    })
+pub(crate) fn dropped(destination: &str, origin: &str, id: &str) -> Result<bool, RpcError> {
+    let mut held = requests().lock().map_err(|_| {
+        RpcError::new(
+            ErrorCode::Internal,
+            "the requests could not be read".to_owned(),
+        )
+    })?;
+    let key = (destination.to_owned(), origin.to_owned(), id.to_owned());
+    if held
+        .held
+        .get(&key)
+        .is_some_and(|request| matches!(request.state, RequestState::Sending(_)))
+    {
+        return Err(RpcError::new(
+            ErrorCode::Conflict,
+            "that request is being sent".to_owned(),
+        ));
+    }
+    Ok(held.held.remove(&key).is_some())
 }
 
 /// `forwarded.list` — what other orchestrators forwarded to this one.
@@ -139,7 +189,7 @@ pub async fn forwarded_drop(
     id: String,
 ) -> Result<(), RpcError> {
     crate::off_main::blocking(move || {
-        dropped(&project_id, &from, &id);
+        dropped(&project_id, &from, &id)?;
         let _ = app.emit(FORWARDED, &project_id);
         Ok(())
     })
@@ -156,27 +206,71 @@ pub(crate) fn prompt_of(from: &str, text: &str) -> String {
     )
 }
 
-/// The prompt of the turn that sends request `id` from `from` waiting for
-/// `destination`, with `text` as the person left it: nothing when it is no
-/// longer there (sent already, or let go) or `text` may not be sent.
+/// A request reserved for one turn, identified by its generation.
+#[derive(Debug)]
+pub(crate) struct Reserved {
+    generation: u64,
+    prompt: String,
+}
+
+/// Reserves request `id` atomically and returns its prompt. A request already
+/// being sent cannot be sent or discarded again.
 pub(crate) fn to_send(
     destination: &str,
     from: &str,
     id: &str,
     text: &str,
-) -> Result<String, RpcError> {
-    if !listed(destination)
-        .requests
-        .iter()
-        .any(|one| one.from == from && one.id == id)
-    {
-        return Err(RpcError::new(
+) -> Result<Reserved, RpcError> {
+    let (id, text) = checked(id, text).map_err(|why| RpcError::new(ErrorCode::Invalid, why))?;
+    let mut held = requests().lock().map_err(|_| {
+        RpcError::new(
+            ErrorCode::Internal,
+            "the requests could not be read".to_owned(),
+        )
+    })?;
+    let key = (destination.to_owned(), from.to_owned(), id.to_owned());
+    let request = held.held.get(&key).ok_or_else(|| {
+        RpcError::new(
             ErrorCode::NotFound,
             "that request is not waiting any more".to_owned(),
+        )
+    })?;
+    if matches!(request.state, RequestState::Sending(_)) {
+        return Err(RpcError::new(
+            ErrorCode::Conflict,
+            "that request is being sent already".to_owned(),
         ));
     }
-    let (_, text) = checked(id, text).map_err(|why| RpcError::new(ErrorCode::Invalid, why))?;
-    Ok(prompt_of(from, text))
+    let generation = held.next_generation();
+    let request = held.held.get_mut(&key).expect("the request was checked");
+    request.text = text.to_owned();
+    request.state = RequestState::Sending(generation);
+    Ok(Reserved {
+        generation,
+        prompt: prompt_of(from, text),
+    })
+}
+
+fn put_back(key: &Key, generation: u64) {
+    if let Ok(mut held) = requests().lock() {
+        if let Some(request) = held
+            .held
+            .get_mut(key)
+            .filter(|request| request.state == RequestState::Sending(generation))
+        {
+            request.state = RequestState::Pending;
+        }
+    }
+}
+
+fn remove_started(key: &Key, generation: u64) -> bool {
+    requests().lock().is_ok_and(|mut held| {
+        let reserved = held
+            .held
+            .get(key)
+            .is_some_and(|request| request.state == RequestState::Sending(generation));
+        reserved && held.held.remove(key).is_some()
+    })
 }
 
 /// Runs the turn of a request with `run`, which is given what to say when the
@@ -187,6 +281,7 @@ pub(crate) async fn launched<Run, Turn>(
     destination: &str,
     from: &str,
     id: &str,
+    generation: u64,
     told: impl Fn() + Send + Sync + 'static,
     run: Run,
 ) -> Result<(), RpcError>
@@ -200,9 +295,11 @@ where
         (destination.to_owned(), from.to_owned(), id.to_owned()),
         tell.clone(),
     );
+    let began = key.clone();
     let started: Arc<dyn Fn() + Send + Sync> = Arc::new(move || {
-        dropped(&key.0, &key.1, &key.2);
-        told();
+        if remove_started(&began, generation) {
+            told();
+        }
         if let Some(tell) = answer.lock().ok().and_then(|mut tell| tell.take()) {
             let _ = tell.send(Ok(()));
         }
@@ -211,6 +308,7 @@ where
     tauri::async_runtime::spawn(async move {
         let ended = turn.await;
         if let Some(tell) = tell.lock().ok().and_then(|mut tell| tell.take()) {
+            put_back(&key, generation);
             let _ = tell.send(ended);
         }
     });
@@ -236,8 +334,7 @@ pub async fn forwarded_send(
     text: String,
 ) -> Result<ForwardedSent, RpcError> {
     let at = project_id.clone();
-    let (conversation, from, id, ask) = crate::off_main::blocking(move || {
-        let prompt = to_send(&at, &from, &id, &text)?;
+    let (conversation, from, id, generation, ask) = crate::off_main::blocking(move || {
         let project = crate::projects::project_list_now()
             .map_err(|err| RpcError::new(ErrorCode::Internal, err.message))?
             .projects
@@ -246,9 +343,15 @@ pub async fn forwarded_send(
             .ok_or_else(|| RpcError::new(ErrorCode::NotFound, "no such orchestrator".to_owned()))?;
         let conversation =
             conversation_of(&project).map_err(|why| RpcError::new(ErrorCode::Invalid, why))?;
-        let ask = crate::remote_talk::devpits_turn(&at, &conversation, &prompt)
-            .map_err(|why| RpcError::new(ErrorCode::Invalid, why))?;
-        Ok((conversation, from, id, ask))
+        let reserved = to_send(&at, &from, &id, &text)?;
+        let ask = match crate::remote_talk::devpits_turn(&at, &conversation, &reserved.prompt) {
+            Ok(ask) => ask,
+            Err(why) => {
+                put_back(&(at.clone(), from.clone(), id.clone()), reserved.generation);
+                return Err(RpcError::new(ErrorCode::Invalid, why));
+            }
+        };
+        Ok((conversation, from, id, reserved.generation, ask))
     })
     .await?;
     let (told, turn_app, at) = (app.clone(), app, conversation.clone());
@@ -256,6 +359,7 @@ pub async fn forwarded_send(
         &project_id,
         &from,
         &id,
+        generation,
         {
             let project = project_id.clone();
             move || {

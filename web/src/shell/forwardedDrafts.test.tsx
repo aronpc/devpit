@@ -98,6 +98,23 @@ describe('requests forwarded to an orchestrator', () => {
     expect((screen.getByRole('textbox') as HTMLTextAreaElement).value).toBe('first')
   })
 
+  it('send and discard wait while a send is pending', async () => {
+    kept = [request('orchestrator-a', '1', 'first')]
+    let finish: ((value: { conversation: string }) => void) | undefined
+    forwardedSend.mockImplementationOnce(
+      () => new Promise((resolve) => (finish = resolve)),
+    )
+    render(<ForwardedDrafts projectId="prj_1" conversation="conv_1" />)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Send' }))
+    await waitFor(() => expect(forwardedSend).toHaveBeenCalledTimes(1))
+    expect((screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement).disabled).toBe(true)
+    expect((screen.getByRole('button', { name: 'Discard' }) as HTMLButtonElement).disabled).toBe(true)
+
+    finish?.({ conversation: 'conv_1' })
+    await waitFor(() => expect((screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement).disabled).toBe(false))
+  })
+
   it('mounting sends nothing', async () => {
     kept = [request('orchestrator-a', '1', 'please do it')]
     render(<ForwardedDrafts projectId="prj_1" conversation="conv_1" />)
