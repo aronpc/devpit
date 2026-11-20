@@ -32,7 +32,7 @@ pub struct RunRow {
 /// `ORDER BY started_at DESC, id DESC` is a coin toss wearing the clothes of
 /// a tiebreak. It was in three queries and passed on Linux for a year.
 /// `rowid` is insertion order and cannot tie.
-fn now() -> i64 {
+pub(crate) fn now() -> i64 {
     std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .map(|elapsed| elapsed.as_secs() as i64)

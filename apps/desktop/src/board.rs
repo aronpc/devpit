@@ -30,6 +30,7 @@ pub(crate) fn state_of(raw: &str) -> RunState {
         "failed" => RunState::Failed,
         "lost" => RunState::Lost,
         "cancelled" => RunState::Cancelled,
+        "paused" => RunState::Paused,
         _ => RunState::Running,
     }
 }

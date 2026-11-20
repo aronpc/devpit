@@ -24,6 +24,7 @@ mod plugins;
 pub mod project_runs;
 mod projects;
 mod reminders;
+mod run_attempts;
 mod runs;
 pub mod search_index;
 mod seen_sessions;
@@ -63,6 +64,16 @@ pub enum StoreError {
     #[error("a run is already going on this card")]
     AlreadyRunning,
 
+    /// The attempt this ask would continue already has its successor. The
+    /// chain is a line (`run_one_successor`): one attempt, one successor.
+    #[error("that attempt already has its successor")]
+    AlreadyContinued,
+
+    /// A switch away from a pause was asked of a run that is not paused. The
+    /// pause is what offers the switch; anything else has nothing to switch.
+    #[error("only a paused attempt can be switched away from")]
+    NotPaused,
+
     /// Cards that would wait on each other in a circle, which never starts.
     #[error("those cards would wait on each other in a circle")]
     Circle,
@@ -77,6 +88,7 @@ pub use host_links::HostLinkRow;
 pub use hosts::HostRow;
 pub use layouts::{PaneLayoutWrite, TabLayout};
 pub use plans::{NewCard, PlanRow, MOST_PLAN};
+pub use run_attempts::{AttemptCarry, AttemptRow, RunAsk, SwitchKind};
 pub use runs::RunRow;
 pub use seen_sessions::{SeenSessionRow, SessionSeen};
 pub use session_links::SessionLink;
