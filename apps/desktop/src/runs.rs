@@ -61,11 +61,12 @@ pub fn start_chained(
         }
     }
 
-    let run_id = store.start_run(card_id, &step.id, came_from)?;
+    let begun = crate::run_start::prepare(store, card_id, step, came_from)?;
+    let run_id = begun.run_id;
     // A session of its own for every run: two runs of one card are two
     // conversations, and one id for both would write the second over the first.
     let session_id = steps::fresh_session_id();
-    if step.kind == StepKind::Agent {
+    if step.kind == StepKind::Agent && !begun.paused {
         store.set_run_session(&run_id, &session_id)?;
     }
 
@@ -100,8 +101,16 @@ pub fn start_chained(
         &app,
         card_id,
         &run_reference(store, &run_id),
-        Doing::Working,
+        if begun.paused {
+            Doing::Done
+        } else {
+            Doing::Working
+        },
     );
+
+    if begun.paused {
+        return opened(store, card_id, &run_id, step);
+    }
 
     // Its own connection, moved in rather than shared, and the row it has to
     // close is already committed.
@@ -120,6 +129,7 @@ pub fn start_chained(
         card_id: card_id.to_owned(),
         session_id,
         step: step.clone(),
+        fixed_agent: begun.fixed,
         hops,
     };
     std::thread::spawn(move || working::carry_out(carrying, &own));

@@ -10,10 +10,10 @@
 //! record by a path the sync would have refused.
 
 use devpit_rpc::Declared;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 /// What a run remembers about the profile it ran under.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct PinnedProfile {
     pub id: String,
@@ -61,10 +61,6 @@ fn without_credentials(url: &str) -> String {
 }
 
 /// The snapshot for one step: `step_model` wins over the profile's own.
-#[cfg_attr(
-    not(test),
-    expect(dead_code, reason = "caller arrives in T4 (lp#1480)")
-)]
 pub(crate) fn pin(declared: &Declared, step_model: Option<&str>, home: &str) -> PinnedProfile {
     PinnedProfile {
         id: declared.id.clone(),

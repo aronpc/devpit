@@ -176,6 +176,14 @@ fn memory() -> &'static Mutex<Memory> {
     MEMORY.get_or_init(Mutex::default)
 }
 
+/// A fresh quota already read for this account, if one is remembered.
+pub(crate) fn remembered(dir: &str) -> Option<AccountQuota> {
+    memory()
+        .lock()
+        .ok()
+        .and_then(|memory| memory.kept(dir, Instant::now()))
+}
+
 fn read_credentials(dir: &str) -> Option<String> {
     let file = std::fs::File::open(std::path::Path::new(dir).join(".credentials.json")).ok()?;
     let mut text = String::new();

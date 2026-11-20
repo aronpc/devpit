@@ -7,15 +7,25 @@ use devpit_rpc::Step;
 use super::context::{context_of, injected, Checkout};
 use super::Finished;
 
+pub struct Starting<'a> {
+    pub run_id: &'a str,
+    pub session_id: &'a str,
+    pub fixed: Option<&'a crate::run_start::FixedAgent>,
+}
+
 pub fn run(
     store: &Store,
     card_id: &str,
     step: &Step,
-    run_id: &str,
-    session_id: &str,
+    starting: Starting<'_>,
     mut on_progress: impl FnMut(&str),
     on_start: impl FnMut(u32),
 ) -> Result<Finished, String> {
+    let Starting {
+        run_id,
+        session_id,
+        fixed,
+    } = starting;
     let config = super::agent_config::readable(&step.config)?;
 
     // No ceiling, no run. Said here rather than after the money is spent.
@@ -80,10 +90,14 @@ pub fn run(
     // Which account this spends through. A named profile that has gone is an
     // error rather than a silent fall back to the default: the difference
     // between them is somebody's bill.
-    let runner = match &config.profile {
-        Some(id) => Some(crate::agent_profiles::runner_for(store, id)?),
-        None => None,
+    let current_runner = match (&fixed, &config.profile) {
+        (None, Some(id)) => Some(crate::agent_profiles::runner_for(store, id)?),
+        _ => None,
     };
+    let runner = fixed.map(|fixed| &fixed.runner).or(current_runner.as_ref());
+    let model = fixed
+        .and_then(|fixed| fixed.model.as_deref())
+        .or(config.model.as_deref());
 
     let outcome = agent::run_turn_cancellable(
         &agent::Turn {
@@ -92,11 +106,11 @@ pub fn run(
             agents: argument.as_deref(),
             schema: config.schema.as_deref(),
             budget_usd: Some(cap),
-            model: config.model.as_deref(),
+            model,
             settings: settings.as_deref(),
             session_id: Some(session_id),
             env: &context,
-            runner: runner.as_ref(),
+            runner,
         },
         |line| {
             // Only the assistant's own words. The stream also carries hook
@@ -109,6 +123,9 @@ pub fn run(
         on_start,
     )
     .map_err(|err| err.to_string())?;
+
+    crate::run_start::record_effective_model(store, run_id, outcome.model.as_deref())
+        .map_err(|err| err.to_string())?;
 
     // The CLI's own word for the session wins: its transcript is named by it.
     let said = outcome.session_id.as_deref().unwrap_or(session_id);
