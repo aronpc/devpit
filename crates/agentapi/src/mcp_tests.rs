@@ -32,6 +32,57 @@ fn listed(offer: &Offer) -> Vec<String> {
         .collect()
 }
 
+struct MemoryInput(std::io::Cursor<Vec<u8>>);
+
+impl std::io::Read for MemoryInput {
+    fn read(&mut self, buffer: &mut [u8]) -> std::io::Result<usize> {
+        self.0.read(buffer)
+    }
+}
+
+impl BufRead for MemoryInput {
+    fn fill_buf(&mut self) -> std::io::Result<&[u8]> {
+        self.0.fill_buf()
+    }
+
+    fn consume(&mut self, amount: usize) {
+        self.0.consume(amount);
+    }
+
+    fn read_line(&mut self, _: &mut String) -> std::io::Result<usize> {
+        panic!("the message was read into a String before its size was bounded")
+    }
+
+    fn read_until(&mut self, _: u8, _: &mut Vec<u8>) -> std::io::Result<usize> {
+        panic!("read_until was called without a size limit")
+    }
+}
+
+fn answered_messages(input: impl BufRead, ask: Ask) -> Vec<Value> {
+    let messages = Arc::new(Mutex::new(Vec::<Value>::new()));
+    let out: Out = {
+        let messages = messages.clone();
+        Arc::new(move |message: &str| {
+            messages
+                .lock()
+                .expect("messages")
+                .push(serde_json::from_str(message).expect("json"));
+            true
+        })
+    };
+    let home = tempfile::tempdir().expect("home");
+    answered(
+        input,
+        &ask,
+        true,
+        &Mutex::new(Watch::new(home.path())),
+        &AtomicBool::new(true),
+        &out,
+    );
+    let answered = messages.lock().expect("messages").clone();
+    answered
+}
+
 #[test]
 fn the_handshake_offers_tools_and_says_what_devpit_is() {
     let said = reply(
@@ -385,6 +436,49 @@ fn another_call_is_answered_while_evidence_runs() {
         .as_str()
         .unwrap_or_default()
         .contains("\"ran\""));
+}
+
+#[test]
+fn a_line_over_the_ceiling_is_refused_and_the_next_answered() {
+    let next = r#"{"jsonrpc":"2.0","id":2,"method":"ping"}"#;
+    let input = format!("{}\n{next}\n", "x".repeat(MAX_MESSAGE_BYTES + 1));
+    let answers = answered_messages(
+        MemoryInput(std::io::Cursor::new(input.into_bytes())),
+        Arc::new(never),
+    );
+
+    assert_eq!(answers[0]["error"]["code"], -32600);
+    assert_eq!(answers[1]["id"], 2);
+    assert_eq!(answers[1]["result"], json!({}));
+}
+
+#[test]
+fn session_message_over_its_ceilings_is_refused_before_the_app() {
+    let refused = |arguments: Value| {
+        let input = json!({
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "tools/call",
+            "params": { "name": "devpit_session_message", "arguments": arguments }
+        })
+        .to_string();
+        let answers = answered_messages(input.as_bytes(), Arc::new(never));
+        answers[0].clone()
+    };
+
+    let id = refused(json!({ "id": "x".repeat(101), "text": "hello" }));
+    assert_eq!(id["result"]["isError"], true);
+    assert!(id["result"]["content"][0]["text"]
+        .as_str()
+        .unwrap_or_default()
+        .contains("id"));
+
+    let text = refused(json!({ "id": "request-1", "text": "x".repeat(4001) }));
+    assert_eq!(text["result"]["isError"], true);
+    assert!(text["result"]["content"][0]["text"]
+        .as_str()
+        .unwrap_or_default()
+        .contains("text"));
 }
 
 /// A tool's answer reaches the agent as its compact summary, not pretty JSON.
