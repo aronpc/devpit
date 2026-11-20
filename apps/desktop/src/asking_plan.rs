@@ -2,7 +2,9 @@
 //!
 //! Not on the hook, like the other questions: only the prompt's answer can
 //! take the session out of plan mode, so an approved plan went on planning.
-//! A CLI with no hook asks every question on its prompt, and they come here too.
+//! A question to the person rides the same prompt — it is where a remote
+//! control answers from, so it is held for whoever is there. A CLI with no
+//! hook asks every question on its prompt, and they come here too.
 
 use std::sync::Arc;
 
@@ -10,7 +12,7 @@ use devpit_agentcli::control::{Asker, Control, Prompt};
 use serde_json::{json, Value};
 
 use crate::asking::{Answer, Asking, Question, ASKING_MODE};
-use crate::asking_picks::Picks;
+use crate::asking_picks::{answered_input, to_the_person, Picks};
 use crate::asking_waiting::Waiting;
 
 const PLAN: &str = "ExitPlanMode";
@@ -18,12 +20,20 @@ const PLAN: &str = "ExitPlanMode";
 /// What the agent reads when the person refused without a word.
 const NOT_YET: &str = "The person did not approve the plan. Keep planning.";
 
-/// Takes a turn's plan prompts to the window, and every prompt when its CLI
-/// `asks` there; any other prompt is refused as before.
+/// Whether this prompt is answered here rather than refused: a plan, whose
+/// only way out of plan mode is its own prompt; a question to the person;
+/// and anything when its CLI asks every question here.
+fn takes(tool: &str, asks: bool) -> bool {
+    tool == PLAN || to_the_person(tool) || asks
+}
+
+/// Takes a turn's plan prompts and its questions to the person to the
+/// window, and every prompt when its CLI `asks` there; any other prompt is
+/// refused as before.
 pub(crate) fn plans(app: &tauri::AppHandle, asks: bool, conversation_id: &str) -> Asker {
     let (app, conversation) = (app.clone(), conversation_id.to_owned());
     Arc::new(move |prompt: Prompt, control: &Control| {
-        if prompt.tool != PLAN && !asks {
+        if !takes(&prompt.tool, asks) {
             return false;
         }
         let (app, control, conversation) = (app.clone(), control.clone(), conversation.clone());
@@ -45,7 +55,8 @@ fn put(app: &tauri::AppHandle, control: &Control, prompt: Prompt, conversation: 
         conversation_id: Some(conversation),
     };
     let plan = prompt.tool == PLAN;
-    if already_allowed(&app.state::<crate::asking_kept::Kept>(), &question, plan) {
+    let person = to_the_person(&prompt.tool);
+    if already_allowed(&app.state::<crate::asking_kept::Kept>(), &question) {
         control.answer(&prompt.request_id, json!({ "behavior": "allow" }));
         return;
     }
@@ -65,9 +76,12 @@ fn put(app: &tauri::AppHandle, control: &Control, prompt: Prompt, conversation: 
                 asking.ask_from_now(&question.session_id, true);
             }
             let picks = app.state::<Picks>();
-            let said = match plan {
-                true => plan_reply(&picks, &question.id, prompt.input, answer),
-                false => approval_reply(&picks, &question.id, answer),
+            let said = if plan {
+                plan_reply(&picks, &question.id, prompt.input, answer)
+            } else if person {
+                person_reply(&picks, &question.id, &question.input, answer)
+            } else {
+                approval_reply(&picks, &question.id, answer)
             };
             control.answer(&prompt.request_id, said);
         },
@@ -99,16 +113,13 @@ fn held_for_a_late_window(
 }
 
 /// Allowed for the rest of this conversation, as the hook does: never a plan,
-/// never a request for more reach than the call, and never one whose CLI
-/// says it asks every time (`"always": false`).
-pub(crate) fn already_allowed(
-    kept: &crate::asking_kept::Kept,
-    question: &Question,
-    plan: bool,
-) -> bool {
+/// never a question to the person, never a request for more reach than the
+/// call, and never one whose CLI says it asks every time (`"always": false`).
+pub(crate) fn already_allowed(kept: &crate::asking_kept::Kept, question: &Question) -> bool {
+    let never_kept = question.tool == PLAN || to_the_person(&question.tool);
     let each_time = serde_json::from_str::<Value>(&question.input)
         .is_ok_and(|input| input.get("grants").is_some() || input["always"] == false);
-    !plan && !each_time && kept.covers(&question.session_id, &question.tool, &question.input)
+    !never_kept && !each_time && kept.covers(&question.session_id, &question.tool, &question.input)
 }
 
 /// Any other prompt's answer: allowed, or refused with why.
@@ -118,6 +129,25 @@ pub(crate) fn approval_reply(picks: &Picks, id: &str, answer: Answer) -> Value {
     }
     let why = picks.reason(id).filter(|why| !why.is_empty());
     json!({ "behavior": "deny", "message": why.map_or_else(|| "Refused in devpit".to_owned(), |why| format!("Refused in devpit: {why}")) })
+}
+
+/// The prompt's answer to a question put to the person: allowed, their
+/// picks in as the tool's `answers`; or refused, with why. An allow that
+/// chose nothing still answers in the shape the CLI's prompt reads, every
+/// question in it answered with nothing.
+pub(crate) fn person_reply(picks: &Picks, id: &str, input: &str, answer: Answer) -> Value {
+    let why = picks.reason(id).filter(|why| !why.is_empty());
+    if answer == Answer::Deny {
+        picks.taken(id);
+        let message = why.map_or_else(
+            || "Refused in devpit".to_owned(),
+            |why| format!("Refused in devpit: {why}"),
+        );
+        return json!({ "behavior": "deny", "message": message });
+    }
+    let chosen = picks.taken(id).unwrap_or_default();
+    let answered = answered_input(input, chosen).unwrap_or_else(|| json!({}));
+    json!({ "behavior": "allow", "updatedInput": answered })
 }
 
 /// The prompt's answer: the plan approved as written or as the person edited

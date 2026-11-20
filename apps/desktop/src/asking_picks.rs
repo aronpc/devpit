@@ -98,21 +98,12 @@ fn refused_because(why: &str) -> String {
     .to_string()
 }
 
-/// The hook's reply. Allowed with picks, they go in as the tool's `answers`,
-/// keyed by each question as it was asked, several choices joined by ", ".
-pub fn reply_for(picks: &Picks, id: &str, input: &str, answer: Answer) -> String {
-    let why = picks.reason(id);
-    if let (Answer::Deny, Some(why)) = (answer, why.filter(|why| !why.is_empty())) {
-        picks.taken(id);
-        return refused_because(&why);
-    }
-    let chosen = picks.taken(id);
-    let Some(chosen) = chosen.filter(|_| answer == Answer::Allow) else {
-        return decision(answer);
-    };
-    let Ok(mut input) = serde_json::from_str::<serde_json::Value>(input) else {
-        return decision(answer);
-    };
+/// The tool's input as the CLI sent it, with the person's answers in: keyed
+/// by each question's own words, several choices joined by ", ". None when
+/// the input is not a question's shape. The hook's reply and the prompt's
+/// answer both build on it, so the two never drift apart.
+pub(crate) fn answered_input(input: &str, chosen: Vec<Vec<String>>) -> Option<serde_json::Value> {
+    let mut input = serde_json::from_str::<serde_json::Value>(input).ok()?;
     let asked = input
         .get("questions")
         .and_then(serde_json::Value::as_array)
@@ -124,11 +115,30 @@ pub fn reply_for(picks: &Picks, id: &str, input: &str, answer: Answer) -> String
         .map(|(question, labels)| (question.to_owned(), labels.join(", ").into()))
         .collect();
     input["answers"] = answers.into();
+    Some(input)
+}
+
+/// The hook's reply. Allowed with picks, they go in as the tool's `answers`,
+/// keyed by each question as it was asked, several choices joined by ", ".
+pub fn reply_for(picks: &Picks, id: &str, input: &str, answer: Answer) -> String {
+    let why = picks.reason(id);
+    if let (Answer::Deny, Some(why)) = (answer, why.filter(|why| !why.is_empty())) {
+        picks.taken(id);
+        return refused_because(&why);
+    }
+    // The picks go out with the answer, whichever it is: kept for no one.
+    let chosen = picks.taken(id);
+    let Some(updated) = chosen
+        .filter(|_| answer == Answer::Allow)
+        .and_then(|chosen| answered_input(input, chosen))
+    else {
+        return decision(answer);
+    };
     serde_json::json!({ "hookSpecificOutput": {
         "hookEventName": "PreToolUse",
         "permissionDecision": "allow",
         "permissionDecisionReason": "answered in devpit",
-        "updatedInput": input,
+        "updatedInput": updated,
     }})
     .to_string()
 }
