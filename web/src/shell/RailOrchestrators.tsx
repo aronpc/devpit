@@ -142,7 +142,9 @@ export function RailOrchestrators({
         </button>
       </div>
       {!folded && (
-        <div ref={rows}>
+        /* Rows and the button that makes another scroll together, so with
+           many the group keeps its height and the projects below stay. */
+        <div className="rail__orchrows" ref={rows}>
           {mine.map((one) => (
           <button
             key={one.id}
@@ -178,20 +180,18 @@ export function RailOrchestrators({
             <ForwardedMark projectId={one.id} />
           </button>
           ))}
-        </div>
-      )}
-      {!folded && (
-        <button className="rail__i rail__orchnew" data-first={mine.length === 0 ? 'true' : undefined} onClick={() => setMaking(true)} title={t('workspace.railOrchestrators.new')}>
-          <span className="rail__pill" />
-          <span className="rail__ico">
-            <span className="pmark pmark--orch pmark--orchnew">
-              <Plus size={14} />
+          <button className="rail__i rail__orchnew" data-first={mine.length === 0 ? 'true' : undefined} onClick={() => setMaking(true)} title={t('workspace.railOrchestrators.new')}>
+            <span className="rail__pill" />
+            <span className="rail__ico">
+              <span className="pmark pmark--orch pmark--orchnew">
+                <Plus size={14} />
+              </span>
             </span>
-          </span>
-          <span className="rail__text">
-            <span className="rail__n">{t('workspace.railOrchestrators.new')}</span>
-          </span>
-        </button>
+            <span className="rail__text">
+              <span className="rail__n">{t('workspace.railOrchestrators.new')}</span>
+            </span>
+          </button>
+        </div>
       )}
       {(making || account) && (
         <OrchestratorDialog
