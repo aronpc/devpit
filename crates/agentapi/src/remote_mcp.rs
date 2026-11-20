@@ -26,7 +26,7 @@ pub const ALLOWED: [&str; 5] = [
 const PROJECT: &str = "The project, by id or name, as devpit_projects lists it.";
 
 /// The allowed tools, described for a client that stands in no project.
-const TOOLS: [Tool; 5] = [
+pub(crate) const TOOLS: [Tool; 5] = [
     Tool {
         name: "devpit_projects",
         method: "projects",
@@ -64,6 +64,17 @@ const INSTRUCTIONS: &str = "devpit on the person's own machine, read from anothe
 /// One JSON-RPC message from the client in, at most one out. `ask` is the
 /// app, and is asked only for an allowed tool.
 pub fn handle(line: &str, ask: &dyn Fn(&str, Value) -> Result<Value, String>) -> Option<String> {
+    handle_in(crate::mcp::locale(), line, ask)
+}
+
+/// [`handle`], answering in `language`: `pt-BR` says the tools' and the
+/// server's own words in Portuguese, anything else in English.
+pub fn handle_in(
+    language: &str,
+    line: &str,
+    ask: &dyn Fn(&str, Value) -> Result<Value, String>,
+) -> Option<String> {
+    let portuguese = crate::mcp::locale_of(Some(language)) == "pt-BR";
     let Ok(message) = serde_json::from_str::<Value>(line) else {
         return Some(error(Value::Null, -32700, "that is not JSON"));
     };
@@ -79,16 +90,23 @@ pub fn handle(line: &str, ask: &dyn Fn(&str, Value) -> Result<Value, String>) ->
             "protocolVersion": params.get("protocolVersion").and_then(Value::as_str).unwrap_or(PROTOCOL),
             "capabilities": { "tools": {} },
             "serverInfo": { "name": "devpit", "version": env!("CARGO_PKG_VERSION") },
-            "instructions": INSTRUCTIONS,
+            "instructions": if portuguese { crate::rest_pt_br::REMOTE_INSTRUCTIONS } else { INSTRUCTIONS },
         }),
         "ping" => json!({}),
         "tools/list" => {
-            json!({ "tools": TOOLS.iter().filter(|tool| ALLOWED.contains(&tool.name)).map(|tool| json!({
-            "name": tool.name,
-            "description": tool.description,
-            "inputSchema": (tool.input)(),
-            "annotations": { "readOnlyHint": true },
-        })).collect::<Vec<_>>() })
+            json!({ "tools": TOOLS.iter().filter(|tool| ALLOWED.contains(&tool.name)).map(|tool| {
+                let said = portuguese.then(|| crate::rest_pt_br::remote(tool.name)).flatten();
+                let mut input = (tool.input)();
+                if let Some(said) = said {
+                    crate::mcp::says(said.params, "", &mut input);
+                }
+                json!({
+                    "name": tool.name,
+                    "description": said.map_or(tool.description, |said| said.description),
+                    "inputSchema": input,
+                    "annotations": { "readOnlyHint": true },
+                })
+            }).collect::<Vec<_>>() })
         }
         "tools/call" => call(&params, ask),
         _ => {

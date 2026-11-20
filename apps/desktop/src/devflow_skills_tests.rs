@@ -39,7 +39,15 @@ fn an_active_project_gets_its_skills_its_own_layer_first() {
     let store = crate::projects::store().expect("store");
     crate::devflow_asks::remember(&store, &here.id, Ask::Enable, false).expect("forgot");
     let ask = |method: &str, params: Value| {
-        crate::devflow::respond_from(None, method, &here, dir.path(), None, &params)
+        crate::devflow::respond_from(
+            devpit_core::locale::Locale::En,
+            None,
+            method,
+            &here,
+            dir.path(),
+            None,
+            &params,
+        )
     };
 
     // The file says enabled, but the person has not clicked: none listed,
@@ -120,7 +128,15 @@ fn enabled_in(id: &str) -> (tempfile::TempDir, Project) {
 fn the_review_skills_parts_are_served_on_demand() {
     let (dir, here) = enabled_in("prj_devflow_review_parts");
     let ask = |method: &str, params: Value| {
-        crate::devflow::respond_from(None, method, &here, dir.path(), None, &params)
+        crate::devflow::respond_from(
+            devpit_core::locale::Locale::En,
+            None,
+            method,
+            &here,
+            dir.path(),
+            None,
+            &params,
+        )
     };
 
     let core = ask("devflow_skill", json!({ "name": "devflow-review" })).expect("the skill");
@@ -176,7 +192,15 @@ fn a_projects_own_review_skill_serves_its_own_parts_first() {
     std::fs::write(folder.join("SKILL.md"), ours).expect("skill");
     std::fs::write(folder.join("retro.md"), "Our retro.\n").expect("part");
     let ask = |params: Value| {
-        crate::devflow::respond_from(None, "devflow_skill", &here, dir.path(), None, &params)
+        crate::devflow::respond_from(
+            devpit_core::locale::Locale::En,
+            None,
+            "devflow_skill",
+            &here,
+            dir.path(),
+            None,
+            &params,
+        )
     };
 
     let retro = ask(json!({ "name": "devflow-review", "part": "retro" })).expect("ours");

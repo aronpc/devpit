@@ -10,7 +10,16 @@ use serde_json::{json, Value};
 const UNIT: &str = r#"printf '<testsuite><testcase classname="cli" name="rename changes the title"/></testsuite>' > "$DEVPIT_REPORT_DIR/report.xml""#;
 
 fn ask(project: &Project, root: &Path, method: &str, params: Value) -> Value {
-    crate::devflow::respond_from(None, method, project, root, None, &params).expect(method)
+    crate::devflow::respond_from(
+        devpit_core::locale::Locale::En,
+        None,
+        method,
+        project,
+        root,
+        None,
+        &params,
+    )
+    .expect(method)
 }
 
 /// Sabotage: make `Board::create` drop the epic, or point the dialect at
@@ -71,7 +80,9 @@ fn a_brief_becomes_a_planned_card_that_finishes_only_through_the_gate() {
         .set_card_front(&card, Some(&root.display().to_string()), Some("HEAD"))
         .expect("its checkout");
 
-    let refused = crate::devflow_gate::may_finish(&project, &card, &root).expect_err("no run");
+    let refused =
+        crate::devflow_gate::may_finish(devpit_core::locale::Locale::En, &project, &card, &root)
+            .expect_err("no run");
     assert!(refused.contains("the card stays where it is"), "{refused}");
     let ran = ask(
         &project,
@@ -85,7 +96,8 @@ fn a_brief_becomes_a_planned_card_that_finishes_only_through_the_gate() {
         .is_some_and(|run| !run.starts_with(".devflow")));
     let gate = ask(&project, &root, "devflow_gate", json!({ "card": card }));
     assert_eq!(gate["result"], "passed", "{gate}");
-    crate::devflow_gate::may_finish(&project, &card, &root).expect("finishes");
+    crate::devflow_gate::may_finish(devpit_core::locale::Locale::En, &project, &card, &root)
+        .expect("finishes");
     assert!(
         !root.join(".devflow").exists(),
         "nothing of devflow's own folder"

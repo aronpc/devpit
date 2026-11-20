@@ -75,6 +75,7 @@ fn a_range_is_reviewed_without_a_card_and_the_persons_checkout_never_moves() {
     .expect("no card");
 
     let said = respond_with(
+        devpit_core::locale::Locale::En,
         &project,
         &not_switched_on(),
         asked,
@@ -123,8 +124,16 @@ fn a_pull_request_is_read_in_a_worktree_of_devpits_and_held_to_its_body() {
         .expect("no card");
 
     // No devflow.yaml and no reviewer of the person's: the session reviews.
-    let said =
-        respond_with(&project, &State::Missing, asked, &nobody, &github, None).expect("reviewed");
+    let said = respond_with(
+        devpit_core::locale::Locale::En,
+        &project,
+        &State::Missing,
+        asked,
+        &nobody,
+        &github,
+        None,
+    )
+    .expect("reviewed");
 
     assert_eq!(said["reviewed"], "pr-7");
     assert!(said["pending"]

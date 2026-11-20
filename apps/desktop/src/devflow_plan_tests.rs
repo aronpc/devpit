@@ -43,6 +43,7 @@ fn titles(store: &Store, project: &Project) -> Vec<String> {
 
 fn epic(store: &Store, project: &Project) -> String {
     let said = respond(
+        Locale::En,
         None,
         "devflow_brief",
         project,
@@ -68,7 +69,8 @@ fn a_brief_becomes_an_epic_and_the_context_is_written_onto_it() {
     let (store, project) = project(dir.path());
     let epic = epic(&store, &project);
     let said = respond(
-        None,
+            Locale::En,
+            None,
         "devflow_brief",
         &project,
         &json!({ "card": epic, "context": "## Context\n### Facts\n- titles are indexed (`a.rs:1`)" }),
@@ -89,6 +91,7 @@ fn a_brief_becomes_an_epic_and_the_context_is_written_onto_it() {
     assert_eq!(titles(&store, &project).len(), 1);
 
     let elsewhere = respond(
+        Locale::En,
         None,
         "devflow_brief",
         &project,
@@ -109,6 +112,7 @@ fn a_brief_points_past_the_context_stage_when_it_is_off() {
     )
     .expect("yaml");
     let said = respond(
+        Locale::En,
         None,
         "devflow_brief",
         &project,
@@ -127,6 +131,7 @@ fn a_plan_is_a_preview_until_the_persons_yes_and_then_cards_that_wait_on_each_ot
     let epic = epic(&store, &project);
     let plan = |cards: Value, apply: bool| {
         respond(
+            Locale::En,
             None,
             "devflow_plan",
             &project,
@@ -207,6 +212,7 @@ fn a_plan_the_person_edited_and_created_on_the_board_is_the_agents_answer() {
     let (store, project) = project(dir.path());
     let epic = epic(&store, &project);
     respond(
+        Locale::En,
         None,
         "devflow_plan",
         &project,
@@ -225,6 +231,7 @@ fn a_plan_the_person_edited_and_created_on_the_board_is_the_agents_answer() {
     assert!(waiting(&store, &epic).is_none());
 
     let answer = respond(
+        Locale::En,
         None,
         "devflow_plan",
         &project,
@@ -256,6 +263,7 @@ fn the_brief_and_the_plan_wait_for_the_persons_click_on_devflow() {
     .expect("yaml");
     for method in ["devflow_brief", "devflow_plan", "devflow_evidence"] {
         let refused = crate::devflow::respond_from(
+            devpit_core::locale::Locale::En,
             None,
             method,
             &project,
@@ -276,13 +284,13 @@ fn the_orchestrator_passes_the_persons_yes_on_and_the_epic_quotes_it() {
     let (store, project) = project(dir.path());
     let epic = epic(&store, &project);
     let preview = json!({ "epic": epic, "cards": cards() });
-    respond(None, "devflow_plan", &project, &preview).expect("a preview");
+    respond(Locale::En, None, "devflow_plan", &project, &preview).expect("a preview");
 
     let bare = json!({ "epic": epic, "apply": true });
     assert!(relayed_refusal("devflow_plan", &bare).is_some());
     assert!(relayed_refusal("devflow_plan", &preview).is_none());
     let unquoted = json!({ "epic": epic, "apply": true, "approval": { "by": "orchestrator" } });
-    assert!(respond(None, "devflow_plan", &project, &unquoted).is_err());
+    assert!(respond(Locale::En, None, "devflow_plan", &project, &unquoted).is_err());
     assert!(relayed_refusal("devflow_plan", &unquoted).is_some());
 
     let yes = json!({
@@ -290,7 +298,7 @@ fn the_orchestrator_passes_the_persons_yes_on_and_the_epic_quotes_it() {
         "approval": { "by": "orchestrator", "quote": "pode criar os cards" },
     });
     assert!(relayed_refusal("devflow_plan", &yes).is_none());
-    let said = respond(None, "devflow_plan", &project, &yes).expect("created");
+    let said = respond(Locale::En, None, "devflow_plan", &project, &yes).expect("created");
     assert_eq!(said["applied"], true);
     assert_eq!(titles(&store, &project).len(), 4);
     let record: Value = serde_json::from_str(
@@ -319,6 +327,7 @@ fn cards_that_differ_from_the_preview_are_a_new_preview_even_with_the_persons_wo
     let (store, project) = project(dir.path());
     let epic = epic(&store, &project);
     respond(
+        Locale::En,
         None,
         "devflow_plan",
         &project,
@@ -328,6 +337,7 @@ fn cards_that_differ_from_the_preview_are_a_new_preview_even_with_the_persons_wo
     let mut other = cards();
     other[2]["title"] = json!("Matches are bold");
     let said = respond(
+        Locale::En,
         None,
         "devflow_plan",
         &project,
@@ -351,6 +361,7 @@ fn a_plan_waits_on_a_card_of_another_epic() {
     let epic = epic(&store, &project);
     let plan = |depends_on: &str, apply: bool| {
         respond(
+            Locale::En,
             None,
             "devflow_plan",
             &project,
@@ -393,7 +404,15 @@ fn a_plan_without_an_epic_is_a_preview_alone_and_needs_no_click() {
     let dir = tempfile::tempdir().expect("tempdir");
     let (store, project) = project(dir.path());
     let ask = |params: Value| {
-        crate::devflow::respond_from(None, "devflow_plan", &project, dir.path(), None, &params)
+        crate::devflow::respond_from(
+            devpit_core::locale::Locale::En,
+            None,
+            "devflow_plan",
+            &project,
+            dir.path(),
+            None,
+            &params,
+        )
     };
     let off = ask(json!({ "cards": cards() })).expect_err("off");
     assert!(off.contains("off in this project"), "{off}");
@@ -435,6 +454,7 @@ fn the_persons_edit_keeps_a_cards_abuse_cases_and_its_trust_boundary() {
         "abuse": ["a path outside the root is refused"], "boundary": true
     }]);
     respond(
+        Locale::En,
         None,
         "devflow_plan",
         &project,
@@ -460,4 +480,24 @@ fn the_persons_edit_keeps_a_cards_abuse_cases_and_its_trust_boundary() {
         body.contains("Abuse case: a path outside the root is refused"),
         "{body}"
     );
+}
+
+/// Sabotage: give `previewed` the English dialect whatever the session's
+/// language is, and the pt-BR session reads the engine's sentence in English.
+#[test]
+fn a_plan_refusal_is_said_in_the_calling_sessions_language() {
+    let refusal = |locale| {
+        previewed(
+            locale,
+            &json!({ "cards": [
+                { "key": "s1", "title": "The search box lists them", "depends_on": ["ghost"] },
+            ] }),
+        )
+        .expect_err("a card of no plan and no board")
+    };
+    let en = refusal(Locale::En);
+    let pt = refusal(Locale::PtBr);
+    assert!(en.contains("is not another card of this plan"), "{en}");
+    assert!(pt.contains("não é outro card deste plano"), "{pt}");
+    assert!(!pt.contains("is not another card"), "{pt}");
 }

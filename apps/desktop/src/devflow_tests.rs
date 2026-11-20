@@ -80,7 +80,16 @@ fn the_recommended_setup_runs_a_detected_e2e_at_release_and_judges_no_brief() {
     std::fs::write(dir.path().join("Makefile"), "test:\n\ttrue\ne2e:\n\ttrue\n").expect("makefile");
     let here = project("prj_devflow_release", dir.path());
     let ask = |params: Value| {
-        respond_from(None, "devflow_setup", &here, dir.path(), None, &params).expect("setup")
+        respond_from(
+            devpit_core::locale::Locale::En,
+            None,
+            "devflow_setup",
+            &here,
+            dir.path(),
+            None,
+            &params,
+        )
+        .expect("setup")
     };
     let names = |said: &Value, key: &str| -> Vec<String> {
         said[key]
@@ -131,7 +140,16 @@ fn a_setup_writes_only_when_applied_and_leaves_switching_on_to_the_click() {
     std::fs::write(dir.path().join("Makefile"), "test:\n\ttrue\n").expect("makefile");
     let here = project("prj_devflow_setup", dir.path());
     let ask = |method: &str, params: Value| {
-        respond_from(None, method, &here, dir.path(), None, &params).expect(method)
+        respond_from(
+            devpit_core::locale::Locale::En,
+            None,
+            method,
+            &here,
+            dir.path(),
+            None,
+            &params,
+        )
+        .expect(method)
     };
 
     let status = ask("devflow_status", json!({}));
@@ -215,7 +233,16 @@ fn the_offer_says_who_asks_and_an_orchestrator_is_offered_no_flow() {
     let dir = tempfile::tempdir().expect("tempdir");
     let mut here = project("prj_offer_seat", dir.path());
     let offer = |here: &Project| {
-        respond_from(None, "devflow_offer", here, dir.path(), None, &json!({})).expect("offer")
+        respond_from(
+            devpit_core::locale::Locale::En,
+            None,
+            "devflow_offer",
+            here,
+            dir.path(),
+            None,
+            &json!({}),
+        )
+        .expect("offer")
     };
     let plain = offer(&here);
     assert_eq!(plain["offer"], "off");
@@ -285,6 +312,7 @@ fn a_change_that_weakens_what_the_team_locked_is_refused_before_it_is_written() 
     let here = project("prj_devflow_locked", &root);
 
     let refused = respond_from(
+        devpit_core::locale::Locale::En,
         None,
         "devflow_set",
         &here,
@@ -352,7 +380,16 @@ fn a_setup_apply_writes_nothing_when_the_setup_changed_since_the_preview() {
     std::fs::write(dir.path().join("Makefile"), "test:\n\ttrue\n").expect("makefile");
     let here = project("prj_devflow_setup_moved", dir.path());
     let ask = |method: &str, params: Value| {
-        respond_from(None, method, &here, dir.path(), None, &params).expect(method)
+        respond_from(
+            devpit_core::locale::Locale::En,
+            None,
+            method,
+            &here,
+            dir.path(),
+            None,
+            &params,
+        )
+        .expect(method)
     };
     let setup = |apply: bool| {
         ask(

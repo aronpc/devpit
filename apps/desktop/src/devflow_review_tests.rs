@@ -207,6 +207,7 @@ fn one_reviewer_on_a_fake_cli_reviews_the_card_and_its_critical_finding_holds_th
     );
 
     let gate = crate::devflow::respond_from(
+        devpit_core::locale::Locale::En,
         None,
         "devflow_gate",
         &project,
@@ -236,6 +237,7 @@ fn one_reviewer_on_a_fake_cli_reviews_the_card_and_its_critical_finding_holds_th
     let heard = crate::checkpoint_findings::of_card(&store, &card).expect("findings");
     assert_eq!(heard.reviews[0].dismissed, vec![0]);
     let gate = crate::devflow::respond_from(
+        devpit_core::locale::Locale::En,
         None,
         "devflow_gate",
         &project,
@@ -431,6 +433,7 @@ fn a_rereview_pins_the_change_since_the_previous_run_and_the_gate_takes_it() {
     );
 
     let gate = crate::devflow::respond_from(
+        devpit_core::locale::Locale::En,
         None,
         "devflow_gate",
         &project,

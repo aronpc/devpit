@@ -69,13 +69,16 @@ pub(crate) struct Said {
 pub(crate) fn described(language: &str, tool: &Tool, mut input: Value) -> (&'static str, Value) {
     let said = (locale_of(Some(language)) == "pt-BR")
         .then(|| {
-            crate::mcp_pt_br::said(tool.name).or_else(|| crate::devflow_pt_br::said(tool.name))
+            crate::mcp_pt_br::said(tool.name)
+                .or_else(|| crate::devflow_pt_br::said(tool.name))
+                .or_else(|| crate::rest_pt_br::assistant(tool.name))
         })
         .flatten();
     let Some(said) = said else {
         return (tool.description, input);
     };
     says(said.params, "", &mut input);
+    says(crate::rest_pt_br::lean(tool.name), "", &mut input);
     (said.description, input)
 }
 
@@ -83,7 +86,7 @@ pub(crate) fn described(language: &str, tool: &Tool, mut input: Value) -> (&'sta
 /// the key the parameter sits under — wherever it sits, `items` and
 /// `additionalProperties` included. A key with no description in the base
 /// gets none: the catalog translates, it never adds.
-fn says(params: &[(&'static str, &'static str)], under: &str, value: &mut Value) {
+pub(crate) fn says(params: &[(&'static str, &'static str)], under: &str, value: &mut Value) {
     let Some(fields) = value.as_object_mut() else {
         return;
     };

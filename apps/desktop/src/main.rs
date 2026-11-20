@@ -12,6 +12,9 @@ mod agent_api;
 mod agent_door;
 mod agent_reach;
 mod agent_reminders;
+#[cfg(test)]
+#[path = "agent_rules_tests.rs"]
+mod agent_rules_tests;
 mod arranging;
 mod artifacts;
 mod asking;

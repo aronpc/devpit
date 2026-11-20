@@ -46,7 +46,16 @@ fn devflow_on(dir: &Path, extra: &str) -> (Store, Project, String) {
 }
 
 fn ask(project: &Project, root: &Path, method: &str, params: Value) -> Value {
-    crate::devflow::respond_from(None, method, project, root, None, &params).expect(method)
+    crate::devflow::respond_from(
+        devpit_core::locale::Locale::En,
+        None,
+        method,
+        project,
+        root,
+        None,
+        &params,
+    )
+    .expect(method)
 }
 
 fn evidence(project: &Project, root: &Path, card: &str) -> Value {
@@ -322,13 +331,15 @@ fn finishing_the_card_waits_for_a_gate_that_passed_on_the_newest_run() {
     let dir = tempfile::tempdir().expect("tempdir");
     let root = dir.path().canonicalize().expect("root");
     let (_store, project, card) = devflow_on(&root, "");
-    let refused = may_finish(&project, &card, &root).expect_err("no evidence yet");
+    let refused = may_finish(devpit_core::locale::Locale::En, &project, &card, &root)
+        .expect_err("no evidence yet");
     assert!(refused.contains("the card stays where it is"), "{refused}");
     evidence(&project, &root, &card);
-    let refused = may_finish(&project, &card, &root).expect_err("no gate yet");
+    let refused = may_finish(devpit_core::locale::Locale::En, &project, &card, &root)
+        .expect_err("no gate yet");
     assert!(refused.contains("call devpit_devflow_gate"), "{refused}");
     ask(&project, &root, "devflow_gate", json!({ "card": card }));
-    may_finish(&project, &card, &root).expect("the gate passed");
+    may_finish(devpit_core::locale::Locale::En, &project, &card, &root).expect("the gate passed");
 }
 
 /// Decisions set up in devflow.yaml but no key kept: the gate asks nothing
@@ -522,7 +533,14 @@ fn a_card_merged_into_another_finishes_on_its_evidence_and_a_cut_one_on_none() {
     let root = dir.path().canonicalize().expect("root");
     let (store, project, card) = devflow_on(&root, "");
     let plan = |params: Value| {
-        crate::devflow_plan::respond(None, "devflow_plan", &project, &params).expect("plan")
+        crate::devflow_plan::respond(
+            devpit_core::locale::Locale::En,
+            None,
+            "devflow_plan",
+            &project,
+            &params,
+        )
+        .expect("plan")
     };
     let first = store.columns(&project.id).expect("columns")[0].id.clone();
     let criteria = "## Acceptance criteria\n- [ ] the menu renames\n";
@@ -536,7 +554,8 @@ fn a_card_merged_into_another_finishes_on_its_evidence_and_a_cut_one_on_none() {
         .expect("card");
     let next = waiting_on(&store, &project, &merged, "[devflow] Show the new title");
     plan(json!({ "merge": { "from": merged, "into": card }, "apply": true }));
-    let refused = may_finish(&project, &merged, &root).expect_err("nothing passed yet");
+    let refused = may_finish(devpit_core::locale::Locale::En, &project, &merged, &root)
+        .expect_err("nothing passed yet");
     assert!(refused.contains("its work went into"), "{refused}");
     assert!(
         !startable(&project, &next),
@@ -545,7 +564,8 @@ fn a_card_merged_into_another_finishes_on_its_evidence_and_a_cut_one_on_none() {
 
     evidence(&project, &root, &card);
     ask(&project, &root, "devflow_gate", json!({ "card": card }));
-    may_finish(&project, &merged, &root).expect("finishes on the card it went into");
+    may_finish(devpit_core::locale::Locale::En, &project, &merged, &root)
+        .expect("finishes on the card it went into");
     let done = store
         .columns(&project.id)
         .expect("columns")
@@ -562,9 +582,10 @@ fn a_card_merged_into_another_finishes_on_its_evidence_and_a_cut_one_on_none() {
         .create_card(&project.id, &first, "[devflow] Rename by voice", criteria)
         .expect("card");
     let after = waiting_on(&store, &project, &dropped, "[devflow] Say the new title");
-    assert!(may_finish(&project, &dropped, &root).is_err());
+    assert!(may_finish(devpit_core::locale::Locale::En, &project, &dropped, &root).is_err());
     plan(json!({ "cut": dropped, "apply": true }));
-    may_finish(&project, &dropped, &root).expect("closes without evidence");
+    may_finish(devpit_core::locale::Locale::En, &project, &dropped, &root)
+        .expect("closes without evidence");
     assert!(startable(&project, &after));
 }
 

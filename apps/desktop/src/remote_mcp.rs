@@ -76,7 +76,11 @@ pub(crate) fn serve(app: tauri::AppHandle, root: PathBuf, mut link: RelayLink, d
         crate::remote_hub::holds(id)
     };
     let mut answer = |line: &str| {
-        devpit_agentapi::remote_mcp::handle(line, &|method, params| ask(method, &params))
+        devpit_agentapi::remote_mcp::handle_in(
+            devpit_core::locale::Locale::current().tag(),
+            line,
+            &|method, params| ask(method, &params),
+        )
     };
     devpit_remote::mcp::serve(&mut link, &mut still, &mut answer, IDLE);
     crate::remote_hub::leave(&app, id);
