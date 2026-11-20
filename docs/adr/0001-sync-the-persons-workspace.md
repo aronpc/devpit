@@ -6,6 +6,14 @@
 - Date: 2026-10-28
 - Builds on: [`docs/sync.md`](../sync.md) (M-10, shipped in 0.1.41)
 
+## Note — 2026-11-19
+
+An online board is intentionally readable by the devpit.app server and travels
+through its board API and MCP, not through the sync namespaces described by
+this decision. Personal sync remains sealed with a key held only by the
+person's machines, and the server never opens those blobs. A local SQLite board
+stays on its machine.
+
 ## Context
 
 Sync today carries three small namespaces through devpit.app, sealed with a
