@@ -11,13 +11,21 @@ const dropped = vi.fn(async (_project: string, from: string, id: string) => {
 })
 const said = vi.fn()
 const sent = vi.fn()
+const forwardedSend = vi.fn(async (..._args: unknown[]): Promise<{ conversation: string }> => ({ conversation: 'conv_1' }))
 const heard: Array<(id: string) => void> = []
 
 vi.mock('./live', () => ({
-  ask: async (call: () => Promise<unknown>) => ({ data: await call(), error: null, loading: false }),
+  ask: async (call: () => Promise<unknown>) => {
+    try {
+      return { data: await call(), error: null, loading: false }
+    } catch (thrown) {
+      return { data: null, error: (thrown as { message: string }).message, loading: false }
+    }
+  },
   commands: {
     forwardedList: async () => ({ requests: kept }),
     forwardedDrop: (...args: [string, string, string]) => dropped(...args),
+    forwardedSend: (...args: unknown[]) => forwardedSend(...args),
     chatSay: (...args: unknown[]) => said(...args),
     orchestratorReply: (...args: unknown[]) => sent(...args),
   },
@@ -68,6 +76,28 @@ describe('requests forwarded to an orchestrator', () => {
     expect(screen.queryByDisplayValue('in another')).toBeNull()
   })
 
+  it('send calls forwarded_send with the edited words and nothing else', async () => {
+    kept = [request('orchestrator-a', '1', 'first'), request('orchestrator-a', '2', 'second')]
+    render(<ForwardedDrafts projectId="prj_1" conversation="conv_1" />)
+    await screen.findAllByRole('button', { name: 'Send' })
+    fireEvent.change(screen.getAllByRole('textbox')[0], { target: { value: 'first, edited' } })
+    fireEvent.click(screen.getAllByRole('button', { name: 'Send' })[0])
+    await waitFor(() => expect(forwardedSend).toHaveBeenCalledWith('prj_1', 'orchestrator-a', '1', 'first, edited'))
+    expect(forwardedSend).toHaveBeenCalledTimes(1)
+    expect(said).not.toHaveBeenCalled()
+    expect(sent).not.toHaveBeenCalled()
+    expect(dropped).not.toHaveBeenCalled()
+  })
+
+  it('a refused send leaves the card, with its words, and says why', async () => {
+    kept = [request('orchestrator-a', '1', 'first')]
+    forwardedSend.mockRejectedValueOnce({ message: 'another turn runs' })
+    render(<ForwardedDrafts projectId="prj_1" conversation="conv_1" />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Send' }))
+    expect((await screen.findByRole('alert')).textContent).toBe('another turn runs')
+    expect((screen.getByRole('textbox') as HTMLTextAreaElement).value).toBe('first')
+  })
+
   it('mounting sends nothing', async () => {
     kept = [request('orchestrator-a', '1', 'please do it')]
     render(<ForwardedDrafts projectId="prj_1" conversation="conv_1" />)
@@ -75,6 +105,7 @@ describe('requests forwarded to an orchestrator', () => {
     expect(said).not.toHaveBeenCalled()
     expect(sent).not.toHaveBeenCalled()
     expect(dropped).not.toHaveBeenCalled()
+    expect(forwardedSend).not.toHaveBeenCalled()
   })
 
   it('the sidebar marks the destination, and the mark follows the event', async () => {

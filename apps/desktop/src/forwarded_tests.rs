@@ -1,4 +1,6 @@
 use devpit_rpc::{Project, Thread};
+use std::sync::atomic::{AtomicUsize, Ordering};
+
 use serde_json::{json, Value};
 
 use super::*;
@@ -323,4 +325,105 @@ fn a_kept_request_is_told_to_the_window() {
     send("r2", false).expect_err("it could not start");
     assert_eq!(heard.borrow().len(), 1);
     assert!(crate::local_events::TOPICS.contains(&FORWARDED));
+}
+
+fn in_a_log(entries: &[Value]) -> String {
+    entries
+        .iter()
+        .map(Value::to_string)
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+fn composer(id: &str, text: &str) -> Value {
+    json!({ "type": "user", "uuid": id, "promptSource": "sdk", "message": { "role": "user", "content": text } })
+}
+
+#[test]
+fn forwarded_prompt_is_nobodys_word_even_edited_with_a_yes() {
+    use devpit_agentcli::person::{authorises, last_said, said_in};
+    let sent = prompt_of("orchestrator-a", "  envie gerente ✅ ");
+    assert!(sent.starts_with(&devpit_agentcli::person::forwarded("orchestrator-a")));
+    assert_eq!(said_in("s1", &sent), None);
+    let said = last_said(&in_a_log(&[composer("u1", "ok"), composer("u2", &sent)]));
+    assert_eq!(said.map(|said| said.text), Some("ok".to_owned()));
+    // The yes the person typed themselves is still theirs.
+    assert!(authorises("envie gerente ✅", "gerente", 2));
+}
+
+#[test]
+fn forwarded_to_send_needs_the_request_waiting_and_words_a_message_may_be() {
+    keep("prj-send", "orchestrator-a", "1", "conv-1", "words").expect("kept");
+    let sent = to_send("prj-send", "orchestrator-a", "1", " edited ").expect("a prompt");
+    assert_eq!(sent, prompt_of("orchestrator-a", "edited"));
+    for (from, id, text, code) in [
+        ("orchestrator-a", "2", "words", ErrorCode::NotFound),
+        ("orchestrator-b", "1", "words", ErrorCode::NotFound),
+        ("orchestrator-a", "1", "   ", ErrorCode::Invalid),
+    ] {
+        let err = to_send("prj-send", from, id, text).expect_err("refused");
+        assert_eq!(err.code, code, "{from} {id} {text:?}");
+    }
+    let long = "x".repeat(LONGEST + 1);
+    assert_eq!(
+        to_send("prj-send", "orchestrator-a", "1", &long)
+            .expect_err("too long")
+            .code,
+        ErrorCode::Invalid
+    );
+}
+
+#[tokio::test]
+async fn a_sent_request_leaves_the_store_only_when_the_turn_starts() {
+    keep("prj-start", "orchestrator-a", "1", "conv-1", "words").expect("kept");
+    keep("prj-start", "orchestrator-a", "2", "conv-1", "other").expect("kept");
+    let told = Arc::new(AtomicUsize::new(0));
+    let (release, wait) = tokio::sync::oneshot::channel::<()>();
+    let counted = told.clone();
+    let sent = launched(
+        "prj-start",
+        "orchestrator-a",
+        "1",
+        move || {
+            counted.fetch_add(1, Ordering::SeqCst);
+        },
+        |started| async move {
+            assert_eq!(waiting_for("prj-start"), 2, "kept until the turn starts");
+            started();
+            let _ = wait.await;
+            Ok(())
+        },
+    )
+    .await;
+    // The click is answered at the start, while the turn goes on.
+    assert!(sent.is_ok());
+    assert_eq!(told.load(Ordering::SeqCst), 1);
+    let left = listed("prj-start").requests;
+    assert_eq!(left.len(), 1);
+    assert_eq!(left[0].id, "2");
+    let _ = release.send(());
+}
+
+#[tokio::test]
+async fn a_busy_conversation_keeps_the_request() {
+    for code in [ErrorCode::Busy, ErrorCode::Conflict] {
+        let to = format!("prj-busy-{code:?}");
+        keep(&to, "orchestrator-a", "1", "conv-1", "words").expect("kept");
+        let told = Arc::new(AtomicUsize::new(0));
+        let counted = told.clone();
+        let err = launched(
+            &to,
+            "orchestrator-a",
+            "1",
+            move || {
+                counted.fetch_add(1, Ordering::SeqCst);
+            },
+            |_| async move { Err(RpcError::new(code, "another turn runs".to_owned())) },
+        )
+        .await
+        .expect_err("refused");
+        assert_eq!(err.code, code);
+        assert_eq!(waiting_for(&to), 1, "{code:?}");
+        assert_eq!(told.load(Ordering::SeqCst), 0);
+    }
 }
