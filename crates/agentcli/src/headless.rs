@@ -27,6 +27,9 @@ pub struct Outcome {
     pub stop_reason: Option<String>,
     /// The session the CLI says it ran, from its `init` line.
     pub session_id: Option<String>,
+    /// The model the CLI says it used, from the same `init` line. Empty when
+    /// the line or the field is missing; what was asked for is kept apart.
+    pub model: Option<String>,
 }
 
 /// How a turn is configured.

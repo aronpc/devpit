@@ -272,6 +272,7 @@ mod roots;
 mod round_state;
 mod rubric;
 mod run_from;
+mod run_pin;
 mod runs;
 mod saves;
 mod schedules;

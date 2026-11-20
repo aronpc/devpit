@@ -64,3 +64,26 @@ fn a_turn_reports_the_session_its_init_line_named() {
         "the init line still reaches the card's stream"
     );
 }
+
+fn run_of(init: &str) -> Outcome {
+    let result = r#"{"type":"result","is_error":false,"result":"ok"}"#;
+    read_stream([init.to_owned(), result.to_owned()].into_iter(), |_| {})
+        .expect("the stream ends with a result")
+}
+
+/// The model the CLI used is its own word on the `init` line.
+#[test]
+fn a_turn_reports_the_model_its_init_line_named() {
+    let outcome =
+        run_of(r#"{"type":"system","subtype":"init","session_id":"s","model":"glm-4.6"}"#);
+    assert_eq!(outcome.model.as_deref(), Some("glm-4.6"));
+}
+
+/// No field, or no init line at all, leaves it empty rather than guessed.
+#[test]
+fn a_turn_without_a_model_on_init_has_none() {
+    let bare = run_of(r#"{"type":"system","subtype":"init","session_id":"s"}"#);
+    assert_eq!(bare.model, None);
+    let other = run_of(r#"{"type":"system","subtype":"hook","session_id":"s","model":"x"}"#);
+    assert_eq!(other.model, None);
+}
