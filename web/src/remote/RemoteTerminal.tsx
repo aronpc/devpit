@@ -17,14 +17,14 @@ import { t } from '../i18n'
 
 // `name` because a glyph is not a name: a screen reader would say "upwards arrow".
 const KEYS: readonly { label: string; name: string; bytes: string }[] = [
-  { label: 'Esc', name: 'Escape', bytes: '\x1b' },
-  { label: 'Tab', name: 'Tab', bytes: '\t' },
+  { label: 'Esc', name: 'Escape', bytes: '\x1b' }, // ui-text: ok the cap printed on the key
+  { label: 'Tab', name: 'Tab', bytes: '\t' }, // ui-text: ok the cap printed on the key
   { label: '^C', name: 'Interrupt (Ctrl+C)', bytes: '\x03' },
   { label: '↑', name: 'Up', bytes: '\x1b[A' },
   { label: '↓', name: 'Down', bytes: '\x1b[B' },
   { label: '←', name: 'Left', bytes: '\x1b[D' },
   { label: '→', name: 'Right', bytes: '\x1b[C' },
-  { label: 'Enter', name: 'Enter', bytes: '\r' },
+  { label: 'Enter', name: 'Enter', bytes: '\r' }, // ui-text: ok the cap printed on the key
 ]
 
 /* Each terminal opened gets a handle of its own, so bytes still on the way

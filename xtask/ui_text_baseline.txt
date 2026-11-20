@@ -4,3 +4,32 @@
 # is the rule for anything written from here on; a slice that translated its
 # files runs `cargo xtask ui-text` to take the credit.
 
+web/src/remote/deviceName.ts 1
+web/src/shell/ChangeRows.tsx 12
+web/src/shell/ChatPane.tsx 1
+web/src/shell/Chips.tsx 1
+web/src/shell/CopyButton.tsx 2
+web/src/shell/CopySession.tsx 2
+web/src/shell/ErrorReportsPreview.tsx 3
+web/src/shell/FieldSelect.tsx 1
+web/src/shell/FilePane.tsx 2
+web/src/shell/Grip.tsx 2
+web/src/shell/RemoteControlMark.tsx 2
+web/src/shell/StatusStrip.tsx 1
+web/src/shell/Version.tsx 2
+web/src/shell/acts.ts 6
+web/src/shell/backgroundTasks.ts 1
+web/src/shell/browsing.ts 7
+web/src/shell/chat.ts 4
+web/src/shell/chatMarkdown.ts 2
+web/src/shell/found.ts 1
+web/src/shell/modelPick.ts 1
+web/src/shell/outside.ts 1
+web/src/shell/paneActions.ts 2
+web/src/shell/planEdit.ts 2
+web/src/shell/primary.ts 2
+web/src/shell/recipes.ts 2
+web/src/shell/shortcuts.ts 7
+web/src/shell/useAccount.ts 1
+web/src/shell/wouldRun.ts 2
+web/src/shell/wsbrowse.ts 1

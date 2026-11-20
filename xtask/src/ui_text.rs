@@ -25,6 +25,10 @@ const READ_ALOUD: [&str; 5] = ["title", "aria-label", "placeholder", "alt", "lab
 /// Calls that say a sentence; their first argument is it.
 const SAYS: [&str; 3] = ["toast", "notify", "confirm"];
 
+/// Object keys whose literal is words the person reads — a menu entry, a
+/// pill, a tooltip built away from the markup that shows it.
+const READ_ALOUD_KEYS: [&str; 4] = ["label", "title", "placeholder", "alt"];
+
 /// No file may grow fixed screen text, and none may start.
 pub fn uncatalogued_screen_text_never_grows(root: &Path) -> Vec<Finding> {
     counts_in(BASELINE, root)
@@ -120,7 +124,10 @@ pub(crate) fn screens(dir: &Path) -> Vec<PathBuf> {
 /// any reader holds — code, inside a tag, between tags — skipping what
 /// carries no words (strings, comments, names). Template literals hold
 /// interpolated words, which the translation slices move by hand; only plain
-/// literals are counted. The walk can be fooled by code no one writes
+/// literals are counted. In TypeScript a literal is words only where it is
+/// headed for the screen — a branch of `?:`, the fallback of `??`, the value
+/// of a `label:` — and only when it reads like words (see `reads_as_words`),
+/// so ids, catalog keys and classes in the same places stay out. The walk can be fooled by code no one writes
 /// (`a<b` squeezed together, a regex holding a quote), and the line
 /// `// ui-text: ok <reason>` is the way out when it is.
 pub(crate) fn fixed_text_lines(text: &str) -> Vec<usize> {
@@ -173,12 +180,66 @@ impl<'a> Scan<'a> {
     fn code(&mut self, stop: Stop) {
         let mut word = String::new();
         let mut depth = 0usize;
+        // Brackets of any kind opened here, and the level each open `?`
+        // waits at for its `:` — a `:` deeper in is an object's or a type's.
+        let mut nest = 0usize;
+        let mut questions: Vec<usize> = Vec::new();
+        // Whether the next token, when it is a literal, is headed for the
+        // screen: just past a ternary's `?` or `:`, a `??`, or a `label:`.
+        let mut shown = false;
         loop {
             let Some(byte) = self.peek() else { return };
+            if !byte.is_ascii_whitespace() && !matches!(byte, b'\'' | b'"' | b'?' | b':') {
+                shown = false;
+            }
             match byte {
                 b'\'' | b'"' => {
                     word.clear();
+                    if std::mem::take(&mut shown) {
+                        self.shown_literal(byte);
+                    }
                     self.skip_string(byte);
+                }
+                b'?' if self.ahead(1) == Some(b'?') => {
+                    word.clear();
+                    self.bump();
+                    self.bump();
+                    if self.peek() == Some(b'=') {
+                        self.bump();
+                    }
+                    shown = true;
+                }
+                b'?' => {
+                    word.clear();
+                    self.bump();
+                    // `a?.b`, `a?: T` and `(a?, b)` ask nothing.
+                    let asks =
+                        !matches!(self.peek(), Some(b'.' | b':' | b')' | b',' | b'=' | b';'));
+                    if asks {
+                        questions.push(nest);
+                    }
+                    shown = asks;
+                }
+                b':' => {
+                    if questions.last() == Some(&nest) {
+                        questions.pop();
+                        shown = true;
+                    } else {
+                        shown = READ_ALOUD_KEYS.contains(&self.name_before().as_str());
+                    }
+                    word.clear();
+                    self.bump();
+                }
+                b')' | b']' => {
+                    word.clear();
+                    nest = nest.saturating_sub(1);
+                    questions.retain(|&level| level <= nest);
+                    self.bump();
+                }
+                b'[' => {
+                    word.clear();
+                    nest += 1;
+                    self.bump();
                 }
                 b'`' => {
                     word.clear();
@@ -210,6 +271,7 @@ impl<'a> Scan<'a> {
                 b'{' => {
                     word.clear();
                     depth += 1;
+                    nest += 1;
                     self.bump();
                 }
                 b'}' => {
@@ -219,6 +281,8 @@ impl<'a> Scan<'a> {
                         return;
                     }
                     depth = depth.saturating_sub(1);
+                    nest = nest.saturating_sub(1);
+                    questions.retain(|&level| level <= nest);
                     self.bump();
                 }
                 b'(' => {
@@ -226,6 +290,7 @@ impl<'a> Scan<'a> {
                         self.first_argument();
                     }
                     word.clear();
+                    nest += 1;
                     self.bump();
                 }
                 b'<' => {
@@ -253,6 +318,39 @@ impl<'a> Scan<'a> {
                     self.bump();
                 }
             }
+        }
+    }
+
+    /// The name right before the `:` under the walk, spaces aside — the key
+    /// of an object entry, when it is one.
+    fn name_before(&self) -> String {
+        let mut at = self.at;
+        while at > 0 && matches!(self.bytes[at - 1], b' ' | b'\t') {
+            at -= 1;
+        }
+        let start = self.bytes[..at]
+            .iter()
+            .rposition(|&b| !(b.is_ascii_alphanumeric() || b == b'_' || b == b'$'))
+            .map_or(0, |p| p + 1);
+        self.text[start..at].to_owned()
+    }
+
+    /// The literal at the walk, headed for the screen, when it reads like
+    /// words. Nothing is consumed.
+    fn shown_literal(&mut self, quote: u8) {
+        let start = self.at;
+        let mut end = start + 1;
+        while let Some(&b) = self.bytes.get(end) {
+            if b == b'\\' {
+                end += 2;
+            } else if b == quote || b == b'\n' {
+                break;
+            } else {
+                end += 1;
+            }
+        }
+        if self.bytes.get(end) == Some(&quote) && reads_as_words(&self.text[start + 1..end]) {
+            self.say(start);
         }
     }
 
@@ -597,6 +695,40 @@ fn says_words(text: &str) -> bool {
     first_letter(text).is_some()
 }
 
+/// Whether a TypeScript literal reads like words for a person rather than a
+/// name for the code: it opens on a capital and goes on in lowercase
+/// (`'Nothing yet'`, `'Archive'`), and a single run without spaces is not a
+/// name in disguise — `AgentChip`, `Content-Type`, `Edit.tsx`, `./Preview`;
+/// nor is a run with no two letters together, which is a drawing.
+/// Ids, catalog keys and classes are lowercase, so they never qualify.
+fn reads_as_words(text: &str) -> bool {
+    let Some(at) = first_letter(text) else {
+        return false;
+    };
+    let rest = &text[at..];
+    if !rest.chars().next().is_some_and(char::is_uppercase) || !rest.chars().any(char::is_lowercase)
+    {
+        return false;
+    }
+    // Letters only ever one at a time are a drawing, not words: an SVG path
+    // (`M12 5v14`) opens on a capital too.
+    if !rest
+        .chars()
+        .zip(rest.chars().skip(1))
+        .any(|(a, b)| a.is_alphabetic() && b.is_alphabetic())
+    {
+        return false;
+    }
+    if text.chars().any(char::is_whitespace) {
+        return true;
+    }
+    let hump = rest
+        .chars()
+        .zip(rest.chars().skip(1))
+        .any(|(a, b)| a.is_lowercase() && b.is_uppercase());
+    !hump && !text.contains(['.', '/', '_', '-', ':'])
+}
+
 /// Where the first letter is, entities aside.
 fn first_letter(text: &str) -> Option<usize> {
     let bytes = text.as_bytes();
@@ -627,9 +759,10 @@ fn entity_end(from: &str) -> Option<usize> {
     (at > 1 && bytes.get(at) == Some(&b';')).then(|| at + 1)
 }
 
-/// A string literal and nothing else — `{'Save'}` is what JSX reads as text,
-/// and `{cond ? 'Save' : 'Load'}` is a choice, not a saying. Returns where
-/// the literal starts, and what it says.
+/// A string literal and nothing else — `{'Save'}` is what JSX reads as text.
+/// A choice (`{cond ? 'Save' : 'Load'}`) is not one literal; its branches are
+/// counted by the walk of the expression. Returns where the literal starts,
+/// and what it says.
 fn lone_literal(body: &str) -> Option<(usize, &str)> {
     let at = body.find(['\'', '"'])?;
     if !body[..at].trim().is_empty() {

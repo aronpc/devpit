@@ -53,7 +53,84 @@ fn an_entity_alone_is_not_words_but_text_around_it_is() {
 fn a_string_literal_as_a_child_is_counted_but_a_value_is_not() {
     assert_eq!(count("<p>{'Save everything'}</p>"), 1);
     assert_eq!(count("<p>{count}</p>"), 0);
-    assert_eq!(count("<p>{a ? 'Save' : 'Load'}</p>"), 0);
+    assert_eq!(count("<p>{a ? t('save') : t('load')}</p>"), 0);
+}
+
+/// Each branch of a choice is a sentence of its own, and it reaches the
+/// screen as surely as a child does (`Preview.tsx`, `step ? … : 'Nothing yet'`).
+#[test]
+fn a_literal_branch_of_a_ternary_is_counted() {
+    assert_eq!(count("<p>{a ? 'Save' : 'Load'}</p>"), 2);
+    assert_eq!(
+        count("const shown = step ? verbOf(step) : 'Nothing yet'"),
+        1
+    );
+    assert_eq!(count("const shown = step ? 'Running now' : idle"), 1);
+    assert_eq!(
+        count("<span>{step ? verbOf(step.tool) : 'Nothing yet'}</span>"),
+        1
+    );
+    assert_eq!(count("const a = x ? { kind: 'edit' } : 'Not shown'"), 1);
+    assert_eq!(count("const a = x ? f(y, 'edit') : 'Not shown'"), 1);
+}
+
+/// The fallback of `??` is what shows when the value is missing.
+#[test]
+fn the_fallback_of_nullish_coalescing_is_counted() {
+    assert_eq!(count("const said = answer.error ?? 'Not shown'"), 1);
+    assert_eq!(count("<p>{answer.error ?? 'Not shown'}</p>"), 1);
+}
+
+/// A `label` in an object is a menu entry or a pill — words for the person.
+#[test]
+fn a_label_in_an_object_is_counted() {
+    assert_eq!(
+        count("const items = [{ id: 'open', label: 'Open card' }]"),
+        1
+    );
+    assert_eq!(count("const one = { label: \"Move to doing\", run }"), 1);
+    assert_eq!(
+        count("const one = { title: 'Archive', placeholder: 'Search' }"),
+        2
+    );
+}
+
+/// What is not words for a person stays out: ids, catalog keys, CSS classes,
+/// imports, optional chaining, optional members and the other keys of an
+/// object.
+#[test]
+fn ids_keys_classes_and_imports_in_those_places_are_not_counted() {
+    assert_eq!(count("const c = on ? 'isl-peek isl-peek--on' : ''"), 0);
+    assert_eq!(count("const k = key ?? 'island.preview.nothingYet'"), 0);
+    assert_eq!(
+        count("const k = a ? t('island.preview.nothingYet') : t('b')"),
+        0
+    );
+    assert_eq!(count("const k = a ? 'edit' : 'write'"), 0);
+    assert_eq!(count("const k = a ? 'AgentChip' : 'TOOL_USE'"), 0);
+    assert_eq!(count("import Preview from './Preview'"), 0);
+    assert_eq!(
+        count("const one = { id: 'open-card', kind: 'Edit', label: t('x') }"),
+        0
+    );
+    assert_eq!(count("const a = b?.c ?? null"), 0);
+    assert_eq!(count("type A = { label?: string; title?: 'x' }"), 0);
+    assert_eq!(count("function f(a?: string, b?) {}"), 0);
+    assert_eq!(count("switch (k) { case 'Open': return 1 }"), 0);
+    assert_eq!(
+        count("<path d={down ? 'M12 5v14M6 13l6 6 6-6' : 'M12 19V5'} />"),
+        0
+    );
+}
+
+/// The way out keeps working for the new places.
+#[test]
+fn an_excused_line_still_passes_with_the_new_places() {
+    let markup = "const said = error ?? 'Not shown' // ui-text: ok shown only in logs\n\
+                  const one = { label: 'Open card' } // ui-text: ok a test fixture\n\
+                  const s = a ? 'Running now' : 'Idle now' // ui-text: ok a reason";
+    assert_eq!(fixed_text_lines(markup).len(), 4);
+    assert!(unmarked(markup).is_empty());
 }
 
 #[test]
@@ -83,9 +160,9 @@ fn attributes_that_carry_no_words_are_not_counted() {
 }
 
 #[test]
-fn an_attribute_literal_in_braces_is_counted_but_a_choice_is_not() {
+fn an_attribute_literal_in_braces_is_counted_and_so_is_each_branch_of_a_choice() {
     assert_eq!(count("<input title={'Search'} />"), 1);
-    assert_eq!(count("<input title={cond ? 'Search' : 'Replace'} />"), 0);
+    assert_eq!(count("<input title={cond ? 'Search' : 'Replace'} />"), 2);
     assert_eq!(count("<input title={t('search')} />"), 0);
 }
 

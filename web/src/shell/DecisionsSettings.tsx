@@ -17,7 +17,7 @@ import { useShell } from './useShell'
 
 const PROVIDERS: readonly { id: string; label: string; url: string; model: string }[] = [
   { id: 'openrouter', label: 'OpenRouter', url: 'https://openrouter.ai/api/v1', model: 'typesafe/jev-1.13' },
-  { id: 'vercel', label: 'Vercel AI Gateway', url: 'https://ai-gateway.vercel.sh/v1', model: 'typesafe-ai/jev' },
+  { id: 'vercel', label: 'Vercel AI Gateway', url: 'https://ai-gateway.vercel.sh/v1', model: 'typesafe-ai/jev' }, // ui-text: ok a product's name
 ]
 
 const dollars = (value: number): string => `$${value.toFixed(value < 0.01 && value > 0 ? 4 : 2)}`
