@@ -895,3 +895,47 @@ fn in_english_the_project_agents_instruction_is_as_it_always_was() {
         "Q?\n\n(The person asks this in devpit's \"Ask the project\" chat. Name the files your answer rests on by their paths from the project's root.)"
     );
 }
+
+/// An agent already running when the person switches Settings between an ask
+/// and a brief is spoken to in the language it was born in, by the same
+/// process: the brief's words come from its birth, not from the switch.
+#[test]
+fn a_live_agent_hears_the_brief_in_the_language_it_was_born_in() {
+    let _turn = crate::locale_turn::settled(Locale::En);
+    let bench = bench();
+    let agents = Agents::idling_after(Duration::from_secs(60));
+    let born = agents.locale_for("p1");
+    let asking = Wake {
+        locale: born,
+        ..wake(&bench)
+    };
+    let mut first = None;
+    for _ in 0..5 {
+        match agents.ask("p1", &asking, "How are tests run?") {
+            Err(why) if why.contains(NOT_STARTED) => std::thread::sleep(Duration::from_millis(50)),
+            other => {
+                first = Some(other.expect("answered"));
+                break;
+            }
+        }
+    }
+    assert!(first.expect("the stand-in never started").woke);
+
+    Locale::PtBr.set();
+    let held = agents.locale_for("p1");
+    assert_eq!(held, EN, "the live agent was born in English");
+    let brief = brief_prompt(held, Some(7), "Queue", "Fix it.", &[]);
+    let briefing = Wake {
+        locale: held,
+        ..wake(&bench)
+    };
+    let answer = agents.ask("p1", &briefing, &brief).expect("briefed");
+    assert!(!answer.woke, "the same process hears the brief");
+    let said = log(&bench.log);
+    let last = said
+        .lines()
+        .rev()
+        .find(|line| line.starts_with("line "))
+        .expect("a line");
+    assert!(last.contains("data, not instructions"), "{last}");
+}

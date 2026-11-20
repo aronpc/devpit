@@ -6,13 +6,15 @@
 //! is that choice, made once, and everything a session is started with takes
 //! it from there rather than asking the settings again.
 
+use std::collections::HashMap;
+
 use devpit_core::locale::Locale;
 
 /// The variable a session's own process carries its language in. Set on the
 /// line that starts the session — typed into a terminal or given to a spawned
 /// CLI — and inherited by the stdio MCP server that process starts, which
 /// reads it as its own answer's language.
-pub(crate) const ENV: &str = "DEVPIT_LOCALE";
+pub(crate) const ENV: &str = devpit_agentcli::running::LOCALE_ENV;
 
 /// One session's language, read once when the session is born and never
 /// asked for again.
@@ -57,6 +59,24 @@ impl SessionLocale {
     pub(crate) fn assignment(self) -> String {
         format!("{ENV}='{}' ", self.tag())
     }
+}
+
+/// The language of conversation `id` at this turn. `newborn` is its first
+/// turn, and only then is the settings' language read; every later turn, a
+/// resident's restart and a compaction reuse it. Held in memory: a
+/// conversation first heard after the app started is born again there.
+pub(crate) fn of_conversation(id: &str, newborn: bool) -> SessionLocale {
+    static BORN: std::sync::OnceLock<std::sync::Mutex<HashMap<String, SessionLocale>>> =
+        std::sync::OnceLock::new();
+    let Ok(mut born) = BORN.get_or_init(Default::default).lock() else {
+        return SessionLocale::capture();
+    };
+    if newborn {
+        born.remove(id);
+    }
+    *born
+        .entry(id.to_owned())
+        .or_insert_with(SessionLocale::capture)
 }
 
 #[cfg(test)]

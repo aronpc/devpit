@@ -114,3 +114,46 @@ fn a_launch_line_carries_the_sessions_language_in_front() {
     let line = launch_line(locale, "claude", "claude", None, None, None);
     assert!(line.starts_with("DEVPIT_LOCALE='pt-BR' claude"), "{line}");
 }
+
+/// A profile that sets `DEVPIT_LOCALE` itself does not choose the session's
+/// language: the name is devpit's, and the line carries the one captured at
+/// the session's birth and no other.
+#[test]
+fn a_profiles_own_locale_never_speaks_over_the_sessions() {
+    let mut found = devpit_rpc::Profile {
+        id: "01JGLM".to_owned(),
+        label: "GLM".to_owned(),
+        command: "claude".to_owned(),
+        driver: "claude".to_owned(),
+        path: None,
+        reach: devpit_rpc::Reach::Runnable,
+        base: "claude".to_owned(),
+        args: Vec::new(),
+        env: Vec::new(),
+        mine: true,
+        models: Vec::new(),
+        own_models: Vec::new(),
+        offered: Vec::new(),
+        efforts: Vec::new(),
+        effort_default: None,
+        metered: true,
+        enabled: true,
+    };
+    found.env.push(devpit_rpc::EnvVar {
+        name: "DEVPIT_LOCALE".to_owned(),
+        value: "en".to_owned(),
+    });
+    found.env.push(devpit_rpc::EnvVar {
+        name: "ANTHROPIC_BASE_URL".to_owned(),
+        value: "https://example.test".to_owned(),
+    });
+    let said = devpit_agentcli::running::line(&devpit_agentcli::running::runner(&found));
+    let locale = crate::session_locale::SessionLocale::of(devpit_core::locale::Locale::PtBr);
+    let line = launch_line(locale, &said, "claude", None, None, None);
+    assert!(line.contains("DEVPIT_LOCALE='pt-BR'"), "{line}");
+    assert!(!line.contains("DEVPIT_LOCALE='en'"), "{line}");
+    assert!(
+        line.contains("ANTHROPIC_BASE_URL='https://example.test'"),
+        "{line}"
+    );
+}
