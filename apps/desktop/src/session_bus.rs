@@ -22,7 +22,7 @@ pub(crate) use crate::card_activity::Doing;
 /// How long an agent may take to show the turn devpit typed for it.
 pub(crate) const TAKES_A_TURN_MS: f64 = 15_000.0;
 /// The longest message: a message, not a document.
-const LONGEST: usize = 4000;
+pub(crate) const LONGEST: usize = 4000;
 /// The most one turn in an orchestrator's chat carries of what waited for it.
 const MOST_IN_A_TURN: usize = 16_000;
 /// How often what waits looks at its recipient again.
@@ -456,6 +456,19 @@ fn bus() -> MutexGuard<'static, Bus> {
 
 static APP: OnceLock<AppHandle> = OnceLock::new();
 
+/// Whether a letter waits for the chat of `project`.
+#[cfg(test)]
+pub(crate) fn waits_in_chat(project: &str) -> bool {
+    bus().waiting().contains(&Inbox::Chat {
+        project: project.to_owned(),
+    })
+}
+
+/// The app, once it has started.
+pub(crate) fn app() -> Option<&'static AppHandle> {
+    APP.get()
+}
+
 /// Starts the look at what waits, for as long as the app runs.
 pub(crate) fn start(app: AppHandle) {
     if APP.set(app).is_ok() {
@@ -661,6 +674,9 @@ pub(crate) fn message(
     let to = said("to").filter(|to| !to.is_empty());
     if let Some(profile) = here.orchestrator.as_deref() {
         let to = to.ok_or(WHICH_SESSION)?;
+        if let Some(kept) = crate::forwarded::route(projects, here, to, params, text) {
+            return kept;
+        }
         let (inbox, name) = pane_named(here, profile, to)?;
         let from = crate::orchestrator::address(Path::new(&here.root_path))
             .unwrap_or_else(|| here.name.clone());

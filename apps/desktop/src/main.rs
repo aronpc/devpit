@@ -148,6 +148,7 @@ mod fake_host;
 mod files;
 mod filetree;
 mod folder_trust;
+mod forwarded;
 mod front;
 mod guardrails;
 mod handler;
