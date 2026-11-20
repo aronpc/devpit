@@ -5,6 +5,7 @@ fn scoped(model: Option<&str>, mode: Option<&str>, pattern: Option<&str>) -> Sco
         model: model.map(str::to_owned),
         permission_mode: mode.map(str::to_owned),
         branch_pattern: pattern.map(str::to_owned),
+        automatic_switch: None,
     }
 }
 
@@ -169,4 +170,14 @@ fn one_setting_changes_and_the_others_stay() {
     );
     assert!(with_field(set.clone(), "theme", Some("dark".to_owned())).is_err());
     assert!(with_field(set, "model", Some("not a model".to_owned())).is_err());
+    assert_eq!(
+        with_field(
+            Scoped::default(),
+            "automaticSwitch",
+            Some("true".to_owned())
+        )
+        .expect("automatic switch")
+        .automatic_switch,
+        Some(true)
+    );
 }

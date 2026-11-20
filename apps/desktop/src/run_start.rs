@@ -1,7 +1,7 @@
 //! Settling an agent run before its process starts.
 
 use devpit_agentcli::running::Runner;
-use devpit_core::store::{AttemptCarry, RunAsk};
+use devpit_core::store::{AttemptCarry, RunAsk, SwitchKind};
 use devpit_core::Store;
 use devpit_rpc::{Credentials, Profile, RpcError, Step};
 
@@ -106,11 +106,12 @@ pub(crate) fn switch_agent(
     from_column: Option<&str>,
     carry: AttemptCarry,
     fixed: FixedAgent,
+    how: SwitchKind,
 ) -> Result<BegunAgent, devpit_core::store::StoreError> {
     let (run_id, _, _) = store.begin_checked_attempt(
         RunAsk::Switch {
             from: from.to_owned(),
-            how: devpit_core::store::SwitchKind::Click,
+            how,
         },
         from_column,
         carry,
@@ -186,9 +187,26 @@ fn begin_profiled(
     sources: &Sources,
 ) -> Result<BegunAgent, devpit_core::store::StoreError> {
     let carry = sources.current(profile_id, model);
-    begin_agent(store, card_id, step_id, from_column, carry, |carry| {
+    let begun = begin_agent(store, card_id, step_id, from_column, carry, |carry| {
         sources.fixed(carry)
-    })
+    })?;
+    if !begun.paused || !crate::project_settings::automatic_switch(store, card_id)? {
+        return Ok(begun);
+    }
+    for profile in &sources.profiles {
+        let carry = sources.current(&profile.id, model);
+        if let Ok(fixed) = sources.fixed(&carry) {
+            return switch_agent(
+                store,
+                &begun.run_id,
+                from_column,
+                carry,
+                fixed,
+                SwitchKind::Automatic,
+            );
+        }
+    }
+    Ok(begun)
 }
 
 pub(crate) fn begin_agent(

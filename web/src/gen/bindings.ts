@@ -6128,6 +6128,7 @@ export type Scoped = {
 	model?: string | null,
 	permissionMode?: string | null,
 	branchPattern?: string | null,
+	automaticSwitch?: boolean | null,
 };
 
 export type SearchFile = {

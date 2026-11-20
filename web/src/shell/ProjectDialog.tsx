@@ -6,6 +6,7 @@ import { GroupPicker } from './GroupPicker'
 import { ask, commands } from './live'
 import { ProjectHosts } from './ProjectHosts'
 import { COLOURS, ICONS, iconName, ProjectMark } from './ProjectMark'
+import { PrefSwitch } from './PrefSwitch'
 import { abandoned, committed } from './typing'
 import { SecretFields } from './SecretFields'
 import { useShell } from './useShell'
@@ -32,9 +33,15 @@ export function ProjectDialog({ project, onClose }: { project: Project; onClose:
   /* A worktree is a git project's; an orchestrator's folder never gets one. */
   const [setup, setSetup] = useState<WorktreeSetup | null>(null)
   const [setupChanged, setSetupChanged] = useState(false)
+  const [automaticSwitch, setAutomaticSwitch] = useState<boolean | null>(null)
+  const [automaticSwitchChanged, setAutomaticSwitchChanged] = useState(false)
   useEffect(() => {
     if (project.orchestrator) return
     void ask(() => commands.projectWorktreeSetup(project.id)).then((answer) => setSetup(answer.data))
+    void ask(() => commands.projectSettingsRead(project.id)).then((answer) => {
+      if (answer.error) setError(answer.error)
+      if (answer.data) setAutomaticSwitch(answer.data.own.automaticSwitch ?? false)
+    })
   }, [project])
 
   const groups = [...new Set(projects.map((one) => one.group).filter((one): one is string => Boolean(one)))].sort()
@@ -47,6 +54,10 @@ export function ProjectDialog({ project, onClose }: { project: Project; onClose:
         if (answer.error) return setError(answer.error)
         if (setup && setupChanged) {
           const kept = await ask(() => commands.projectWorktreeSetupSet(project.id, setup))
+          if (kept.error) return setError(kept.error)
+        }
+        if (automaticSwitch !== null && automaticSwitchChanged) {
+          const kept = await ask(() => commands.projectSettingsWrite(project.id, 'automaticSwitch', automaticSwitch ? 'true' : null))
           if (kept.error) return setError(kept.error)
         }
         reloadProjects()
@@ -128,6 +139,20 @@ export function ProjectDialog({ project, onClose }: { project: Project; onClose:
               setSetup(next)
               setSetupChanged(true)
             }}
+          />
+        )}
+
+        {!project.orchestrator && (
+          <PrefSwitch
+            on={automaticSwitch ?? false}
+            disabled={automaticSwitch === null}
+            onFlip={() => {
+              if (automaticSwitch === null) return
+              setAutomaticSwitch(!automaticSwitch)
+              setAutomaticSwitchChanged(true)
+            }}
+            title="Switch accounts automatically"
+            said="When a step's account cannot run, try the first account that can."
           />
         )}
 

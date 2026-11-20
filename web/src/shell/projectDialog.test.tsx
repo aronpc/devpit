@@ -6,6 +6,8 @@ import type { Project } from '../gen/bindings'
 const edited = vi.fn()
 const kept = vi.fn()
 const rotation = vi.fn()
+const settingsWritten = vi.fn()
+const settings = { own: {}, repo: {}, machine: {}, applied: {}, repoProblem: null }
 vi.mock('./live', () => ({
   ask: (call: () => unknown) => Promise.resolve(call()),
   commands: {
@@ -15,6 +17,11 @@ vi.mock('./live', () => ({
     },
     projectWorktreeSetup: () => ({ data: { copy: [], link: [], run: [], share: [] }, error: null }),
     projectWorktreeSetupSet: () => ({ data: null, error: null }),
+    projectSettingsRead: () => ({ data: settings, error: null }),
+    projectSettingsWrite: (...args: unknown[]) => {
+      settingsWritten(...args)
+      return { data: settings, error: null }
+    },
     hostsList: () => ({ data: { hosts: [] }, error: null }),
     projectHosts: () => ({ data: { links: [] }, error: null }),
     projectSecrets: () => ({ data: { secrets: [], file: '/p/.env' }, error: null }),
@@ -56,6 +63,7 @@ import { ProjectDialog } from './ProjectDialog'
 afterEach(() => {
   cleanup()
   edited.mockReset()
+  settingsWritten.mockReset()
 })
 
 describe('the project dialog', () => {
@@ -78,6 +86,18 @@ describe('the project dialog', () => {
     fireEvent.change(screen.getByPlaceholderText('…or an emoji'), { target: { value: '🚀' } })
     fireEvent.click(screen.getByText('Save'))
     await waitFor(() => expect(edited).toHaveBeenCalledWith('p1', 'site', null, '🚀', null))
+  })
+
+  it('keeps automatic account switching off until this project turns it on', async () => {
+    render(<ProjectDialog project={project()} onClose={vi.fn()} />)
+    const toggle = await screen.findByRole('switch', { name: 'Switch accounts automatically' })
+    expect(toggle.getAttribute('aria-checked')).toBe('false')
+
+    fireEvent.click(toggle)
+    expect(toggle.getAttribute('aria-checked')).toBe('true')
+    fireEvent.click(screen.getByText('Save'))
+
+    await waitFor(() => expect(settingsWritten).toHaveBeenCalledWith('p1', 'automaticSwitch', 'true'))
   })
 
   it('offers the groups other projects are in, and a new one', () => {
