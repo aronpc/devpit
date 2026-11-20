@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use devpit_core::store::RunAsk;
+use devpit_core::store::{Asked, Carried, RunAsk};
 use devpit_core::Store;
 use devpit_rpc::{Credentials, Declared, EnvVar, Profile, ProfileSignIn, Reach};
 
@@ -176,6 +176,35 @@ fn run_switch_opens_the_next_click_attempt_under_the_chosen_profile_and_model() 
     assert_eq!(
         (listed[0].profile.as_deref(), listed[0].model.as_deref()),
         (Some("Work account"), Some("opus"))
+    );
+}
+
+#[test]
+fn run_switch_records_the_profile_that_actually_executes() {
+    let (_dir, store, card, step, column) = seeded();
+    let sources = sources();
+    let paused = paused(&store, &card, &step, &column, &sources);
+    let switched = switch_with(&store, &paused, "work", &sources).expect("switch");
+
+    crate::run_launch::record_whose_run(
+        &store,
+        &switched.begun.run_id,
+        &switched.step,
+        Asked::Card,
+        None,
+        switched.begun.fixed.as_ref(),
+    )
+    .expect("record");
+
+    let whose = store
+        .whose_run(&switched.begun.run_id)
+        .expect("read")
+        .expect("run");
+    assert_eq!(
+        whose.carried,
+        Carried::Agent {
+            profile: Some("work".to_owned())
+        }
     );
 }
 

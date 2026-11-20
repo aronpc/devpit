@@ -25,10 +25,7 @@ fn profile(env: Vec<EnvVar>) -> Declared {
 fn the_pin_names_the_account_gateway_and_model() {
     let declared = profile(vec![
         var("CLAUDE_CONFIG_DIR", "/home/aron/.claude-2"),
-        var(
-            "ANTHROPIC_BASE_URL",
-            "https://user:pw@api.z.ai/api/anthropic",
-        ),
+        var("ANTHROPIC_BASE_URL", "https://api.z.ai/api/anthropic"),
         var("ANTHROPIC_MODEL", "glm-4.6"),
     ]);
     let pinned = pin(&declared, None, "/home/aron");
@@ -73,7 +70,7 @@ fn a_secret_valued_variable_never_reaches_the_json() {
     ]);
     let json = serde_json::to_string(&pin(&declared, None, "/home/aron")).expect("json");
     assert!(!json.contains(fake), "{json}");
-    assert!(json.contains("https://gw.example/v1"), "{json}");
+    assert!(!json.contains("gw.example"), "{json}");
 }
 
 #[test]
@@ -94,4 +91,26 @@ fn a_gateway_variable_the_sync_refuses_is_skipped() {
     ]);
     let pinned = pin(&declared, None, "/h");
     assert_eq!(pinned.base_url.as_deref(), Some("https://gw.example"));
+}
+
+#[test]
+fn a_gateway_with_credentials_is_not_pinned() {
+    let fake = "sk-query-sentinel-5016";
+    let declared = profile(vec![var(
+        "ANTHROPIC_BASE_URL",
+        &format!("https://gw.example/v1?api-key={fake}"),
+    )]);
+
+    let pinned = pin(&declared, None, "/home/aron");
+    let json = serde_json::to_string(&pinned).expect("json");
+
+    assert_eq!(pinned.base_url, None);
+    assert!(!json.contains(fake), "{json}");
+}
+
+#[test]
+fn a_config_folder_outside_home_is_not_pinned() {
+    let declared = profile(vec![var("CLAUDE_CONFIG_DIR", "/srv/claude")]);
+
+    assert_eq!(pin(&declared, None, "/home/aron").config_dir, None);
 }

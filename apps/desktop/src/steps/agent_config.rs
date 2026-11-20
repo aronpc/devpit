@@ -43,11 +43,3 @@ pub(crate) struct AgentConfig {
 pub(crate) fn readable(config: &str) -> Result<AgentConfig, String> {
     serde_json::from_str(config).map_err(|err| format!("this step's config is not readable: {err}"))
 }
-
-/// Which profile a step declares, for the record a run keeps of what carried
-/// it out. `None` for a step that names none, and for a config that will not
-/// read — a run that is about to fail for that reason is not a run to guess a
-/// profile for.
-pub(crate) fn profile_of(config: &str) -> Option<String> {
-    readable(config).ok().and_then(|declared| declared.profile)
-}
