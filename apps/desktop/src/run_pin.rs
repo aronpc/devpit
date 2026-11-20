@@ -28,7 +28,7 @@ pub(crate) struct PinnedProfile {
 }
 
 /// The first variable the sync would share that `wants` by name.
-fn shared_value<'a>(declared: &'a Declared, wants: impl Fn(&str) -> bool) -> Option<&'a str> {
+fn shared_value(declared: &Declared, wants: impl Fn(&str) -> bool) -> Option<&str> {
     declared
         .env
         .iter()
@@ -61,6 +61,10 @@ fn without_credentials(url: &str) -> String {
 }
 
 /// The snapshot for one step: `step_model` wins over the profile's own.
+#[cfg_attr(
+    not(test),
+    expect(dead_code, reason = "caller arrives in T4 (lp#1480)")
+)]
 pub(crate) fn pin(declared: &Declared, step_model: Option<&str>, home: &str) -> PinnedProfile {
     PinnedProfile {
         id: declared.id.clone(),
