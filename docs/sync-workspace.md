@@ -9,6 +9,11 @@ The goal, in the person's words: *sync here, then on a new PC pick the
 orchestrator and bring its configs*, and keep the same context and memory on
 both machines.
 
+Boards are separate from personal sync. The server can read an online board,
+which the app reaches through devpit.app's board API and MCP; it never becomes
+a sealed namespace here. The board this design seals later (#198) is the local
+board, the SQLite that stays on each machine.
+
 ## What travels, and how
 
 ```mermaid
@@ -19,7 +24,7 @@ flowchart LR
     SA[[transcripts<br/>conversation files]]
     XA{{secrets, tokens,<br/>paths, sync key}}
   end
-  subgraph APP[devpit.app — reads nothing]
+  subgraph APP[devpit.app — reads no synced record]
     BL[(sealed blobs<br/>records + manifests)]
     OB[(sealed objects<br/>file contents)]
   end
@@ -39,7 +44,7 @@ flowchart LR
 
 | class | examples | how it travels | merge |
 |---|---|---|---|
-| **records** | prefs, project settings, machines (today); profiles, orchestrators, project links (new); board (#198, later) | one sealed blob per namespace, the existing round | field by field, later HLC stamp wins |
+| **records** | prefs, project settings, machines (today); profiles, orchestrators, project links (new); local board (#198, later) | one sealed blob per namespace, the existing round | field by field, later HLC stamp wins |
 | **files** | orchestrator notes, project memory, Claude Code auto-memory | new *file tree*: a sealed manifest blob + sealed content-addressed objects | per file; concurrent edits keep both; journals union |
 | **sessions** | Claude transcripts, devpit's `sessions/*.jsonl`, the orchestrator's chat | do not sync | — continued from synced notes |
 | **local only** | vault, token files, sync key, worktrees, runs, caches, absolute paths | never leave | — |
@@ -225,7 +230,7 @@ Claude's auto-memory.
 | user `CLAUDE.md` in the config dir | `CLAUDE_CONFIG_DIR` | **yes**, a one-file tree per profile | the person's global instructions per account |
 | `settings.json`, hooks, plugins, credentials | `CLAUDE_CONFIG_DIR` | **no** | machine paths, tokens, sign-in |
 | devpit conversation files `projects/<folder>/sessions/` | devpit home | **no** | they point at a Claude session that does not exist on the other machine |
-| card handoff | `card_comment` | with the board (#198) | the way work resumes elsewhere |
+| card handoff | `card_comment` | with the local board (#198) | the way work resumes elsewhere |
 | anchored memory | `~/.anchored/data/anchored.db` | **no, by devpit** | 5.2 GB, local embeddings, its own remote sync (`remote:` in its config); bootstrap points at it |
 
 So "continue on the other machine" means: the orchestrator starts fresh on
@@ -372,7 +377,7 @@ Taken on 2026-10-28, each the recommendation of the proposal.
 | 7 | anchored | devpit reminds the person to turn on anchored's remote; it hosts nothing |
 | 8 | two machines on one orchestrator | allowed, with a banner when the other wrote in the last minutes |
 | 9 | profile secrets | never sync; each machine asks |
-| 10 | order against the board (#198) | workspace sync first |
+| 10 | order against the local board (#198) | workspace sync first |
 
 Security notes from the design's review, for the cards that build it:
 
@@ -409,4 +414,4 @@ Security notes from the design's review, for the cards that build it:
    skip, *the same as*), fill profiles, the anchored reminder.
 9. The history and conflicts UI: restore a file or a folder from a snapshot,
    the conflict copies' notice, and what continues (handoff, not session).
-10. Board sync (#198), on the same identity rules.
+10. Local board sync (#198), on the same identity rules.
