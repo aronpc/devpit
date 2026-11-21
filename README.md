@@ -52,9 +52,8 @@ attachments on devpit.app, where the server can read them. The app reaches it
 through the board API and MCP. Attachments have limits per file, per account
 and across the service.
 
-Personal sync is separate: preferences, project settings and files you choose
-remain sealed with a key held only by your machines, so the server never opens
-those blobs. A local SQLite board, projects, conversations and terminal history
+Personal sync is separate: preferences and project settings remain sealed
+with a key held only by your machines, so the server never opens those blobs. A local SQLite board, projects, conversations and terminal history
 never leave this machine.
 
 ## Install

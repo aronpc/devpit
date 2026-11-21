@@ -52,9 +52,9 @@ autor e data e anexos, que o servidor consegue ler. O app chega a ele pela API
 de quadros e pelo MCP. Os anexos têm limites por arquivo, por conta e em todo o
 serviço.
 
-O sync pessoal é separado: preferências, configurações de projeto e arquivos
-que você escolher continuam selados com uma chave que só as suas máquinas têm,
-por isso o servidor nunca abre esses blobs. Um quadro Local em SQLite, projetos,
+O sync pessoal é separado: preferências e configurações de projeto continuam
+selados com uma chave que só as suas máquinas têm, por isso o servidor nunca
+abre esses blobs. Um quadro Local em SQLite, projetos,
 conversas e histórico de terminal nunca saem desta máquina.
 
 ## Instalar
