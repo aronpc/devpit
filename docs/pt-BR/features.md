@@ -40,8 +40,8 @@ está, e um número em cada chamada de agente.
   data e anexos ficam no devpit.app, onde o servidor consegue lê-los. O app
   chega a ele pela API de quadros e pelo MCP. Os anexos têm limites por arquivo,
   por conta e em todo o serviço.
-- **O sync pessoal continua selado.** Preferências, configurações de projeto e
-  arquivos que você escolher são selados com uma chave que só as suas máquinas
-  têm; o devpit.app nunca abre esses blobs (`docs/sync.md`).
+- **O sync pessoal continua selado.** Preferências e configurações de projeto
+  são selados com uma chave que só as suas máquinas têm; o devpit.app nunca
+  abre esses blobs (`docs/sync.md`).
 - **Na sua máquina.** Um quadro Local em SQLite, projetos, conversas e histórico
   de terminal nunca saem deste computador. A conta é opcional.

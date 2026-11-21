@@ -44,8 +44,8 @@ work stands, and a number on every agent call.
   attachments live on devpit.app, where the server can read them. The app
   reaches it through the board API and MCP. Attachments have limits per file,
   per account and across the service.
-- **Personal sync stays sealed.** Preferences, project settings and files you
-  choose are sealed with a key held only by your machines; devpit.app never
-  opens those blobs (`docs/sync.md`).
+- **Personal sync stays sealed.** Preferences and project settings are sealed
+  with a key held only by your machines; devpit.app never opens those blobs
+  (`docs/sync.md`).
 - **On your machine.** A local SQLite board, projects, conversations and
   terminal history never leave this computer. An account is optional.
