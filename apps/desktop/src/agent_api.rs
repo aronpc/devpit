@@ -376,7 +376,16 @@ fn respond_in(
             }
             let live = crate::live_sessions::orchestrator_sessions_now(profile).map_err(said)?;
             let word = crate::draft_sending::last_word(profile, Path::new(&here.root_path)).ok();
-            let running: Vec<&str> = live.sessions.iter().map(|one| one.name.as_str()).collect();
+            let before = word
+                .as_ref()
+                .map(|said| crate::stop_asked::stopped_on(profile, &said.id))
+                .unwrap_or_default();
+            let running: Vec<&str> = live
+                .sessions
+                .iter()
+                .map(|one| one.name.as_str())
+                .chain(before.iter().map(String::as_str))
+                .collect();
             let request = crate::stop_asked::Request {
                 said: word.as_ref(),
                 name: &name,
@@ -391,8 +400,12 @@ fn respond_in(
                 let _ = app.emit(crate::stop_asked::STOP_ASKED, profile);
                 return Ok(asked);
             }
-            return crate::stopping::stop(app, profile, &name, pid, "orchestrator", force)
-                .map_err(said);
+            let done = crate::stopping::stop(app, profile, &name, pid, "orchestrator", force)
+                .map_err(said)?;
+            if let Some(word) = &word {
+                crate::stop_asked::stopped_now(profile, &word.id, &name);
+            }
+            return Ok(done);
         }
         "transcript" => {
             let profile = orchestrating(here)?;
