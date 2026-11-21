@@ -13,7 +13,7 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Mutex, OnceLock};
 
-use devpit_agentcli::person::{authorises, bare, last_said, From, Said};
+use devpit_agentcli::person::{authorises, bare, last_heard, From, Heard, Said};
 use serde_json::{json, Value};
 
 /// A message that let a draft go: (profile, message id, session). A bare
@@ -141,14 +141,17 @@ pub(crate) fn hear(profile: &str, root: &Path, sent: &str) {
     }
 }
 
-/// [`hear`], for a CLI whose log devpit does not read. A turn devpit started
-/// itself leaves the person's last word as it was.
+/// [`hear`], for a CLI whose log devpit does not read. A turn that is not the
+/// person's (one devpit started, or a forwarded request) is a barrier: what
+/// they said before it is forgotten, so it cannot approve what the turn asks.
 pub(crate) fn heard_in(root: &Path, sent: &str) {
     let id = format!("said_{}", ulid::Ulid::generate());
-    if let (Some(said), Ok(mut heard)) =
-        (devpit_agentcli::person::said_in(&id, sent), heard().lock())
-    {
-        heard.insert(at(root), said);
+    let said = devpit_agentcli::person::said_in(&id, sent);
+    if let Ok(mut heard) = heard().lock() {
+        match said {
+            Some(said) => heard.insert(at(root), said),
+            None => heard.remove(&at(root)),
+        };
     }
 }
 
@@ -173,8 +176,16 @@ pub(crate) fn last_word(profile: &str, root: &Path) -> Result<Said, String> {
     if !crate::live_sessions::on_claude(profile) {
         return heard_last(root);
     }
-    last_said(&log_tail(profile, root)?)
-        .ok_or_else(|| "devpit found nothing the person said in this conversation".to_owned())
+    match last_heard(&log_tail(profile, root)?) {
+        Heard::Said(said) => Ok(said),
+        Heard::Barrier => Err(
+            "the person has said nothing since a turn that was not theirs (a forwarded request or one devpit started): their earlier words do not carry over"
+                .to_owned(),
+        ),
+        Heard::Nothing => {
+            Err("devpit found nothing the person said in this conversation".to_owned())
+        }
+    }
 }
 
 /// The end of the log of `profile`'s orchestrator, standing in `root`.

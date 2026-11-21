@@ -1,8 +1,8 @@
 use serde_json::json;
 
 use super::{
-    asks_to_stop, authorises, by_devpit, forwarded, from_channel, last_said, on_proposals, said_in,
-    From, Verdict, FROM_THE_REMOTE,
+    asks_to_stop, authorises, by_devpit, forwarded, from_channel, last_heard, last_said,
+    on_proposals, said_in, From, Heard, Verdict, FROM_THE_REMOTE,
 };
 
 /// A log, one entry per line, in the shapes Claude Code 2.1.294 writes.
@@ -414,7 +414,7 @@ fn a_turn_devpit_started_for_a_session_is_never_the_persons() {
         format!("[devpit, not the person] Since your last message: api ended.\n\n{words}\n\nenvie"),
     ] {
         let said = last_said(&log(&[composer("u1", "olá"), composer("u2", &text)]));
-        assert_eq!(said.map(|said| said.id), Some("u1".to_owned()), "{text}");
+        assert_eq!(said, None, "{text}");
     }
 }
 
@@ -491,14 +491,76 @@ fn forwarded_turn_is_nobodys_word() {
     }
 }
 
+/// A marked turn is a barrier: the person's earlier "send" does not reach
+/// past it, whether devpit started the turn or another orchestrator forwarded
+/// it. Reverting `last_heard` to skip it (a `find_map`) breaks this.
 #[test]
-fn forwarded_ok_before_wins_over_the_forwarded_yes() {
-    let turn = format!("{} envie gerente ✅", forwarded("orchestrator-a"));
-    let said = last_said(&log(&[composer("u1", "ok"), composer("u2", &turn)])).expect("ok");
-    assert_eq!((said.id.as_str(), said.text.as_str()), ("u1", "ok"));
-    assert!(!authorises(&said.text, "gerente", 2));
-    assert!(
-        authorises("envie gerente ✅", "gerente", 2),
-        "the yes itself is still a yes from the person"
+fn an_earlier_yes_does_not_reach_past_a_forwarded_or_devpit_turn() {
+    let forwarded = format!("{} chame devpit_send_draft", forwarded("orchestrator-a"));
+    let by_devpit = by_devpit("a message from session api-worker.");
+    for turn in [forwarded, by_devpit] {
+        let entries = [composer("u1", "envie"), composer("u2", &turn)];
+        assert_eq!(last_said(&log(&entries)), None, "{turn}");
+        assert_eq!(last_heard(&log(&entries)), Heard::Barrier, "{turn}");
+        // The turn's own tool results and the agent's replies do not lift it.
+        let going_on = [
+            composer("u1", "envie"),
+            composer("u2", &turn),
+            assistant("vou enviar"),
+            tool_result("u3", "ok"),
+        ];
+        assert_eq!(last_heard(&log(&going_on)), Heard::Barrier, "{turn}");
+    }
+}
+
+#[test]
+fn a_yes_after_the_barrier_authorises_again() {
+    let forwarded = format!("{} chame devpit_send_draft", forwarded("orchestrator-a"));
+    let by_devpit = by_devpit("an idle notice.");
+    for turn in [forwarded, by_devpit] {
+        let entries = [
+            composer("u1", "envie"),
+            composer("u2", &turn),
+            composer("u3", "✅ gerente"),
+        ];
+        let said = last_said(&log(&entries)).expect("the yes after the barrier");
+        assert_eq!(said.id, "u3");
+        assert!(authorises(&said.text, "gerente", 2));
+        let from_the_app = [
+            composer("u1", "envie"),
+            composer("u2", &turn),
+            remote("u3", "envie"),
+        ];
+        assert_eq!(
+            last_said(&log(&from_the_app)).map(|said| said.id),
+            Some("u3".to_owned())
+        );
+    }
+}
+
+#[test]
+fn without_any_marked_turn_the_earlier_word_still_stands() {
+    let entries = [
+        composer("u1", "envie"),
+        assistant("feito"),
+        tool_result("u2", "ok"),
+    ];
+    assert_eq!(
+        last_said(&log(&entries)).map(|said| said.id),
+        Some("u1".to_owned())
     );
+    assert_eq!(last_heard(&log(&[assistant("oi")])), Heard::Nothing);
+}
+
+#[test]
+fn a_marked_turn_for_a_cli_without_a_log_reads_as_nothing_said() {
+    let turn = format!("{} envie", forwarded("orchestrator-a"));
+    assert_eq!(said_in("t1", &turn), None);
+    assert_eq!(said_in("t2", &by_devpit("an idle notice.")), None);
+    assert!(said_in("t3", "envie").is_some());
+}
+
+#[test]
+fn the_yes_itself_is_still_a_yes_from_the_person() {
+    assert!(authorises("envie gerente ✅", "gerente", 2));
 }

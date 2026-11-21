@@ -95,17 +95,68 @@ pub struct Said {
     pub from: From,
 }
 
-/// The person's last words in a log's text, past whatever the turn did since.
-pub fn last_said(log: &str) -> Option<Said> {
-    log.lines().rev().find_map(|line| {
-        let entry = serde_json::from_str::<Value>(line).ok()?;
-        (entry["type"] == "user").then_some(())?;
-        person_said(&entry)
-    })
+/// What the end of a log says about the person's last word.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Heard {
+    /// The person's last words, with no barrier after them.
+    Said(Said),
+    /// A turn that is not the person's (a forwarded request, or one devpit
+    /// started) came after their last words: those do not reach past it.
+    Barrier,
+    /// Nothing the person said.
+    Nothing,
 }
 
-/// What one `user` entry says the person said, if it is the person's.
-fn person_said(entry: &Value) -> Option<Said> {
+/// The person's last words in a log's text, past whatever the turn did since,
+/// but not past a turn that is not theirs: [`Heard::Barrier`] stops the
+/// search, so an earlier "send" cannot approve what a forwarded or devpit-made
+/// turn asks for. A word or a click after the barrier is read as usual.
+pub fn last_heard(log: &str) -> Heard {
+    for line in log.lines().rev() {
+        let Ok(entry) = serde_json::from_str::<Value>(line) else {
+            continue;
+        };
+        if entry["type"] != "user" {
+            continue;
+        }
+        match person_turn(&entry) {
+            Turn::Said(said) => return Heard::Said(said),
+            Turn::Barrier => return Heard::Barrier,
+            Turn::Skip => {}
+        }
+    }
+    Heard::Nothing
+}
+
+/// The person's last words in a log's text, when no barrier stands after them.
+pub fn last_said(log: &str) -> Option<Said> {
+    match last_heard(log) {
+        Heard::Said(said) => Some(said),
+        Heard::Barrier | Heard::Nothing => None,
+    }
+}
+
+/// What one `user` entry is, to the search for the person's last words.
+enum Turn {
+    Said(Said),
+    /// A marked turn: not the person's word, and nothing before it counts.
+    Barrier,
+    /// Not a turn of the person's to read: look further back.
+    Skip,
+}
+
+fn person_turn(entry: &Value) -> Turn {
+    match person_said(entry) {
+        Some(Some(said)) => Turn::Said(said),
+        Some(None) => Turn::Barrier,
+        None => Turn::Skip,
+    }
+}
+
+/// What one `user` entry says the person said, if it is the person's: `None`
+/// when it is not a turn to read, `Some(None)` when it is a marked turn (a
+/// barrier), `Some(Some(..))` when it is their words.
+fn person_said(entry: &Value) -> Option<Option<Said>> {
     if entry["isMeta"] == true || entry["isCompactSummary"] == true {
         return None;
     }
@@ -130,15 +181,17 @@ fn person_said(entry: &Value) -> Option<Said> {
         }
         _ => return None,
     };
-    let (text, sent_from) = without_notices(&text)?;
-    Some(Said {
+    let Some((text, sent_from)) = without_notices(&text) else {
+        return Some(None);
+    };
+    Some(Some(Said {
         id: entry["uuid"].as_str()?.to_owned(),
         text: text.trim().to_owned(),
         from: match sent_from {
             Some(sent_from) if from == From::Composer => sent_from,
             _ => from,
         },
-    })
+    }))
 }
 
 /// What the person said in a turn devpit sent to a CLI whose log it does not
