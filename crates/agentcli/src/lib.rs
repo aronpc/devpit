@@ -300,6 +300,7 @@ mod tests;
 pub mod acp;
 pub mod apps_host;
 pub mod aside;
+mod bounded_lines;
 pub mod claude_lines;
 pub mod cli_config;
 pub mod codex;

@@ -11,7 +11,6 @@
 //! after its result while stdin is open, is listed as a live session, and an
 //! idle one answers a message with a turn of its own.
 
-use std::io::{BufRead, BufReader};
 use std::process::Stdio;
 use std::sync::Arc;
 use std::time::Instant;
@@ -110,14 +109,12 @@ impl Resident {
             // Control answers are not turn frames; they are handed on as
             // they pass, and the turn reader never sees a difference.
             let (watching, answers) = (tell.clone(), reading.clone());
-            let mut lines = BufReader::new(stdout)
-                .lines()
-                .map_while(Result::ok)
-                .inspect(move |line| {
-                    if let Some(said) = answers.control_answer(line) {
-                        watching(Heard::Control(said));
-                    }
-                });
+            let (bounded, overflow) = crate::bounded_lines::bounded_lines(stdout);
+            let mut lines = bounded.inspect(move |line| {
+                if let Some(said) = answers.control_answer(line) {
+                    watching(Heard::Control(said));
+                }
+            });
             // The CLI counts what the process has spent so far: a turn's cost
             // is what it added.
             let mut spent = 0.0;
@@ -156,6 +153,26 @@ impl Resident {
                 if !whole {
                     break;
                 }
+            }
+            // A line past the ceiling cut the stream with the CLI alive: end it,
+            // say why, and let the wait below return.
+            if overflow.happened() {
+                tell(Heard::Part(Part::Text {
+                    text: crate::bounded_lines::complaint(),
+                    parent: None,
+                }));
+                tell(Heard::Ended(Box::new(Said {
+                    end: TurnEnd {
+                        turn_id: String::new(),
+                        stop_reason: Some("output_too_large".to_owned()),
+                        is_error: true,
+                        ..Default::default()
+                    },
+                    session_id: None,
+                    init: None,
+                    anchor: None,
+                })));
+                crate::talk::end_group(&mut child);
             }
             // Gone, it takes no message: one written into its stdin would wait forever.
             reading.close();
