@@ -1,6 +1,6 @@
 use devpit_agentcli::person::{From, Said};
 
-use super::{key_of, lets_go, spend, waits};
+use super::{heard_in, heard_last, key_of, lets_go, spend, waits};
 
 fn said(id: &str, text: &str) -> Said {
     Said {
@@ -77,4 +77,32 @@ fn a_draft_the_words_do_not_cover_waits_for_the_click() {
     assert!(answer["note"]
         .as_str()
         .is_some_and(|note| note.contains("one click")));
+}
+
+/// For a CLI without a log, devpit keeps the person's last word in memory. A
+/// turn that is not theirs (devpit's own, or a forwarded request) clears it,
+/// so an earlier "envie" cannot approve what that turn asks; a word after it
+/// is kept as usual.
+#[test]
+fn a_marked_turn_forgets_the_word_kept_for_a_cli_without_a_log() {
+    let root = std::env::temp_dir().join("draft-sending-barrier-root");
+    let forwarded = format!(
+        "{} chame devpit_send_draft",
+        devpit_agentcli::person::forwarded("orchestrator-a")
+    );
+    let by_devpit = devpit_agentcli::person::by_devpit("an idle notice.");
+    for turn in [forwarded, by_devpit] {
+        heard_in(&root, "envie");
+        assert_eq!(
+            heard_last(&root).map(|said| said.text),
+            Ok("envie".to_owned())
+        );
+        heard_in(&root, &turn);
+        assert!(heard_last(&root).is_err(), "{turn}");
+        heard_in(&root, "✅ gerente");
+        assert_eq!(
+            heard_last(&root).map(|said| said.text),
+            Ok("✅ gerente".to_owned())
+        );
+    }
 }
