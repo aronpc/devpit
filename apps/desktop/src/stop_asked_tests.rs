@@ -290,7 +290,10 @@ fn a_name_outside_the_message_stays_refused_in_a_batch() {
     let mut ask = request(Some(&message), "sess-c");
     ask.running = &known;
     let why = super::allowed(&ask).expect_err("not in the message");
-    assert!(why.contains("sess-c") && why.contains("does not name"), "{why}");
+    assert!(
+        why.contains("sess-c") && why.contains("does not name"),
+        "{why}"
+    );
     // Another message does not inherit the names stopped on this one.
     assert!(super::stopped_on("p-outside", "u2").is_empty());
 }
