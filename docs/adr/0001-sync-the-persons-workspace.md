@@ -39,9 +39,9 @@ env values hold tokens; "project memory" does not exist yet as a feature.
 ## Decision
 
 1. **Three kinds of data, three ways to travel.**
-   - *Records* (settings, profiles, orchestrator links, later the board) go
-     through the existing round: one sealed blob per namespace, merged field
-     by field by the hybrid logical clock.
+   - *Records* (settings, profiles, orchestrator links, later the local
+     board) go through the existing round: one sealed blob per namespace,
+     merged field by field by the hybrid logical clock.
    - *Files* (an orchestrator's notes, a project's memory, Claude Code's
      auto-memory) go through a new **file tree** namespace: a sealed manifest
      merged per file, and contents as sealed, content-addressed objects on
@@ -91,7 +91,7 @@ env values hold tokens; "project memory" does not exist yet as a feature.
 - Work in progress on machine A cannot be resumed as the same agent session
   on machine B; it is continued from its handoff. That is a product promise
   the UI must state plainly.
-- The board (#198) stays out of this ADR's first steps; it reuses the same
+- The local board (#198) stays out of this ADR's first steps; it reuses the
   identity rules and still has its own blockers (per-machine card numbers,
   steps that must not run twice).
 
