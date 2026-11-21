@@ -1,6 +1,7 @@
 use std::path::Path;
 
 use super::*;
+use devpit_rpc::Part;
 
 fn turn(budget: Option<f64>) -> Say<'static> {
     Say {
@@ -612,4 +613,86 @@ fn each_mode_is_claudes_own_permission_mode_on_the_line() {
     assert!(!argv(&turn(None))
         .iter()
         .any(|one| one == "--permission-mode"));
+}
+
+/// A stand-in that writes one line past the ceiling, starting the way `head`
+/// says, and then keeps the pipe busy as a runaway CLI would.
+#[cfg(unix)]
+fn runaway(dir: &Path, head: &str) -> String {
+    use std::os::unix::fs::PermissionsExt;
+
+    let cli = dir.join("fake-claude");
+    let over = crate::bounded_lines::MOST_LINE_BYTES + 1024 * 1024;
+    std::fs::write(
+        &cli,
+        format!(
+            "#!/bin/sh\nread -r _prompt\nprintf '%s' '{head}'\n\
+             head -c {over} /dev/zero | tr '\\0' x\n\
+             printf '\"}}}}}}\\n'\nsleep 30\n"
+        ),
+    )
+    .expect("script");
+    std::fs::set_permissions(&cli, std::fs::Permissions::from_mode(0o755)).expect("chmod");
+    cli.to_string_lossy().into_owned()
+}
+
+#[cfg(unix)]
+fn say_to(command: &str, cwd: &Path) -> (crate::talk::Said, String) {
+    let turn = Say {
+        command,
+        cwd,
+        prompt: "go",
+        ..turn(None)
+    };
+    let mut text = String::new();
+    let said = (0..5)
+        .find_map(|_| {
+            let mut on = |part: Part| {
+                if let Part::Text { text: more, .. } = part {
+                    text.push_str(&more);
+                }
+            };
+            match crate::talk::say(&crate::driver::Claude::default(), &turn, &mut on, |_| {}) {
+                Err(crate::AgentError::NotInstalled) => {
+                    std::thread::sleep(std::time::Duration::from_millis(50));
+                    None
+                }
+                other => Some(other),
+            }
+        })
+        .expect("the stand-in never started")
+        .expect("a turn");
+    (said, text)
+}
+
+/// One line past the ceiling must not be held: the turn ends with an error
+/// at once, without waiting for the CLI to finish, whatever the line said it was.
+#[cfg(unix)]
+#[test]
+fn an_oversized_permission_prompt_line_ends_the_turn_with_an_error() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let command = runaway(
+        dir.path(),
+        r#"{"type":"control_request","request_id":"r1","request":{"subtype":"can_use_tool","tool_name":"Bash","input":{"command":""#,
+    );
+    let started = std::time::Instant::now();
+    let (said, text) = say_to(&command, dir.path());
+    assert!(started.elapsed() < std::time::Duration::from_secs(20));
+    assert!(said.end.is_error);
+    assert_eq!(said.end.stop_reason.as_deref(), Some("output_too_large"));
+    assert!(text.contains("longer than"), "{text}");
+}
+
+#[cfg(unix)]
+#[test]
+fn an_oversized_cancel_request_line_ends_the_turn_with_an_error() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let command = runaway(
+        dir.path(),
+        r#"{"type":"control_cancel_request","request_id":"r1","request":{"subtype":"can_use_tool","input":{"x":""#,
+    );
+    let (said, text) = say_to(&command, dir.path());
+    assert!(said.end.is_error);
+    assert_eq!(said.end.stop_reason.as_deref(), Some("output_too_large"));
+    assert!(text.contains("longer than"), "{text}");
 }

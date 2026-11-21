@@ -331,3 +331,54 @@ printf '{"type":"result","subtype":"success","session_id":"s-1","total_cost_usd"
     assert_eq!(first, format!("[{}]", inherited.as_deref().unwrap_or("1")));
     resident.close();
 }
+
+/// The resident process writes one line past the ceiling and stays alive: the
+/// reader must not hold it, the turn ends with an error, and the process goes.
+fn oversized_resident(head: &str) {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let over = crate::bounded_lines::MOST_LINE_BYTES + 1024 * 1024;
+    let cli = dir.path().join("fake-claude");
+    std::fs::write(
+        &cli,
+        format!(
+            "#!/bin/sh\nread -r _first\nprintf '%s' '{head}'\n\
+             head -c {over} /dev/zero | tr '\\0' x\n\
+             printf '\"}}}}}}\\n'\nsleep 30\n"
+        ),
+    )
+    .expect("script");
+    std::fs::set_permissions(&cli, std::fs::Permissions::from_mode(0o755)).expect("chmod");
+    let command = cli.to_string_lossy().into_owned();
+
+    let (tell, heard) = mpsc::channel();
+    let resident = started(&command, tell);
+    assert!(resident.say("go"));
+    let mut seen = Vec::new();
+    while let Ok(one) = heard.recv_timeout(Duration::from_secs(20)) {
+        let gone = one == "<gone>";
+        seen.push(one);
+        if gone {
+            break;
+        }
+    }
+    assert!(
+        seen.iter().any(|one| one.contains("longer than")),
+        "{seen:?}"
+    );
+    assert!(seen.iter().any(|one| one == "<ended>"), "{seen:?}");
+    assert_eq!(seen.last().map(String::as_str), Some("<gone>"));
+}
+
+#[test]
+fn an_oversized_permission_prompt_line_ends_the_resident_turn() {
+    oversized_resident(
+        r#"{"type":"control_request","request_id":"r1","request":{"subtype":"can_use_tool","tool_name":"Bash","input":{"command":""#,
+    );
+}
+
+#[test]
+fn an_oversized_cancel_request_line_ends_the_resident_turn() {
+    oversized_resident(
+        r#"{"type":"control_cancel_request","request_id":"r1","request":{"subtype":"can_use_tool","input":{"x":""#,
+    );
+}

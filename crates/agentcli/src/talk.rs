@@ -3,7 +3,6 @@
 //! `headless::run_turn` answers once, at the end — right for a board step,
 //! wrong for a chat, where the point is watching it happen.
 
-use std::io::{BufRead, BufReader};
 use std::path::Path;
 use std::process::Stdio;
 
@@ -72,6 +71,18 @@ pub struct Said {
     pub anchor: Option<String>,
 }
 
+/// Ends the CLI and the tools it started, then lets the caller reap it.
+pub(crate) fn end_group(child: &mut std::process::Child) {
+    #[cfg(unix)]
+    {
+        // The turn's CLI leads its own group (`own_group`), so its pid is the group's.
+        let _ = std::process::Command::new("kill")
+            .args(["-KILL", "--", &format!("-{}", child.id())])
+            .status();
+    }
+    let _ = child.kill();
+}
+
 /// A turn's CLI leads a process group of its own: a forced stop ends the
 /// tools it started with it, which signalling the CLI alone would leave running.
 pub(crate) fn own_group(command: &mut std::process::Command) -> &mut std::process::Command {
@@ -113,21 +124,30 @@ pub fn say(
     }
     let stdout = child.stdout.take().ok_or(AgentError::NotInstalled)?;
     let started = std::time::Instant::now();
-    let heard = crate::talk_stream::follow(
-        driver,
-        BufReader::new(stdout).lines().map_while(Result::ok),
-        &control,
-        turn.on_session,
-        &mut on_part,
-    );
+    let (lines, overflow) = crate::bounded_lines::bounded_lines(stdout);
+    let heard = crate::talk_stream::follow(driver, lines, &control, turn.on_session, &mut on_part);
 
+    // A line past the ceiling ended the stream with the CLI still writing:
+    // end its group, or the wait below never returns.
+    if overflow.happened() {
+        crate::talk::end_group(&mut child);
+    }
     // Whatever ended the stream, stdin is not needed any more.
     control.close();
     let status = child
         .wait()
         .map_err(|err| AgentError::Unreadable(err.to_string()))?;
 
-    let ending = crate::talk_failure::ending(heard.ended, status.success(), stderr, &mut on_part);
+    let mut ending =
+        crate::talk_failure::ending(heard.ended, status.success(), stderr, &mut on_part);
+    if overflow.happened() {
+        on_part(Part::Text {
+            text: crate::bounded_lines::complaint(),
+            parent: None,
+        });
+        ending.is_error = true;
+        ending.stop_reason = Some("output_too_large".to_owned());
+    }
 
     Ok(Said {
         end: TurnEnd {
