@@ -258,3 +258,39 @@ fn a_swap_is_another_session_running_on_the_same_card() {
     );
     assert!(!swapped(&[], "fix-login", None), "nothing running");
 }
+
+/// One message, `stop a b c`, stops the three through three calls: each call
+/// reads the sessions running at that moment, so the ones stopped before are
+/// gone from the list, and the message must still read as only the request.
+#[test]
+fn a_batch_stop_goes_through_one_call_per_name() {
+    let message = said("stop sess-a sess-b sess-c", From::Composer);
+    let mut running = vec!["sess-a", "sess-b", "sess-c"];
+    for name in ["sess-a", "sess-b", "sess-c"] {
+        let stopped = super::stopped_on("p-batch", &message.id);
+        let mut known: Vec<&str> = running.clone();
+        known.extend(stopped.iter().map(String::as_str));
+        let mut ask = request(Some(&message), name);
+        ask.running = &known;
+        assert_eq!(super::allowed(&ask), Ok(()), "{name}");
+        super::stopped_now("p-batch", &message.id, name);
+        running.retain(|one| *one != name);
+    }
+}
+
+/// A name the message does not carry stays refused, even after others of it
+/// stopped, and the refusal says which name the message lacks.
+#[test]
+fn a_name_outside_the_message_stays_refused_in_a_batch() {
+    let message = said("stop sess-a sess-b", From::Composer);
+    super::stopped_now("p-outside", &message.id, "sess-a");
+    let stopped = super::stopped_on("p-outside", &message.id);
+    let mut known: Vec<&str> = vec!["sess-b", "sess-c"];
+    known.extend(stopped.iter().map(String::as_str));
+    let mut ask = request(Some(&message), "sess-c");
+    ask.running = &known;
+    let why = super::allowed(&ask).expect_err("not in the message");
+    assert!(why.contains("sess-c") && why.contains("does not name"), "{why}");
+    // Another message does not inherit the names stopped on this one.
+    assert!(super::stopped_on("p-outside", "u2").is_empty());
+}

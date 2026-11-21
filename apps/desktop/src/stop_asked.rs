@@ -60,8 +60,13 @@ pub(crate) fn allowed(asked: &Request<'_>) -> Result<(), String> {
             None
         }
         Some(said) => Some(format!(
-            "the person's last message («{}») is not only a request to stop {name}",
-            crate::draft_sending::short(&said.text)
+            "the person's last message («{}») is not only a request to stop {name}{}",
+            crate::draft_sending::short(&said.text),
+            if said.text.to_lowercase().contains(&name.to_lowercase()) {
+                ""
+            } else {
+                ": it does not name it"
+            }
         )),
         None => Some(format!(
             "devpit found nothing the person said asking for {name} to stop"
@@ -99,6 +104,36 @@ pub(crate) fn requested(profile: &str, asked: &Request<'_>) -> Result<(), Value>
         losing: asked.losing.clone(),
     };
     Err(ask(profile, held, &why, asked.said.map(|said| said.from)))
+}
+
+/// Names stopped on the person's word, by orchestrator account and the id of
+/// the message: one message stops several sessions through one call each, and
+/// the ones stopped before are no longer running to be read in it.
+type Stopped = HashMap<(String, String), Vec<String>>;
+
+fn stopped() -> &'static Mutex<Stopped> {
+    static STOPPED: OnceLock<Mutex<Stopped>> = OnceLock::new();
+    STOPPED.get_or_init(Mutex::default)
+}
+
+/// Remembers `name` as stopped on the message `said`. Only the last message
+/// is kept per account.
+pub(crate) fn stopped_now(profile: &str, said: &str, name: &str) {
+    if let Ok(mut held) = stopped().lock() {
+        held.retain(|(one, id), _| one != profile || id == said);
+        held.entry((profile.to_owned(), said.to_owned()))
+            .or_default()
+            .push(name.to_owned());
+    }
+}
+
+/// The names already stopped on the message `said`, to read it with.
+pub(crate) fn stopped_on(profile: &str, said: &str) -> Vec<String> {
+    stopped()
+        .lock()
+        .ok()
+        .and_then(|held| held.get(&(profile.to_owned(), said.to_owned())).cloned())
+        .unwrap_or_default()
 }
 
 type Asked = HashMap<String, Vec<StopAsked>>;
