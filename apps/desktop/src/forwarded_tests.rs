@@ -365,7 +365,8 @@ fn forwarded_prompt_is_nobodys_word_even_edited_with_a_yes() {
     assert!(sent.starts_with(&devpit_agentcli::person::forwarded("orchestrator-a")));
     assert_eq!(said_in("s1", &sent), None);
     let said = last_said(&in_a_log(&[composer("u1", "ok"), composer("u2", &sent)]));
-    assert_eq!(said.map(|said| said.text), Some("ok".to_owned()));
+    // The forwarded turn is a barrier: the earlier "ok" does not cross it.
+    assert_eq!(said.map(|said| said.text), None);
     // The yes the person typed themselves is still theirs.
     assert!(authorises("envie gerente ✅", "gerente", 2));
 }
