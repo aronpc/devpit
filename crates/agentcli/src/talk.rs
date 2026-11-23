@@ -11,6 +11,8 @@ use devpit_rpc::{Part, SessionInit, TurnEnd};
 use crate::driver::Driver;
 use crate::AgentError;
 
+pub(crate) use crate::talk_group::{end_group, own_group};
+
 /// What a turn needs to start.
 pub struct Say<'a> {
     /// The binary this conversation's profile names. Two accounts of the
@@ -69,26 +71,6 @@ pub struct Said {
     pub init: Option<SessionInit>,
     /// The last message the agent wrote, where a rewind to this turn forks.
     pub anchor: Option<String>,
-}
-
-/// Ends the CLI and the tools it started, then lets the caller reap it.
-pub(crate) fn end_group(child: &mut std::process::Child) {
-    #[cfg(unix)]
-    {
-        // The turn's CLI leads its own group (`own_group`), so its pid is the group's.
-        let _ = std::process::Command::new("kill")
-            .args(["-KILL", "--", &format!("-{}", child.id())])
-            .status();
-    }
-    let _ = child.kill();
-}
-
-/// A turn's CLI leads a process group of its own: a forced stop ends the
-/// tools it started with it, which signalling the CLI alone would leave running.
-pub(crate) fn own_group(command: &mut std::process::Command) -> &mut std::process::Command {
-    #[cfg(unix)]
-    std::os::unix::process::CommandExt::process_group(command, 0);
-    command
 }
 
 /// Runs one turn, handing every part to `on_part` as it is read. `on_start`
