@@ -62,7 +62,10 @@ describe('pausing devpit', () => {
     render(<PauseControl />)
     await act(async () => heard['pause:changed']!({ on: true, until: null }))
     expect(screen.getByText('Pausado até você retomar · Retomar')).toBeTruthy()
-    const at = new Date(2026, 9, 1, 18, 0).getTime() / 1000 + 3600
+    const tomorrow = new Date()
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    tomorrow.setHours(19, 0, 0, 0)
+    const at = tomorrow.getTime() / 1000
     await act(async () => heard['pause:changed']!({ on: true, until: at }))
     const hour = new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' }).format(new Date(at * 1000))
     expect(screen.getByText(`Pausado até ${hour} · Retomar`)).toBeTruthy()
