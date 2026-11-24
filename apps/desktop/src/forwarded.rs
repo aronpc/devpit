@@ -77,7 +77,7 @@ pub(crate) fn keep(
     destination: &str,
     origin: &str,
     id: &str,
-    conversation: &str,
+    conversation: Option<&str>,
     text: &str,
 ) -> Result<bool, String> {
     let (id, text) = checked(id, text)?;
@@ -104,10 +104,20 @@ pub(crate) fn keep(
             "{MOST} requests wait for that orchestrator already: it has to deal with them before more come"
         ));
     }
+    // A destination with no conversation yet gets one for all its requests,
+    // decided under the lock so two requests never split across two.
+    let conversation = conversation.map(str::to_owned).unwrap_or_else(|| {
+        held.held
+            .iter()
+            .filter(|((to, ..), _)| to == destination)
+            .map(|(_, kept)| kept.conversation.clone())
+            .min()
+            .unwrap_or_else(|| ulid::Ulid::generate().to_string().to_lowercase())
+    });
     held.held.insert(
         key,
         Kept {
-            conversation: conversation.to_owned(),
+            conversation,
             text: text.to_owned(),
             state: RequestState::Pending,
         },
@@ -211,6 +221,7 @@ pub(crate) fn prompt_of(from: &str, text: &str) -> String {
 pub(crate) struct Reserved {
     generation: u64,
     prompt: String,
+    conversation: String,
 }
 
 /// Reserves request `id` atomically and returns its prompt. A request already
@@ -248,6 +259,7 @@ pub(crate) fn to_send(
     Ok(Reserved {
         generation,
         prompt: prompt_of(from, text),
+        conversation: request.conversation.clone(),
     })
 }
 
@@ -341,9 +353,11 @@ pub async fn forwarded_send(
             .into_iter()
             .find(|one| one.id == at && one.orchestrator.is_some())
             .ok_or_else(|| RpcError::new(ErrorCode::NotFound, "no such orchestrator".to_owned()))?;
-        let conversation =
+        let chosen =
             conversation_of(&project).map_err(|why| RpcError::new(ErrorCode::Invalid, why))?;
         let reserved = to_send(&at, &from, &id, &text)?;
+        // With no conversation of its own yet, the turn runs where the card waited.
+        let conversation = chosen.unwrap_or_else(|| reserved.conversation.clone());
         let ask = match crate::remote_talk::devpits_turn(&at, &conversation, &reserved.prompt) {
             Ok(ask) => ask,
             Err(why) => {
@@ -390,18 +404,19 @@ pub(crate) fn chosen(
 }
 
 /// The conversation for a request to `destination`, found without opening
-/// anything: no process starts for it.
-fn conversation_of(destination: &Project) -> Result<String, String> {
+/// anything: no process starts for it. None when it has none yet.
+fn conversation_of(destination: &Project) -> Result<Option<String>, String> {
     let listening = crate::session_bus::app()
         .map(|app| crate::chat_resident::conversations_of(app, &destination.id))
         .unwrap_or_default();
     let threads = crate::threads::chat_list_now(destination.id.clone())
         .map_err(|err| err.message)?
         .conversations;
-    Ok(
-        chosen(&listening, threads, destination.orchestrator.as_deref())
-            .unwrap_or_else(|| ulid::Ulid::generate().to_string().to_lowercase()),
-    )
+    Ok(chosen(
+        &listening,
+        threads,
+        destination.orchestrator.as_deref(),
+    ))
 }
 
 /// `devpit_session_message` from orchestrator `here` to `to`, when `to` is the
@@ -435,7 +450,7 @@ fn forward(
     to: &str,
     params: &Value,
     text: &str,
-    conversation_of: impl Fn(&Project) -> Result<String, String>,
+    conversation_of: impl Fn(&Project) -> Result<Option<String>, String>,
     told: impl Fn(&str),
 ) -> Option<Result<Value, String>> {
     if !to.starts_with("orchestrator-") {
@@ -469,7 +484,7 @@ fn forward(
         let conversation = conversation_of(destination).map_err(|cause| {
             format!("{to} could not start: {cause}; nothing was kept, send again with the same id")
         })?;
-        let again = keep(&destination.id, &from, id, &conversation, text)?;
+        let again = keep(&destination.id, &from, id, conversation.as_deref(), text)?;
         // The window learns of it and marks the destination; nothing is
         // opened or raised, so the person is not taken from what they do.
         told(&destination.id);
