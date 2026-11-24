@@ -12,12 +12,28 @@ use super::SessionLocale;
 #[test]
 fn a_session_carries_its_language_as_an_assignment_in_front() {
     assert_eq!(
-        SessionLocale::of(Locale::PtBr).assignment(),
+        SessionLocale::of(Locale::PtBr).assignment_for(false),
         "DEVPIT_LOCALE='pt-BR' "
     );
     assert_eq!(
-        SessionLocale::of(Locale::En).assignment(),
+        SessionLocale::of(Locale::En).assignment_for(false),
         "DEVPIT_LOCALE='en' "
+    );
+}
+
+/// PowerShell reads `NAME='value' command` as a command named after the
+/// assignment and fails: on Windows the variable is set the way PowerShell
+/// sets one, and the command after it inherits it.
+#[test]
+fn on_powershell_the_language_is_set_the_way_powershell_sets_a_variable() {
+    assert_eq!(
+        SessionLocale::of(Locale::PtBr).assignment_for(true),
+        "$env:DEVPIT_LOCALE='pt-BR'; "
+    );
+    assert_eq!(
+        SessionLocale::of(Locale::En).assignment(),
+        SessionLocale::of(Locale::En).assignment_for(cfg!(windows)),
+        "a Windows build types PowerShell's form, every other build the POSIX one"
     );
 }
 

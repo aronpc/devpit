@@ -53,11 +53,22 @@ impl SessionLocale {
         (ENV.to_owned(), self.tag().to_owned())
     }
 
-    /// The `DEVPIT_LOCALE='pt-BR' ` a typed line starts with — an assignment
-    /// like a profile's own, and the only way a line of text can put a value
-    /// in a process's environment.
+    /// What a typed line starts with to put the language in the agent's
+    /// environment, in the syntax of the shell it is typed into: PowerShell,
+    /// the shell a Windows terminal starts, or a POSIX shell everywhere else.
     pub(crate) fn assignment(self) -> String {
-        format!("{ENV}='{}' ", self.tag())
+        self.assignment_for(cfg!(windows))
+    }
+
+    /// [`Self::assignment`] for PowerShell or a POSIX shell. PowerShell has
+    /// no `NAME=value command` form: the variable is set in the pane's shell,
+    /// and the command after `;` inherits it.
+    pub(crate) fn assignment_for(self, powershell: bool) -> String {
+        if powershell {
+            format!("$env:{ENV}='{}'; ", self.tag())
+        } else {
+            format!("{ENV}='{}' ", self.tag())
+        }
     }
 }
 
