@@ -486,7 +486,7 @@ fn answer(
                     "denied a tool"
                 },
             );
-            if question.as_ref().is_some_and(asks_for_choice) {
+            if denies_by_picks(question.as_ref(), &id) {
                 let Some(asking) = app.try_state::<crate::asking::Asking>() else {
                     return failed("nothing is asking");
                 };
@@ -779,10 +779,21 @@ fn asks_for_choice(question: &RemoteQuestion) -> bool {
 }
 
 fn validate_answer(allow: bool, question: Option<&RemoteQuestion>) -> Result<(), String> {
+    // An older viewer offers Allow here: say how to answer instead.
     if allow && question.is_some_and(asks_for_choice) {
-        return Err("this question asks for a choice".to_owned());
+        return Err(
+            "this question asks for a choice: reload the Remote to pick one here, or answer it on the machine"
+                .to_owned(),
+        );
     }
     Ok(())
+}
+
+/// Whether a deny goes through the picks: a question to the person the app
+/// holds. One read off a terminal's screen (`ask_…`) is settled where it was
+/// read, as before.
+fn denies_by_picks(question: Option<&RemoteQuestion>, id: &str) -> bool {
+    !id.starts_with("ask_") && question.is_some_and(asks_for_choice)
 }
 
 fn refuse_choice(

@@ -1,5 +1,6 @@
-import type { AgentHealth, RemoteDraft, RemoteIn, RemoteQuestion, RemoteStop } from '../gen/bindings'
+import type { AgentHealth, IslandAsked, RemoteDraft, RemoteIn, RemoteQuestion, RemoteStop } from '../gen/bindings'
 import { t } from '../i18n'
+import { RemoteChoices } from './RemoteChoices'
 
 /* What agents and orchestrators are waiting on the person for, answered from here. */
 
@@ -12,6 +13,13 @@ const what = (question: RemoteQuestion): string => {
     return question.tool
   }
 }
+
+/* A question to the person: answered with choices, never with a bare Allow. */
+const toThePerson = (question: RemoteQuestion): boolean => question.tool === 'AskUserQuestion'
+
+/* Its choices, when the machine read them. */
+const asksOf = (question: RemoteQuestion): readonly IslandAsked[] | null =>
+  question.touch?.kind === 'ask' && question.touch.questions.length > 0 ? question.touch.questions : null
 
 export function RemoteWaiting({
   questions,
@@ -72,16 +80,28 @@ export function RemoteWaiting({
       {questions.map((question) => (
         <div className="rm__ask" key={question.id}>
           <span className="rm__dim">{t('remote.waiting.asksTo', { who: question.project ?? (question.from === 'chat' ? t('remote.waiting.aChat') : t('remote.waiting.aTerminal')) })}</span>
-          <code className="rm__what">{what(question)}</code>
+          {!asksOf(question) && <code className="rm__what">{what(question)}</code>}
           {answering ? (
-            <div className="rm__acts">
-              <button className="rm__btn" onClick={() => confirm(t('remote.waiting.confirmDeny', { what: what(question) })) && send({ t: 'answer', id: question.id, allow: false })}>
-                {t('remote.waiting.deny')}
-              </button>
-              <button className="rm__btn rm__btn--go" onClick={() => confirm(t('remote.waiting.confirmAllow', { what: what(question) })) && send({ t: 'answer', id: question.id, allow: true })}>
-                {t('remote.waiting.allow')}
-              </button>
-            </div>
+            asksOf(question) ? (
+              <RemoteChoices
+                asked={asksOf(question)!}
+                onPick={(chosen) => send({ t: 'pick', id: question.id, chosen })}
+                onDeny={() => send({ t: 'answer', id: question.id, allow: false })}
+              />
+            ) : (
+              <div className="rm__acts">
+                <button className="rm__btn" onClick={() => confirm(t('remote.waiting.confirmDeny', { what: what(question) })) && send({ t: 'answer', id: question.id, allow: false })}>
+                  {t('remote.waiting.deny')}
+                </button>
+                {toThePerson(question) ? (
+                  <span className="rm__dim">{t('remote.waiting.answerOnMachine')}</span>
+                ) : (
+                  <button className="rm__btn rm__btn--go" onClick={() => confirm(t('remote.waiting.confirmAllow', { what: what(question) })) && send({ t: 'answer', id: question.id, allow: true })}>
+                    {t('remote.waiting.allow')}
+                  </button>
+                )}
+              </div>
+            )
           ) : (
             <span className="rm__dim">{t('remote.waiting.answeringPerDevice')}</span>
           )}
