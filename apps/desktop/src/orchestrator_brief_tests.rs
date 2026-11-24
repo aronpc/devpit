@@ -12,7 +12,11 @@ fn read(path: &Path) -> String {
 fn each_cli_reads_the_orchestrators_brief_from_claude_md() {
     let dir = tempfile::tempdir().expect("tempdir");
     let folder = dir.path().join("orchestrator").join("work");
-    crate::orchestrator::seed(&folder).expect("seeded");
+    crate::orchestrator::seed(
+        &folder,
+        crate::session_locale::SessionLocale::of(devpit_core::locale::Locale::En),
+    )
+    .expect("seeded");
     assert_eq!(read(&folder.join("GEMINI.md")), "@CLAUDE.md\n");
     let agents = read(&folder.join(AGENTS));
     assert!(

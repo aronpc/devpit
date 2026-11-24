@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from 'react'
 
+import { t } from '../i18n'
 import { useAway } from './away'
 import { ChevronDown } from './GitIcons'
 
@@ -31,7 +32,7 @@ export function FieldSelect({
   return (
     <div className="fsel" ref={box}>
       <button type="button" className="fsel__b" aria-haspopup="listbox" aria-expanded={open} aria-label={label} onClick={() => setOpen((was) => !was)}>
-        <span className="fsel__v">{chosen ? chosen.label : 'Pick one'}</span>
+        <span className="fsel__v">{chosen ? chosen.label : t('common.pickOne')}</span>
         {chosen?.hint && <span className="fsel__h">{chosen.hint}</span>}
         <ChevronDown size={12} />
       </button>

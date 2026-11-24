@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 
+import { t } from '../i18n'
 import { CardPane } from './CardPane'
 import { LaneFoot, LaneHead, Tile } from './Lane'
 import { LaneCards } from './LaneCards'
@@ -91,7 +92,7 @@ export function BoardPane(): React.JSX.Element {
       {/* Every board command reported its refusal into state nobody drew: a
           rename that failed simply did not happen, and nothing said why. */}
       {live.error && (
-        <button className="tnote" onClick={live.dismiss} title="Dismiss">
+        <button className="tnote" onClick={live.dismiss} title={t('board.dismiss')}>
           {live.error}
         </button>
       )}
@@ -164,7 +165,6 @@ export function BoardPane(): React.JSX.Element {
             </div>
           )
         })}
-
 
         {/* Only while the board shows: a pane behind another tab stays mounted,
             and a hidden card took the chat's Escape and kept its stop from arming. */}

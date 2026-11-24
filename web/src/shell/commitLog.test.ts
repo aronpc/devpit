@@ -1,6 +1,7 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 
 import type { Commit } from '../gen/bindings'
+import { setLocale } from '../i18n'
 import { appended, byDay, dayOf, matches, since, subjectOf } from './commitLog'
 
 const commit = (sha: string, committedAt: number | null, subject = 'fix: x'): Commit => ({ sha, subject, author: 'Jhol', committedAt })
@@ -39,5 +40,30 @@ describe('the history tab', () => {
     expect(since(now / 1000 - 3 * 3600, now)).toBe('3h')
     expect(since(now / 1000 - 2 * 86400, now)).toBe('2d')
     expect(since(null, now)).toBe('')
+  })
+})
+
+/* A weekday and a date in the language the person chose, not the machine's. */
+describe("a commit's day in the chosen language", () => {
+  const now = new Date(2026, 8, 23, 9, 0)
+  const at = (day: Date): number => day.getTime() / 1000
+  afterEach(() => setLocale('en'))
+
+  it('reads in pt-BR when pt-BR is chosen', () => {
+    setLocale('pt-BR')
+    expect(dayOf(at(new Date(2026, 8, 20, 12)), now)).toBe('domingo')
+    expect(dayOf(at(new Date(2026, 8, 1, 12)), now)).toMatch(/^1 de set\.?$/)
+  })
+
+  it('says today, yesterday and no date in pt-BR too', () => {
+    setLocale('pt-BR')
+    expect(dayOf(at(new Date(2026, 8, 23, 1, 0)), now)).toBe('Hoje')
+    expect(dayOf(at(new Date(2026, 8, 22, 23, 0)), now)).toBe('Ontem')
+    expect(dayOf(null, now)).toBe('Sem data')
+  })
+
+  it('reads in English when English is chosen', () => {
+    expect(dayOf(at(new Date(2026, 8, 20, 12)), now)).toBe('Sunday')
+    expect(dayOf(at(new Date(2026, 8, 1, 12)), now)).toBe('Sep 1')
   })
 })

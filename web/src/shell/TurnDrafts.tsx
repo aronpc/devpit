@@ -5,6 +5,8 @@ import { ask, commands } from './live'
 import { refreshSessions, useLiveSessions } from './liveStatus'
 import { useShellPick } from './shellStore'
 import { WaitingPrompts } from './WaitingPrompts'
+import { t } from '../i18n'
+import { formatDate } from '../i18n/format'
 
 /*
  * A reply the orchestrator drafted, as a card where it drafted it: the person
@@ -40,12 +42,7 @@ export function standing(draft: Drafted, session: LiveSession | null, done: Stan
   return session?.draft?.trim() === draft.text ? 'pending' : 'gone'
 }
 
-const WORDS: Readonly<Record<Standing, string>> = {
-  pending: 'Waiting for you to send it',
-  sent: 'Sent as you',
-  dropped: 'Dropped',
-  gone: 'No longer pending: replaced, sent or dropped elsewhere',
-}
+const words = (standing: Standing): string => t(`sessions.drafts.${standing}`)
 
 export function TurnDrafts({ parts }: { parts: readonly Part[] }): React.JSX.Element | null {
   // Drafts are an orchestrator's, for the sessions of its own account.
@@ -80,7 +77,7 @@ function DraftCard({ draft, session, profileId }: { draft: Drafted; session: Liv
       setWhy(sent.error)
       if (sent.error) return
       setDone('sent')
-      setAt(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }))
+      setAt(formatDate(new Date(), { hour: '2-digit', minute: '2-digit' }))
       refreshSessions(profileId)
     })
   }
@@ -94,11 +91,11 @@ function DraftCard({ draft, session, profileId }: { draft: Drafted; session: Liv
   return (
     <div className="tdraft__card" data-standing={now}>
       <p className="tdraft__h">
-        <span className="tdraft__to">Reply to {draft.to}, as you</span>
-        <span className="tdraft__state">{now === 'sent' && at ? `${WORDS.sent} at ${at}` : WORDS[now]}</span>
+        <span className="tdraft__to">{t('sessions.drafts.reply', { name: draft.to })}</span>
+        <span className="tdraft__state">{now === 'sent' && at ? t('sessions.drafts.sentAt', { time: at }) : words(now)}</span>
       </p>
       {editing && now === 'pending' ? (
-        <textarea className="rdraft__text" aria-label={`Reply to ${draft.to}, as you`} value={text} rows={Math.min(6, text.split('\n').length + 1)} onChange={(event) => setText(event.target.value)} />
+        <textarea className="rdraft__text" aria-label={t('sessions.drafts.reply', { name: draft.to })} value={text} rows={Math.min(6, text.split('\n').length + 1)} onChange={(event) => setText(event.target.value)} />
       ) : (
         <p className="tdraft__text">{text}</p>
       )}
@@ -110,13 +107,13 @@ function DraftCard({ draft, session, profileId }: { draft: Drafted; session: Liv
           <button
             className="wprompt__o"
             disabled={busy || onAQuestion || !session?.pane || text.trim() === ''}
-            title={onAQuestion ? 'It is stopped on a question: answer that first' : session?.pane ? 'Types it into its terminal as you' : 'Not in a devpit terminal'}
+            title={onAQuestion ? t('sessions.drafts.onQuestion') : session?.pane ? t('sessions.drafts.types') : t('sessions.drafts.noTerminal')}
             onClick={send}
           >
-            Send
+            {t('sessions.drafts.send')}
           </button>
-          <button className="wprompt__o" onClick={() => setEditing((was) => !was)}>{editing ? 'Done editing' : 'Edit'}</button>
-          <button className="wprompt__o wprompt__esc" disabled={busy} onClick={drop}>Drop</button>
+          <button className="wprompt__o" onClick={() => setEditing((was) => !was)}>{editing ? t('sessions.drafts.doneEditing') : t('sessions.drafts.edit')}</button>
+          <button className="wprompt__o wprompt__esc" disabled={busy} onClick={drop}>{t('sessions.drafts.drop')}</button>
         </div>
       )}
       {why && <p className="osess__said">{why}</p>}

@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import type { LiveSession } from '../gen/bindings'
+import { setLocale } from '../i18n'
 import { since, SessionsView } from './SessionsView'
 
 const replied = vi.fn()
@@ -108,11 +109,22 @@ describe("an orchestrator's sessions", () => {
     expect(screen.getByText('Done.')).toBeTruthy()
   })
 
+  it('says how long in the language chosen', () => {
+    const now = Date.UTC(2026, 8, 25, 12)
+    setLocale('pt-BR')
+    try {
+      expect(since(now - 20_000, now)).toBe('agora há pouco')
+      expect(since(now - 2 * 60_000, now)).toBe('há 2 minutos')
+    } finally {
+      setLocale('en')
+    }
+  })
+
   it('says how long in words', () => {
     const now = Date.UTC(2026, 8, 25, 12)
     expect(since(null, now)).toBeNull()
     expect(since(now - 20_000, now)).toBe('just now')
-    expect(since(now - 12 * 60_000, now)).toBe('12 min')
-    expect(since(now - 3 * 3_600_000, now)).toBe('3 h')
+    expect(since(now - 12 * 60_000, now)).toBe('12 minutes ago')
+    expect(since(now - 3 * 3_600_000, now)).toBe('3 hours ago')
   })
 })

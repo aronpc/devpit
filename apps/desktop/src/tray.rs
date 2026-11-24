@@ -10,6 +10,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Mutex, OnceLock};
 use std::time::Duration;
 
+use devpit_core::locale::Locale;
 use devpit_core::store::preference;
 use devpit_core::Store;
 use devpit_rpc::{Doing, RpcError, Tray};
@@ -188,6 +189,15 @@ pub(crate) fn refresh_soon() {
     });
 }
 
+/// The person changed the language: forgets what the tray last drew so the
+/// next refresh redraws every word of it, not only what waits.
+pub(crate) fn relanguage() {
+    if let Ok(mut last) = LAST.lock() {
+        *last = None;
+    }
+    refresh_soon();
+}
+
 fn refresh(app: &AppHandle) {
     let (waiting, recent) = gathered();
     let now = said(&waiting, &recent, crate::pausing::paused());
@@ -226,7 +236,7 @@ fn gathered() -> (Vec<Waiting>, Vec<Recent>) {
             who: one
                 .card
                 .or(one.project)
-                .unwrap_or_else(|| "A session".to_owned()),
+                .unwrap_or_else(|| devpit_core::i18n::t("tray.aSession", &[])),
             session_id: one.session_id,
             project_id: one.project_id,
             pane_id: one.pane_id,
@@ -285,7 +295,12 @@ fn menu(app: &AppHandle, entries: &[Entry]) -> tauri::Result<Menu<tauri::Wry>> {
                 None::<&str>,
             )?)?,
             Entry::Projects(projects) => {
-                let sub = Submenu::with_id(app, "projects", "Recent projects", true)?;
+                let sub = Submenu::with_id(
+                    app,
+                    "projects",
+                    devpit_core::i18n::t("tray.recentProjects", &[]),
+                    true,
+                )?;
                 for (name, go) in projects {
                     sub.append(&MenuItem::with_id(app, go.id(), name, true, None::<&str>)?)?;
                 }
@@ -423,13 +438,15 @@ fn told_once(app: &AppHandle) {
     if store.preference_flag(preference::TRAY_TOLD).ok().flatten() == Some(true) {
         return;
     }
-    crate::island_notify::show(
-        app,
-        "devpit is still running",
-        "It went to the tray and goes on hearing your agents. Quit it from the tray's menu.",
-        false,
-    );
+    let (title, body) = told_words(Locale::current());
+    crate::island_notify::show(app, &title, &body, false);
     let _ = store.set_preference_flag(preference::TRAY_TOLD, true);
+}
+
+/// The title and body of the one notice closing the window gives.
+fn told_words(locale: Locale) -> (String, String) {
+    let say = |key: &str| devpit_core::i18n::t_for(locale, key, &[]);
+    (say("tray.toldTitle"), say("tray.toldBody"))
 }
 
 fn kept(store: &Store) -> bool {
@@ -471,3 +488,7 @@ pub async fn tray_keep_set(on: bool) -> Result<Tray, RpcError> {
     })
     .await
 }
+
+#[cfg(test)]
+#[path = "tray_tests.rs"]
+mod tests;

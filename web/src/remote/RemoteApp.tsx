@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 
 import type { AgentHealth, Board, Conversations, LivePane, RemoteDraft, RemoteIn, RemoteOut, RemoteProject, RemoteQuestion, RemoteStop, RemoteTalks } from '../gen/bindings'
+import { currentLocale, setLocale, subscribe, t } from '../i18n'
 import { Kind, unframe } from '../shell/paneSocket'
 import { launcherLink } from '../shell/remoteLauncher'
 import { connectRelay, CLOSED, deviceKey, forgetMachine, keepMachine, machinesKept, offerOpened, type RelayMachine, type RelayPairing } from './relay'
@@ -32,6 +33,12 @@ type View = 'terminals' | 'board' | 'waiting' | 'chats' | 'secrets'
 export type Welcome = Omit<Extract<RemoteOut, { t: 'welcome' }>, 't'>
 
 export function RemoteApp(): React.JSX.Element {
+  /* The host's language, said in its welcome: this device has no settings of
+     its own to read it from, and never reads `navigator.language` for it. */
+  const locale = useSyncExternalStore(subscribe, currentLocale)
+  useEffect(() => {
+    document.documentElement.lang = locale
+  }, [locale])
   const [token, setToken] = useState<string | null>(tokenKept)
   const [offer, setOffer] = useState(() => offerOpened(location.hash))
   const [relay, setRelay] = useState<RelayMachine | null>(() => machinesKept()[0] ?? null)
@@ -73,6 +80,8 @@ export function RemoteApp(): React.JSX.Element {
         case 'welcome':
           setApproving(false)
           setWelcome(message)
+          /* An older host says none: English stays. */
+          if (message.locale) setLocale(message.locale)
           setRefused(null)
           link.current?.send({ t: 'projects' })
           link.current?.send({ t: 'waiting' })
@@ -200,18 +209,18 @@ export function RemoteApp(): React.JSX.Element {
   if (approving)
     return (
       <main className="rm rm--center">
-        <h1 className="rm__title">Allow it on the machine</h1>
-        <p className="rm__said">devpit asks the person at {relay?.name ?? 'the machine'} before this device pairs.</p>
+        <h1 className="rm__title">{t('remote.app.allowTitle')}</h1>
+        <p className="rm__said">{t('remote.app.allowSaid', { machine: relay?.name ?? t('remote.app.theMachine') })}</p>
       </main>
     )
 
   if (refused)
     return (
       <main className="rm rm--center">
-        <h1 className="rm__title">Not let in</h1>
+        <h1 className="rm__title">{t('remote.app.refusedTitle')}</h1>
         <p className="rm__said">{refused}</p>
         <button className="rm__btn" onClick={() => (relay ? (forgetMachine(relay.host), setRelay(null), setPairing(null)) : (keepToken(null), setToken(null)), setRefused(null))}>
-          Pair again
+          {t('remote.app.pairAgain')}
         </button>
       </main>
     )
@@ -232,11 +241,11 @@ export function RemoteApp(): React.JSX.Element {
         <span className="rm__dot" data-up={up ? 'true' : undefined} />
         <span className="rm__host">{welcome?.host ?? relay?.name ?? 'devpit'}</span>
         {launcher && (
-          <a className="rm__dim rm__add" href={launcher} target="_blank" rel="noreferrer" title="Adds this machine's address to devpit.app/remote; nothing else is sent">
-            Add to devpit.app
+          <a className="rm__dim rm__add" href={launcher} target="_blank" rel="noreferrer" title={t('remote.app.addTitle')}>
+            {t('remote.app.add')}
           </a>
         )}
-        <select className="rm__pick" aria-label="Project" value={projectId ?? ''} onChange={(event) => (setProjectId(event.target.value), setPane(null), setBoard(null), setChats(null))}>
+        <select className="rm__pick" aria-label={t('remote.app.project')} value={projectId ?? ''} onChange={(event) => (setProjectId(event.target.value), setPane(null), setBoard(null), setChats(null))}>
           {projects.map((one) => (
             <option key={one.id} value={one.id}>
               {one.name}
@@ -246,16 +255,16 @@ export function RemoteApp(): React.JSX.Element {
       </header>
       {away && (
         <p className="rm__failed" role="status">
-          {away.why} {away.code === CLOSED.signIn && <a href="/login?next=/remote">Sign in</a>}
+          {away.why} {away.code === CLOSED.signIn && <a href="/login?next=/remote">{t('remote.app.signIn')}</a>}
         </p>
       )}
       {failed && <p className="rm__failed" role="alert">{failed}</p>}
-      {started && <p className="rm__said" role="status">Started {started}: it runs in a terminal tab of the project.</p>}
-      {kept && <p className="rm__said" role="status">{kept} is kept. A session reads it by that name.</p>}
+      {started && <p className="rm__said" role="status">{t('remote.app.started', { name: started })}</p>}
+      {kept && <p className="rm__said" role="status">{t('remote.app.kept', { name: kept })}</p>}
       <nav className="rm__tabs">
         {(['terminals', 'board', 'waiting', 'chats', 'secrets'] as const).map((one) => (
           <button key={one} className="rm__tab" data-on={view === one ? 'true' : undefined} onClick={() => setView(one)}>
-            {one === 'waiting' && waitingOn > 0 ? `waiting ${waitingOn}` : one}
+            {one === 'waiting' && waitingOn > 0 ? t('remote.app.tab.waitingCount', { count: waitingOn }) : t(`remote.app.tab.${one}`)}
           </button>
         ))}
       </nav>
@@ -263,10 +272,10 @@ export function RemoteApp(): React.JSX.Element {
         {view === 'terminals' && project && (
           <>
             <div className="rm__list">
-              {project.terminals.length === 0 && <p className="rm__said">No terminal is open in {project.name}.</p>}
+              {project.terminals.length === 0 && <p className="rm__said">{t('remote.app.noTerminal', { project: project.name })}</p>}
               {project.terminals.map((one) => (
                 <button key={one.pane} className="rm__row" data-on={pane === one.pane ? 'true' : undefined} onClick={() => setPane(one.pane)}>
-                  <span>{one.command || 'shell'}</span>
+                  <span>{one.command || t('remote.app.shell')}</span>
                   <span className="rm__dim">{one.pane.slice(-6)}</span>
                 </button>
               ))}

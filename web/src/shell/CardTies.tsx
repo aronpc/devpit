@@ -1,4 +1,5 @@
 import type { CardDetail, CardRef } from '../gen/bindings'
+import { t } from '../i18n'
 import { closedLabel } from './planEdit'
 
 /*
@@ -14,11 +15,11 @@ export function CardTies({ detail }: { detail: CardDetail }): React.JSX.Element 
   if (!parent && !closed && blockers.length === 0 && children.length === 0) return null
   const done = children.filter((child) => child.done).length
   return (
-    <section className="ties" aria-label="Plan">
-      {parent && <Named label="Epic" cards={[parent]} />}
+    <section className="ties" aria-label={t('card.plan')}>
+      {parent && <Named label={t('card.epic')} cards={[parent]} />}
       {closed && <p className="ties__closed">{closed}</p>}
-      {blockers.length > 0 && <Named label="Blocked by" cards={blockers} />}
-      {children.length > 0 && <Named label={`Cards · ${done} of ${children.length} done`} cards={children} />}
+      {blockers.length > 0 && <Named label={t('card.blockedBy')} cards={blockers} />}
+      {children.length > 0 && <Named label={t('card.cardsDone', { count: children.length, done })} cards={children} />}
     </section>
   )
 }

@@ -5,6 +5,7 @@ import { Markdown } from './MarkdownView'
 import { since } from './projects'
 import { matches } from './shortcuts'
 import { composing } from './typing'
+import { t } from '../i18n'
 
 /*
  * The card's conversation.
@@ -17,16 +18,16 @@ import { composing } from './typing'
  */
 
 const NAMES: Readonly<Record<string, string>> = {
-  you: 'You',
   claude: 'Claude Code',
   codex: 'Codex',
   gemini: 'Gemini',
   opencode: 'OpenCode',
-  /* An agent that wrote through devpit without saying which one it is. */
-  agent: 'Agent',
 }
 
-const nameOf = (author: string): string => NAMES[author] ?? author
+/* `you` and an agent that wrote through devpit without saying which one it is
+   are words, so they are said in the language the person chose. */
+const nameOf = (author: string): string =>
+  author === 'you' ? t('workspace.comments.you') : author === 'agent' ? t('workspace.comments.agent') : (NAMES[author] ?? author)
 
 export function Comments({
   comments,
@@ -54,9 +55,9 @@ export function Comments({
 
   return (
     <section className="conv">
-      <h2 className="cardp__h">Comments</h2>
+      <h2 className="cardp__h">{t('workspace.comments.title')}</h2>
 
-      {comments.length === 0 && <p className="pref__d">Nothing said yet.</p>}
+      {comments.length === 0 && <p className="pref__d">{t('workspace.comments.none')}</p>}
 
       {comments.map((one) =>
         editing === one.id ? (
@@ -77,13 +78,13 @@ export function Comments({
               <span className="conv__when">{since(one.createdAt)}</span>
               {/* Marked rather than silent: a line that can change under you
                   with no mark is a line you cannot rely on. */}
-              {one.editedAt && <span className="conv__edited">edited</span>}
+              {one.editedAt && <span className="conv__edited">{t('workspace.comments.edited')}</span>}
               <span className="conv__acts">
                 <button className="conv__act" onClick={() => setEditing(one.id)}>
-                  Edit
+                  {t('workspace.comments.edit')}
                 </button>
                 <button className="conv__act" data-danger onClick={() => onDelete(one.id)}>
-                  Delete
+                  {t('workspace.comments.delete')}
                 </button>
               </span>
             </header>
@@ -97,7 +98,7 @@ export function Comments({
           className="conv__f"
           value={draft}
           rows={3}
-          placeholder="Say something about this card"
+          placeholder={t('workspace.comments.placeholder')}
           onChange={(event) => setDraft(event.target.value)}
           /* Enter is a newline here — this is prose, not a chat line, and
              half of what gets pasted in is a stack trace. */
@@ -110,7 +111,7 @@ export function Comments({
         />
         <div className="ask__row">
           <button className="btn btn--go" disabled={!draft.trim()} onClick={() => void say()}>
-            Comment
+            {t('workspace.comments.comment')}
           </button>
         </div>
       </div>
@@ -137,15 +138,15 @@ function Editing({
         value={draft}
         rows={4}
         autoFocus
-        aria-label="Edit comment"
+        aria-label={t('workspace.comments.editLabel')}
         onChange={(event) => setDraft(event.target.value)}
       />
       <div className="ask__row">
         <button className="btn" onClick={onCancel}>
-          Cancel
+          {t('workspace.comments.cancel')}
         </button>
         <button className="btn btn--go" disabled={!draft.trim()} onClick={() => onDone(draft)}>
-          Save
+          {t('workspace.comments.save')}
         </button>
       </div>
     </article>

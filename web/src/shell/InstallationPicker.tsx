@@ -1,5 +1,6 @@
 import type { Installations } from './useInstallations'
 import { named } from './useInstallations'
+import { t } from '../i18n'
 
 /*
  * The installation a panel shows, as chips.
@@ -14,7 +15,7 @@ export function InstallationPicker({ installations }: { installations: Installat
   const current = chosen ?? list.find((one) => one.default)?.directory
 
   return (
-    <div className="agpick" role="radiogroup" aria-label="Installation">
+    <div className="agpick" role="radiogroup" aria-label={t('workspace.installation.label')}>
       {list.map((one) => (
         <button
           key={one.directory}
@@ -25,7 +26,7 @@ export function InstallationPicker({ installations }: { installations: Installat
           onClick={() => choose(one.directory)}
         >
           {named(one)}
-          {one.default && <span className="agpick__on">default</span>}
+          {one.default && <span className="agpick__on">{t('workspace.installation.default')}</span>}
         </button>
       ))}
     </div>

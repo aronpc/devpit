@@ -1,10 +1,18 @@
-use super::{brief, free_folder, may_orchestrate, seed, seed_all, slug, speaks_as};
+use super::{brief, free_folder, may_orchestrate, seed, seed_all, slug, speaks_as, written_in};
+
+fn en() -> crate::session_locale::SessionLocale {
+    crate::session_locale::SessionLocale::of(devpit_core::locale::Locale::En)
+}
+
+fn pt_br() -> crate::session_locale::SessionLocale {
+    crate::session_locale::SessionLocale::of(devpit_core::locale::Locale::PtBr)
+}
 
 #[test]
 fn a_new_orchestrator_starts_with_its_brief_and_folders() {
     let dir = tempfile::tempdir().expect("tempdir");
     let folder = dir.path().join("orchestrator").join("claude2");
-    seed(&folder).expect("seeded");
+    seed(&folder, en()).expect("seeded");
     let mine = std::fs::read_to_string(folder.join("CLAUDE.md")).expect("claude.md");
     assert!(
         mine.contains("@.devpit/orchestrator.md"),
@@ -37,9 +45,9 @@ fn a_new_orchestrator_starts_with_its_brief_and_folders() {
 fn opening_again_leaves_what_the_person_changed() {
     let dir = tempfile::tempdir().expect("tempdir");
     let folder = dir.path().join("claude2");
-    seed(&folder).expect("seeded");
+    seed(&folder, en()).expect("seeded");
     std::fs::write(folder.join("CLAUDE.md"), "mine now").expect("edit");
-    seed(&folder).expect("seeded again");
+    seed(&folder, en()).expect("seeded again");
     assert_eq!(
         std::fs::read_to_string(folder.join("CLAUDE.md")).expect("brief"),
         "mine now"
@@ -50,9 +58,9 @@ fn opening_again_leaves_what_the_person_changed() {
 fn devpits_half_of_the_brief_follows_the_build() {
     let dir = tempfile::tempdir().expect("tempdir");
     let folder = dir.path().join("claude2");
-    seed(&folder).expect("seeded");
+    seed(&folder, en()).expect("seeded");
     std::fs::write(folder.join(".devpit/orchestrator.md"), "an older build's").expect("age it");
-    seed(&folder).expect("opened again");
+    seed(&folder, en()).expect("opened again");
     let brief = std::fs::read_to_string(folder.join(".devpit/orchestrator.md")).expect("brief");
     assert!(
         brief.contains("devpit_sessions"),
@@ -75,7 +83,7 @@ fn a_second_orchestrator_of_one_name_gets_a_folder_of_its_own() {
 fn an_orchestrator_says_its_account_where_the_folder_is_read() {
     let dir = tempfile::tempdir().expect("tempdir");
     let folder = dir.path().join("orchestrator").join("work");
-    seed(&folder).expect("seeded");
+    seed(&folder, en()).expect("seeded");
     let store = devpit_core::Store::open(&dir.path().join("state.db")).expect("store");
     speaks_as(&store, &folder, "01M39W5J").expect("said");
     assert_eq!(
@@ -97,9 +105,9 @@ fn an_orchestrator_says_its_account_where_the_folder_is_read() {
 fn the_brief_says_which_build_wrote_it() {
     let dir = tempfile::tempdir().expect("tempdir");
     let folder = dir.path().join("claude2");
-    seed(&folder).expect("seeded");
+    seed(&folder, en()).expect("seeded");
     let written = std::fs::read_to_string(folder.join(".devpit/orchestrator.md")).expect("brief");
-    assert_eq!(written, brief());
+    assert_eq!(written, brief(en()));
     assert!(written.starts_with(&format!(
         "<!-- written by devpit {} -->\n# Orchestrator",
         env!("CARGO_PKG_VERSION")
@@ -111,6 +119,8 @@ fn the_brief_says_which_build_wrote_it() {
 /// project alone.
 #[test]
 fn starting_brings_every_orchestrator_brief_up_to_this_build() {
+    // The briefs are written in the process's language: hold it English.
+    let _turn = crate::locale_turn::settled(devpit_core::locale::Locale::En);
     let dir = tempfile::tempdir().expect("tempdir");
     let root = dir.path();
     let store = devpit_core::Store::open(&root.join("state.db")).expect("store");
@@ -118,7 +128,7 @@ fn starting_brings_every_orchestrator_brief_up_to_this_build() {
     let mut folders = Vec::new();
     for name in ["work", "home"] {
         let folder = root.join("orchestrator").join(name);
-        seed(&folder).expect("seeded");
+        seed(&folder, en()).expect("seeded");
         speaks_as(&store, &folder, "claude").expect("account");
         store.add_project(&folder, None).expect("project");
         std::fs::write(folder.join(".devpit/orchestrator.md"), "an older build's").expect("age it");
@@ -134,7 +144,7 @@ fn starting_brings_every_orchestrator_brief_up_to_this_build() {
     for folder in &folders {
         let written =
             std::fs::read_to_string(folder.join(".devpit/orchestrator.md")).expect("brief");
-        assert_eq!(written, brief(), "{}", folder.display());
+        assert_eq!(written, brief(en()), "{}", folder.display());
         assert_eq!(
             std::fs::read_to_string(folder.join("CLAUDE.md")).expect("mine"),
             "mine"
@@ -151,7 +161,7 @@ fn starting_brings_every_orchestrator_brief_up_to_this_build() {
 /// this account's sessions are still reached with SendMessage.
 #[test]
 fn the_brief_keeps_send_message_for_this_accounts_sessions() {
-    let brief = brief();
+    let brief = brief(en());
     for kept in [
         "`ListAgents` finds them, `SendMessage`",
         "`notify_when_idle` tells you once",
@@ -210,7 +220,7 @@ fn an_orchestrator_runs_on_any_cli_that_holds_a_chat() {
 /// error asks for — the same id again.
 #[test]
 fn the_brief_says_how_to_forward_to_another_orchestrator() {
-    let brief = brief();
+    let brief = brief(en());
     for kept in [
         "## Forwarding to another orchestrator",
         "another orchestrator's to see through",
@@ -225,8 +235,143 @@ fn the_brief_says_how_to_forward_to_another_orchestrator() {
 /// every session, and starts sessions on any CLI.
 #[test]
 fn the_brief_points_an_orchestrator_on_any_cli_at_the_bus() {
-    let brief = brief();
+    let brief = brief(en());
     assert!(brief.contains("or every session when you run on a CLI other than Claude Code"));
     assert!(brief.contains("`devpit_session_notify_idle` for any other"));
     assert!(brief.contains("on another with\n    `profile`"));
+}
+
+/// English writes the same bytes it always did: the base text under the line
+/// naming the build, byte for byte, whatever came to carry the language.
+#[test]
+fn english_writes_the_bytes_it_always_did() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let folder = dir.path().join("work");
+    seed(&folder, en()).expect("seeded");
+    assert_eq!(
+        std::fs::read_to_string(folder.join(".devpit/orchestrator.md")).expect("brief"),
+        format!(
+            "<!-- written by devpit {} -->\n{}",
+            env!("CARGO_PKG_VERSION"),
+            include_str!("orchestrator_devpit.md")
+        )
+    );
+}
+
+/// English seeds the person's half with the bytes it always did: the base
+/// text of `CLAUDE.md`, byte for byte, whatever came to carry the language.
+#[test]
+fn english_seeds_the_persons_half_with_the_bytes_it_always_did() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let folder = dir.path().join("work");
+    seed(&folder, en()).expect("seeded");
+    assert_eq!(
+        std::fs::read_to_string(folder.join("CLAUDE.md")).expect("the person's half"),
+        include_str!("orchestrator_claude.md")
+    );
+}
+
+/// A folder born in Portuguese carries every brief in it — devpit's half, the
+/// person's half, the assistant's — and the headings the code reads by text
+/// stay the text it reads, whatever the language around them.
+#[test]
+fn a_folder_born_in_portuguese_gets_the_pt_br_briefs_and_keeps_the_read_headings() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let store = devpit_core::Store::open(&dir.path().join("state.db")).expect("store");
+    let folder = dir.path().join("work");
+    // The store keys settings by the folder's canonical path, so the folder
+    // exists before its setting is kept: on macOS the temp dir is a symlink
+    // and a path that does not exist yet would be keyed by another name.
+    std::fs::create_dir_all(&folder).expect("folder");
+    store
+        .set_orchestrator_setting(&folder, "assistant", serde_json::json!(true))
+        .expect("assistant on");
+    written_in(&store, &folder, pt_br()).expect("born");
+    assert_eq!(
+        std::fs::read_to_string(folder.join(".devpit/orchestrator.md")).expect("brief"),
+        format!(
+            "<!-- written by devpit {} -->\n{}",
+            env!("CARGO_PKG_VERSION"),
+            include_str!("orchestrator_devpit_pt_br.md")
+        )
+    );
+    assert_eq!(
+        std::fs::read_to_string(folder.join("CLAUDE.md")).expect("the person's half"),
+        crate::assistant::imported(include_str!("orchestrator_claude_pt_br.md"), true)
+    );
+    assert_eq!(
+        std::fs::read_to_string(folder.join(".devpit/assistant.md")).expect("assistant"),
+        format!(
+            "<!-- written by devpit {} -->\n{}",
+            env!("CARGO_PKG_VERSION"),
+            include_str!("assistant_devpit_pt_br.md")
+        )
+    );
+    // What the code looks for by text is looked for in English: the pt-BR
+    // brief says so, in those words.
+    let brief = include_str!("orchestrator_devpit_pt_br.md");
+    assert!(brief.contains("heading `## Rules for sessions`"));
+    assert!(brief.contains("`## Rules for sessions: <project>`"));
+}
+
+/// One folder is one orchestrator's, so the birth of each of its sessions
+/// rewrites its files whole, in the language of the session being born. A
+/// language switched in Settings never reaches under one already running: the
+/// next birth is what brings it in.
+#[test]
+fn each_birth_rewrites_the_folder_and_a_switched_language_waits_for_the_next() {
+    // It moves the process's language: no other test may read it meanwhile.
+    let _turn = crate::locale_turn::settled(devpit_core::locale::Locale::En);
+    let dir = tempfile::tempdir().expect("tempdir");
+    let store = devpit_core::Store::open(&dir.path().join("state.db")).expect("store");
+    let folder = dir.path().join("work");
+    seed(&folder, en()).expect("seeded");
+    store
+        .set_orchestrator_setting(&folder, "assistant", serde_json::json!(true))
+        .expect("assistant on");
+    for file in ["orchestrator.md", "assistant.md"] {
+        std::fs::write(folder.join(".devpit").join(file), "an older language's").expect("age it");
+    }
+
+    // Born in Portuguese: the folder speaks the language of the birth.
+    devpit_core::locale::Locale::PtBr.set();
+    let born = crate::session_locale::SessionLocale::capture();
+    written_in(&store, &folder, born).expect("born");
+    assert_eq!(
+        std::fs::read_to_string(folder.join(".devpit/orchestrator.md")).expect("brief"),
+        brief(born)
+    );
+    assert_eq!(
+        std::fs::read_to_string(folder.join(".devpit/assistant.md")).expect("assistant"),
+        format!(
+            "<!-- written by devpit {} -->\n{}",
+            env!("CARGO_PKG_VERSION"),
+            include_str!("assistant_devpit_pt_br.md")
+        )
+    );
+
+    // The language switched in Settings with that session running: its files
+    // stay as its birth wrote them.
+    devpit_core::locale::Locale::En.set();
+    assert_eq!(
+        std::fs::read_to_string(folder.join(".devpit/orchestrator.md")).expect("brief"),
+        brief(born)
+    );
+
+    // The next birth rewrites the folder again, in its own language.
+    std::fs::write(
+        folder.join(".devpit/orchestrator.md"),
+        "an older language's",
+    )
+    .expect("age it");
+    written_in(
+        &store,
+        &folder,
+        crate::session_locale::SessionLocale::capture(),
+    )
+    .expect("born again");
+    assert_eq!(
+        std::fs::read_to_string(folder.join(".devpit/orchestrator.md")).expect("brief"),
+        brief(en())
+    );
 }

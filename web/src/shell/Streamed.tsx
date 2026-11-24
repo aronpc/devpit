@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { bytes } from './disk'
 import { ask, commands } from './live'
 import { Picture } from './Picture'
+import { t } from '../i18n'
 
 /*
  * Video, audio and pictures too big to travel inline, streamed by devpit's
@@ -32,13 +33,13 @@ export function Streamed({ kind, projectId, path, name, size }: { kind: Streamed
   const [broken, setBroken] = useState(false)
 
   if (error) return <div className="exempty__t">{error}</div>
-  if (!url) return <div className="exempty__d">Opening {name}…</div>
+  if (!url) return <div className="exempty__d">{t('workspace.streamed.opening', { name })}</div>
   if (kind === 'image') return <Picture src={url} name={name} size={size} />
   if (broken)
     return (
       <div className="exempty">
-        <span className="exempty__t">This window could not play {name}.</span>
-        <span className="exempty__d">Its codec may be missing from the system&rsquo;s GStreamer plugins. {bytes(size)}</span>
+        <span className="exempty__t">{t('workspace.streamed.broken', { name })}</span>
+        <span className="exempty__d">{t('workspace.streamed.codec')} {bytes(size)}</span>
       </div>
     )
   return (

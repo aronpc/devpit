@@ -4,8 +4,11 @@
 
 use std::path::Path;
 
+use devpit_core::i18n::t_for;
 use devpit_rpc::{Briefing, Project};
 use serde::Deserialize;
+
+use crate::session_locale::SessionLocale;
 
 /// What a briefing counts, gathered before it is said.
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
@@ -24,31 +27,31 @@ pub(crate) struct Gathered {
 /// The most merged pull requests named before "and N more".
 const NAMED: usize = 3;
 
-fn counted(count: usize, one: &str, many: &str) -> Option<String> {
-    match count {
-        0 => None,
-        1 => Some(format!("1 {one}")),
-        n => Some(format!("{n} {many}")),
-    }
+/// `count` of something, said by the catalog's `key` in the session's
+/// language; nothing for none.
+fn counted(locale: SessionLocale, count: usize, key: &str) -> Option<String> {
+    (count > 0).then(|| t_for(locale.locale(), key, &[("count", &count.to_string())]))
 }
 
-/// The briefing's lines: at most five, each a sentence.
-pub(crate) fn lines(gathered: &Gathered) -> Vec<String> {
+/// The briefing's lines: at most five, each a sentence, in the language of
+/// the session they are said to.
+pub(crate) fn lines(locale: SessionLocale, gathered: &Gathered) -> Vec<String> {
+    let say = |key: &str, args: &[(&str, &str)]| t_for(locale.locale(), key, args);
     let sessions = [
-        counted(gathered.running, "running", "running"),
-        counted(gathered.waiting, "waiting on you", "waiting on you"),
-        counted(gathered.ended, "ended", "ended"),
+        counted(locale, gathered.running, "briefing.running"),
+        counted(locale, gathered.waiting, "briefing.waitingOnYou"),
+        counted(locale, gathered.ended, "briefing.ended"),
     ]
     .into_iter()
     .flatten()
     .collect::<Vec<_>>();
     let sessions = if sessions.is_empty() {
-        "Sessions: none ran.".to_owned()
+        say("briefing.sessionsNone", &[])
     } else {
-        format!("Sessions: {}.", sessions.join(", "))
+        say("briefing.sessions", &[("list", &sessions.join(", "))])
     };
     let merged = match gathered.merged.len() {
-        0 => "Merged: no pull request.".to_owned(),
+        0 => say("briefing.mergedNone", &[]),
         n => {
             let named: Vec<String> = gathered
                 .merged
@@ -58,30 +61,29 @@ pub(crate) fn lines(gathered: &Gathered) -> Vec<String> {
                 .collect();
             let more = n.saturating_sub(NAMED);
             let more = if more > 0 {
-                format!(", and {more} more")
+                say("briefing.mergedMore", &[("count", &more.to_string())])
             } else {
                 String::new()
             };
-            format!("Merged: {}{more}.", named.join("; "))
+            say(
+                "briefing.merged",
+                &[("list", &named.join("; ")), ("more", &more)],
+            )
         }
     };
     let waiting = [
-        counted(gathered.memory, "memory proposal", "memory proposals"),
-        counted(
-            gathered.schedules,
-            "schedule proposal",
-            "schedule proposals",
-        ),
-        counted(gathered.drafts, "draft to send", "drafts to send"),
-        counted(gathered.plans, "plan to approve", "plans to approve"),
+        counted(locale, gathered.memory, "briefing.memory"),
+        counted(locale, gathered.schedules, "briefing.schedule"),
+        counted(locale, gathered.drafts, "briefing.draft"),
+        counted(locale, gathered.plans, "briefing.plan"),
     ]
     .into_iter()
     .flatten()
     .collect::<Vec<_>>();
     let waiting = if waiting.is_empty() {
-        "Decisions waiting: none.".to_owned()
+        say("briefing.decisionsNone", &[])
     } else {
-        format!("Decisions waiting: {}.", waiting.join(", "))
+        say("briefing.decisions", &[("list", &waiting.join(", "))])
     };
     vec![sessions, merged, waiting]
 }
@@ -184,10 +186,15 @@ pub(crate) fn gathered(here: &Project, projects: &[Project], since: i64) -> Gath
 }
 
 /// The briefing for `here` since `since`.
-pub(crate) fn briefing(here: &Project, projects: &[Project], since: i64) -> Briefing {
+pub(crate) fn briefing(
+    locale: SessionLocale,
+    here: &Project,
+    projects: &[Project],
+    since: i64,
+) -> Briefing {
     Briefing {
         since: since as f64,
-        lines: lines(&gathered(here, projects, since)),
+        lines: lines(locale, &gathered(here, projects, since)),
     }
 }
 
@@ -209,7 +216,7 @@ pub async fn assistant_briefing(
         Ok(projects
             .iter()
             .find(|one| one.id == project_id)
-            .map(|here| briefing(here, &projects, since as i64)))
+            .map(|here| briefing(SessionLocale::capture(), here, &projects, since as i64)))
     })
     .await
 }

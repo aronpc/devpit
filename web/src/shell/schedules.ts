@@ -1,4 +1,5 @@
 import type { Routine, RoutineKind, Schedule, ScheduleState } from '../gen/bindings'
+import { formatDate } from '../i18n/format'
 
 /* What the Schedules pane says about a row, apart from how it draws it. */
 
@@ -30,9 +31,9 @@ export function whenSaid(at: number | null, zone?: string | null): string {
   if (at === null) return '—'
   const options: Intl.DateTimeFormatOptions = { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZoneName: 'short' }
   try {
-    return new Date(at * 1000).toLocaleString(undefined, zone ? { ...options, timeZone: zone } : options)
+    return formatDate(new Date(at * 1000), zone ? { ...options, timeZone: zone } : options)
   } catch {
-    return new Date(at * 1000).toLocaleString(undefined, options)
+    return formatDate(new Date(at * 1000), options)
   }
 }
 

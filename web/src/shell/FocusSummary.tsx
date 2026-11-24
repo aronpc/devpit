@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 
 import type { HeadsDown, Notice, ProjectRun } from '../gen/bindings'
+import { t } from '../i18n'
 import { minutesIn, whatYouDid } from './headsDown'
 import { ask, commands } from './live'
 
@@ -99,34 +100,36 @@ export function FocusSummary({
   const spent =
     did.costUsd === null
       ? null
-      : `$${did.costUsd.toFixed(2)}${did.uncosted > 0 ? ' of what was priced' : ''}`
+      : did.uncosted > 0
+        ? t('workspace.focus.spentPartial', { amount: `$${did.costUsd.toFixed(2)}` })
+        : `$${did.costUsd.toFixed(2)}`
 
   return (
-    <div className="fsum" role="dialog" aria-label="Focus ended">
+    <div className="fsum" role="dialog" aria-label={t('workspace.focus.ended')}>
       <div className="fsum__box">
         {/* What you did comes first: it is the thing the focus was for. */}
         <p className="fsum__did">
-          {`${minutesIn(ended, Date.now() / 1000)} min`}
+          {t('workspace.focus.minutes', { count: minutesIn(ended, Date.now() / 1000) })}
           {mine.length > 0
-            ? ` · ${did.ok} finished${did.failed > 0 ? `, ${did.failed} failed` : ''}`
-            : ' · nothing ran'}
+            ? ` · ${t(did.failed > 0 ? 'workspace.focus.finishedFailed' : 'workspace.focus.finished', { ok: did.ok, failed: did.failed })}`
+            : ` · ${t('workspace.focus.nothingRan')}`}
           {spent ? ` · ${spent}` : ''}
         </p>
 
         <div className="fsum__top">
           <span className="fsum__t">
             {waiting.length === 0
-              ? 'Nothing arrived while you were in it'
-              : `${waiting.length} arrived while you were in it${more ? ', and more behind them' : ''}`}
+              ? t('workspace.focus.noneArrived')
+              : t(more ? 'workspace.focus.arrivedMore' : 'workspace.focus.arrived', { count: waiting.length })}
           </span>
           <button className="conv__act" onClick={onClose}>
-            Done
+            {t('workspace.focus.done')}
           </button>
         </div>
 
         {[...byProject.entries()].map(([projectId, group]) => (
           <div className="fsum__grp" key={projectId || 'none'}>
-            <span className="fsum__p">{projectId || 'No project'}</span>
+            <span className="fsum__p">{projectId || t('workspace.focus.noProject')}</span>
             {group.map((one) => (
               <button
                 className="fsum__one"

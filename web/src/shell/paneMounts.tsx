@@ -2,6 +2,7 @@ import { Drawing } from '../plugins/excalidraw/Drawing'
 import { NotePane } from '../plugins/notes/NotePane'
 import { NotesList } from '../plugins/notes/NotesList'
 import { DrawingList } from '../plugins/excalidraw/DrawingList'
+import { t } from '../i18n'
 import { AskPane } from './AskPane'
 import { MemoryPane } from './MemoryPane'
 import { BoardPane } from './BoardPane'
@@ -64,9 +65,9 @@ export const PANE_MOUNTS: readonly PaneMount[] = [
           <span className="pane__ico">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M9 3v18M15 3v18" /></svg>
           </span>
-          <span className="pane__t"><b>Board</b></span>
+          <span className="pane__t"><b>{t('workspace.pane.board.title')}</b></span>
           <span className="drag"></span>
-          <button className="sq26" onClick={() => close('board')} aria-label="Close board" title="Close board">{closeIcon}</button>
+          <button className="sq26" onClick={() => close('board')} aria-label={t('workspace.mounts.closeBoard')} title={t('workspace.mounts.closeBoard')}>{closeIcon}</button>
         </div>
         <BoardPane />
       </>
@@ -85,9 +86,9 @@ export const PANE_MOUNTS: readonly PaneMount[] = [
           <span className="pane__ico">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v3M5.6 5.6l2.1 2.1M3 12h3M18 12h3M16.3 7.7l2.1-2.1" /><rect x="7" y="12" width="10" height="9" rx="2" /></svg>
           </span>
-          <span className="pane__t"><b>Skills</b></span>
+          <span className="pane__t"><b>{t('workspace.pane.skills.title')}</b></span>
           <span className="drag"></span>
-          <button className="sq26" onClick={() => close('skills')} aria-label="Close Skills" title="Close Skills">{closeIcon}</button>
+          <button className="sq26" onClick={() => close('skills')} aria-label={t('workspace.mounts.closeSkills')} title={t('workspace.mounts.closeSkills')}>{closeIcon}</button>
         </div>
         <SkillsPane />
       </>
@@ -103,9 +104,9 @@ export const PANE_MOUNTS: readonly PaneMount[] = [
           <span className="pane__ico">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><circle cx="5" cy="6" r="2" /><circle cx="12" cy="18" r="2" /><circle cx="19" cy="6" r="2" /><path d="M5 8v2a4 4 0 0 0 4 4h1M19 8v2a4 4 0 0 1-4 4h-1" /></svg>
           </span>
-          <span className="pane__t"><b>Devflow</b></span>
+          <span className="pane__t"><b>{t('workspace.pane.devflow.title')}</b></span>
           <span className="drag"></span>
-          <button className="sq26" onClick={() => close('devflow')} aria-label="Close Devflow" title="Close Devflow">{closeIcon}</button>
+          <button className="sq26" onClick={() => close('devflow')} aria-label={t('workspace.mounts.closeDevflow')} title={t('workspace.mounts.closeDevflow')}>{closeIcon}</button>
         </div>
         <DevflowPane />
       </>
@@ -125,9 +126,9 @@ export const PANE_MOUNTS: readonly PaneMount[] = [
           <span className="pane__ico">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><path d="M9.5 9.2a2.6 2.6 0 0 1 5 .8c0 1.7-2.5 2.3-2.5 3.8M12 17h.01" /></svg>
           </span>
-          <span className="pane__t"><b>Ask the project</b></span>
+          <span className="pane__t"><b>{t('workspace.pane.ask.title')}</b></span>
           <span className="drag"></span>
-          <button className="sq26" onClick={() => close('ask')} aria-label="Close Ask the project" title="Close Ask the project">{closeIcon}</button>
+          <button className="sq26" onClick={() => close('ask')} aria-label={t('workspace.mounts.closeAsk')} title={t('workspace.mounts.closeAsk')}>{closeIcon}</button>
         </div>
         <AskPane />
       </>
@@ -143,9 +144,9 @@ export const PANE_MOUNTS: readonly PaneMount[] = [
           <span className="pane__ico">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M12 4a3 3 0 0 0-3 3 3 3 0 0 0-3 3c0 1 .4 1.8 1 2.4A3 3 0 0 0 9 18a3 3 0 0 0 3 2 3 3 0 0 0 3-2 3 3 0 0 0 2-5.6c.6-.6 1-1.4 1-2.4a3 3 0 0 0-3-3 3 3 0 0 0-3-3Z" /><path d="M12 4v16" /></svg>
           </span>
-          <span className="pane__t"><b>Project agent</b></span>
+          <span className="pane__t"><b>{t('workspace.pane.memory.title')}</b></span>
           <span className="drag"></span>
-          <button className="sq26" onClick={() => close('memory')} aria-label="Close Project agent" title="Close Project agent">{closeIcon}</button>
+          <button className="sq26" onClick={() => close('memory')} aria-label={t('workspace.mounts.closeMemory')} title={t('workspace.mounts.closeMemory')}>{closeIcon}</button>
         </div>
         <MemoryPane />
       </>

@@ -2,6 +2,7 @@ import { open as pickFolder } from '@tauri-apps/plugin-dialog'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import type { ProjectProposal } from '../gen/bindings'
+import { t } from '../i18n'
 import { ask, commands } from './live'
 import { LINKS_CHANGED } from './projectProposal'
 import { ProposalCard } from './ProposalCard'
@@ -80,14 +81,14 @@ export function OrchestratorBoards({ shown }: { shown: boolean }): React.JSX.Ele
 
   return (
     <div className="oboards">
-      <PanelHead title="Boards" meta={linked && linked.length > 0 ? `${linked.length} linked` : null}>
-        <PanelAct label={linking ? 'Stop linking' : 'Link projects'} active={linking !== null} onClick={() => setLinking(linking ? null : new Set(linked ?? []))}>
+      <PanelHead title={t('workspace.orchestratorBoards.title')} meta={linked && linked.length > 0 ? t('workspace.orchestratorBoards.linked', { count: linked.length }) : null}>
+        <PanelAct label={linking ? t('workspace.orchestratorBoards.stopLinking') : t('workspace.orchestratorBoards.linkProjects')} active={linking !== null} onClick={() => setLinking(linking ? null : new Set(linked ?? []))}>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7" /></svg>
         </PanelAct>
-        <PanelAct label="Add a project, and link it here" onClick={() => void addFolder()}>
+        <PanelAct label={t('workspace.orchestratorBoards.addProject')} onClick={() => void addFolder()}>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
         </PanelAct>
-        <PanelAct label="Every board in one view" onClick={openManager}>
+        <PanelAct label={t('workspace.orchestratorBoards.everyBoard')} onClick={openManager}>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" /></svg>
         </PanelAct>
       </PanelHead>
@@ -106,8 +107,8 @@ export function OrchestratorBoards({ shown }: { shown: boolean }): React.JSX.Ele
         />
       )}
       {linking && (
-        <div className="oboards__link" role="group" aria-label="Projects this orchestrator works with">
-          <p className="pempty__d">The projects this orchestrator works with: their boards show here, and its chat and tools reach only these.</p>
+        <div className="oboards__link" role="group" aria-label={t('workspace.orchestratorBoards.linkGroup')}>
+          <p className="pempty__d">{t('workspace.orchestratorBoards.linkSaid')}</p>
           {byGroup.map(([group, members]) => (
             <div className="oboards__group" key={group || 'none'}>
               {group && (
@@ -152,31 +153,31 @@ export function OrchestratorBoards({ shown }: { shown: boolean }): React.JSX.Ele
           {said && <p className="pempty__d">{said}</p>}
           <div className="oboards__save">
             <button className="btn" onClick={() => setLinking(null)}>
-              Cancel
+              {t('workspace.orchestratorBoards.cancel')}
             </button>
             <button className="btn btn--go" onClick={saveLinks}>
-              Save
+              {t('workspace.orchestratorBoards.save')}
             </button>
           </div>
         </div>
       )}
       {linked?.length === 0 && !linking && (
-        <PanelEmpty title="No project linked" hint="Link the projects this orchestrator works with: their boards show here, and it reaches only those.">
+        <PanelEmpty title={t('workspace.orchestratorBoards.noneLinked')} hint={t('workspace.orchestratorBoards.noneLinkedHint')}>
           <button className="btn" onClick={() => setLinking(new Set())}>
-            Link projects
+            {t('workspace.orchestratorBoards.linkProjects')}
           </button>
         </PanelEmpty>
       )}
       {failed && <p className="pempty__d">{failed}</p>}
-      {linked !== null && linked.length > 0 && boards === null && <p className="pempty__d">Reading the boards…</p>}
+      {linked !== null && linked.length > 0 && boards === null && <p className="pempty__d">{t('workspace.orchestratorBoards.reading')}</p>}
       {boards?.map(({ project, board }) => (
         <section className="oboards__p" key={project.id}>
-          <button className="oboards__name" onClick={() => go(project.id)} title={`Open ${project.name}'s board`}>
+          <button className="oboards__name" onClick={() => go(project.id)} title={t('workspace.orchestratorBoards.openBoard', { name: project.name })}>
             <ProjectMark project={project} />
             <span>{project.name}</span>
             <span className="oboards__n">{board.cards.length}</span>
           </button>
-          {board.cards.length === 0 && <p className="oboards__lempty">No cards on this board.</p>}
+          {board.cards.length === 0 && <p className="oboards__lempty">{t('workspace.orchestratorBoards.noCards')}</p>}
           {board.columns.map((column) => {
             const cards = board.cards.filter((card) => card.columnId === column.id).sort((a, b) => a.position - b.position)
             if (cards.length === 0) return null

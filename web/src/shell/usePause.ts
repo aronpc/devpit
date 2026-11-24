@@ -49,15 +49,17 @@ export function usePause(): {
   }
 }
 
-/** The moments a pause can be given, from `now` in seconds: null is until resumed. */
-export function pauseOptions(now: number): { label: string; until: number | null }[] {
+/** The moments a pause can be given, from `now` in seconds: null is until
+ *  resumed. An id, not words — the button says it in the locale of whoever
+ *  reads it (`pause.option.<id>`). */
+export function pauseOptions(now: number): { id: string; until: number | null }[] {
   const tomorrow = new Date(now * 1000)
   tomorrow.setDate(tomorrow.getDate() + 1)
   tomorrow.setHours(9, 0, 0, 0)
   return [
-    { label: 'For 30 minutes', until: now + 30 * 60 },
-    { label: 'For an hour', until: now + 3600 },
-    { label: 'Until tomorrow morning', until: tomorrow.getTime() / 1000 },
-    { label: 'Until I resume', until: null },
+    { id: 'for30', until: now + 30 * 60 },
+    { id: 'forHour', until: now + 3600 },
+    { id: 'untilMorning', until: tomorrow.getTime() / 1000 },
+    { id: 'untilResumed', until: null },
   ]
 }

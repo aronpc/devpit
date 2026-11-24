@@ -1,5 +1,6 @@
 import type { ChatCard } from './useChat'
 import { useShell } from './useShell'
+import { t } from '../i18n'
 
 /*
  * The card a conversation is about, in the chat's corner.
@@ -10,10 +11,10 @@ import { useShell } from './useShell'
 export function ChatCardChip({ card }: { card: ChatCard | null }): React.JSX.Element | null {
   const { show, openCard } = useShell()
   if (!card) return null
-  const name = card.title ?? 'a card'
+  const name = card.title ?? t('sessions.aCard')
   if (!card.onBoard) {
     return (
-      <span className="pcorner__card" title="This card is no longer on the board">
+      <span className="pcorner__card" title={t('sessions.chat.cardGone')}>
         {name}
       </span>
     )
@@ -21,7 +22,7 @@ export function ChatCardChip({ card }: { card: ChatCard | null }): React.JSX.Ele
   return (
     <button
       className="pcorner__card"
-      title="Open the card"
+      title={t('sessions.chat.cardOpen')}
       onClick={() => {
         show('board')
         openCard(card.id)

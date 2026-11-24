@@ -6,8 +6,9 @@ import { ask, commands } from './live'
 import { PlusLink } from './PlusLink'
 import { HubSetup } from './HubSetup'
 import { TelegramSetup } from './TelegramSetup'
+import { t } from '../i18n'
 
-const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+const DAYS = [0, 1, 2, 3, 4, 5, 6]
 
 /*
  * Where devpit tells you things while you are away from it, and which things.
@@ -27,16 +28,16 @@ export function ChannelsPane(): React.JSX.Element {
   const connected = channels?.connected ?? []
   return (
     <>
-      <h1 className="prefs__h">Channels</h1>
+      <h1 className="prefs__h">{t('workspace.channels.title')}</h1>
       <TelegramSetup onLinked={load} />
       <HubSetup onChanged={load} />
       <p className="acc__note">
-        <PlusLink from="app-channels" said="A devpit bot that works with this computer off, and more, come with devpit Plus." />
+        <PlusLink from="app-channels" said={t('workspace.channels.plus')} />
       </p>
 
       {rules && connected.length > 0 && (
         <>
-          <div className="acc__sub">What goes where</div>
+          <div className="acc__sub">{t('workspace.channels.whatWhere')}</div>
           <table className="chmatrix">
             <thead>
               <tr>
@@ -44,7 +45,7 @@ export function ChannelsPane(): React.JSX.Element {
                 {connected.map((one) => (
                   <th key={one.id}>{one.label}</th>
                 ))}
-                <th>If nobody acts</th>
+                <th>{t('workspace.channels.ifNobody')}</th>
               </tr>
             </thead>
             <tbody>
@@ -55,7 +56,7 @@ export function ChannelsPane(): React.JSX.Element {
                     <td key={one.id}>
                       <input
                         type="checkbox"
-                        aria-label={`${label} on ${one.label}`}
+                        aria-label={t('workspace.channels.on', { label, channel: one.label })}
                         checked={rules.routes.some((route) => route.event === event && route.channels.includes(one.id))}
                         onChange={(change) => save(flipped(rules, event, one.id, change.target.checked))}
                       />
@@ -64,13 +65,13 @@ export function ChannelsPane(): React.JSX.Element {
                   <td>
                     {channels.escalates.includes(event) && (
                       <select
-                        aria-label={`${label}: if nobody acts`}
+                        aria-label={t('workspace.channels.ifNobodyLabel', { label })}
                         value={String(rules.routes.find((route) => route.event === event)?.escalateAfter ?? '')}
                         onChange={(change) => save(escalated(rules, event, change.target.value ? Number(change.target.value) : null))}
                       >
                         {ESCALATE_CHOICES.map((choice) => (
                           <option key={String(choice)} value={choice ?? ''}>
-                            {choice === null ? 'Every channel at once' : `Next channel after ${choice} min`}
+                            {choice === null ? t('workspace.channels.everyChannel') : t('workspace.channels.nextChannel', { minutes: choice })}
                           </option>
                         ))}
                       </select>
@@ -80,24 +81,20 @@ export function ChannelsPane(): React.JSX.Element {
               ))}
             </tbody>
           </table>
-          <p className="acc__note">
-            With a delay, a notice goes to its first channel — push, then Telegram, then e-mail — and moves to the next while nobody answers the session, sends
-            the draft, deals with the reminder or presses one of its buttons. Channels you have not set up are skipped. It moves on from this computer: while it
-            is off or asleep, nothing moves on.
-          </p>
+          <p className="acc__note">{t('workspace.channels.delayNote')}</p>
 
-          <div className="acc__sub">Quiet hours</div>
+          <div className="acc__sub">{t('workspace.channels.quiet')}</div>
           <div className="pref">
             <span className="pref__body">
               <label className="voice__row">
                 <input type="checkbox" checked={Boolean(rules.quiet)} onChange={(change) => save({ ...rules, quiet: change.target.checked ? { from: 22 * 60, to: 7 * 60, days: [], offsetMinutes: offsetNow() } : null })} />
-                Send nothing during these hours — a reminder you set still goes
+                {t('workspace.channels.sendNothing')}
               </label>
               {rules.quiet && (
                 <span className="voice__row">
-                  <input type="time" aria-label="Quiet from" value={clock(rules.quiet.from)} onChange={(change) => rules.quiet && save({ ...rules, quiet: { ...rules.quiet, from: minutes(change.target.value) } })} />
-                  to
-                  <input type="time" aria-label="Quiet until" value={clock(rules.quiet.to)} onChange={(change) => rules.quiet && save({ ...rules, quiet: { ...rules.quiet, to: minutes(change.target.value) } })} />
+                  <input type="time" aria-label={t('workspace.channels.quietFrom')} value={clock(rules.quiet.from)} onChange={(change) => rules.quiet && save({ ...rules, quiet: { ...rules.quiet, from: minutes(change.target.value) } })} />
+                  {t('workspace.channels.to')}
+                  <input type="time" aria-label={t('workspace.channels.quietUntil')} value={clock(rules.quiet.to)} onChange={(change) => rules.quiet && save({ ...rules, quiet: { ...rules.quiet, to: minutes(change.target.value) } })} />
                   {DAYS.map((day, at) => (
                     <label key={day} className="chday">
                       <input
@@ -107,24 +104,24 @@ export function ChannelsPane(): React.JSX.Element {
                           rules.quiet && save({ ...rules, quiet: { ...rules.quiet, days: change.target.checked ? [...rules.quiet.days, at] : rules.quiet.days.filter((one) => one !== at) } })
                         }
                       />
-                      {day}
+                      {t(`workspace.channels.day.${day}`)}
                     </label>
                   ))}
                 </span>
               )}
-              <span className="pref__d">No day ticked is every day.</span>
+              <span className="pref__d">{t('workspace.channels.noDay')}</span>
             </span>
           </div>
 
           <div className="pref">
             <span className="pref__body">
-              <span className="pref__t">Gather into one message</span>
-              <span className="pref__d">What happens within this long goes as one message: five sessions finishing at once are one notice.</span>
+              <span className="pref__t">{t('workspace.channels.gather')}</span>
+              <span className="pref__d">{t('workspace.channels.gatherNote')}</span>
             </span>
             <select value={rules.groupSeconds} onChange={(change) => save({ ...rules, groupSeconds: Number(change.target.value) })}>
               {[15, 60, 120, 300].map((seconds) => (
                 <option key={seconds} value={seconds}>
-                  {seconds < 60 ? `${seconds} s` : `${seconds / 60} min`}
+                  {seconds < 60 ? t('workspace.channels.seconds', { count: seconds }) : t('workspace.channels.minutes', { count: seconds / 60 })}
                 </option>
               ))}
             </select>

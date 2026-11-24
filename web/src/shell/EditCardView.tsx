@@ -5,6 +5,7 @@ import { ofPath } from './languages'
 import { Painted } from './Painted'
 import { useShell } from './useShell'
 import { useCopied } from './useCopied'
+import { t } from '../i18n'
 
 /*
  * One edit, as a card: the file, what it gained and lost, and the lines.
@@ -49,12 +50,12 @@ export function EditCard({ diff, failed, error }: { diff: EditDiff; failed: bool
             className="ecard__c"
             onClick={() => copyText(diffText(diff))}
           >
-            {copied ? 'Copied' : 'Copy diff'}
+            {copied ? t('workspace.editCard.copied') : t('workspace.editCard.copy')}
           </button>
         )}
       </div>
       {failed ? (
-        <pre className="ecard__err">{error || 'The edit did not apply.'}</pre>
+        <pre className="ecard__err">{error || t('workspace.editCard.failed')}</pre>
       ) : (
         <div className="diff ecard__b">
           {rows.map((row, at) => (
@@ -64,10 +65,10 @@ export function EditCard({ diff, failed, error }: { diff: EditDiff; failed: bool
           ))}
           {long && (
             <button className="diff__at ecard__more" onClick={() => setWhole(true)}>
-              Show {diff.rows.length - FOLD_ROWS} more lines
+              {t('workspace.editCard.showMore', { count: diff.rows.length - FOLD_ROWS })}
             </button>
           )}
-          {!long && diff.hidden > 0 && <div className="diff__at">{diff.hidden} more lines</div>}
+          {!long && diff.hidden > 0 && <div className="diff__at">{t('workspace.editCard.hidden', { count: diff.hidden })}</div>}
         </div>
       )}
     </div>

@@ -1,3 +1,4 @@
+import { t } from '../i18n'
 import type { EnvVar, WorktreeSetup } from '../gen/bindings'
 
 /*
@@ -27,25 +28,25 @@ export function WorktreeSetupFields({
 }): React.JSX.Element {
   return (
     <details className="pdlg__f wtsetup" open={setup.copy.length + setup.run.length > 0}>
-      <summary>New worktree setup</summary>
-      <p className="wtsetup__d">What a card&rsquo;s own checkout gets before anyone works in it. Kept on this machine, never committed.</p>
+      <summary>{t('workspace.worktreeSetup.title')}</summary>
+      <p className="wtsetup__d">{t('workspace.worktreeSetup.said')}</p>
       <label className="wtsetup__f">
-        <span>Copy from the main checkout</span>
-        <textarea rows={2} placeholder={'.env*\nconfig/*.local.json'} value={text(setup.copy)} onChange={(event) => onChange({ ...setup, copy: lines(event.target.value) })} />
+        <span>{t('workspace.worktreeSetup.copy')}</span>
+        <textarea rows={2} placeholder={t('workspace.worktreeSetup.copyHint')} value={text(setup.copy)} onChange={(event) => onChange({ ...setup, copy: lines(event.target.value) })} />
       </label>
       <label className="wtsetup__f">
-        <span>Link to the main checkout</span>
-        <textarea rows={1} placeholder="data/fixtures" value={text(setup.link)} onChange={(event) => onChange({ ...setup, link: lines(event.target.value) })} />
+        <span>{t('workspace.worktreeSetup.link')}</span>
+        <textarea rows={1} placeholder={t('workspace.worktreeSetup.linkHint')} value={text(setup.link)} onChange={(event) => onChange({ ...setup, link: lines(event.target.value) })} />
       </label>
       <label className="wtsetup__f">
-        <span>Run, in order</span>
-        <textarea rows={2} placeholder={'pnpm install\nmake setup'} value={text(setup.run)} onChange={(event) => onChange({ ...setup, run: lines(event.target.value) })} />
+        <span>{t('workspace.worktreeSetup.run')}</span>
+        <textarea rows={2} placeholder={t('workspace.worktreeSetup.runHint')} value={text(setup.run)} onChange={(event) => onChange({ ...setup, run: lines(event.target.value) })} />
       </label>
       <label className="wtsetup__f">
-        <span>Variables for those commands</span>
+        <span>{t('workspace.worktreeSetup.env')}</span>
         <textarea
           rows={1}
-          placeholder="CARGO_TARGET_DIR=/tmp/shared-target"
+          placeholder={t('workspace.worktreeSetup.envHint')}
           defaultValue={setup.share.map((one) => `${one.name}=${one.value}`).join('\n')}
           onChange={(event) => onChange({ ...setup, share: envOf(event.target.value) })}
         />

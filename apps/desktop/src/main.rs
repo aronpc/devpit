@@ -12,6 +12,9 @@ mod agent_api;
 mod agent_door;
 mod agent_reach;
 mod agent_reminders;
+#[cfg(test)]
+#[path = "agent_rules_tests.rs"]
+mod agent_rules_tests;
 mod arranging;
 mod artifacts;
 mod asking;
@@ -183,6 +186,8 @@ mod local_events;
 mod local_files;
 mod local_rpc;
 mod local_server;
+#[cfg(test)]
+mod locale_turn;
 mod maintenance;
 mod mcp;
 mod mcp_cache;
@@ -284,6 +289,7 @@ mod search;
 mod secret_scan;
 mod session_bus;
 mod session_cost;
+mod session_locale;
 mod session_notice;
 mod session_search;
 mod session_told;

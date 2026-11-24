@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 
 import type { Deciding, DevflowCalibration } from '../gen/bindings'
 import { DevflowAccuracy } from './DevflowAccuracy'
+import { t } from '../i18n'
+import { tRich } from '../i18n/rich'
 import { ask, commands } from './live'
 import { PrefMore } from './PrefRow'
 import { PrefSwitch } from './PrefSwitch'
@@ -15,7 +17,7 @@ import { useShell } from './useShell'
 
 const PROVIDERS: readonly { id: string; label: string; url: string; model: string }[] = [
   { id: 'openrouter', label: 'OpenRouter', url: 'https://openrouter.ai/api/v1', model: 'typesafe/jev-1.13' },
-  { id: 'vercel', label: 'Vercel AI Gateway', url: 'https://ai-gateway.vercel.sh/v1', model: 'typesafe-ai/jev' },
+  { id: 'vercel', label: 'Vercel AI Gateway', url: 'https://ai-gateway.vercel.sh/v1', model: 'typesafe-ai/jev' }, // ui-text: ok a product's name
 ]
 
 const dollars = (value: number): string => `$${value.toFixed(value < 0.01 && value > 0 ? 4 : 2)}`
@@ -70,9 +72,9 @@ export function DecisionsSettings(): React.JSX.Element {
     void ask(() => commands.decisionsTest()).then((answer) => {
       setTesting(false)
       const got = answer.data
-      if (!got) return setTried(answer.error ?? 'no answer')
+      if (!got) return setTried(answer.error ?? t('workspace.decisions.noAnswer'))
       if (got.note) return setTried(got.note)
-      setTried(`Answered in ${got.latencyMs ?? 0} ms for ${dollars(got.costUsd ?? 0)}${got.probability == null ? '' : ` — p ${got.probability.toFixed(2)}`}.`)
+      setTried(t('workspace.decisions.answered', { ms: got.latencyMs ?? 0, cost: dollars(got.costUsd ?? 0), p: got.probability == null ? '' : ` — p ${got.probability.toFixed(2)}` }))
       void ask(() => commands.decisionsRead()).then((again) => again.data && setNow(again.data))
     })
   }
@@ -86,12 +88,12 @@ export function DecisionsSettings(): React.JSX.Element {
     <>
       <div className="pref pref--stack">
         <div className="pref__body">
-          <span className="pref__t">Decisions</span>
-          <span className="pref__d">Yes/no, a choice or a score, each with a calibrated confidence — asked by devpit and its agents, answered by Jev. {now.keySet ? 'On.' : 'Off until a key is kept.'}</span>
+          <span className="pref__t">{t('workspace.decisions.title')}</span>
+          <span className="pref__d">{t('workspace.decisions.hint')} {now.keySet ? t('workspace.decisions.on') : t('workspace.decisions.offUntilKey')}</span>
           <PrefMore>
-            Every state passes through devpit&rsquo;s redaction first, every request asks for zero retention and no training, and the day&rsquo;s cap stops it. Without a key, the network or budget, everything works as it does without it. Agents reach it as <code>devpit_decide</code> and <code>devpit_rubric_run</code>.
+            {tRich('workspace.decisions.more', { decide: <code>devpit_decide</code>, rubric: <code>devpit_rubric_run</code> })} {/* // ui-text: ok commands and file names are not words */}
           </PrefMore>
-          <span className="voice__row" role="radiogroup" aria-label="Provider">
+          <span className="voice__row" role="radiogroup" aria-label={t('workspace.decisions.provider')}>
             {PROVIDERS.map((one) => (
               <button key={one.id} className="btn" data-on={now.provider === one.id ? 'true' : undefined} role="radio" aria-checked={now.provider === one.id} onClick={() => save({ ...now, provider: one.id })}>
                 {one.label}
@@ -99,21 +101,21 @@ export function DecisionsSettings(): React.JSX.Element {
             ))}
           </span>
           <label className="voice__row">
-            <span className="voice__l">Address</span>
+            <span className="voice__l">{t('workspace.decisions.address')}</span>
             <input key={`url-${provider.id}`} className="voice__in" placeholder={provider.url} defaultValue={now.url} onBlur={(event) => event.target.value !== now.url && save({ ...now, url: event.target.value })} />
           </label>
           <label className="voice__row">
-            <span className="voice__l">Model</span>
+            <span className="voice__l">{t('workspace.decisions.model')}</span>
             <input key={`model-${provider.id}`} className="voice__in" placeholder={provider.model} defaultValue={now.model} onBlur={(event) => event.target.value !== now.model && save({ ...now, model: event.target.value })} />
           </label>
           <label className="voice__row">
-            <span className="voice__l">Daily cap</span>
+            <span className="voice__l">{t('workspace.decisions.cap')}</span>
             <input
               className="voice__in voice__in--short"
               type="number"
               min="0"
               step="0.25"
-              aria-label="Daily cap in dollars"
+              aria-label={t('workspace.decisions.capLabel')}
               defaultValue={cap}
               onBlur={(event) => {
                 const next = Number(event.target.value)
@@ -122,25 +124,25 @@ export function DecisionsSettings(): React.JSX.Element {
             />
           </label>
           <span className="voice__row">
-            <span className="voice__l">Key</span>
-            <input className="voice__in" type="password" autoComplete="off" placeholder={now.keySet ? 'Kept — type to replace' : `Paste your ${provider.label} key`} value={key} onChange={(event) => setKey(event.target.value)} />
+            <span className="voice__l">{t('workspace.decisions.key')}</span>
+            <input className="voice__in" type="password" autoComplete="off" placeholder={now.keySet ? t('workspace.decisions.keyKept') : t('workspace.decisions.keyPaste', { provider: provider.label })} value={key} onChange={(event) => setKey(event.target.value)} />
             <button className="btn" disabled={!key.trim()} onClick={() => keep(key)}>
-              Keep
+              {t('workspace.decisions.keep')}
             </button>
             {now.keySet && (
               <button className="btn" onClick={() => keep(null)}>
-                Forget
+                {t('workspace.decisions.forget')}
               </button>
             )}
           </span>
           <span className="voice__row">
             <button className="btn" disabled={testing || !now.keySet} onClick={test}>
-              {testing ? 'Asking…' : 'Test'}
+              {testing ? t('workspace.decisions.asking') : t('workspace.decisions.test')}
             </button>
             {tried && <span className="pref__d">{tried}</span>}
           </span>
           <span className="pref__d">
-            Today: {dollars(now.spentTodayUsd ?? 0)} of {dollars(cap)}, {now.decidedToday} {now.decidedToday === 1 ? 'decision' : 'decisions'}.
+            {t('workspace.decisions.today', { spent: dollars(now.spentTodayUsd ?? 0), cap: dollars(cap), count: now.decidedToday })}
           </span>
           {said && <span className="pref__d voice__bad">{said}</span>}
         </div>
@@ -149,8 +151,8 @@ export function DecisionsSettings(): React.JSX.Element {
         <PrefSwitch
           on={sent}
           onFlip={() => send(project.id, !sent)}
-          title={`Send ${project.name}'s state`}
-          said="Off keeps this project's cards, diffs and output from ever reaching Decisions; its gates then do what they did without it."
+          title={t('workspace.decisions.sendState', { name: project.name })}
+          said={t('workspace.decisions.sendStateSaid')}
         />
       )}
       {accuracy && accuracy.rubrics.length > 0 && <DevflowAccuracy calibration={accuracy} />}

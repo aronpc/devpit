@@ -22,6 +22,7 @@
 
 use std::path::{Path, PathBuf};
 
+use devpit_core::locale::Locale;
 use devpit_rpc::{Board, Card, Column, Project, RpcError};
 use serde::Deserialize;
 use serde_json::{json, Value};
@@ -42,6 +43,20 @@ pub(crate) struct Asked {
     /// The asking session's `CLAUDE_CONFIG_DIR`, when it has one.
     #[serde(default, rename = "configDir")]
     pub config_dir: Option<String>,
+    /// The asking session's language, as its MCP server carries it; absent
+    /// from an older server, which is English.
+    #[serde(default)]
+    pub locale: Option<String>,
+}
+
+impl Asked {
+    /// The language the asking session was born in.
+    pub(crate) fn session_locale(&self) -> Locale {
+        match self.locale.as_deref() {
+            Some("pt-BR") => Locale::PtBr,
+            _ => Locale::En,
+        }
+    }
 }
 
 /// The methods this build answers, for an agent asking what it can do.
@@ -240,6 +255,7 @@ fn respond_in(
         cwd: asked.cwd.clone(),
         author: asked.author.clone(),
         config_dir: asked.config_dir.clone(),
+        locale: asked.locale.clone(),
     };
     let text = |name: &str| {
         asked
@@ -531,6 +547,7 @@ fn respond_in(
         cwd: asked.cwd.clone(),
         author: asked.author.clone(),
         config_dir: asked.config_dir.clone(),
+        locale: asked.locale.clone(),
     };
     let text = |name: &str| {
         asked
@@ -546,6 +563,7 @@ fn respond_in(
             }
         }
         return crate::devflow::respond_from(
+            asked.session_locale(),
             app,
             &asked.method,
             project,
@@ -762,7 +780,12 @@ fn respond_in(
         }
         "finish_card" => {
             on_board(&board, &card_id)?;
-            crate::devflow_gate::may_finish(project, &card_id, Path::new(&asked.cwd))?;
+            crate::devflow_gate::may_finish(
+                asked.session_locale(),
+                project,
+                &card_id,
+                Path::new(&asked.cwd),
+            )?;
             let mut done = crate::card_follows::finish(
                 app,
                 &board,
@@ -791,7 +814,10 @@ fn respond_in(
                 let card = on_board(&board, &card_id)?;
                 name = name.or_else(|| Some(crate::handing::session_name(&card.title, &card_id)));
             }
+            // The session's language, of the moment it is started.
+            let locale = crate::session_locale::SessionLocale::capture();
             let started = crate::host_sessions::started(
+                locale,
                 app,
                 here,
                 project,
@@ -817,13 +843,17 @@ fn respond_in(
             let app = app.ok_or("devpit's window is not running")?;
             let profile = orchestrating(here)?;
             let runs_as = crate::opening::runs_as(profile, text("profile").as_deref())?;
+            // The session's language, of the moment it is started.
+            let locale = crate::session_locale::SessionLocale::capture();
             let started = crate::opening::open(
                 app,
                 project,
                 profile,
                 &crate::orchestrator_notes::briefed(
+                    locale,
                     Path::new(&here.root_path),
                     &crate::project_agent::nudged(
+                        locale,
                         &text("prompt").unwrap_or_default(),
                         Path::new(&project.root_path),
                     ),
@@ -845,14 +875,18 @@ fn respond_in(
         "start" => {
             let profile = orchestrating(here)?;
             let runs_as = crate::opening::runs_as(profile, text("profile").as_deref())?;
+            // The session's language, of the moment it is started.
+            let locale = crate::session_locale::SessionLocale::capture();
             let started = crate::handing::hand(
                 app.ok_or("devpit's window is not running")?,
                 &board,
                 profile,
                 &card_id,
                 &crate::orchestrator_notes::briefed(
+                    locale,
                     Path::new(&here.root_path),
                     &crate::project_agent::nudged(
+                        locale,
                         &text("prompt").unwrap_or_default(),
                         Path::new(&project.root_path),
                     ),

@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import type { AgentChoice, Profile } from '../gen/bindings'
+import { t } from '../i18n'
+import { formatDate } from '../i18n/format'
+import { useLocale } from '../i18n/LocaleRoot'
+import { tRich } from '../i18n/rich'
 import { AgentRow } from './AgentRow'
 import { EnvironmentCopy } from './EnvironmentCopy'
 import { ProviderChecks } from './ProviderChecks'
@@ -28,11 +32,15 @@ import { useKnownAgents } from './useKnownAgents'
  */
 
 const NO_AGENT = ''
+/* Commands and paths the sentences point at: said the same in every language. */
+const HOOK_COMMAND = 'devpit-agent hook --agent <name> <event>'
+const CLAUDE_DIR = '.claude'
 /* The editor's open id while it holds a profile that does not exist yet. No
    agent or minted profile id can be this. */
 const NEW = '+new'
 
 export function ProviderRows(): React.JSX.Element {
+  useLocale()
   const [profiles, setProfiles] = useState<readonly Profile[]>([])
   const [choice, setChoice] = useState<AgentChoice>({ defaultId: NO_AGENT, disabled: [], hooks: true, trust: true })
   const [checked, setChecked] = useState<string | null>(null)
@@ -48,7 +56,7 @@ export function ProviderRows(): React.JSX.Element {
     void ask(() => commands.agentProfiles()).then((answer) => {
       setProfiles(answer.data ?? [])
       setError(answer.error)
-      setChecked(new Date().toLocaleTimeString())
+      setChecked(formatDate(new Date(), { timeStyle: 'medium' }))
     })
     void ask(() => commands.agentChoice()).then((answer) => {
       if (answer.data) setChoice(answer.data)
@@ -156,20 +164,18 @@ export function ProviderRows(): React.JSX.Element {
       <div className="card2">
         <div className="card2__top">
           <div style={{ flex: '1', minWidth: '0' }}>
-            <div className="card2__t">Default agent</div>
-            <div className="card2__d">
-              What a new terminal opens. A plain shell is an answer too.
-            </div>
+            <div className="card2__t">{t('providers.defaultAgent')}</div>
+            <div className="card2__d">{t('providers.defaultSaid')}</div>
           </div>
         </div>
         {/* One menu, not a row of buttons: the row grew with every profile
             anyone declared, and a default is picked once and read often. */}
         <div className="agpick">
           <FieldSelect
-            label="Default agent"
+            label={t('providers.defaultAgent')}
             value={choice.defaultId}
             options={[
-              { id: NO_AGENT, label: 'No agent', hint: 'A plain shell' },
+              { id: NO_AGENT, label: t('providers.noAgent'), hint: t('providers.plainShell') },
               ...choosable(entries).map((entry) => ({ id: entry.id, label: entry.label, hint: entry.launch })),
             ]}
             onPick={(id) => {
@@ -180,9 +186,7 @@ export function ProviderRows(): React.JSX.Element {
         {/* A default pointing at something absent or switched off opens
             nothing. Said here rather than discovered at the next launch. */}
         {lost && (
-          <p className="acc__note">
-            The default is not on this machine any more, so a new terminal opens a shell.
-          </p>
+          <p className="acc__note">{t('providers.lost')}</p>
         )}
       </div>
 
@@ -190,63 +194,42 @@ export function ProviderRows(): React.JSX.Element {
         on={choice.hooks}
         disabled={busy}
         onFlip={() => setHooks(!choice.hooks)}
-        title="Agent status hooks"
-        said="Shows working, waiting and done on the island, in the sidebar and on a card."
-        more={
-          <>
-            For Claude Code and the Gemini CLI run in devpit&rsquo;s terminals. The hooks travel
-            with the launch &mdash; nothing is written into your own configuration, so turning
-            this off is the whole of turning it off. Any other agent can report with{' '}
-            <code>devpit-agent hook --agent &lt;name&gt; &lt;event&gt;</code>, run in one of devpit&rsquo;s terminals.
-          </>
-        }
+        title={t('providers.hooksTitle')}
+        said={t('providers.hooksSaid')}
+        more={<>{tRich('providers.hooksMore', { command: <code>{HOOK_COMMAND}</code> })}</>}
       />
 
       <PrefSwitch
         on={choice.trust}
         disabled={busy}
         onFlip={() => setTrust(!choice.trust)}
-        title="Trust the folders of the projects I add"
-        said="Claude Code stops asking whether to trust a project's folder or its worktrees."
-        more={
-          <>
-            Adding a project is the answer: devpit writes it into each Claude Code account it knows,
-            when the project is added and when a worktree is made. A trusted folder&rsquo;s own{' '}
-            <code>.claude</code> settings &mdash; hooks, permissions &mdash; apply without asking, so
-            add only what you would trust by hand. Off, the question comes back for new folders.
-          </>
-        }
+        title={t('providers.trustTitle')}
+        said={t('providers.trustSaid')}
+        more={<>{tRich('providers.trustMore', { settings: <code>{CLAUDE_DIR}</code> })}</>}
       />
 
       <div className="card2">
         <div className="card2__top">
           <div style={{ flex: '1', minWidth: '0' }}>
             <div className="card2__t">
-              Installed <span className="git__count">{here(entries).length} detected</span>
+              {t('providers.installed')} <span className="git__count">{t('providers.detected', { count: here(entries).length })}</span>
             </div>
-            <div className="card2__d">
-              devpit drives agent CLIs installed on this computer. Open one to change the
-              program it runs, the arguments it carries or the variables it starts with.
-            </div>
+            <div className="card2__d">{t('providers.installedSaid')}</div>
           </div>
           <div>
             <button className="card2__go" onClick={refresh}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4" /><path d="M21 3v6h-6" /></svg>
-              Refresh
+              {t('providers.refresh')}
             </button>
-            {checked && <div className="card2__when">Checked {checked}</div>}
+            {checked && <div className="card2__when">{t('providers.checked', { time: checked })}</div>}
           </div>
         </div>
 
         <div className="provnew">
-          <span className="provnew__d">
-            Another account or endpoint of the same CLI — a second sign-in in its own config
-            directory, or a gateway such as z.ai — is a profile. Each one shows up in the
-            chat&rsquo;s model picker with its own history, skills and MCP servers.
-          </span>
+          <span className="provnew__d">{t('providers.newSaid')}</span>
           <button className="card2__go" aria-expanded={open === NEW} onClick={create}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
-            New profile
+            {t('providers.newProfile')}
           </button>
         </div>
         {open === NEW && draft && (
@@ -261,10 +244,7 @@ export function ProviderRows(): React.JSX.Element {
 
         {error && <p className="acc__note">{error}</p>}
         {!error && entries.length === 0 && (
-          <p className="acc__note">
-            No agent CLI found. devpit looked on your login shell’s PATH and the usual install
-            folders; set a profile’s Command to the full path.
-          </p>
+          <p className="acc__note">{t('providers.noneFound')}</p>
         )}
         <EnvironmentCopy />
         <ProviderChecks />
@@ -295,12 +275,10 @@ export function ProviderRows(): React.JSX.Element {
           <div className="card2__top">
             <div style={{ flex: '1', minWidth: '0' }}>
               <div className="card2__t">
-                Not on this machine{' '}
+                {t('providers.elsewhere')}{' '}
                 <span className="git__count">{elsewhere(entries).length}</span>
               </div>
-              <div className="card2__d">
-                devpit can drive these too. Install one with its own CLI and press Refresh.
-              </div>
+              <div className="card2__d">{t('providers.elsewhereSaid')}</div>
             </div>
           </div>
           {elsewhere(entries).map((entry) => (

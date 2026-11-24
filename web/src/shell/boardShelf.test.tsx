@@ -2,12 +2,19 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-libra
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import type { ArchivedCards, CardDeleted } from '../gen/bindings'
+import { setLocale } from '../i18n'
 import { ArchivedPane, UNDO_MS, UndoArchive } from './BoardShelf'
 
 afterEach(() => {
   cleanup()
   vi.useRealTimers()
+  setLocale('en')
 })
+
+/* Noon UTC on 20 January: the same day on any runner, and a day past the
+   twelfth, so a day-first date and a month-first one cannot pass for each
+   other. */
+const ARCHIVED_AT = Date.UTC(2026, 0, 20, 12) / 1000
 
 const restored = vi.fn()
 const deleted = vi.fn()
@@ -16,7 +23,7 @@ vi.mock('./live', () => ({
   ask: (call: () => unknown) => Promise.resolve({ data: call(), error: null, loading: false }),
   commands: {
     boardArchived: (): ArchivedCards => ({
-      cards: [{ id: 'card_a', title: 'Old idea', columnName: 'Todo', archivedAt: 100 }],
+      cards: [{ id: 'card_a', title: 'Old idea', columnName: 'Todo', archivedAt: ARCHIVED_AT }],
     }),
     cardRestore: (_project: string, card: string) => {
       restored(card)
@@ -31,6 +38,19 @@ vi.mock('./live', () => ({
 }))
 
 describe('the archived cards', () => {
+  /* The date in the language the person chose, not the machine's: a runner
+     under LC_ALL=en_US with the app in pt-BR still reads 20/01/2026. */
+  it('dates an archived card in the chosen locale', async () => {
+    setLocale('pt-BR')
+    render(<ArchivedPane projectId="p1" onClose={vi.fn()} onChanged={vi.fn()} />)
+    expect(await screen.findByText(/· arquivado em 20\/01\/2026/)).toBeTruthy()
+  })
+
+  it('dates an archived card in English when English is chosen', async () => {
+    render(<ArchivedPane projectId="p1" onClose={vi.fn()} onChanged={vi.fn()} />)
+    expect(await screen.findByText(/· archived 1\/20\/(20)?26/)).toBeTruthy()
+  })
+
   it('brings one back', async () => {
     const onChanged = vi.fn()
     render(<ArchivedPane projectId="p1" onClose={vi.fn()} onChanged={onChanged} />)

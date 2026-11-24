@@ -1,4 +1,6 @@
 import type { Commit } from '../gen/bindings'
+import { t } from '../i18n'
+import { formatDate } from '../i18n/format'
 
 /*
  * The rules behind the History tab, apart from the drawing.
@@ -25,14 +27,14 @@ export function subjectOf(subject: string): Subject {
 
 /** The heading a commit sits under: today, yesterday, a weekday this week, or its date. */
 export function dayOf(atSeconds: number | null, now: Date): string {
-  if (atSeconds === null) return 'Undated'
+  if (atSeconds === null) return t('workspace.history.undated')
   const at = new Date(atSeconds * 1000)
   const midnight = (day: Date): number => new Date(day.getFullYear(), day.getMonth(), day.getDate()).getTime()
   const days = Math.round((midnight(now) - midnight(at)) / 86_400_000)
-  if (days <= 0) return 'Today'
-  if (days === 1) return 'Yesterday'
-  if (days < 7) return at.toLocaleDateString(undefined, { weekday: 'long' })
-  return at.toLocaleDateString(undefined, {
+  if (days <= 0) return t('workspace.history.today')
+  if (days === 1) return t('workspace.history.yesterday')
+  if (days < 7) return formatDate(at, { weekday: 'long' })
+  return formatDate(at, {
     month: 'short',
     day: 'numeric',
     ...(at.getFullYear() === now.getFullYear() ? {} : { year: 'numeric' }),

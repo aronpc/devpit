@@ -1,3 +1,5 @@
+import { t } from '../i18n'
+
 /*
  * What a person typed into an address bar, and where it points.
  *
@@ -48,7 +50,7 @@ const HOSTISH =
  */
 export function aim(typed: string): Aimed {
   const text = typed.trim()
-  if (!text) return { refused: 'Type an address to open.' }
+  if (!text) return { refused: t('workspace.browserPane.typeAnAddress') }
 
   /* A scheme is `word:`, and only when what follows is not just digits —
      otherwise `localhost:3000` reads as the scheme `localhost`. */
@@ -56,12 +58,12 @@ export function aim(typed: string): Aimed {
   if (scheme) {
     const named = `${scheme[1].toLowerCase()}:`
     if (!opens(named)) {
-      return { refused: `This pane opens http and https. ${scheme[1]} is not one of them.` }
+      return { refused: t('workspace.browserPane.schemeRefused', { scheme: scheme[1]! }) }
     }
     try {
       return { at: new URL(text).toString() }
     } catch {
-      return { refused: `${text} is not an address.` }
+      return { refused: t('workspace.browserPane.notAnAddress', { text }) }
     }
   }
 
@@ -75,11 +77,11 @@ export function aim(typed: string): Aimed {
     try {
       return { at: new URL(`${scheme}://${text}`).toString() }
     } catch {
-      return { refused: `${text} is not an address.` }
+      return { refused: t('workspace.browserPane.notAnAddress', { text }) }
     }
   }
 
-  return { refused: `${text} is not an address. devpit does not search for you.` }
+  return { refused: t('workspace.browserPane.notSearch', { text }) }
 }
 
 /** Whether a host is this machine, which is the only place `http` is assumed. */
@@ -204,7 +206,6 @@ export function grouped(stores: readonly { family: string; profile: string; path
 /** A width to show a page at, for looking at a layout that is not this one. */
 export interface Viewport {
   readonly id: string
-  readonly label: string
   readonly width: number
   readonly height: number
 }
@@ -222,14 +223,17 @@ export interface Viewport {
  * checked there break at the same place.
  */
 export const VIEWPORTS: readonly Viewport[] = [
-  { id: 'mobile-s', label: 'Mobile S', width: 320, height: 568 },
-  { id: 'mobile-m', label: 'Mobile M', width: 375, height: 667 },
-  { id: 'mobile-l', label: 'Mobile L', width: 425, height: 812 },
-  { id: 'tablet', label: 'Tablet', width: 768, height: 1024 },
-  { id: 'laptop', label: 'Laptop', width: 1024, height: 768 },
-  { id: 'laptop-l', label: 'Laptop L', width: 1440, height: 900 },
-  { id: 'desktop', label: 'Desktop', width: 1920, height: 1080 },
+  { id: 'mobile-s', width: 320, height: 568 },
+  { id: 'mobile-m', width: 375, height: 667 },
+  { id: 'mobile-l', width: 425, height: 812 },
+  { id: 'tablet', width: 768, height: 1024 },
+  { id: 'laptop', width: 1024, height: 768 },
+  { id: 'laptop-l', width: 1440, height: 900 },
+  { id: 'desktop', width: 1920, height: 1080 },
 ]
+
+/** What the menu calls a width. */
+export const viewportLabel = (one: Viewport): string => t(`workspace.browserMenu.viewport.${one.id}`)
 
 /**
  * The box to give the page inside the hole the pane measured.

@@ -1,4 +1,5 @@
 import type { Card, CardRef, PlannedCard } from '../gen/bindings'
+import { t } from '../i18n'
 
 /*
  * A Devflow plan as the person changes it on the board, before any card
@@ -31,8 +32,8 @@ export function edited(cards: readonly PlannedCard[], key: string, change: Parti
 /** A card's trust boundary and abuse cases, which become its `Abuse case:` criteria. */
 export function abuseSaid(card: Pick<PlannedCard, 'abuse' | 'boundary'>): string {
   const cases = card.abuse ?? []
-  const said = cases.length > 0 ? `Abuse cases: ${cases.join('; ')}` : 'No abuse cases yet'
-  return card.boundary ? `Crosses a trust boundary · ${said}` : said
+  const said = cases.length > 0 ? t('workspace.plan.abuseCases', { cases: cases.join('; ') }) : t('workspace.plan.noAbuse')
+  return card.boundary ? t('workspace.plan.crossesBoundary', { said }) : said
 }
 
 /** Criteria typed one per line. */
@@ -50,8 +51,8 @@ export function stillBlocking(blockedBy: readonly CardRef[] | undefined): CardRe
 
 /** How a card left the plan without its own evidence, or null while it is in it. */
 export function closedLabel(card: Pick<Card, 'cut' | 'supersededBy'>): string | null {
-  if (card.supersededBy) return `Merged into ${named(card.supersededBy)}`
-  return card.cut ? 'Cut from the plan' : null
+  if (card.supersededBy) return t('workspace.plan.mergedInto', { card: named(card.supersededBy) })
+  return card.cut ? t('workspace.plan.cutFromPlan') : null
 }
 
 /** Another card as a person says it: `#42 title`, or the title alone before it had a number. */

@@ -8,6 +8,8 @@ use std::sync::LazyLock;
 use devflow_engine::dialect::{Assets, Tools};
 use devflow_engine::skills::{self, Words};
 use devflow_engine::Dialect;
+use devpit_core::i18n::t_for;
+use devpit_core::locale::Locale;
 
 /// devflow's skills, their parts and its publish templates in devpit's words;
 /// the personas, rubrics and schema as devflow ships them.
@@ -68,6 +70,34 @@ pub(crate) static DEVPIT: LazyLock<Dialect> = LazyLock::new(|| Dialect {
     decisions_no_key: "no key — set one in Settings → Decisions",
     assets: said_for_devpit(),
 });
+
+/// The dialect a session reads in its own language. Only what the engine says
+/// to the agent in sentences moves: the card's words, the tools, the
+/// variables and the folder are the engine's vocabulary and stay literal, and
+/// so do the skills, the plugin and the `devflow.yaml` header, which go into
+/// the person's repository and are shared with a team: they say the same
+/// thing whoever installed them. In English it is [`DEVPIT`] itself.
+pub(crate) fn dialect_in(locale: Locale) -> &'static Dialect {
+    static PORTUGUESE: LazyLock<Dialect> = LazyLock::new(|| {
+        let say = |key: &str| -> &'static str {
+            Box::leak(t_for(Locale::PtBr, key, &[]).into_boxed_str())
+        };
+        Dialect {
+            files_label: say("devflow.filesLabel"),
+            files_more: say("devflow.filesMore"),
+            packet_heading: say("devflow.packetHeading"),
+            plan_board: say("devflow.planBoard"),
+            plan_outside: say("devflow.planOutside"),
+            decisions_opted_out: say("devflow.decisionsOptedOut"),
+            decisions_no_key: say("devflow.decisionsNoKey"),
+            ..*DEVPIT
+        }
+    });
+    match locale {
+        Locale::En => &DEVPIT,
+        Locale::PtBr => &PORTUGUESE,
+    }
+}
 
 /// devpit's words as `devflow host` takes them at `initialize`: the ones
 /// devflow ships for it.

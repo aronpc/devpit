@@ -1,6 +1,8 @@
 import { useState } from 'react'
 
 import type { Step } from '../gen/bindings'
+import { t } from '../i18n'
+import { tRich } from '../i18n/rich'
 import { Confirm } from './Confirm'
 import { ask, commands } from './live'
 import { useShell } from './useShell'
@@ -53,7 +55,7 @@ export function CardPlay({
   if (!step) {
     return (
       <div className="play">
-        <span className="play__d">This lane runs nothing on its own.</span>
+        <span className="play__d">{t('card.laneRunsNothing')}</span>
       </div>
     )
   }
@@ -62,22 +64,16 @@ export function CardPlay({
     <div className="play">
       <button className="btn btn--go" disabled={busy} onClick={() => void play(false)}>
         <Triangle />
-        {busy ? 'Starting…' : `Run ${step.name}`}
+        {busy ? t('card.starting') : t('lane.runStep', { name: step.name })}
       </button>
-      {step.irreversible && <span className="lstep__warn">no undo</span>}
+      {step.irreversible && <span className="lstep__warn">{t('step.noUndo')}</span>}
       {problem && <span className="play__no">{problem}</span>}
 
       {asking && (
         <Confirm
-          title={`Run ${step.name}?`}
-          body={
-            <>
-              This step is marked as having no undo. It runs against{' '}
-              <b>this card&rsquo;s own checkout</b>, on its own branch &mdash; but what it does
-              from there is its own.
-            </>
-          }
-          danger={`Run ${step.name}`}
+          title={t('lane.runStepAsk', { name: step.name })}
+          body={<>{tRich('card.playBody', { checkout: <b>{t('card.playCheckout')}</b> })}</>}
+          danger={t('lane.runStep', { name: step.name })}
           onClose={() => setAsking(false)}
           onConfirm={() => void play(true)}
         />

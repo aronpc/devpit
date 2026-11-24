@@ -18,6 +18,7 @@ use serde_json::{json, Value};
 use tauri::{AppHandle, Emitter};
 
 use crate::schedules::Kept;
+use crate::session_locale::SessionLocale;
 
 /// What the bell files the assistant's notices under.
 pub(crate) const KIND: &str = "assistant";
@@ -313,7 +314,9 @@ fn report(kind: RoutineKind, here: &Project, projects: &[Project], since: i64) -
     let linked = crate::orchestrator_links::linked(Path::new(&here.root_path));
     let mine = projects.iter().filter(|one| linked.contains(&one.id));
     let lines: Vec<String> = match kind {
-        RoutineKind::Morning => crate::briefing::briefing(here, projects, since).lines,
+        RoutineKind::Morning => {
+            crate::briefing::briefing(SessionLocale::capture(), here, projects, since).lines
+        }
         RoutineKind::Ci => mine
             .flat_map(|project| {
                 pulls(project)

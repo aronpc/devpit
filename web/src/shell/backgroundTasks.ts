@@ -1,4 +1,5 @@
 import type { Part } from '../gen/bindings'
+import { t } from '../i18n'
 
 /*
  * The work a conversation left running beside it.
@@ -42,9 +43,9 @@ export function tasksOf(parts: readonly Part[]): readonly BackgroundTask[] {
 
 /* What a task is, in a word: the CLI's own word when it is not one of these. */
 export function taskLabel(task: BackgroundTask): string {
-  if (task.kind === 'local_agent') return 'Subagent'
-  if (task.kind === 'local_bash') return 'Shell'
-  return task.kind ? task.kind.replace(/^local_/, '').replace(/^./, (first) => first.toUpperCase()) : 'Task'
+  if (task.kind === 'local_agent') return t('sessions.task.subagent')
+  if (task.kind === 'local_bash') return t('sessions.task.shell')
+  return task.kind ? task.kind.replace(/^local_/, '').replace(/^./, (first) => first.toUpperCase()) : t('sessions.task.task')
 }
 
 export interface Wakeup {
@@ -68,7 +69,7 @@ export function wakeupOf(parts: readonly Part[]): Wakeup | null {
   } catch {
     // Not JSON: the row still says a wakeup is set.
   }
-  const delay = typeof input.delaySeconds === 'number' ? `in ${elapsed(0, input.delaySeconds * 1000)}` : ''
+  const delay = typeof input.delaySeconds === 'number' ? t('sessions.wakeup.in', { time: elapsed(0, input.delaySeconds * 1000) }) : ''
   return { id: call.id, reason: typeof input.reason === 'string' ? input.reason : '', when: at ?? delay }
 }
 

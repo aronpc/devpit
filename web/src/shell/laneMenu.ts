@@ -1,3 +1,4 @@
+import { t } from '../i18n'
 import type { SessionEntry } from './sessionMenu'
 
 /*
@@ -17,12 +18,7 @@ export interface LaneHands {
 }
 
 /** What a lane can be for, in the words the menu uses. */
-export const ROLES: readonly { role: string; label: string }[] = [
-  { role: 'backlog', label: 'Holds waiting work' },
-  { role: 'doing', label: 'Holds work in progress' },
-  { role: 'check', label: 'Holds work to check' },
-  { role: 'done', label: 'Holds done work' },
-]
+export const ROLES: readonly string[] = ['backlog', 'doing', 'check', 'done']
 
 /* What a lane is for is how an agent knows where its card goes, whatever the
    lane is called. Read from the name until somebody says; the one in force
@@ -31,8 +27,8 @@ const roleEntries = (hands: LaneHands, now: { role: string | null; chosen: boole
   hands.role
     ? [
         { rule: true },
-        ...ROLES.map(({ role, label }) => ({
-          label: `${now.role === role ? '✓ ' : ''}${label}${now.role === role && !now.chosen ? ' · by its name' : ''}`,
+        ...ROLES.map((role) => ({
+          label: `${now.role === role ? '✓ ' : ''}${t(`lane.role.${role}`)}${now.role === role && !now.chosen ? ` · ${t('lane.byItsName')}` : ''}`,
           run: () => hands.role?.(now.role === role && now.chosen ? null : role),
         })),
       ]
@@ -42,12 +38,12 @@ export const laneMenu = (
   hands: LaneHands,
   now: { role: string | null; chosen: boolean } = { role: null, chosen: false },
 ): readonly SessionEntry[] => [
-  { label: 'Rename', run: hands.rename },
-  { label: 'Add card', run: hands.addCard },
+  { label: t('lane.menu.rename'), run: hands.rename },
+  { label: t('lane.menu.addCard'), run: hands.addCard },
   { rule: true },
-  { label: 'Move left', run: () => hands.shift(-1) },
-  { label: 'Move right', run: () => hands.shift(1) },
+  { label: t('lane.menu.moveLeft'), run: () => hands.shift(-1) },
+  { label: t('lane.menu.moveRight'), run: () => hands.shift(1) },
   ...roleEntries(hands, now),
   { rule: true },
-  { label: 'Delete…', bad: true, run: hands.remove },
+  { label: t('lane.menu.delete'), bad: true, run: hands.remove },
 ]

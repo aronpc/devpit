@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 
+import { t } from '../i18n'
 import { PROBLEM } from './problems'
 
 /* The last refusal `report` heard, at the foot of the window until dismissed
@@ -19,7 +20,7 @@ export function Problem(): React.JSX.Element | null {
     <div className="undo" role="alert">
       {why}
       <button className="undo__b" onClick={() => setWhy(null)}>
-        Dismiss
+        {t('workspace.problem.dismiss')}
       </button>
     </div>
   )

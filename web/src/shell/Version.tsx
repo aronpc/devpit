@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 
 import type { AppInfo } from '../gen/bindings'
+import { t } from '../i18n'
 import { ask, commands } from './live'
 import { SHOW_THE_UPDATE } from './UpdateCard'
 import { aNewerOne, useUpdateStatus } from './useUpdateStatus'
@@ -34,10 +35,10 @@ export function Version(): React.JSX.Element | null {
   return (
     <button
       className="strip__v"
-      title={newer ? `devpit${which} is waiting — show the update` : copied ? 'Copied' : `${named} — click to copy`}
+      title={newer ? t('workspace.version.waiting', { version: which }) : copied ? t('workspace.version.copied') : t('workspace.version.clickToCopy', { name: named })}
       onClick={newer ? () => window.dispatchEvent(new Event(SHOW_THE_UPDATE)) : copy}
     >
-      {copied ? 'Copied' : `v${info.version}${info.dev ? ' · dev' : ''}`}
+      {copied ? t('workspace.version.copied') : `v${info.version}${info.dev ? ' · dev' : ''}`}
       {newer && <span className="strip__dot" aria-hidden />}
     </button>
   )

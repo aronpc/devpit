@@ -74,6 +74,9 @@ function numbered(text: string): string {
   return said
 }
 
+/* A newline, which is not words. */
+const NEWLINE = '\n'
+
 export function Code({
   text,
   language,
@@ -151,7 +154,7 @@ export function Code({
         {painted}
         {/* A trailing newline leaves the painting one line shorter than the
             field, and the last line of a file is where a caret usually is. */}
-        {'\n'}
+        {NEWLINE}
       </pre>
       <textarea
         ref={field}

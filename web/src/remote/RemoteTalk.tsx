@@ -6,6 +6,7 @@ import { joined } from '../shell/frames'
 import { compactedAt } from '../shell/turnFold'
 import { RemoteComposer } from './RemoteComposer'
 import { after, asked, draftsOf, type Talking } from './talk'
+import { t } from '../i18n'
 
 /*
  * One conversation, or one session, on the phone: what was said, the answer
@@ -79,30 +80,30 @@ export function RemoteTalk({
     <div className="rm__talk">
       <div className="rm__talkh">
         <button className="rm__btn" onClick={onBack}>
-          ← Chats
+          {t('remote.talk.back')}
         </button>
         <span className="rm__host">{talking.title}</span>
         {talking.kind === 'session' && talking.pane && (
           <button className="rm__btn" onClick={() => onTerminal(talking.pane!)}>
-            Terminal
+            {t('remote.talk.terminal')}
           </button>
         )}
       </div>
       <div className="rm__thread" ref={thread}>
-        {!read && <p className="rm__said">Reading…</p>}
-        {read && messages.length === 0 && <p className="rm__said">Nothing said here yet.</p>}
+        {!read && <p className="rm__said">{t('remote.talk.reading')}</p>}
+        {read && messages.length === 0 && <p className="rm__said">{t('remote.talk.nothing')}</p>}
         {messages.map((message, at) => (
           <RemoteTurn key={talking.kind === 'chat' ? message.id : at} message={message} />
         ))}
       </div>
       {mine.map((draft) => (
         <div className="rm__ask" key={`${draft.profile}/${draft.name}`}>
-          <span className="rm__dim">Drafted for {draft.name}, to send as you</span>
+          <span className="rm__dim">{t('remote.talk.drafted', { name: draft.name })}</span>
           <code className="rm__what">{draft.text}</code>
           {typing && (
             <div className="rm__acts">
-              <button className="rm__btn rm__btn--go" onClick={() => confirm(`Type this in ${draft.name}'s terminal, as you?`) && send({ t: 'draftSend', profile: draft.profile, name: draft.name })}>
-                Send
+              <button className="rm__btn rm__btn--go" onClick={() => confirm(t('remote.talk.confirmDraft', { name: draft.name })) && send({ t: 'draftSend', profile: draft.profile, name: draft.name })}>
+                {t('remote.talk.send')}
               </button>
             </div>
           )}
@@ -125,7 +126,7 @@ function RemoteTurn({ message }: { message: Message }): React.JSX.Element {
       </div>
     )
   const receipt = message.parts.find((part) => part.kind === 'receipt')
-  if (receipt?.kind === 'receipt') return <p className="rm__dim">{`${receipt.allowed ? 'Allowed' : 'Refused'} ${receipt.tool}`}</p>
+  if (receipt?.kind === 'receipt') return <p className="rm__dim">{t(receipt.allowed ? 'remote.talk.allowed' : 'remote.talk.refused', { tool: receipt.tool })}</p>
   const compacted = message.parts.find((part) => part.kind === 'compacted')
   if (compacted?.kind === 'compacted') return <p className="rm__dim">{compactedAt(compacted.tokens)}</p>
   const rows = acts(message.parts)

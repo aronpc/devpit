@@ -1,3 +1,4 @@
+import { t } from '../i18n'
 import { bare, comboOf, keyOf, labelOf, onMacNow, pressMatches, sameCombo, specOf, type Press } from './keys'
 import { keepRebound, rebound } from './rebound'
 
@@ -15,11 +16,8 @@ export type Scope = 'global' | 'board' | 'terminal' | 'chat' | 'file' | 'browser
 /** What must hold, besides the scope, for a key to act. */
 export type When = 'composerFocus' | 'terminalFocus' | 'turnRunning'
 
-export const WHEN: Readonly<Record<When, string>> = {
-  composerFocus: 'the composer has focus',
-  terminalFocus: 'a terminal has focus',
-  turnRunning: 'a turn is running',
-}
+/* What `when` says, read from the catalog when it is said. */
+const whenWord = (need: When): string => t(`workspace.keyboard.when.${need}`)
 
 interface PerPlatform {
   readonly mac: readonly string[]
@@ -28,8 +26,6 @@ interface PerPlatform {
 
 interface Definition {
   readonly id: string
-  /** What it does, as the cheat sheet and Settings say it. */
-  readonly does: string
   readonly scope: Scope
   /** `Mod` is ⌘ on a Mac and Ctrl elsewhere; a platform may have keys of its own. */
   readonly keys: readonly string[] | PerPlatform
@@ -41,58 +37,58 @@ interface Definition {
 }
 
 const LIST = [
-  { id: 'palette', does: 'Open the command palette', scope: 'global', keys: ['Mod+K'], inTerminal: false },
-  { id: 'project', does: 'Switch project', scope: 'global', keys: ['Mod+P'], inTerminal: false },
-  { id: 'terminal', does: 'New terminal', scope: 'global', keys: ['Mod+T'], inTerminal: false },
-  { id: 'chat', does: 'New chat', scope: 'global', keys: ['Mod+N'], inTerminal: false },
-  { id: 'settings', does: 'Open Settings', scope: 'global', keys: ['Mod+,'], inTerminal: true },
-  { id: 'next', does: 'Go to what needs you next', scope: 'global', keys: ['Mod+Shift+N'], inTerminal: true },
-  { id: 'focus', does: 'Turn focus mode on or off', scope: 'global', keys: ['Mod+Shift+F'], inTerminal: true },
-  { id: 'shortcuts', does: 'Show the keyboard shortcuts', scope: 'global', keys: ['Mod+/', '?'], inTerminal: true },
-  { id: 'rename', does: 'Rename the focused card, file or session', scope: 'global', keys: ['F2'], inTerminal: false },
-  { id: 'goToTab', does: 'Go to the tab in that place, 1 to 9', scope: 'global', keys: ['Mod+1', 'Mod+2', 'Mod+3', 'Mod+4', 'Mod+5', 'Mod+6', 'Mod+7', 'Mod+8', 'Mod+9'], inTerminal: false, fixed: true },
-  { id: 'reopenTab', does: 'Reopen the tab closed last', scope: 'global', keys: ['Mod+Shift+T'], inTerminal: false },
+  { id: 'palette', scope: 'global', keys: ['Mod+K'], inTerminal: false },
+  { id: 'project', scope: 'global', keys: ['Mod+P'], inTerminal: false },
+  { id: 'terminal', scope: 'global', keys: ['Mod+T'], inTerminal: false },
+  { id: 'chat', scope: 'global', keys: ['Mod+N'], inTerminal: false },
+  { id: 'settings', scope: 'global', keys: ['Mod+,'], inTerminal: true },
+  { id: 'next', scope: 'global', keys: ['Mod+Shift+N'], inTerminal: true },
+  { id: 'focus', scope: 'global', keys: ['Mod+Shift+F'], inTerminal: true },
+  { id: 'shortcuts', scope: 'global', keys: ['Mod+/', '?'], inTerminal: true },
+  { id: 'rename', scope: 'global', keys: ['F2'], inTerminal: false },
+  { id: 'goToTab', scope: 'global', keys: ['Mod+1', 'Mod+2', 'Mod+3', 'Mod+4', 'Mod+5', 'Mod+6', 'Mod+7', 'Mod+8', 'Mod+9'], inTerminal: false, fixed: true },
+  { id: 'reopenTab', scope: 'global', keys: ['Mod+Shift+T'], inTerminal: false },
 
-  { id: 'openCard', does: 'Open the focused card', scope: 'board', keys: ['Enter', 'Space'], inTerminal: false, fixed: true },
-  { id: 'moveCard', does: 'Move the focused card to another column', scope: 'board', keys: ['Mod+M'], inTerminal: false },
-  { id: 'archiveCard', does: 'Archive the focused card', scope: 'board', keys: ['Delete'], inTerminal: false },
-  { id: 'comment', does: 'Send a comment on a card', scope: 'board', keys: ['Mod+Enter'], inTerminal: false },
+  { id: 'openCard', scope: 'board', keys: ['Enter', 'Space'], inTerminal: false, fixed: true },
+  { id: 'moveCard', scope: 'board', keys: ['Mod+M'], inTerminal: false },
+  { id: 'archiveCard', scope: 'board', keys: ['Delete'], inTerminal: false },
+  { id: 'comment', scope: 'board', keys: ['Mod+Enter'], inTerminal: false },
 
-  { id: 'splitRight', does: 'Split the terminal to the right', scope: 'terminal', keys: ['Mod+Shift+D'], inTerminal: true },
-  { id: 'splitDown', does: 'Split the terminal down', scope: 'terminal', keys: ['Mod+Shift+E'], inTerminal: true },
+  { id: 'splitRight', scope: 'terminal', keys: ['Mod+Shift+D'], inTerminal: true },
+  { id: 'splitDown', scope: 'terminal', keys: ['Mod+Shift+E'], inTerminal: true },
   /* Plain Ctrl+C and Ctrl+V stay the program's off a Mac: interrupt, and
      Claude Code's own paste-an-image. */
-  { id: 'copy', does: 'Copy the selection', scope: 'terminal', keys: { mac: ['Mod+C'], other: ['Ctrl+Shift+C', 'Ctrl+Insert'] }, inTerminal: true },
-  { id: 'paste', does: 'Paste', scope: 'terminal', keys: { mac: ['Mod+V'], other: ['Ctrl+Shift+V', 'Shift+Insert'] }, inTerminal: true },
+  { id: 'copy', scope: 'terminal', keys: { mac: ['Mod+C'], other: ['Ctrl+Shift+C', 'Ctrl+Insert'] }, inTerminal: true },
+  { id: 'paste', scope: 'terminal', keys: { mac: ['Mod+V'], other: ['Ctrl+Shift+V', 'Shift+Insert'] }, inTerminal: true },
   /* Ctrl on a Mac too, as in Warp, whose key this is. */
-  { id: 'compose', does: 'Write the next message to the agent in an editor', scope: 'terminal', keys: ['Ctrl+G'], inTerminal: true },
-  { id: 'previousCommand', does: 'Jump to the previous command', scope: 'terminal', keys: ['Alt+ArrowUp'], inTerminal: true, when: ['terminalFocus'] },
-  { id: 'nextCommand', does: 'Jump to the next command', scope: 'terminal', keys: ['Alt+ArrowDown'], inTerminal: true, when: ['terminalFocus'] },
+  { id: 'compose', scope: 'terminal', keys: ['Ctrl+G'], inTerminal: true },
+  { id: 'previousCommand', scope: 'terminal', keys: ['Alt+ArrowUp'], inTerminal: true, when: ['terminalFocus'] },
+  { id: 'nextCommand', scope: 'terminal', keys: ['Alt+ArrowDown'], inTerminal: true, when: ['terminalFocus'] },
   /* The command line under a terminal answers to the shell's own keys. */
-  { id: 'clearBlocks', does: 'Clear the blocks, from the command line', scope: 'terminal', keys: ['Ctrl+L'], inTerminal: false },
-  { id: 'searchHistory', does: 'Search the command history, from the command line', scope: 'terminal', keys: ['Ctrl+R'], inTerminal: false },
-  { id: 'clearLine', does: 'Clear the command line', scope: 'terminal', keys: ['Ctrl+C'], inTerminal: false },
+  { id: 'clearBlocks', scope: 'terminal', keys: ['Ctrl+L'], inTerminal: false },
+  { id: 'searchHistory', scope: 'terminal', keys: ['Ctrl+R'], inTerminal: false },
+  { id: 'clearLine', scope: 'terminal', keys: ['Ctrl+C'], inTerminal: false },
 
-  { id: 'attach', does: 'Attach files to the message', scope: 'chat', keys: ['Mod+Shift+A'], inTerminal: false },
+  { id: 'attach', scope: 'chat', keys: ['Mod+Shift+A'], inTerminal: false },
   /* Held, not pressed: it records until the key, or one held with it, is let go. */
-  { id: 'talk', does: 'Hold to speak; let go and the words land in the composer', scope: 'chat', keys: ['Mod+Shift+Space'], inTerminal: false },
-  { id: 'stopTurn', does: 'Stop the agent’s turn — press it twice', scope: 'chat', keys: ['Escape'], inTerminal: false, fixed: true, when: ['turnRunning'] },
-  { id: 'findChat', does: 'Find in the conversation', scope: 'chat', keys: ['Mod+F'], inTerminal: false },
-  { id: 'steerNow', does: 'Send the other way: into the running turn, or after it', scope: 'chat', keys: ['Mod+Enter'], inTerminal: false, when: ['composerFocus'] },
-  { id: 'steerQueued', does: 'Send the first queued message into the running turn', scope: 'chat', keys: ['Mod+Shift+Enter'], inTerminal: false, when: ['composerFocus', 'turnRunning'] },
-  { id: 'stashDraft', does: 'Put the draft aside, or bring it back', scope: 'chat', keys: ['Mod+Shift+S'], inTerminal: false, when: ['composerFocus'] },
-  { id: 'sendBackground', does: 'Send, and start a new chat while this one works', scope: 'chat', keys: ['Mod+Alt+Enter'], inTerminal: false, when: ['composerFocus'] },
-  { id: 'recallPrompt', does: 'Bring back an earlier prompt, in an empty composer', scope: 'chat', keys: ['ArrowUp'], inTerminal: false, fixed: true, when: ['composerFocus'] },
-  { id: 'recallNext', does: 'Go forward through the earlier prompts, back to an empty composer', scope: 'chat', keys: ['ArrowDown'], inTerminal: false, fixed: true, when: ['composerFocus'] },
-  { id: 'nextMessage', does: 'Go to the next message', scope: 'chat', keys: ['Alt+ArrowDown'], inTerminal: false },
-  { id: 'previousMessage', does: 'Go to the previous message', scope: 'chat', keys: ['Alt+ArrowUp'], inTerminal: false },
-  { id: 'nextFailed', does: 'Go to the next tool that failed', scope: 'chat', keys: ['Alt+Shift+ArrowDown'], inTerminal: false },
-  { id: 'toggleRow', does: 'Open or close the row you are on', scope: 'chat', keys: ['Alt+Enter'], inTerminal: false },
+  { id: 'talk', scope: 'chat', keys: ['Mod+Shift+Space'], inTerminal: false },
+  { id: 'stopTurn', scope: 'chat', keys: ['Escape'], inTerminal: false, fixed: true, when: ['turnRunning'] },
+  { id: 'findChat', scope: 'chat', keys: ['Mod+F'], inTerminal: false },
+  { id: 'steerNow', scope: 'chat', keys: ['Mod+Enter'], inTerminal: false, when: ['composerFocus'] },
+  { id: 'steerQueued', scope: 'chat', keys: ['Mod+Shift+Enter'], inTerminal: false, when: ['composerFocus', 'turnRunning'] },
+  { id: 'stashDraft', scope: 'chat', keys: ['Mod+Shift+S'], inTerminal: false, when: ['composerFocus'] },
+  { id: 'sendBackground', scope: 'chat', keys: ['Mod+Alt+Enter'], inTerminal: false, when: ['composerFocus'] },
+  { id: 'recallPrompt', scope: 'chat', keys: ['ArrowUp'], inTerminal: false, fixed: true, when: ['composerFocus'] },
+  { id: 'recallNext', scope: 'chat', keys: ['ArrowDown'], inTerminal: false, fixed: true, when: ['composerFocus'] },
+  { id: 'nextMessage', scope: 'chat', keys: ['Alt+ArrowDown'], inTerminal: false },
+  { id: 'previousMessage', scope: 'chat', keys: ['Alt+ArrowUp'], inTerminal: false },
+  { id: 'nextFailed', scope: 'chat', keys: ['Alt+Shift+ArrowDown'], inTerminal: false },
+  { id: 'toggleRow', scope: 'chat', keys: ['Alt+Enter'], inTerminal: false },
 
-  { id: 'save', does: 'Save the file', scope: 'file', keys: ['Mod+S'], inTerminal: false },
-  { id: 'commit', does: 'Commit, from the message field', scope: 'file', keys: ['Mod+Enter'], inTerminal: false },
+  { id: 'save', scope: 'file', keys: ['Mod+S'], inTerminal: false },
+  { id: 'commit', scope: 'file', keys: ['Mod+Enter'], inTerminal: false },
 
-  { id: 'find', does: 'Find in the page', scope: 'browser', keys: ['Mod+F'], inTerminal: false },
+  { id: 'find', scope: 'browser', keys: ['Mod+F'], inTerminal: false },
 ] as const satisfies readonly Definition[]
 
 export type ShortcutId = (typeof LIST)[number]['id']
@@ -100,18 +96,27 @@ export type Shortcut = Definition & { readonly id: ShortcutId }
 
 export const SHORTCUT_LIST: readonly Shortcut[] = LIST
 
+/* What it does, as the cheat sheet and Settings say it — a key in the catalog,
+   so the words follow the language the person chose. */
+export const doesOf = (one: Pick<Shortcut, 'id'>): string => t(`workspace.shortcut.${one.id}`)
+
 /** When it acts, past its scope: "When the composer has focus.", or null. */
 export const whenOf = (one: Shortcut): string | null =>
-  one.when?.length ? `When ${one.when.map((need) => WHEN[need]).join(' and ')}.` : null
+  one.when?.length
+    ? t('workspace.keyboard.whenSaid', { needs: one.when.map(whenWord).join(t('workspace.keyboard.and')) })
+    : null
 
-export const SCOPES: readonly { readonly scope: Scope; readonly title: string }[] = [
-  { scope: 'global', title: 'Anywhere' },
-  { scope: 'board', title: 'Board' },
-  { scope: 'terminal', title: 'Terminal' },
-  { scope: 'chat', title: 'Chat' },
-  { scope: 'file', title: 'Files and changes' },
-  { scope: 'browser', title: 'Browser' },
+export const SCOPES: readonly { readonly scope: Scope }[] = [
+  { scope: 'global' },
+  { scope: 'board' },
+  { scope: 'terminal' },
+  { scope: 'chat' },
+  { scope: 'file' },
+  { scope: 'browser' },
 ]
+
+/** What a scope is called on the screen. */
+export const scopeTitle = (scope: Scope): string => t(`workspace.keyboard.scope.${scope}`)
 
 const byId = new Map<string, Shortcut>(SHORTCUT_LIST.map((one) => [one.id, one]))
 export const shortcutNamed = (id: ShortcutId): Shortcut => byId.get(id)!
@@ -190,10 +195,10 @@ export function recordKeys(id: ShortcutId, press: Press, onMac = onMacNow()): Re
   if (!spec || shortcutNamed(id).fixed) return null
   const said = labelOf(spec, onMac)
   if (bare(comboOf(spec, onMac)) && MOVING.has(comboOf(spec, onMac).key)) {
-    return { refused: `${said} moves around the window. Hold ${onMac ? '⌘, ⌃ or ⌥' : 'Ctrl or Alt'} with it.` }
+    return { refused: t('workspace.keyboard.movesAround', { key: said, mods: onMac ? t('workspace.keyboard.modsMac') : t('workspace.keyboard.mods') }) }
   }
   const other = clashWith(id, spec, onMac)
-  if (other) return { refused: `${said} is already “${other.does}”.` }
+  if (other) return { refused: t('workspace.keyboard.taken', { key: said, does: doesOf(other) }) }
   keepRebound({ ...rebound(), [id]: [spec] })
   return { kept: spec }
 }
@@ -202,7 +207,7 @@ export function recordKeys(id: ShortcutId, press: Press, onMac = onMacNow()): Re
 export function resetKeys(id: ShortcutId, onMac = onMacNow()): string | null {
   for (const spec of defaultKeys(id, onMac)) {
     const other = clashWith(id, spec, onMac)
-    if (other) return `${labelOf(spec, onMac)} is now “${other.does}”. Change that one first.`
+    if (other) return t('workspace.keyboard.nowIs', { key: labelOf(spec, onMac), does: doesOf(other) })
   }
   keepRebound(Object.fromEntries(Object.entries(rebound()).filter(([key]) => key !== id)))
   return null

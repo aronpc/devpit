@@ -1,0 +1,7 @@
+{
+  "greet.hello": "Hello, {name}",
+  "board.cards": { "one": "{count} card", "other": "{count} cards" },
+  "common.copy": "Copy",
+  "common.copied": "Copied",
+  "common.pickOne": "Pick one"
+}

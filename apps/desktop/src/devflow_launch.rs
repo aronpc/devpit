@@ -32,8 +32,14 @@ pub(crate) fn written(base: &Path, files: &[(String, String)]) -> Option<()> {
 }
 
 /// The flags that bring Devflow to `agent` started in `project_id`; none
-/// where Devflow is off there, or for a CLI it has no hooks for.
-pub(crate) fn flags(agent: &str, project_id: &str) -> Option<String> {
+/// where Devflow is off there, or for a CLI it has no hooks for. The
+/// session's `locale` arrives with them: the plugin's own words will speak
+/// it when they are translated, and no launcher asks the settings again.
+pub(crate) fn flags(
+    locale: crate::session_locale::SessionLocale,
+    agent: &str,
+    project_id: &str,
+) -> Option<String> {
     let cli = Cli::of(agent)?;
     let store = crate::projects::store().ok()?;
     let row = store.project(project_id).ok()??;
@@ -41,11 +47,18 @@ pub(crate) fn flags(agent: &str, project_id: &str) -> Option<String> {
         return None;
     }
     let exe = crate::agent_reach::exe()?;
-    flags_for(cli, &Store::root().ok()?, exe.to_str()?)
+    flags_for(locale, cli, &Store::root().ok()?, exe.to_str()?)
 }
 
-/// [`flags`], once Devflow is known to be on.
-pub(crate) fn flags_for(cli: Cli, root: &Path, exe: &str) -> Option<String> {
+/// [`flags`], once Devflow is known to be on. The plugin folder is every
+/// session's, so no session's language is written into it: `locale` is held
+/// for the hooks' words, which the session's own environment already names.
+pub(crate) fn flags_for(
+    _locale: crate::session_locale::SessionLocale,
+    cli: Cli,
+    root: &Path,
+    exe: &str,
+) -> Option<String> {
     match cli {
         Cli::Claude => {
             let base = folder(root, cli);

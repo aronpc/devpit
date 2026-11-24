@@ -1,3 +1,4 @@
+import { t } from '../i18n'
 import { HostTerminals } from './HostTerminals'
 import { useShell } from './useShell'
 import { useKeys } from './useShortcut'
@@ -40,7 +41,7 @@ export function PaneCorner({
 }): React.JSX.Element {
   const { show, close, open, openCard } = useShell()
   const keys = useKeys()
-  const chatLabel = onChat ? 'Continue in chat' : 'New chat'
+  const chatLabel = onChat ? t('workspace.corner.continueChat') : t('workspace.corner.newChat')
   /* The way back to the card a terminal was opened for. Only a tab the backend
      filed under a card has one. */
   const cardId = open.find((tab) => tab.id === tabId)?.cardId
@@ -50,34 +51,34 @@ export function PaneCorner({
       {cardId && (
         <button
           className="pcorner__card"
-          title="Open the card this terminal is for"
+          title={t('workspace.corner.cardTitle')}
           onClick={() => {
             show('board')
             openCard(cardId)
           }}
         >
-          Card
+          {t('workspace.corner.card')}
         </button>
       )}
       {children}
       <button
         className="sq26"
         aria-label={chatLabel}
-        title={onChat ? 'Continue this conversation in a chat — the agent here stops' : chatLabel}
+        title={onChat ? t('workspace.corner.continueTitle') : chatLabel}
         onClick={onChat ?? (() => show('chat'))}
       >
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9.9 9.9 0 0 1-4.2-.9L3 20.5l1.6-4.4A8.4 8.4 0 0 1 3.6 11.5 8.4 8.4 0 0 1 12 3.1a8.4 8.4 0 0 1 9 8.4Z" /><path d="M12 8.5v6M9 11.5h6" /></svg>
       </button>
-      <button className="sq26" aria-label="New terminal" title="New terminal" onClick={() => show('term')}>
+      <button className="sq26" aria-label={t('workspace.corner.newTerminal')} title={t('workspace.corner.newTerminal')} onClick={() => show('term')}>
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="m7 9 3 3-3 3M13 15h4" /></svg>
       </button>
       <HostTerminals />
       {onSplit && (
         <>
-          <button className="sq26" aria-label="Split right" title={`Split right (${keys('splitRight')})`} onClick={() => onSplit('horizontal')}>
+          <button className="sq26" aria-label={t('workspace.corner.splitRight')} title={t('workspace.corner.splitRightKeys', { keys: keys('splitRight') })} onClick={() => onSplit('horizontal')}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M12 4v16" /></svg>
           </button>
-          <button className="sq26" aria-label="Split down" title={`Split down (${keys('splitDown')})`} onClick={() => onSplit('vertical')}>
+          <button className="sq26" aria-label={t('workspace.corner.splitDown')} title={t('workspace.corner.splitDownKeys', { keys: keys('splitDown') })} onClick={() => onSplit('vertical')}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M3 12h18" /></svg>
           </button>
         </>
@@ -85,8 +86,8 @@ export function PaneCorner({
       <button
         className="sq26"
         data-armed={closeArmed ? 'true' : undefined}
-        aria-label={closeLabel ?? `Close ${what}`}
-        title={closeLabel ?? 'Close'}
+        aria-label={closeLabel ?? t('workspace.corner.closeWhat', { what })}
+        title={closeLabel ?? t('workspace.corner.close')}
         onClick={onClose ?? (() => close(tabId))}
       >
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12" /></svg>

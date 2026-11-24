@@ -1,7 +1,8 @@
 //! Contract commands for what the person chose.
 
+use devpit_core::locale::Locale;
 use devpit_core::{preference, Store};
-use devpit_rpc::{ErrorCode, RpcError, Settings, Theme};
+use devpit_rpc::{ErrorCode, Language, RpcError, Settings, Theme};
 
 /// What xterm accepts: 1 is no lift, 21 is black on white.
 const CONTRAST: std::ops::RangeInclusive<f64> = 1.0..=21.0;
@@ -11,10 +12,19 @@ fn store() -> Result<Store, RpcError> {
 }
 
 fn read(store: &Store) -> Result<Settings, RpcError> {
+    let language = store
+        .preference(preference::LANGUAGE)?
+        .map_or(Language::System, |stored| Language::parse(&stored));
+    let locale = Locale::resolve(language.locale(), &Locale::system());
+    // Now, so that the tray, the island and the error paths read one answer
+    // rather than each walking back to the store.
+    locale.set();
     Ok(Settings {
         theme: store
             .preference(preference::THEME)?
             .map_or(Theme::Dark, |stored| Theme::parse(&stored)),
+        language,
+        locale: locale.tag().to_string(),
         onboarded_at: store
             .preference(preference::ONBOARDED_AT)?
             .and_then(|value| value.parse::<i64>().ok())
@@ -50,8 +60,10 @@ pub(crate) fn settings_read_now() -> Result<Settings, RpcError> {
 /// has to predict what a write did to the rest of it.
 #[tauri::command]
 #[specta::specta]
+#[allow(clippy::too_many_arguments)]
 pub async fn settings_write(
     theme: Option<Theme>,
+    language: Option<Language>,
     automatic_updates: Option<bool>,
     confirm_stop: Option<bool>,
     terminal_contrast: Option<f64>,
@@ -62,6 +74,7 @@ pub async fn settings_write(
     crate::off_main::blocking(move || {
         settings_write_now(
             theme,
+            language,
             automatic_updates,
             confirm_stop,
             terminal_contrast,
@@ -74,8 +87,10 @@ pub async fn settings_write(
 }
 
 /// [`settings_write`], on the calling thread.
+#[allow(clippy::too_many_arguments)]
 pub(crate) fn settings_write_now(
     theme: Option<Theme>,
+    language: Option<Language>,
     automatic_updates: Option<bool>,
     confirm_stop: Option<bool>,
     terminal_contrast: Option<f64>,
@@ -86,6 +101,10 @@ pub(crate) fn settings_write_now(
     let store = store()?;
     if let Some(chosen) = theme {
         store.set_preference(preference::THEME, chosen.stored())?;
+    }
+    let relanguaged = language.is_some();
+    if let Some(chosen) = language {
+        store.set_preference(preference::LANGUAGE, chosen.stored())?;
     }
     if let Some(automatic) = automatic_updates {
         store.set_preference_flag(preference::AUTO_UPDATE, automatic)?;
@@ -113,7 +132,13 @@ pub(crate) fn settings_write_now(
         store.set_preference(preference::TERMINAL_CONTRAST, &contrast.to_string())?;
     }
     crate::sync::nudge();
-    read(&store)
+    let settings = read(&store);
+    if relanguaged {
+        // `read` has settled the process on the new language; the tray's
+        // menu and tooltip are words, so they are drawn again in it.
+        crate::tray::relanguage();
+    }
+    settings
 }
 
 /// `settings.finish_onboarding` — the first run is done.
@@ -137,3 +162,7 @@ pub(crate) fn settings_finish_onboarding_now() -> Result<Settings, RpcError> {
     store.set_preference(preference::ONBOARDED_AT, &now.to_string())?;
     read(&store)
 }
+
+#[cfg(test)]
+#[path = "settings_tests.rs"]
+mod tests;

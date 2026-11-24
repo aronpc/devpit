@@ -14,6 +14,7 @@ import { useFile } from './useFile'
 import { useShell } from './useShell'
 import { useShortcut } from './useShortcut'
 import { useWantedLine } from './revealLine'
+import { t } from '../i18n'
 
 /*
  * One file, one tab.
@@ -46,7 +47,7 @@ export function FilePane({ tab }: { tab: Tab }): React.JSX.Element {
     if (edit.dirty) edit.save()
   }, mine)
 
-  const name = path?.split('/').pop() ?? 'No file open'
+  const name = path?.split('/').pop() ?? t('workspace.filePane.noFile')
   const editing = kind === 'text' || (kind === 'markdown' && !preview)
 
   return (
@@ -60,15 +61,15 @@ export function FilePane({ tab }: { tab: Tab }): React.JSX.Element {
         <span className="drag" />
         {kind === 'markdown' && (
           <button className="chip" onClick={() => setPreview((was) => !was)}>
-            {preview ? 'Source' : 'Preview'}
+            {preview ? t('workspace.workspaceFile.source') : t('workspace.workspaceFile.preview')}
           </button>
         )}
         {edit.dirty && (
           <button className="chip" onClick={edit.save} disabled={edit.saving}>
-            {edit.saving ? 'Saving…' : 'Save'}
+            {edit.saving ? t('workspace.filePane.saving') : t('workspace.filePane.save')}
           </button>
         )}
-        <button className="sq26" onClick={() => close(tab.id)} aria-label="Close file" title="Close file">
+        <button className="sq26" onClick={() => close(tab.id)} aria-label={t('workspace.filePane.close')} title={t('workspace.filePane.close')}>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
         </button>
       </div>
@@ -77,10 +78,10 @@ export function FilePane({ tab }: { tab: Tab }): React.JSX.Element {
         <div className="clash">
           <span className="clash__t">{edit.clash}</span>
           <button className="btn" onClick={edit.reload}>
-            Reload from disk
+            {t('workspace.filePane.reload')}
           </button>
           <button className="btn btn--danger" onClick={edit.overwrite}>
-            Overwrite
+            {t('workspace.filePane.overwrite')}
           </button>
         </div>
       )}
@@ -88,8 +89,8 @@ export function FilePane({ tab }: { tab: Tab }): React.JSX.Element {
       <div className={editing ? 'code code--edit' : 'code'}>
         {!path && (
           <div className="exempty">
-            <span className="exempty__t">No file open</span>
-            <span className="exempty__d">Pick one in the Explorer.</span>
+            <span className="exempty__t">{t('workspace.filePane.noFile')}</span>
+            <span className="exempty__d">{t('workspace.filePane.pickOne')}</span>
           </div>
         )}
         {edit.error && <div className="exempty__t">{edit.error}</div>}
@@ -97,16 +98,16 @@ export function FilePane({ tab }: { tab: Tab }): React.JSX.Element {
         {!edit.error && edit.file?.notShown && (
           <div className="exempty">
             <span className="exempty__t">{edit.file.notShown}</span>
-            <span className="exempty__d">{bytes(edit.file.bytes) ?? 'empty'}</span>
+            <span className="exempty__d">{bytes(edit.file.bytes) ?? t('workspace.filePane.empty')}</span>
             <span className="voice__row">
               <button className="btn" onClick={() => void ask(() => commands.pathOpen(edit.file!.fullPath)).then(went)}>
-                Open in the system app
+                {t('workspace.filePane.openApp')}
               </button>
               <button
                 className="btn"
                 onClick={() => void ask(() => commands.pathReveal(edit.file!.fullPath))}
               >
-                Show in the finder
+                {t('workspace.filePane.reveal')}
               </button>
             </span>
           </div>

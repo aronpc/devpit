@@ -7,6 +7,7 @@ import { Markdown } from './MarkdownView'
 import { useShellPick } from './shellStore'
 import { composing } from './typing'
 import { useShell } from './useShell'
+import { t } from '../i18n'
 
 /*
  * "Ask the project": a chat with the project's own agent, the resident
@@ -77,7 +78,7 @@ export function AskPane(): React.JSX.Element {
   const last = turns.at(-1)
   useEffect(() => end.current?.scrollIntoView?.({ block: 'end' }), [last])
 
-  if (!here) return <p className="acc__note">Ask the project belongs to a project.</p>
+  if (!here) return <p className="acc__note">{t('workspace.askPane.needsProject')}</p>
   const send = (): void => {
     const question = draft.trim()
     if (!question || waiting) return
@@ -87,7 +88,7 @@ export function AskPane(): React.JSX.Element {
     setDraft('')
     put(projectId, (was) => [...was, { id, question }])
     void ask(() => commands.projectAgentChat(projectId, question)).then((said) => {
-      const error = said.error ?? (said.data ? undefined : 'the project agent gave no answer')
+      const error = said.error ?? (said.data ? undefined : t('workspace.askPane.noAnswer'))
       put(projectId, (was) => was.map((turn) => (turn.id === id ? { ...turn, answer: said.data ?? undefined, error } : turn)))
     })
   }
@@ -126,12 +127,12 @@ export function AskPane(): React.JSX.Element {
               </button>
             </div>
           ) : (
-            <p className="acc__note">Off for this project: its agent neither learns nor answers until you turn it on.</p>
+            <p className="acc__note">{t('workspace.askPane.off')}</p>
           ))}
         {problem && <p className="acc__note voice__bad" role="alert">{problem}</p>}
         {on !== false && turns.length === 0 && (
           <p className="acc__note">
-            Ask {here.name}&apos;s agent about its code and its memory. It reads and never writes; an answer becomes a fact only once you approve it.
+            {t('workspace.askPane.intro', { name: here.name })}
           </p>
         )}
         {turns.map((turn, at) => (
@@ -141,7 +142,7 @@ export function AskPane(): React.JSX.Element {
               <div className="pask__a">
                 <Markdown source={turn.answer.answer} />
                 {turn.answer.cited.length > 0 && (
-                  <div className="pask__cited" aria-label="Files it cites">
+                  <div className="pask__cited" aria-label={t('workspace.askPane.cites')}>
                     {turn.answer.cited.map((path) => (
                       <button key={path} className="pask__path" onClick={() => show('file', { id: `file:${path}`, path })}>
                         {path}
@@ -150,34 +151,34 @@ export function AskPane(): React.JSX.Element {
                   </div>
                 )}
                 {turn.proposed ? (
-                  <p className="acc__note">Proposed as a fact: it waits for your approval under the top bar.</p>
+                  <p className="acc__note">{t('workspace.askPane.proposed')}</p>
                 ) : fact?.at === at ? (
                   <div className="pask__fact">
-                    <textarea aria-label="Fact" value={fact.text} onChange={(event) => setFact({ projectId: here.id, at, text: event.target.value })} />
-                    <button className="btn btn--sm" onClick={() => setFact(null)}>Cancel</button>
+                    <textarea aria-label={t('workspace.askPane.fact')} value={fact.text} onChange={(event) => setFact({ projectId: here.id, at, text: event.target.value })} />
+                    <button className="btn btn--sm" onClick={() => setFact(null)}>{t('workspace.askPane.cancel')}</button>
                     <button className="btn btn--sm btn--go" disabled={!fact.text.trim()} onClick={() => propose(at, fact.text, turn.answer?.cited ?? [])}>
-                      Propose
+                      {t('workspace.askPane.propose')}
                     </button>
                   </div>
                 ) : (
                   turn.answer.cited.length > 0 && (
                     <button className="btn btn--sm" onClick={() => setFact({ projectId: here.id, at, text: oneLine(turn.answer?.answer ?? '') })}>
-                      Save as fact
+                      {t('workspace.askPane.save')}
                     </button>
                   )
                 )}
               </div>
             )}
             {turn.error && <p className="acc__note voice__bad" role="alert">{turn.error}</p>}
-            {!turn.answer && !turn.error && <p className="acc__note">Reading…</p>}
+            {!turn.answer && !turn.error && <p className="acc__note">{t('workspace.askPane.reading')}</p>}
           </div>
         ))}
         <div ref={end} />
       </div>
       <div className="pask__compose">
         <textarea
-          aria-label="Ask the project"
-          placeholder={`Ask ${here.name}…`}
+          aria-label={t('workspace.askPane.ask')}
+          placeholder={t('workspace.askPane.placeholder', { name: here.name })}
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
           onKeyDown={(event) => {
@@ -187,7 +188,7 @@ export function AskPane(): React.JSX.Element {
           }}
         />
         <button className="btn btn--sm btn--go" disabled={waiting || !draft.trim()} onClick={send}>
-          Ask
+          {t('workspace.askPane.send')}
         </button>
       </div>
     </div>

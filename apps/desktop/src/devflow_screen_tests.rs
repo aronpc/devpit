@@ -99,6 +99,7 @@ fn one_click_recommended_setup_writes_what_devpit_devflow_setup_writes() {
     .expect("created");
     for apply in [false, true] {
         devflow::respond_from(
+            devpit_core::locale::Locale::En,
             None,
             "devflow_setup",
             &by_tool,

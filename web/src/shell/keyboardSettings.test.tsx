@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/rea
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { KeyboardSettings } from './KeyboardSettings'
-import { keysLabel, resetAllKeys, SHORTCUT_LIST } from './shortcuts'
+import { doesOf, keysLabel, resetAllKeys, SHORTCUT_LIST } from './shortcuts'
 
 afterEach(() => {
   cleanup()
@@ -14,7 +14,7 @@ const row = (does: string): HTMLElement => screen.getByText(does).closest<HTMLEl
 describe('Settings → Keyboard', () => {
   it('lists every shortcut, with the keys it answers to now', () => {
     render(<KeyboardSettings onGeneral={vi.fn()} />)
-    for (const one of SHORTCUT_LIST) expect(screen.getByText(one.does)).toBeTruthy()
+    for (const one of SHORTCUT_LIST) expect(screen.getByText(doesOf(one))).toBeTruthy()
     expect(within(row('Open the command palette')).getByText(keysLabel('palette'))).toBeTruthy()
   })
 

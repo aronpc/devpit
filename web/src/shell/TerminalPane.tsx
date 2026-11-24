@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import type { LayoutNode, MissingSignIn } from '../gen/bindings'
+import { t } from '../i18n'
 import { ask, commands } from './live'
 import { BlockTerm } from './BlockTerm'
 import { LaunchHeld } from './LaunchHeld'
@@ -146,7 +147,7 @@ export function TerminalPane({ tab, projectId }: { tab: Tab; projectId: string }
   const pane = usePaneActions({ tab, tree, focused, onLayout: layoutTo, onNotice: setNotice })
 
   if (error) return <div className="exempty__t">{error}</div>
-  if (!tree) return <div className="termhost termhost--starting">Starting the terminal…</div>
+  if (!tree) return <div className="termhost termhost--starting">{t('workspace.terminal.starting')}</div>
 
   return (
     <>
@@ -162,7 +163,7 @@ export function TerminalPane({ tab, projectId }: { tab: Tab; projectId: string }
         <SessionCost sessionId={agents[focused]?.sessionId} className="pcorner__cost scost" />
       </PaneCorner>
       {notice && (
-        <button className="tnote" onClick={() => setNotice(null)} title="Dismiss">
+        <button className="tnote" onClick={() => setNotice(null)} title={t('workspace.terminal.dismiss')}>
           {notice}
         </button>
       )}

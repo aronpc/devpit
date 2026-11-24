@@ -1,4 +1,5 @@
 import type { Part } from '../gen/bindings'
+import { t } from '../i18n'
 import { took } from './turnFold'
 
 /*
@@ -37,25 +38,12 @@ export interface Act {
   readonly endedAs?: string | null
 }
 
-/* The verb on the row. Six letters at most, so the subject beside it starts
-   at the same place on every line. */
-const LABELS: Readonly<Record<Kind, string>> = {
-  think: 'Think',
-  run: 'Run',
-  edit: 'Edit',
-  read: 'Read',
-  find: 'Search',
-  list: 'List',
-  plan: 'Plan',
-  agent: 'Agent',
-  tool: 'Tool',
-}
-
-export const actionLabel = (kind: Kind): string => LABELS[kind]
+/* The verb on the row, read from the catalog by its kind. */
+export const actionLabel = (kind: Kind): string => t(`acts.kind.${kind}`)
 
 /* The verb a row leads with: a timed thought says how long it took. */
 export function rowLabel(act: Act): string {
-  if (act.kind === 'think' && act.durationMs != null) return `Thought for ${took(Math.max(act.durationMs, 1000))}`
+  if (act.kind === 'think' && act.durationMs != null) return t('acts.thoughtFor', { time: took(Math.max(act.durationMs, 1000)) })
   return actionLabel(act.kind)
 }
 
@@ -156,7 +144,7 @@ export function toolName(name: string): string {
     .replace(/[_-]+/g, ' ')
     .replace(/([a-z\d])([A-Z])/g, '$1 $2')
     .trim()
-  return words ? words[0]!.toUpperCase() + words.slice(1) : 'Tool'
+  return words ? words[0]!.toUpperCase() + words.slice(1) : t('acts.kind.tool')
 }
 
 /* The parts of one message, paired into rows.
@@ -179,11 +167,18 @@ export function acts(parts: readonly Part[], every: readonly Part[] = parts): re
   })
 }
 
-/* A subagent's state, in a word. */
-export function ranAs(act: Act): 'Working' | 'Done' | 'Failed' | 'Stopped' {
-  if (!act.done) return 'Working'
-  if (act.endedAs && act.endedAs !== 'completed' && act.endedAs !== 'failed') return 'Stopped'
-  return act.failed ? 'Failed' : 'Done'
+/* A subagent's state, as the style knows it: an id, never a word to read. */
+export type RanState = 'working' | 'done' | 'failed' | 'stopped'
+
+export function ranState(act: Act): RanState {
+  if (!act.done) return 'working'
+  if (act.endedAs && act.endedAs !== 'completed' && act.endedAs !== 'failed') return 'stopped'
+  return act.failed ? 'failed' : 'done'
+}
+
+/* The same state, in a word. */
+export function ranAs(act: Act): string {
+  return t(`acts.state.${ranState(act)}`)
 }
 
 /* The CLI's own count for the task a call started, at its latest report. */
@@ -214,11 +209,11 @@ function rowsOf(parts: readonly Part[], every: readonly Part[]): Act[] {
   parts.forEach((part) => {
     const at = every.indexOf(part)
     if (part.kind === 'thinking') {
-      rows.push({ id: `t${at}`, kind: 'think', name: 'Thinking', target: oneLine(part.text), input: '', output: part.text, failed: false, done: true, children: [], durationMs: part.duration_ms ?? null })
+      rows.push({ id: `t${at}`, kind: 'think', name: t('acts.doing.thinking'), target: oneLine(part.text), input: '', output: part.text, failed: false, done: true, children: [], durationMs: part.duration_ms ?? null })
       return
     }
     if (part.kind === 'unknown') {
-      rows.push({ id: `u${at}`, kind: 'tool', name: 'Output', target: oneLine(part.text), input: '', output: part.text, failed: false, done: true, children: [] })
+      rows.push({ id: `u${at}`, kind: 'tool', name: t('acts.output'), target: oneLine(part.text), input: '', output: part.text, failed: false, done: true, children: [] })
       return
     }
     if (part.kind !== 'tool_call') return
@@ -301,59 +296,31 @@ export function grouped(rows: readonly Act[]): readonly Item[] {
 }
 
 /* What a group amounts to, as the subject beside its verb. */
-const GROUP_NOUNS: Readonly<Record<Kind, readonly [string, string]>> = {
-  think: ['thought', 'thoughts'],
-  run: ['command', 'commands'],
-  edit: ['file', 'files'],
-  read: ['file', 'files'],
-  find: ['search', 'searches'],
-  list: ['folder', 'folders'],
-  plan: ['step', 'steps'],
-  agent: ['subagent', 'subagents'],
-  tool: ['call', 'calls'],
-}
-
 export function groupTarget(group: Group): string {
-  const [one, many] = GROUP_NOUNS[group.kind]
-  const counted = `${group.rows.length} ${group.rows.length === 1 ? one : many}`
+  const counted = t(`acts.group.${group.kind}`, { count: group.rows.length })
   const working = group.kind === 'agent' ? group.rows.filter((row) => !row.done).length : 0
-  return working > 0 ? `${counted} · ${working} working` : counted
+  return working > 0 ? t('acts.group.someWorking', { counted, working }) : counted
 }
 
 /* What a settled group of rows amounts to: "Ran 3 commands · 2 file edits". */
-const NOUNS: Readonly<Record<Kind, readonly [string, string]>> = {
-  think: ['thought', 'thoughts'],
-  run: ['command', 'commands'],
-  edit: ['file edit', 'file edits'],
-  read: ['file read', 'file reads'],
-  find: ['search', 'searches'],
-  list: ['file list', 'file lists'],
-  plan: ['plan step', 'plan steps'],
-  agent: ['subagent', 'subagents'],
-  tool: ['tool call', 'tool calls'],
-}
-
 export function tally(rows: readonly Act[]): string {
   const counts = new Map<Kind, number>()
   for (const row of rows) counts.set(row.kind, (counts.get(row.kind) ?? 0) + 1)
   return [...counts]
-    .map(([kind, count]) => {
-      const [one, many] = NOUNS[kind]
-      return `${count} ${count === 1 ? one : many}`
-    })
+    .map(([kind, count]) => t(`acts.tally.${kind}`, { count }))
     .join(' · ')
 }
 
 export function summary(rows: readonly Act[]): string {
   const running = rows.some((row) => !row.done)
-  return `${running ? 'Running' : 'Ran'} ${tally(rows)}`
+  return t(running ? 'acts.summary.now' : 'acts.summary.ran', { what: tally(rows) })
 }
 
 /* The header names the newest row while the work is live — that is what you
    look up to check — and the tally once it settles, because by then you want
    to know what it came to, not what it ended on. */
 export function headline(rows: readonly Act[], live: boolean): string {
-  if (!rows.length) return live ? 'Working' : ''
+  if (!rows.length) return live ? t('acts.doing.working') : ''
   if (!live) return summary(rows)
   const last = rows[rows.length - 1]!
   return last.target ? `${actionLabel(last.kind)} ${last.target}` : actionLabel(last.kind)
@@ -364,12 +331,12 @@ export function headline(rows: readonly Act[], live: boolean): string {
 export function doing(parts: readonly Part[]): string {
   const last = parts.filter((part) => !('parent' in part) || !part.parent).at(-1)
   const opened = acts(parts).filter((row) => !row.done)
-  if (opened.length > 1 && opened.every((row) => row.kind === 'agent')) return `Waiting on ${opened.length} subagents`
+  if (opened.length > 1 && opened.every((row) => row.kind === 'agent')) return t('acts.doing.waiting', { count: opened.length })
   const open = opened.at(-1)
   if (open) return open.target ? `${actionLabel(open.kind)} ${open.target}` : actionLabel(open.kind)
-  if (last?.kind === 'thinking') return 'Thinking'
-  if (last?.kind === 'text') return 'Writing'
-  return 'Working'
+  if (last?.kind === 'thinking') return t('acts.doing.thinking')
+  if (last?.kind === 'text') return t('acts.doing.writing')
+  return t('acts.doing.working')
 }
 
 /* The agent CLIs, by the name their process wears.

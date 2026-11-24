@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { ask, commands } from './live'
 import { keysLabel, matches } from './shortcuts'
 import { abandoned, committed } from './typing'
+import { t } from '../i18n'
 
 /*
  * A session's name, renamed in place: a click or F2 makes it a field, Enter
@@ -40,7 +41,7 @@ export function SessionName({
     return (
       <button
         className="sterm__name sterm__name--edit"
-        title={`Rename (${keysLabel('rename')})`}
+        title={t('sessions.name.rename', { keys: keysLabel('rename') })}
         onClick={() => (setTyped(name), setEditing(true))}
         onKeyDown={(event) => matches('rename', event) && (event.preventDefault(), setTyped(name), setEditing(true))}
       >
@@ -52,7 +53,7 @@ export function SessionName({
     <span className="sterm__rename">
       <input
         className="sterm__input"
-        aria-label="Session name"
+        aria-label={t('sessions.name.label')}
         autoFocus
         value={typed}
         onChange={(event) => setTyped(event.target.value)}

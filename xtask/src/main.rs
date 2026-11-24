@@ -10,6 +10,7 @@ use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
 mod agent_boundary;
+mod catalog;
 mod csp;
 mod dead_controls;
 mod home_paths;
@@ -28,6 +29,7 @@ mod release_workflow;
 mod reseed;
 mod shell_boundary;
 mod tmux_survives;
+mod ui_text;
 mod uncalled;
 mod versions;
 
@@ -40,11 +42,14 @@ fn main() -> ExitCode {
         "check" => check(),
         "ceilings" => ceilings(),
         "controls" => controls(),
+        "ui-text" => ui_text(),
         "release-manifest" => release_manifest_command(),
         "release-notes" => release_notes_command(),
         "release-announcement" => release_announcement_command(),
         other => {
-            eprintln!("unknown command: {other}\n\nusage: cargo xtask check | ceilings | controls");
+            eprintln!(
+                "unknown command: {other}\n\nusage: cargo xtask check | ceilings | controls | ui-text"
+            );
             ExitCode::FAILURE
         }
     }
@@ -76,6 +81,20 @@ fn controls() -> ExitCode {
         }
         Err(error) => {
             eprintln!("could not write the budgets: {error}");
+            ExitCode::FAILURE
+        }
+    }
+}
+
+/// Rewrites the fixed-screen-text counts from what the tree says now.
+fn ui_text() -> ExitCode {
+    match ui_text::reseed(&workspace_root()) {
+        Ok(count) => {
+            println!("fixed screen text: {count} left");
+            ExitCode::SUCCESS
+        }
+        Err(error) => {
+            eprintln!("could not write the counts: {error}");
             ExitCode::FAILURE
         }
     }
@@ -171,6 +190,8 @@ fn check() -> ExitCode {
     findings.extend(uncalled::the_app_answers_what_the_contract_offers(&root));
     findings.extend(off_main::no_command_holds_the_window(&root));
     findings.extend(listening::nothing_listens_beyond_loopback(&root));
+    findings.extend(catalog::every_catalog_keeps_up_with_english(&root));
+    findings.extend(ui_text::uncatalogued_screen_text_never_grows(&root));
 
     if findings.is_empty() {
         println!("guards: ok");

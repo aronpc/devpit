@@ -10,6 +10,8 @@ use std::path::Path;
 use devpit_core::Store;
 use devpit_rpc::{ErrorCode, Project, RpcError};
 
+use crate::session_locale::SessionLocale;
+
 /// devpit's half of the brief: rewritten on every opening, so an orchestrator
 /// made by an older build learns how this one works. `CLAUDE.md` imports it.
 const DEVPIT_BRIEF: (&str, &str) = (
@@ -17,19 +19,31 @@ const DEVPIT_BRIEF: (&str, &str) = (
     include_str!("orchestrator_devpit.md"),
 );
 
-/// What a new orchestrator's folder starts with. Written only when missing:
-/// the person edits these, and a second opening must not undo that.
-const SEEDED: &[(&str, &str)] = &[
-    ("CLAUDE.md", include_str!("orchestrator_claude.md")),
-    // Gemini follows the same imports; `AGENTS.md` is written from both.
-    ("GEMINI.md", "@CLAUDE.md\n"),
-    // Where it keeps what it learns: an orchestrator's notes, not a
-    // repository — there is no remote to push them to, so no git either.
-    ("context/projects/.keep", ""),
-    ("decisions/.keep", ""),
-    ("docs/.keep", ""),
-    ("artifacts/.keep", ""),
-];
+/// What a new orchestrator's folder starts with, in the session's language.
+/// Written only when missing: the person edits these, and a second opening
+/// must not undo that.
+fn seeded(locale: SessionLocale) -> Vec<(&'static str, &'static str)> {
+    vec![
+        ("CLAUDE.md", persons_half(locale)),
+        // Gemini follows the same imports; `AGENTS.md` is written from both.
+        ("GEMINI.md", "@CLAUDE.md\n"),
+        // Where it keeps what it learns: an orchestrator's notes, not a
+        // repository — there is no remote to push them to, so no git either.
+        ("context/projects/.keep", ""),
+        ("decisions/.keep", ""),
+        ("docs/.keep", ""),
+        ("artifacts/.keep", ""),
+    ]
+}
+
+/// The person's half of the brief a folder is born with, in the session's
+/// language: `CLAUDE.md`, theirs to edit from its first line on.
+fn persons_half(locale: SessionLocale) -> &'static str {
+    match locale.tag() {
+        "pt-BR" => include_str!("orchestrator_claude_pt_br.md"),
+        _ => include_str!("orchestrator_claude.md"),
+    }
+}
 
 /// `orchestrator.create` — a new orchestrator speaking as this profile.
 ///
@@ -58,7 +72,7 @@ pub(crate) fn orchestrator_create_now(
     let root = Store::root().map_err(|err| RpcError::internal(err.to_string()))?;
     let folder = free_folder(&root, name)
         .ok_or_else(|| RpcError::new(ErrorCode::Invalid, "that name cannot name a folder"))?;
-    seed(&folder).map_err(|err| RpcError::internal(err.to_string()))?;
+    seed(&folder, SessionLocale::capture()).map_err(|err| RpcError::internal(err.to_string()))?;
     speaks_as(&store, &folder, &profile.id)?;
     let here = folder
         .canonicalize()
@@ -86,8 +100,7 @@ pub async fn orchestrator_refresh(project_id: String) -> Result<(), RpcError> {
     crate::off_main::blocking(move || {
         let store = crate::projects::store()?;
         let (_, root) = crate::projects::locate(&store, &project_id)?;
-        seed(&root)
-            .and_then(|()| crate::assistant::brief_in(&root, crate::assistant::on(&store, &root)))
+        written_in(&store, &root, SessionLocale::capture())
             .map_err(|err| RpcError::internal(err.to_string()))
     })
     .await
@@ -240,27 +253,36 @@ pub(crate) fn slug(name: &str) -> String {
     }
 }
 
-/// devpit's brief as this build writes it: the text, under a line naming the
-/// build — so "which brief is this orchestrator reading" is answered by
-/// opening the file rather than by diffing it against a release.
-pub(crate) fn brief() -> String {
+/// devpit's brief as this build writes it in `locale`: the text, under a line
+/// naming the build — so "which brief is this orchestrator reading" is
+/// answered by opening the file rather than by diffing it against a release.
+pub(crate) fn brief(locale: SessionLocale) -> String {
     format!(
         "<!-- written by devpit {} -->\n{}",
         env!("CARGO_PKG_VERSION"),
-        DEVPIT_BRIEF.1
+        devpits_half(locale)
     )
 }
 
-/// Writes devpit's brief as this build has it, and what a new orchestrator
-/// starts with, leaving the rest alone.
-pub(crate) fn seed(folder: &Path) -> std::io::Result<()> {
-    let text = brief();
+/// devpit's half of the brief in the session's language: the pt-BR words
+/// beside the English base, which every other language reads too.
+fn devpits_half(locale: SessionLocale) -> &'static str {
+    match locale.tag() {
+        "pt-BR" => include_str!("orchestrator_devpit_pt_br.md"),
+        _ => DEVPIT_BRIEF.1,
+    }
+}
+
+/// Writes devpit's brief as this build has it in `locale`, and what a new
+/// orchestrator starts with, leaving the rest alone.
+pub(crate) fn seed(folder: &Path, locale: SessionLocale) -> std::io::Result<()> {
+    let text = brief(locale);
     let brief = folder.join(DEVPIT_BRIEF.0);
     if std::fs::read_to_string(&brief).ok() != Some(text.clone()) {
         std::fs::create_dir_all(brief.parent().unwrap_or(folder))?;
         std::fs::write(&brief, text)?;
     }
-    for (name, text) in SEEDED {
+    for (name, text) in seeded(locale) {
         let path = folder.join(name);
         if path.exists() {
             continue;
@@ -274,6 +296,44 @@ pub(crate) fn seed(folder: &Path) -> std::io::Result<()> {
     crate::orchestrator_view::set_up(folder)
 }
 
+/// devpit's half of an orchestrator's folder, written in `locale`: its brief
+/// of this build, and the assistant's beside it when its mode is on. The
+/// birth of each of the orchestrator's own sessions writes it in that
+/// session's language; the window, in front, in its own. Never under a
+/// session already running, whose files stay the language it was born in.
+pub(crate) fn written_in(
+    store: &Store,
+    folder: &Path,
+    locale: SessionLocale,
+) -> std::io::Result<()> {
+    seed(folder, locale).and_then(|()| {
+        crate::assistant::brief_in(folder, crate::assistant::on(store, folder), locale)
+    })
+}
+
+/// The birth of a conversation of the orchestrator `project_id`, when the
+/// project is one and the conversation is `newborn`: its folder rewritten in
+/// the language of the session being born. Nothing for any other project,
+/// whose chats keep no folder of devpit's, or for a conversation already
+/// running, whose files stay the language it was born in.
+pub(crate) fn born(project_id: &str, locale: SessionLocale, newborn: bool) {
+    if !newborn {
+        return;
+    }
+    let Ok(store) = crate::projects::store() else {
+        return;
+    };
+    let Ok(folder) = crate::assistant::folder_of(&store, project_id) else {
+        return;
+    };
+    if let Err(err) = written_in(&store, &folder, locale) {
+        eprintln!(
+            "the orchestrator brief in {} was left as it was: {err}",
+            folder.display()
+        );
+    }
+}
+
 /// Every orchestrator's brief brought up to this build, and what could not
 /// be. Opening one refreshes it too, but one nobody opens was left with an
 /// older build's brief for anything else that reads its folder.
@@ -281,14 +341,12 @@ pub(crate) fn seed_all(store: &Store, root: &Path) -> Vec<(String, std::io::Erro
     let Ok(rows) = store.projects() else {
         return Vec::new();
     };
+    let locale = SessionLocale::capture();
     rows.into_iter()
         .map(|row| std::path::PathBuf::from(row.root_path))
         .filter(|folder| devpit_core::home::orchestrator_of(store, root, folder).is_some())
         .filter_map(|folder| {
-            seed(&folder)
-                .and_then(|()| {
-                    crate::assistant::brief_in(&folder, crate::assistant::on(store, &folder))
-                })
+            written_in(store, &folder, locale)
                 .err()
                 .map(|err| (folder.display().to_string(), err))
         })

@@ -3,6 +3,8 @@ import { useCallback, useEffect, useState } from 'react'
 import { open as pickFolder } from '@tauri-apps/plugin-dialog'
 
 import type { WorktreeBase as Base } from '../gen/bindings'
+import { t } from '../i18n'
+import { tRich } from '../i18n/rich'
 import { ask, commands } from './live'
 import { useShell } from './useShell'
 import { committed } from './typing'
@@ -59,10 +61,9 @@ export function WorktreeBase(): React.JSX.Element {
   return (
     <section className="wtb">
       <div className="wtb__head">
-        <span className="pref__t">Worktree folder</span>
+        <span className="pref__t">{t('workspace.worktreeBase.title')}</span>
         <span className="pref__d">
-          Where a card&rsquo;s checkout is created. A relative path puts them inside the project; an
-          absolute one holds every project in the same place.
+          {t('workspace.worktreeBase.said')}
         </span>
       </div>
 
@@ -71,8 +72,8 @@ export function WorktreeBase(): React.JSX.Element {
           className="wtb__f"
           value={draft}
           spellCheck={false}
-          placeholder="the devpit workspace"
-          aria-label="Worktree folder"
+          placeholder={t('workspace.worktreeBase.placeholder')}
+          aria-label={t('workspace.worktreeBase.title')}
           onChange={(event) => {
             setDraft(event.target.value)
             setSaved(false)
@@ -83,14 +84,14 @@ export function WorktreeBase(): React.JSX.Element {
         />
         <button className="btn" onClick={() => void browse()}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" /></svg>
-          Browse
+          {t('workspace.worktreeBase.browse')}
         </button>
         {/* Only once the read has come back and said there is something to
             reset. `!base?.isDefault` is true while `base` is still null, so
             the button appeared before anything had been chosen. */}
         {base && !base.isDefault && (
           <button className="btn" onClick={() => save('')}>
-            Reset
+            {t('workspace.worktreeBase.reset')}
           </button>
         )}
       </div>
@@ -100,8 +101,8 @@ export function WorktreeBase(): React.JSX.Element {
       ) : (
         base && (
           <p className="wtb__ex">
-            Next one lands in <code>{base.example}</code>
-            {saved && <span className="wtb__ok">Saved</span>}
+            {tRich('workspace.worktreeBase.next', { folder: <code>{base.example}</code> })}
+            {saved && <span className="wtb__ok">{t('workspace.worktreeBase.saved')}</span>}
           </p>
         )
       )}

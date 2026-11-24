@@ -90,9 +90,9 @@ impl Seat {
     }
 }
 
-/// `tool` as `tools/list` shows it to `seat`, or nothing when it is not
-/// offered there.
-pub(crate) fn listed(tool: &Tool, seat: &Seat) -> Option<Value> {
+/// `tool` as `tools/list` shows it to `seat` in `language`, or nothing when
+/// it is not offered there.
+pub(crate) fn listed(tool: &Tool, seat: &Seat, language: &str) -> Option<Value> {
     if !seat.offers(tool) {
         return None;
     }
@@ -103,9 +103,10 @@ pub(crate) fn listed(tool: &Tool, seat: &Seat) -> Option<Value> {
         }
     }
     crate::lean::offered(tool.name, &mut input);
+    let (description, input) = crate::mcp::described(language, tool, input);
     let mut listed = json!({
         "name": tool.name,
-        "description": tool.description,
+        "description": description,
         "inputSchema": input,
     });
     if READ_ONLY.contains(&tool.name) {

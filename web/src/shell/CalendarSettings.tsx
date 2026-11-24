@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 
 import type { CalendarFeed } from '../gen/bindings'
+import { t } from '../i18n'
+import { tRich } from '../i18n/rich'
 import { ask, commands } from './live'
 import { PrefSwitch } from './PrefSwitch'
 
@@ -43,11 +45,11 @@ export function CalendarSettings(): React.JSX.Element {
       on={Boolean(link)}
       disabled={busy || (!link && !feed.signedIn)}
       onFlip={() => set(!link, feed.titles)}
-      title="Calendar"
+      title={t('workspace.calendar.title')}
       said={
         <>
-          Card dates and reminders as a calendar Google Calendar, Apple Calendar or Outlook can subscribe to, served by devpit.app from what this computer sends it.
-          {!feed.signedIn && ' Sign in to devpit.app on this computer first (Settings → Account).'}
+          {t('workspace.calendar.said')}
+          {!feed.signedIn && ` ${t('workspace.calendar.signIn')}`}
         </>
       }
     >
@@ -56,19 +58,21 @@ export function CalendarSettings(): React.JSX.Element {
           <span className="voice__row">
             <code className="remote__addr">{link}</code>
             <button className="btn" onClick={copy}>
-              {copied ? 'Copied' : 'Copy link'}
+              {copied ? t('workspace.calendar.copied') : t('workspace.calendar.copy')}
             </button>
           </span>
           <label className="voice__row">
             <input type="checkbox" checked={feed.titles} disabled={busy} onChange={(event) => set(true, event.target.checked)} />
-            Show titles — otherwise every event reads “devpit reminder”, and no card’s words leave this computer
+            {t('workspace.calendar.titles')}
           </label>
           <span className="pref__d">
-            Anyone with the link can read the calendar.{' '}
-            <button className="plusl" disabled={busy} onClick={reset}>
-              Reset link
-            </button>{' '}
-            and the old one stops working.
+            {tRich('workspace.calendar.anyone', {
+              reset: (
+                <button className="plusl" disabled={busy} onClick={reset}>
+                  {t('workspace.calendar.reset')}
+                </button>
+              ),
+            })}
           </span>
         </>
       )}

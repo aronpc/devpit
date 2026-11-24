@@ -52,6 +52,7 @@ fn wake(bench: &Bench) -> Wake<'_> {
         root: &bench.root,
         name: "pilot",
         mcp_config: None,
+        locale: crate::session_locale::SessionLocale::of(devpit_core::locale::Locale::En),
     }
 }
 

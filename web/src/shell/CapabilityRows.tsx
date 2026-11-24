@@ -1,6 +1,7 @@
 import { CAPABILITIES_ICON, CapabilityGlyph, enabledCount, liveCapabilities } from './capabilities'
 import { usePlugins } from './usePlugins'
 import { useShell } from './useShell'
+import { t } from '../i18n'
 
 /*
  * Capabilities in the sidebar: where they are chosen, then one item for each
@@ -19,8 +20,8 @@ export function CapabilityRows(): React.JSX.Element {
     <>
       <button className="act" onClick={() => show('plugins')} aria-pressed={active?.kind === 'plugins'}>
         <span className="act__ico">{CAPABILITIES_ICON(15)}</span>
-        <span className="act__label">Capabilities</span>
-        {on ? <span className="act__n">{on} on</span> : null}
+        <span className="act__label">{t('workspace.capRows.title')}</span>
+        {on ? <span className="act__n">{t('workspace.capRows.on', { count: on })}</span> : null}
       </button>
 
       {liveCapabilities(plugins).map(({ manifest, opens }) => (

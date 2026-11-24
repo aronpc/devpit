@@ -47,6 +47,7 @@ fn closing_a_card_yields_proposed_lessons_with_its_source() {
         root: &root,
         name: "pilot",
         mcp_config: None,
+        locale: crate::session_locale::SessionLocale::of(devpit_core::locale::Locale::En),
     };
     let agents = Agents::idling_after(Duration::from_secs(60));
     let mut proposed = Err(NOT_STARTED.to_owned());

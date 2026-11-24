@@ -1,5 +1,13 @@
 use super::{brief_in, imported, on, IMPORT, KEY};
 
+fn en() -> crate::session_locale::SessionLocale {
+    crate::session_locale::SessionLocale::of(devpit_core::locale::Locale::En)
+}
+
+fn pt_br() -> crate::session_locale::SessionLocale {
+    crate::session_locale::SessionLocale::of(devpit_core::locale::Locale::PtBr)
+}
+
 const SEEDED: &str = include_str!("orchestrator_claude.md");
 
 /// The orchestrator's context: what `CLAUDE.md` imports, and whether each
@@ -21,7 +29,7 @@ fn with_assistant_mode_on_the_context_imports_the_assistant_brief_and_off_it_is_
     std::fs::create_dir_all(folder.join(".devpit")).expect("dir");
     std::fs::write(folder.join(".devpit/orchestrator.md"), "devpit").expect("brief");
 
-    brief_in(folder, true).expect("on");
+    brief_in(folder, true, en()).expect("on");
     let on = context(folder);
     assert_eq!(
         on,
@@ -33,7 +41,7 @@ fn with_assistant_mode_on_the_context_imports_the_assistant_brief_and_off_it_is_
     let brief = std::fs::read_to_string(folder.join(".devpit/assistant.md")).expect("brief");
     assert!(brief.contains("Only the person schedules"));
 
-    brief_in(folder, false).expect("off");
+    brief_in(folder, false, en()).expect("off");
     assert_eq!(
         context(folder),
         [(".devpit/orchestrator.md".to_owned(), true)]
@@ -91,6 +99,76 @@ fn a_brief_linked_out_of_the_folder_is_left_alone() {
     let elsewhere = dir.path().join("elsewhere.txt");
     std::fs::write(&elsewhere, "mine").expect("elsewhere");
     std::os::unix::fs::symlink(&elsewhere, folder.join(".devpit/assistant.md")).expect("link");
-    assert!(brief_in(&folder, true).is_err());
+    assert!(brief_in(&folder, true, en()).is_err());
     assert_eq!(std::fs::read_to_string(&elsewhere).expect("read"), "mine");
+}
+
+/// Portuguese writes the pt-BR variant of the assistant brief, under the
+/// same line naming the build: one text per language, one shape for both.
+#[test]
+fn portuguese_writes_the_pt_br_assistant_brief() {
+    let dir = tempfile::tempdir().expect("tmp");
+    let folder = dir.path();
+    std::fs::write(folder.join("CLAUDE.md"), SEEDED).expect("seeded");
+    std::fs::create_dir_all(folder.join(".devpit")).expect("dir");
+    std::fs::write(folder.join(".devpit/orchestrator.md"), "devpit").expect("brief");
+
+    brief_in(folder, true, pt_br()).expect("on");
+    assert_eq!(
+        std::fs::read_to_string(folder.join(".devpit/assistant.md")).expect("assistant"),
+        format!(
+            "<!-- written by devpit {} -->\n{}",
+            env!("CARGO_PKG_VERSION"),
+            include_str!("assistant_devpit_pt_br.md")
+        )
+    );
+}
+
+/// Each pt-BR brief stays within a quarter more characters than its English
+/// base: a translation, not a rewrite that outgrows what it translates.
+#[test]
+fn the_pt_br_briefs_stay_within_a_quarter_more_characters() {
+    for (en, pt) in [
+        (
+            include_str!("orchestrator_devpit.md"),
+            include_str!("orchestrator_devpit_pt_br.md"),
+        ),
+        (
+            include_str!("orchestrator_claude.md"),
+            include_str!("orchestrator_claude_pt_br.md"),
+        ),
+        (
+            include_str!("assistant_devpit.md"),
+            include_str!("assistant_devpit_pt_br.md"),
+        ),
+    ] {
+        assert!(
+            pt.chars().count() <= en.chars().count() * 5 / 4,
+            "a {}-character base carries a {}-character pt-BR brief",
+            en.chars().count(),
+            pt.chars().count()
+        );
+    }
+}
+
+/// English writes the assistant brief as it always did: the base text under
+/// the line naming the build, byte for byte, whatever came to carry the
+/// language.
+#[test]
+fn english_writes_the_assistants_bytes_as_they_always_were() {
+    let dir = tempfile::tempdir().expect("tmp");
+    let folder = dir.path();
+    std::fs::write(folder.join("CLAUDE.md"), SEEDED).expect("seeded");
+    std::fs::create_dir_all(folder.join(".devpit")).expect("dir");
+    std::fs::write(folder.join(".devpit/orchestrator.md"), "devpit").expect("brief");
+
+    brief_in(folder, true, en()).expect("on");
+    assert_eq!(
+        std::fs::read_to_string(folder.join(".devpit/assistant.md")).expect("assistant"),
+        format!(
+            "<!-- written by devpit {} -->\n{}",
+            env!("CARGO_PKG_VERSION"),
+            include_str!("assistant_devpit.md")
+        )
+    );
 }

@@ -7,6 +7,10 @@
 use std::io::Write as _;
 use std::path::{Path, PathBuf};
 
+use devpit_core::i18n::t_for;
+
+use crate::session_locale::SessionLocale;
+
 /// The logs an orchestrator keeps, by the name a call gives.
 const LOGS: [&str; 2] = ["sessions", "preferences"];
 /// How long one entry may be, in characters.
@@ -250,44 +254,61 @@ const LONGEST_BRIEF: usize = 8000;
 
 /// Whom a session reports to: the orchestrator's own name, which outlives a
 /// restart of its chat where the one the CLI makes up does not.
-pub(crate) fn report_to(folder: &Path, by_bus: bool) -> Option<String> {
+pub(crate) fn report_to(locale: SessionLocale, folder: &Path, by_bus: bool) -> Option<String> {
     let name = crate::orchestrator::address(folder)?;
-    Some(report_line(&name, !by_bus))
+    Some(report_line(locale, &name, !by_bus))
 }
 
 /// How a session reaches `name`: Claude Code's own SendMessage, or devpit's
-/// tool for a session on a CLI without it.
-pub(crate) fn report_line(name: &str, send_message: bool) -> String {
-    let how = match send_message {
-        true => "SendMessage to that name",
-        false => "message it with devpit_session_message, `to` left out,",
+/// tool for a session on a CLI without it. Said in the session's language,
+/// never the process's.
+pub(crate) fn report_line(locale: SessionLocale, name: &str, send_message: bool) -> String {
+    let key = match send_message {
+        true => "brief.reportSendMessage",
+        false => "brief.reportBus",
     };
-    format!(
-        "The orchestrator that started you is `{name}`: {how} to report back. It keeps the name when its chat restarts."
-    )
+    t_for(locale.locale(), key, &[("name", name)])
 }
 
 /// A session's brief, with whom to report to, the person's standing rules
 /// and those of the session's own project after it — cut to what still
-/// fits, so they never make a brief too long to start.
+/// fits, so they never make a brief too long to start. Written in the
+/// language of the session being started, held from its own start.
 /// A session that reports `by_bus` is one devpit keeps, with no SendMessage
 /// to the orchestrator.
 pub(crate) fn briefed(
+    locale: SessionLocale,
     folder: &Path,
     prompt: &str,
     project: Option<ProjectName>,
     by_bus: bool,
 ) -> String {
-    briefed_with(folder, prompt, project, report_to(folder, by_bus))
+    briefed_with(
+        locale,
+        folder,
+        prompt,
+        project,
+        report_to(locale, folder, by_bus),
+    )
 }
 
 /// [`briefed`] for a session on a host, which nothing of devpit's reaches:
 /// the person's rules, and no way of reporting back it could not use.
-pub(crate) fn briefed_on_host(folder: &Path, prompt: &str, project: Option<ProjectName>) -> String {
-    briefed_with(folder, prompt, project, None)
+pub(crate) fn briefed_on_host(
+    locale: SessionLocale,
+    folder: &Path,
+    prompt: &str,
+    project: Option<ProjectName>,
+) -> String {
+    briefed_with(locale, folder, prompt, project, None)
 }
 
+/// The address and the rules are made room for first and never cut: past the
+/// ceiling the prompt gives up its tail, marked with "…", and a block that
+/// would leave it too little goes out whole. The address's heading is the session's language; "Rules for sessions" is
+/// the one the parser reads and stays as written in every language.
 fn briefed_with(
+    locale: SessionLocale,
     folder: &Path,
     prompt: &str,
     project: Option<ProjectName>,
@@ -299,30 +320,39 @@ fn briefed_with(
     let preferences = log_file(folder, "preferences")
         .and_then(|file| std::fs::read_to_string(file).ok())
         .unwrap_or_default();
-    let mut brief = prompt.trim_end().to_owned();
     let added = [
-        ("Reporting back".to_owned(), report),
+        (t_for(locale.locale(), "brief.reportingBack", &[]), report),
         ("Rules for sessions".to_owned(), rules_in(&preferences)),
         (
             format!("Rules for sessions: {}", project.map_or("", |one| one.name)),
             project.and_then(|one| project_rules_in(&preferences, one)),
         ),
     ];
-    for (heading, body) in added {
-        let Some(body) = body else { continue };
-        let used = brief.chars().count() + heading.chars().count() + 64;
-        let Some(room) = LONGEST_BRIEF.checked_sub(used).filter(|room| *room > 0) else {
-            break;
-        };
-        let body: String = body.chars().take(room).collect();
-        brief = format!("{brief}\n\n## {heading}\n\n{body}");
+    let mut blocks: Vec<String> = added
+        .into_iter()
+        .filter_map(|(heading, body)| Some(format!("\n\n## {heading}\n\n{}", body?)))
+        .collect();
+    if blocks.is_empty() {
+        return prompt.to_owned();
     }
-    if brief == prompt.trim_end() {
-        prompt.to_owned()
-    } else {
-        brief
+    // A block goes whole or not at all: the last ones give way only when
+    // they would leave the prompt less than its share.
+    let length = |blocks: &[String]| blocks.iter().map(|one| one.chars().count()).sum::<usize>();
+    while length(&blocks) > LONGEST_BRIEF - LEAST_PROMPT {
+        blocks.pop();
     }
+    let room = LONGEST_BRIEF - length(&blocks);
+    let prompt = prompt.trim_end();
+    let mut brief = match prompt.chars().count() > room {
+        true => prompt.chars().take(room - 1).chain(['…']).collect(),
+        false => prompt.to_owned(),
+    };
+    brief.extend(blocks);
+    brief
 }
+
+/// What of the prompt a brief keeps, however long the rules after it.
+const LEAST_PROMPT: usize = 2000;
 
 #[cfg(test)]
 #[path = "orchestrator_notes_tests.rs"]

@@ -2,6 +2,7 @@ import { useState } from 'react'
 
 import { useForwarded } from './forwardedRequests'
 import { ask, commands } from './live'
+import { t } from '../i18n'
 
 /*
  * Requests another orchestrator forwarded, in the chat they were kept for.
@@ -45,8 +46,8 @@ export function ForwardedDrafts({ projectId, conversation }: { projectId: string
   }
 
   return (
-    <section className="wprompt rdraft" aria-label="Requests from other orchestrators">
-      <p className="wprompt__t">Forwarded to this orchestrator</p>
+    <section className="wprompt rdraft" aria-label={t('workspace.forwarded.label')}>
+      <p className="wprompt__t">{t('workspace.forwarded.title')}</p>
       {here.map((one) => {
         const key = `${one.from}\n${one.id}`
         const text = edited[key] ?? one.text
@@ -54,11 +55,11 @@ export function ForwardedDrafts({ projectId, conversation }: { projectId: string
           <div className="wprompt__i" key={key}>
             <p className="wprompt__who">
               <span className="osess__name">{one.from}</span>
-              <span className="osess__where">asks, nothing was sent</span>
+              <span className="osess__where">{t('workspace.forwarded.asks')}</span>
             </p>
             <textarea
               className="rdraft__text"
-              aria-label={`Request from ${one.from}`}
+              aria-label={t('workspace.forwarded.requestFrom', { from: one.from })}
               value={text}
               rows={Math.min(6, text.split('\n').length + 1)}
               onChange={(event) => setEdited((was) => ({ ...was, [key]: event.target.value }))}
@@ -66,10 +67,10 @@ export function ForwardedDrafts({ projectId, conversation }: { projectId: string
             {refused[key] && <p role="alert">{refused[key]}</p>}
             <div className="wprompt__opts">
               <button className="wprompt__o" disabled={pending.has(key)} onClick={() => send(one.from, one.id, text)}>
-                Send
+                {t('workspace.forwarded.send')}
               </button>
               <button className="wprompt__o wprompt__esc" disabled={pending.has(key)} onClick={() => discard(one.from, one.id)}>
-                Discard
+                {t('workspace.forwarded.discard')}
               </button>
             </div>
           </div>

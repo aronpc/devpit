@@ -1,5 +1,6 @@
 import { useState } from 'react'
 
+import { t } from '../i18n'
 import { Markdown } from './MarkdownView'
 
 /*
@@ -25,8 +26,8 @@ export function CardDescription({
         className="cardp__body"
         value={body}
         rows={8}
-        aria-label="Description"
-        placeholder="What is this card for?"
+        aria-label={t('card.description')}
+        placeholder={t('card.descriptionHint')}
         autoFocus
         onChange={(event) => onChange(event.target.value)}
         onBlur={() => {
@@ -42,7 +43,7 @@ export function CardDescription({
       className="cardp__md"
       role="button"
       tabIndex={0}
-      aria-label="Edit the description"
+      aria-label={t('card.editDescription')}
       onClick={(event) => {
         if (!(event.target as HTMLElement).closest('a')) setEditing(true)
       }}
@@ -52,7 +53,7 @@ export function CardDescription({
         setEditing(true)
       }}
     >
-      {body.trim() ? <Markdown source={body} /> : <span className="cardp__ph">What is this card for?</span>}
+      {body.trim() ? <Markdown source={body} /> : <span className="cardp__ph">{t('card.descriptionHint')}</span>}
     </div>
   )
 }

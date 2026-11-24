@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
+import { t } from '../i18n'
 import { shellWord, useFileDrop } from '../shell/fileDrop'
 
 import { ask, commands } from '../shell/live'
@@ -42,11 +43,11 @@ export function IslandWindow(): React.JSX.Element {
       const named = under?.closest<HTMLElement>('[data-session]')?.dataset.session
       const sessionId = named ?? chosen?.sessionId ?? (sessions.length === 1 ? sessions[0].sessionId : null)
       if (!sessionId) {
-        setDropNote('Drop the file on a session')
+        setDropNote(t('island.drop.noTarget'))
         return
       }
       void ask(() => commands.islandDrop(sessionId, `${paths.map(shellWord).join(' ')} `)).then((answer) =>
-        setDropNote(answer.error ?? 'In its prompt — finish the message there'),
+        setDropNote(answer.error ?? t('island.drop.inPrompt')),
       )
     },
     [chosen, sessions],
@@ -84,9 +85,11 @@ export function IslandWindow(): React.JSX.Element {
   const projects = new Set(sessions.map((one) => one.projectId).filter(Boolean)).size
   const across =
     sessions.length === 0
-      ? 'No agent is running'
-      : `${sessions.length} ${sessions.length === 1 ? 'session' : 'sessions'} in ${Math.max(1, projects)} ${projects > 1 ? 'projects' : 'project'}` +
-        (sessions.length > ROWS ? ` · ${sessions.length - ROWS} more` : '')
+      ? t('island.overview.none')
+      : t('island.overview.across', {
+          sessions: t('island.overview.sessions', { count: sessions.length }),
+          projects: t('island.overview.projects', { count: Math.max(1, projects) }),
+        }) + (sessions.length > ROWS ? ` · ${t('island.overview.more', { count: sessions.length - ROWS })}` : '')
   const pin = (): void => nudge({ kind: 'pin', pinned: !island.pinned })
   const fold = (): void => nudge({ kind: 'close' })
 
@@ -116,8 +119,8 @@ export function IslandWindow(): React.JSX.Element {
               <>
                 <Head
                   mood="asking"
-                  title={`${asked ? (labels.get(asked.sessionId) ?? nameOf(asked)) : (question.project ?? 'An agent')} asks to`}
-                  sub={question.from === 'terminal' ? 'From its terminal · waiting on your answer' : 'From a chat · waiting on your answer'}
+                  title={t('island.asking.title', { who: asked ? (labels.get(asked.sessionId) ?? nameOf(asked)) : (question.project ?? t('island.asking.anAgent')) })}
+                  sub={question.from === 'terminal' ? t('island.asking.fromTerminal') : t('island.asking.fromChat')}
                   color={asked?.color}
                   pinned={island.pinned}
                   onPin={pin}

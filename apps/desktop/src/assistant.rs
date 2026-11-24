@@ -13,8 +13,19 @@ use devpit_core::Store;
 use devpit_rpc::{AssistantMode, ErrorCode, Project, RpcError};
 use tauri::AppHandle;
 
+use crate::session_locale::SessionLocale;
+
 /// devpit's assistant brief, beside its orchestrator brief.
 const BRIEF: (&str, &str) = (".devpit/assistant.md", include_str!("assistant_devpit.md"));
+
+/// The assistant brief's words in the session's language: the pt-BR ones
+/// beside the English base, which every other language reads too.
+fn words(locale: SessionLocale) -> &'static str {
+    match locale.tag() {
+        "pt-BR" => include_str!("assistant_devpit_pt_br.md"),
+        _ => BRIEF.1,
+    }
+}
 /// The line that imports it.
 pub(crate) const IMPORT: &str = "@.devpit/assistant.md";
 /// The line it goes under.
@@ -68,14 +79,15 @@ pub(crate) fn inside(folder: &Path, path: &Path) -> std::io::Result<()> {
 }
 
 /// The brief and its import as the mode says: written and imported when on,
-/// taken out when off.
-pub(crate) fn brief_in(folder: &Path, on: bool) -> std::io::Result<()> {
+/// taken out when off, in the language of the session the folder is being
+/// written for.
+pub(crate) fn brief_in(folder: &Path, on: bool, locale: SessionLocale) -> std::io::Result<()> {
     let brief = folder.join(BRIEF.0);
     if on {
         let text = format!(
             "<!-- written by devpit {} -->\n{}",
             env!("CARGO_PKG_VERSION"),
-            BRIEF.1
+            words(locale)
         );
         std::fs::create_dir_all(brief.parent().unwrap_or(folder))?;
         inside(folder, &brief)?;
@@ -127,7 +139,10 @@ pub(crate) fn respond(
                 .unwrap_or(24);
             let since = crate::ended_sessions::now_secs() - hours.clamp(1, 24 * 14) as i64 * 3600;
             Ok(serde_json::json!(crate::briefing::briefing(
-                here, projects, since
+                SessionLocale::capture(),
+                here,
+                projects,
+                since
             )))
         }
         "telegram_send" => crate::assistant_watch::telegram(params),
@@ -188,7 +203,8 @@ pub async fn assistant_mode_set(
         let store = crate::projects::store()?;
         let folder = folder_of(&store, &project_id)?;
         store.set_orchestrator_setting(&folder, KEY, serde_json::json!(on))?;
-        brief_in(&folder, on).map_err(|err| RpcError::internal(err.to_string()))?;
+        brief_in(&folder, on, SessionLocale::capture())
+            .map_err(|err| RpcError::internal(err.to_string()))?;
         crate::devflow_asks::rang(Some(&app), &project_id);
         Ok(AssistantMode { on })
     })

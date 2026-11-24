@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { OpenApp, Project } from '../gen/bindings'
 import type { PrefsPane } from './shape'
 import { PrefsSide, rowFor } from './PrefsSide'
-import { matching, PREFS_NAV } from './prefsNav'
+import { matching, prefsNav } from './prefsNav'
 import { OpenIn } from './OpenIn'
 import { ProjectRows } from './ProjectRows'
 import { RemoveProject } from './RemoveProject'
@@ -56,7 +56,7 @@ describe('the settings sidebar', () => {
   it('puts every pane under exactly one heading', () => {
     /* A pane in two groups is a pane you find twice and change in one of
        them; a pane in none is a pane that is unreachable. */
-    const ids = PREFS_NAV.flatMap((group) => group.items.map((item) => item.id))
+    const ids = prefsNav().flatMap((group) => group.items.map((item) => item.id))
     expect(new Set(ids).size).toBe(ids.length)
     expect(ids).toHaveLength(25)
   })
@@ -127,7 +127,7 @@ describe('the settings sidebar', () => {
   })
 
   it('is the whole list again once the field is emptied', () => {
-    expect(matching('   ')).toBe(PREFS_NAV)
+    expect(matching('   ')).toEqual(prefsNav())
   })
 })
 
@@ -135,7 +135,7 @@ describe('a project row', () => {
   it('says when it was last opened, which is what the list is ordered by', () => {
     shell.projects = [project({ lastOpenedAt: Date.now() / 1000 - 3 * 3600 })]
     render(<ProjectRows onRemove={vi.fn()} />)
-    const worded = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' }).format(-3, 'hour')
+    const worded = new Intl.RelativeTimeFormat('en', { numeric: 'auto' }).format(-3, 'hour')
     expect(screen.getByText(worded)).toBeTruthy()
   })
 

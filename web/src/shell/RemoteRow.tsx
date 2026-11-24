@@ -1,6 +1,7 @@
 import { useState } from 'react'
 
 import type { RemoteAct, Worktree } from '../gen/bindings'
+import { t } from '../i18n'
 import { ask, commands } from './live'
 import { changed } from './useTree'
 
@@ -10,7 +11,7 @@ import { changed } from './useTree'
  * finish, and git's own words say what to do instead.
  */
 
-const SAYS: Record<RemoteAct, string> = { fetch: 'Fetched', pull: 'Pulled', push: 'Pushed', sync: 'In sync' }
+const SAYS: Record<RemoteAct, string> = { fetch: 'workspace.remoteRow.fetched', pull: 'workspace.remoteRow.pulled', push: 'workspace.remoteRow.pushed', sync: 'workspace.remoteRow.synced' }
 
 /** The one act the row leads with, from how far apart the two sides are. */
 export function leading(ahead: number, behind: number): RemoteAct {
@@ -41,7 +42,7 @@ export function RemoteRow({
     setSaid(null)
     void ask(() => commands.changesRemote(projectId, null, act))
       .then((answer) => {
-        setSaid(answer.error ?? SAYS[act])
+        setSaid(answer.error ?? t(SAYS[act]))
         changed()
         onDone()
       })
@@ -57,11 +58,11 @@ export function RemoteRow({
 
   return (
     <div className="gremote">
-      {button('fetch', 'Fetch', <Arc />)}
-      {button('pull', behind > 0 ? `Pull ${behind} commit${behind === 1 ? '' : 's'}` : 'Pull', <Arrow down />, behind)}
-      {button('push', ahead > 0 ? `Push ${ahead} commit${ahead === 1 ? '' : 's'}` : 'Push', <Arrow />, ahead)}
-      <button className="btn gremote__sync" data-lead={lead === 'sync' && ahead + behind > 0 ? 'true' : undefined} disabled={busy !== null} onClick={() => run('sync')} title="Pull, then push">
-        {busy === 'sync' ? 'Syncing…' : 'Sync'}
+      {button('fetch', t('workspace.remoteRow.fetch'), <Arc />)}
+      {button('pull', behind > 0 ? t('workspace.remoteRow.pullCommits', { count: behind }) : t('workspace.remoteRow.pull'), <Arrow down />, behind)}
+      {button('push', ahead > 0 ? t('workspace.remoteRow.pushCommits', { count: ahead }) : t('workspace.remoteRow.push'), <Arrow />, ahead)}
+      <button className="btn gremote__sync" data-lead={lead === 'sync' && ahead + behind > 0 ? 'true' : undefined} disabled={busy !== null} onClick={() => run('sync')} title={t('workspace.remoteRow.syncTitle')}>
+        {busy === 'sync' ? t('workspace.remoteRow.syncing') : t('workspace.remoteRow.sync')}
       </button>
       {said && <span className="gremote__said" title={said}>{said}</span>}
     </div>

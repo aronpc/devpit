@@ -1,5 +1,9 @@
 use super::*;
 
+fn en() -> crate::session_locale::SessionLocale {
+    crate::session_locale::SessionLocale::of(devpit_core::locale::Locale::En)
+}
+
 #[test]
 fn a_log_is_only_one_the_brief_names() {
     let folder = Path::new("/o");
@@ -46,14 +50,20 @@ fn the_rules_for_sessions_go_with_every_brief() {
     let folder = dir.path().join("workspace");
     std::fs::create_dir_all(folder.join("context")).expect("context");
     std::fs::write(folder.join("context/preferences.md"), text).expect("prefs");
-    let brief = super::briefed(&folder, "Fix the invoice total.", None, false);
+    let brief = super::briefed(en(), &folder, "Fix the invoice total.", None, false);
     assert_eq!(
         brief,
         "Fix the invoice total.\n\n## Reporting back\n\nThe orchestrator that started you is `orchestrator-workspace`: SendMessage to that name to report back. It keeps the name when its chat restarts.\n\n## Rules for sessions\n\n- Never push to main.\n- Write commit messages in English."
     );
-    // Too long already, it goes as it is rather than being refused.
+    // Too long already, the prompt gives up its tail to the rules, marked.
     let long = "x".repeat(7990);
-    assert_eq!(super::briefed(&folder, &long, None, false), long);
+    let cut = super::briefed(en(), &folder, &long, None, false);
+    assert_eq!(cut.chars().count(), super::LONGEST_BRIEF);
+    assert!(cut.contains("x…\n\n## Reporting back\n\n"), "{cut}");
+    assert!(cut.ends_with("- Write commit messages in English."));
+    // Nothing to add, a long prompt goes as it is rather than being refused.
+    let bare = tempfile::tempdir().expect("bare");
+    assert_eq!(super::briefed_on_host(en(), bare.path(), &long, None), long);
 }
 
 /// A session reports to the orchestrator by a name taken from its folder, so
@@ -65,12 +75,12 @@ fn a_session_is_told_the_orchestrators_lasting_name() {
         crate::orchestrator::address(folder).as_deref(),
         Some("orchestrator-workspace")
     );
-    let brief = super::briefed(folder, "Ship it.", None, false);
+    let brief = super::briefed(en(), folder, "Ship it.", None, false);
     assert!(brief.starts_with("Ship it.\n\n## Reporting back\n\n"));
     assert!(brief.contains("SendMessage to that name"));
     assert!(brief.contains("`orchestrator-workspace`"));
     // Nothing to brief, nothing added.
-    assert_eq!(super::briefed(folder, "  ", None, false), "  ");
+    assert_eq!(super::briefed(en(), folder, "  ", None, false), "  ");
 }
 
 /// How an orchestrator's preferences read today: the rules in the middle,
@@ -223,7 +233,7 @@ fn the_brief_takes_the_rules_up_to_the_next_heading() {
     for text in [REORGANISED, RULES_LAST] {
         let (_dir, folder) = preferences_in(text);
         assert_eq!(
-            briefed(&folder, "Go.", Some(BILLING), false),
+            briefed(en(), &folder, "Go.", Some(BILLING), false),
             format!("Go.\n\n{REPORTING}\n\n{GENERAL}")
         );
     }
@@ -237,7 +247,7 @@ fn the_brief_takes_the_rules_up_to_the_next_heading() {
     )
     .expect("note");
     assert_eq!(
-        briefed(&folder, "Go.", Some(BILLING), false),
+        briefed(en(), &folder, "Go.", Some(BILLING), false),
         format!("Go.\n\n{REPORTING}\n\n{GENERAL}")
     );
 }
@@ -248,7 +258,7 @@ fn a_session_gets_its_own_projects_rules_and_no_one_elses() {
         "{RULES_LAST}\n## Rules for sessions: billing\n- Deploy only after the gate.\n\n## Rules for sessions: shop, prj_billing\n- Ask before a migration.\n\n## Rules for sessions: shop\n- The shop's DNS is the person's.\n"
     );
     let (_dir, folder) = preferences_in(&text);
-    let billing = briefed(&folder, "Go.", Some(BILLING), false);
+    let billing = briefed(en(), &folder, "Go.", Some(BILLING), false);
     assert_eq!(
         billing,
         format!("Go.\n\n{REPORTING}\n\n{GENERAL}\n\n## Rules for sessions: billing\n\n- Deploy only after the gate.\n\n- Ask before a migration.")
@@ -257,20 +267,20 @@ fn a_session_gets_its_own_projects_rules_and_no_one_elses() {
         id: "prj_shop",
         name: "Shop",
     };
-    let other = briefed(&folder, "Go.", Some(shop), false);
+    let other = briefed(en(), &folder, "Go.", Some(shop), false);
     assert!(!other.contains("Deploy only after the gate."));
     assert!(other.ends_with("## Rules for sessions: Shop\n\n- Ask before a migration.\n\n- The shop's DNS is the person's."));
     // Rules of a project and none general: the project's alone.
     let (_only, folder) =
         preferences_in("## Rules for sessions: billing\n- Deploy only after the gate.\n");
     assert_eq!(
-        briefed(&folder, "Go.", Some(BILLING), false),
+        briefed(en(), &folder, "Go.", Some(BILLING), false),
         format!(
             "Go.\n\n{REPORTING}\n\n## Rules for sessions: billing\n\n- Deploy only after the gate."
         )
     );
     assert_eq!(
-        briefed(&folder, "Go.", None, false),
+        briefed(en(), &folder, "Go.", None, false),
         format!("Go.\n\n{REPORTING}")
     );
 }
@@ -278,12 +288,100 @@ fn a_session_gets_its_own_projects_rules_and_no_one_elses() {
 /// A session on a CLI without SendMessage is told devpit's own tool instead.
 #[test]
 fn a_session_without_send_message_reports_through_devpit() {
-    let claude = super::report_line("orchestrator-work", true);
+    let claude = super::report_line(en(), "orchestrator-work", true);
     assert!(
         claude.contains("SendMessage to that name to report back"),
         "{claude}"
     );
-    let other = super::report_line("orchestrator-work", false);
+    let other = super::report_line(en(), "orchestrator-work", false);
     assert!(other.contains("`orchestrator-work`: message it with devpit_session_message, `to` left out, to report back"), "{other}");
     assert!(!other.contains("SendMessage"), "{other}");
+}
+
+fn pt() -> crate::session_locale::SessionLocale {
+    crate::session_locale::SessionLocale::of(devpit_core::locale::Locale::PtBr)
+}
+
+/// The brief is the session's, not the process's: the global locale says
+/// English here and the session was born in Portuguese.
+#[test]
+fn a_portuguese_session_is_briefed_in_portuguese_whatever_the_process_says() {
+    let _turn = crate::locale_turn::settled(devpit_core::locale::Locale::En);
+    let folder = std::path::Path::new("/home/someone/.devpit/orchestrator/claude/workspace");
+    let brief = super::briefed(pt(), folder, "Ship it.", None, false);
+    assert!(
+        brief.starts_with("Ship it.\n\n## Reportar de volta\n\n"),
+        "{brief}"
+    );
+    assert!(brief.contains("`orchestrator-workspace`"));
+    assert!(brief.contains("SendMessage"));
+    assert!(!brief.contains("Reporting back"));
+    let bus = super::report_line(pt(), "orchestrator-work", false);
+    assert!(bus.contains("devpit_session_message"), "{bus}");
+    assert!(!bus.contains("report back"), "{bus}");
+}
+
+/// The heading the parser reads is the same in every language, and a long
+/// Portuguese brief keeps the address and the rules whole inside the ceiling.
+#[test]
+fn a_long_portuguese_brief_keeps_the_address_and_the_rules_whole() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let folder = dir.path().join("orchestrator/claude/workspace");
+    std::fs::create_dir_all(folder.join("context")).expect("dirs");
+    let rule = "- Nunca envie direto para a main sem revisão.\n";
+    let rules: String = rule.repeat(3_000 / rule.chars().count());
+    std::fs::write(
+        folder.join("context/preferences.md"),
+        format!("## Rules for sessions\n\n{rules}"),
+    )
+    .expect("write");
+    let prompt = "Corrija o total da fatura. ".repeat(150);
+    let brief = super::briefed(pt(), &folder, &prompt, None, false);
+    assert!(
+        brief.chars().count() <= super::LONGEST_BRIEF,
+        "{}",
+        brief.chars().count()
+    );
+    assert!(brief.contains("`orchestrator-workspace`"));
+    assert!(brief.contains("\n\n## Rules for sessions\n\n"));
+    assert!(brief.ends_with(rules.trim()), "the rules were cut");
+
+    // Past the ceiling the prompt is cut, never the address or the rules.
+    let huge = "x".repeat(7_500);
+    let tight = super::briefed(pt(), &folder, &huge, None, false);
+    assert!(tight.chars().count() <= super::LONGEST_BRIEF);
+    assert!(tight.contains("`orchestrator-workspace`"));
+    assert!(tight.ends_with(rules.trim()), "the rules were cut");
+    assert!(tight.contains("x…\n\n## "), "the cut prompt is not marked");
+}
+
+/// Near the ceiling the rules still go whole, down to the prohibition they
+/// end with: the prompt gives up its tail, with a mark that it did.
+#[test]
+fn near_the_ceiling_the_rules_go_whole_and_the_prompt_is_cut() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let folder = dir.path().join("orchestrator/claude/workspace");
+    std::fs::create_dir_all(folder.join("context")).expect("dirs");
+    let ban = "- NUNCA FAÇA DEPLOY SEM APROVAÇÃO EXPLÍCITA.";
+    let rules = format!(
+        "{}{ban}",
+        "- Commit messages in English, with no trailers.\n".repeat(20)
+    );
+    std::fs::write(
+        folder.join("context/preferences.md"),
+        format!("## Rules for sessions\n\n{rules}\n"),
+    )
+    .expect("write");
+    let prompt = "y".repeat(7_500);
+    for locale in [pt(), en()] {
+        let brief = super::briefed(locale, &folder, &prompt, None, false);
+        assert!(
+            brief.chars().count() <= super::LONGEST_BRIEF,
+            "{}",
+            brief.chars().count()
+        );
+        assert!(brief.contains("`orchestrator-workspace`"), "{brief}");
+        assert!(brief.ends_with(&format!("\n\n## Rules for sessions\n\n{rules}")));
+        assert!(brief.contains("y…\n\n## "), "the cut prompt is not marked");
+    }
 }

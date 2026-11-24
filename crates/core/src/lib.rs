@@ -11,6 +11,10 @@
 pub mod bus;
 pub mod data_files;
 pub mod home;
+pub mod i18n;
+pub mod locale;
+#[cfg(test)]
+mod locale_tests;
 pub mod origin;
 pub mod paths;
 #[cfg(test)]
@@ -20,6 +24,7 @@ mod paths_tests;
 pub mod reports;
 pub mod store;
 pub mod tree;
+mod tree_error;
 #[cfg(test)]
 mod tree_tests;
 pub mod words;
@@ -30,7 +35,7 @@ pub use store::{
     NoticeRow, PaneLayoutWrite, PluginRow, ProjectRow, ReminderRow, RunRow, SessionLink, StepRow,
     Store, StoreError, SyncedProject, DEFAULT_COLUMNS, DEV_ROOT, RELEASE_ROOT, ROOT_NAME,
 };
-pub use tree::TreeError;
+pub use tree_error::TreeError;
 
 /// Held by whatever reads, changes and writes back the agent profiles or
 /// what sync keeps about them: each is one preference written whole, and two

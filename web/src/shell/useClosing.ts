@@ -81,7 +81,7 @@ export function useClosing({
       })
       if (!dontAskAgain) return
       setStop(false)
-      void inOrder('settings', () => ask(() => commands.settingsWrite(null, null, false, null, null, null, null)))
+      void inOrder('settings', () => ask(() => commands.settingsWrite(null, null, null, false, null, null, null, null)))
     },
     [closeNow],
   )

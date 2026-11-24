@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 
+import { t } from '../i18n'
 import { droppedPaths } from './pasting'
 
 /*
@@ -49,7 +50,7 @@ export function DropTarget({
   if (!hovering) return null
   return (
     <div className="chat__drop" aria-hidden="true">
-      <span className="chat__dropt">Drop to attach to this chat</span>
+      <span className="chat__dropt">{t('workspace.drop')}</span>
     </div>
   )
 }

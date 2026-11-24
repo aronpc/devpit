@@ -62,18 +62,18 @@ describe('when a project was last opened', () => {
     expect(since(ago(5), now)).toBe('just now')
   })
 
-  /* Against the same formatter rather than against English words: the
-     wording is the reader's locale's business, and what this has to get
-     right is the unit and the count. */
+  /* Against the same formatter rather than against English words, but with
+     the locale said out loud on both sides: a test that took the machine's
+     would expect something else from one runner to the next. */
   const worded = (count: number, unit: Intl.RelativeTimeFormatUnit): string =>
-    new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' }).format(-count, unit)
+    new Intl.RelativeTimeFormat('en', { numeric: 'auto' }).format(-count, unit)
 
   it('picks the largest unit that fits', () => {
-    expect(since(ago(3 * 60), now)).toBe(worded(3, 'minute'))
-    expect(since(ago(5 * 3600), now)).toBe(worded(5, 'hour'))
-    expect(since(ago(3 * 24 * 3600), now)).toBe(worded(3, 'day'))
-    expect(since(ago(20 * 24 * 3600), now)).toBe(worded(2, 'week'))
-    expect(since(ago(400 * 24 * 3600), now)).toBe(worded(1, 'year'))
+    expect(since(ago(3 * 60), now, 'en')).toBe(worded(3, 'minute'))
+    expect(since(ago(5 * 3600), now, 'en')).toBe(worded(5, 'hour'))
+    expect(since(ago(3 * 24 * 3600), now, 'en')).toBe(worded(3, 'day'))
+    expect(since(ago(20 * 24 * 3600), now, 'en')).toBe(worded(2, 'week'))
+    expect(since(ago(400 * 24 * 3600), now, 'en')).toBe(worded(1, 'year'))
   })
 })
 

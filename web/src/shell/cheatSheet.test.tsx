@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { CheatSheet, KeysSheet } from './CheatSheet'
 import { openKeysSheet } from './keysSheet'
-import { keysLabels, recordKeys, resetAllKeys, SCOPES, SHORTCUT_LIST } from './shortcuts'
+import { doesOf, keysLabels, recordKeys, resetAllKeys, SCOPES, scopeTitle, SHORTCUT_LIST } from './shortcuts'
 
 const openPrefs = vi.fn()
 vi.mock('./useShell', () => ({ useShell: () => ({ openPrefs }) }))
@@ -16,11 +16,11 @@ afterEach(() => {
 describe('the cheat sheet', () => {
   it('prints every shortcut in the registry, under where it works, with its keys', () => {
     render(<KeysSheet />)
-    for (const { scope, title } of SCOPES) {
-      const group = screen.getByRole('region', { name: title })
+    for (const { scope } of SCOPES) {
+      const group = screen.getByRole('region', { name: scopeTitle(scope) })
       for (const one of SHORTCUT_LIST.filter((shortcut) => shortcut.scope === scope)) {
-        const line = within(group).getByText(one.does).closest('.ksheet__r') as HTMLElement
-        expect(within(line).getAllByText(/./).map((cap) => cap.textContent)).toEqual([one.does, ...keysLabels(one.id)])
+        const line = within(group).getByText(doesOf(one)).closest('.ksheet__r') as HTMLElement
+        expect(within(line).getAllByText(/./).map((cap) => cap.textContent)).toEqual([doesOf(one), ...keysLabels(one.id)])
       }
     }
   })

@@ -4,6 +4,7 @@ import { Markdown } from './MarkdownView'
 import { keepWidth, keptWidth, PEEK_DEFAULT, peekWidth } from './peekWidth'
 import { useFile } from './useFile'
 import { useShellPick } from './shellStore'
+import { t } from '../i18n'
 
 /*
  * A file an answer points at, read beside the chat rather than instead of it:
@@ -47,13 +48,13 @@ export function DocPeek({ path, onOpen, onClose }: { path: string; onOpen: (path
   }
 
   return (
-    <aside className="peek" ref={side} aria-label={`Preview of ${name}`}>
+    <aside className="peek" ref={side} aria-label={t('workspace.peek.preview', { name })}>
       <div
         className="peek__grip"
         role="separator"
         aria-orientation="vertical"
-        aria-label="Resize the preview"
-        title="Drag to resize · double-click for the default"
+        aria-label={t('workspace.peek.resize')}
+        title={t('workspace.peek.grip')}
         onPointerDown={drag}
         onDoubleClick={() => (setWidth(PEEK_DEFAULT), keepWidth(PEEK_DEFAULT))}
       />
@@ -63,13 +64,13 @@ export function DocPeek({ path, onOpen, onClose }: { path: string; onOpen: (path
         </span>
         <button
           className="sq26"
-          title="Open as a tab"
-          aria-label="Open as a tab"
+          title={t('workspace.peek.openTab')}
+          aria-label={t('workspace.peek.openTab')}
           onClick={() => (show('file', { id: `file:${path}`, path, title: name }), onClose())}
         >
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" /></svg>
         </button>
-        <button className="sq26" title="Close" aria-label="Close preview" onClick={onClose}>
+        <button className="sq26" title={t('workspace.peek.closeTitle')} aria-label={t('workspace.peek.close')} onClick={onClose}>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
         </button>
       </header>
@@ -77,7 +78,7 @@ export function DocPeek({ path, onOpen, onClose }: { path: string; onOpen: (path
         {file.error ? (
           <p className="peek__note">{file.error}</p>
         ) : text === null ? (
-          <p className="peek__note">{file.file?.notShown ?? 'Reading…'}</p>
+          <p className="peek__note">{file.file?.notShown ?? t('workspace.peek.reading')}</p>
         ) : markdown ? (
           <Markdown source={text} path={path} opens={onOpen} />
         ) : (

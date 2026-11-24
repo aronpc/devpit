@@ -105,9 +105,11 @@ pub async fn chat_send(
         ));
     };
     // Which account this turn spends, as a terminal's line and a step's runner
-    // carry it, and the conversation its hooks name.
-    let env = crate::chat_turn::env_of(&profile, &conversation_id);
-    let mcp = crate::agent_reach::chat_mcp(&profile);
+    // carry it, and the conversation its hooks name. The language rides too.
+    let locale = crate::session_locale::of_conversation(&conversation_id, head.is_none());
+    crate::orchestrator::born(&project_id, locale, head.is_none());
+    let env = crate::chat_turn::env_of(locale, &profile, &conversation_id);
+    let mcp = crate::agent_reach::chat_mcp(locale, &profile);
     let reach = crate::orchestrator::reaches(&project_id);
     let address = crate::orchestrator::address_of(&project_id);
 
@@ -162,12 +164,11 @@ pub async fn chat_send(
 
     let (asked, opened) = crate::chat_turn::messages(&turn_id, &prompt, now() * 1000.0);
     let answer_id = opened.id.clone();
-    let _ = on_frame.send(Frame::Opened {
-        message: asked.clone(),
-    });
-    let _ = on_frame.send(Frame::Opened {
-        message: opened.clone(),
-    });
+    for message in [&asked, &opened] {
+        let _ = on_frame.send(Frame::Opened {
+            message: message.clone(),
+        });
+    }
 
     let started = state.on_start(&conversation_id, staying.is_some());
     let talking = state.inner().clone();
@@ -191,7 +192,7 @@ pub async fn chat_send(
     let advised = profile_id.clone();
     let checkout_at = PathBuf::from(&cwd);
     let said = tauri::async_runtime::spawn_blocking(move || {
-        let prompt = crate::session_notice::with_notice(&noticed, &prompt, now() * 1000.0);
+        let prompt = crate::session_notice::with_notice(locale, &noticed, &prompt, now() * 1000.0);
         let hooks = crate::steps::hook_settings_for(Some(&advised));
         let checkout = std::path::Path::new(&cwd);
         let mut before = crate::turn_changes::Before::default();

@@ -1,4 +1,5 @@
 import type { OfferedModel, Profile } from '../gen/bindings'
+import { t } from '../i18n'
 import { modelHint, modelName } from './models'
 import { ACCOUNT, valueOf } from './profiles'
 
@@ -81,5 +82,5 @@ export function accountHint(profile: Profile): string {
   }
   const config = valueOf(env, ACCOUNT.config)
   if (config) return config.split('/').filter(Boolean).pop() ?? config
-  return profile.command === profile.driver ? 'Default sign-in' : profile.command
+  return profile.command === profile.driver ? t('sessions.model.defaultSignIn') : profile.command
 }

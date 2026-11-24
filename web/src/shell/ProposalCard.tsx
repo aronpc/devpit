@@ -3,6 +3,7 @@ import { useState } from 'react'
 import type { Project, ProjectProposal } from '../gen/bindings'
 import { GroupPicker } from './GroupPicker'
 import { applied, proposalWords } from './projectProposal'
+import { t } from '../i18n'
 
 /*
  * One proposed change to an orchestrator's projects, made with one click or
@@ -47,25 +48,25 @@ export function ProposalCard({
   }
 
   return (
-    <div className="proposal" role="group" aria-label="Proposed project change">
+    <div className="proposal" role="group" aria-label={t('workspace.proposalCard.label')}>
       {editing ? (
         <div className="proposal__fields">
           <span className="proposal__path" title={proposal.path}>
             {proposal.path}
           </span>
           <label className="proposal__row">
-            <span>Name</span>
-            <input className="proposal__input" value={name} onChange={(event) => setName(event.target.value)} aria-label="Name" />
+            <span>{t('workspace.proposalCard.name')}</span>
+            <input className="proposal__input" value={name} onChange={(event) => setName(event.target.value)} aria-label={t('workspace.proposalCard.name')} />
           </label>
           <label className="proposal__row">
-            <span>Group</span>
+            <span>{t('workspace.proposalCard.group')}</span>
             <GroupPicker value={group} groups={groups} onChange={setGroup} />
           </label>
           {/* A proposal that leaves the link alone has no link to set. */}
           {proposal.link !== null && (
             <label className="proposal__row proposal__row--check">
               <input type="checkbox" checked={link} onChange={(event) => setLink(event.target.checked)} />
-              <span>Link it to this orchestrator</span>
+              <span>{t('workspace.proposalCard.link')}</span>
             </label>
           )}
         </div>
@@ -75,15 +76,15 @@ export function ProposalCard({
       {problem && <p className="proposal__problem">{problem}</p>}
       <div className="proposal__acts">
         <button className="btn" onClick={onDrop} disabled={busy}>
-          {editing && startEditing ? 'Cancel' : 'Drop'}
+          {editing && startEditing ? t('workspace.proposalCard.cancel') : t('workspace.proposalCard.drop')}
         </button>
         {!editing && (
           <button className="btn" onClick={() => setEditing(true)} disabled={busy}>
-            Edit
+            {t('workspace.proposalCard.edit')}
           </button>
         )}
         <button className="btn btn--go" onClick={make} disabled={busy}>
-          {editing ? 'Save' : 'Yes'}
+          {editing ? t('workspace.proposalCard.save') : t('workspace.proposalCard.yes')}
         </button>
       </div>
     </div>

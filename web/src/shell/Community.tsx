@@ -1,3 +1,4 @@
+import { t } from '../i18n'
 import { ask, commands } from './live'
 
 /** The community's Discord. A permanent invite, so an old build still lands. */
@@ -17,7 +18,7 @@ export function CommunityMenuItem({ onPick }: { onPick: () => void }): React.JSX
   return (
     <button className="newmenu__item" role="menuitem" onClick={() => (onPick(), openCommunity())}>
       <span className="newmenu__ico">{icon}</span>
-      <span className="newmenu__label">Community</span>
+      <span className="newmenu__label">{t('workspace.community.label')}</span>
     </button>
   )
 }
@@ -25,9 +26,9 @@ export function CommunityMenuItem({ onPick }: { onPick: () => void }): React.JSX
 /** The foot of the settings column, under the panes. */
 export function CommunityFoot(): React.JSX.Element {
   return (
-    <button className="prefs__comm" onClick={openCommunity} title="The devpit community on Discord">
+    <button className="prefs__comm" onClick={openCommunity} title={t('workspace.community.title')}>
       {icon}
-      Community
+      {t('workspace.community.label')}
     </button>
   )
 }

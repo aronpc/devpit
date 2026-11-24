@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import type { Branch } from '../gen/bindings'
+import { t } from '../i18n'
 import { useAway } from './away'
 import { ask, commands } from './live'
 import { useShell } from './useShell'
@@ -60,7 +61,7 @@ export function BranchPicker({ branch, ahead }: { branch: string; ahead: number 
 
   return (
     <div className="branchbox" ref={box}>
-      <button className="branch" onClick={() => setOpen((was) => !was)} title="Switch branch">
+      <button className="branch" onClick={() => setOpen((was) => !was)} title={t('workspace.branchPicker.switch')}>
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
           <line x1="6" y1="3" x2="6" y2="15" />
           <circle cx="18" cy="6" r="3" />
@@ -77,7 +78,7 @@ export function BranchPicker({ branch, ahead }: { branch: string; ahead: number 
             <input
               className="branchmenu__f"
               autoFocus
-              placeholder="Filter branches"
+              placeholder={t('workspace.branchPicker.filter')}
               value={filter}
               onChange={(event) => setFilter(event.target.value)}
               onKeyDown={(event) => event.key === 'Escape' && setOpen(false)}

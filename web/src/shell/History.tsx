@@ -10,6 +10,7 @@ import { menuPoint } from './menuRules'
 import { Skeleton } from './Skeleton'
 import { CHANGED } from './useTree'
 import { useShell } from './useShell'
+import { t } from '../i18n'
 
 /*
  * What was committed here, most recent first, under the day it was made.
@@ -109,7 +110,7 @@ export function History(): React.JSX.Element {
       {commits.length > 0 && (
         <label className="hist__find">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
-          <input value={query} placeholder="Filter commits" spellCheck={false} aria-label="Filter commits" onChange={(event) => setQuery(event.target.value)} />
+          <input value={query} placeholder={t('workspace.history.filter')} spellCheck={false} aria-label={t('workspace.history.filter')} onChange={(event) => setQuery(event.target.value)} />
         </label>
       )}
       {error && (
@@ -120,10 +121,10 @@ export function History(): React.JSX.Element {
       {loading && commits.length === 0 && <Skeleton />}
       {!error && !loading && commits.length === 0 && (
         <div className="exempty">
-          <span className="exempty__t">No commits yet.</span>
+          <span className="exempty__t">{t('workspace.history.none')}</span>
         </div>
       )}
-      {commits.length > 0 && shown.length === 0 && <div className="hist__none">No loaded commit matches.</div>}
+      {commits.length > 0 && shown.length === 0 && <div className="hist__none">{t('workspace.history.noMatch')}</div>}
 
       {byDay(shown, now).map((group) => (
         <section key={group.day} className="hist__group">
@@ -156,7 +157,7 @@ export function History(): React.JSX.Element {
                   <span
                     className="hist__sha"
                     role="button"
-                    title={copied === commit.sha ? 'Copied' : 'Copy the commit id'}
+                    title={copied === commit.sha ? t('workspace.history.copied') : t('workspace.history.copy')}
                     data-copied={copied === commit.sha ? 'true' : undefined}
                     onClick={(event) => {
                       event.stopPropagation()
@@ -175,10 +176,10 @@ export function History(): React.JSX.Element {
       <div ref={end} className="hist__end">
         {hasMore ? (
           <button className="hist__more" disabled={loading} onClick={older}>
-            {loading ? 'Loading older…' : 'Load older commits'}
+            {loading ? t('workspace.history.loading') : t('workspace.history.older')}
           </button>
         ) : (
-          commits.length > 0 && !query && <span>The first commit</span>
+          commits.length > 0 && !query && <span>{t('workspace.history.first')}</span>
         )}
       </div>
     </div>

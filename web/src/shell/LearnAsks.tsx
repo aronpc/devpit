@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react'
 import type { LabsProject, Maintenance } from '../gen/bindings'
 import { ask, commands } from './live'
 import { onCarried } from './window'
+import { t } from '../i18n'
 
 /*
  * Whether a project learns is the person's answer, never a default. A project
@@ -13,10 +14,10 @@ import { onCarried } from './window'
 /** The question, worded the same wherever it is asked. */
 export function learnQuestion(project?: string): { question: string; why: string; yes: string; no: string } {
   return {
-    question: project ? `Turn on learning for ${project}?` : 'Turn on learning for this project?',
-    why: 'Its agent reads the project once and keeps what it learns for the orchestrator and its sessions. Nothing reads it until you turn it on.',
-    yes: 'Turn on',
-    no: 'Not now',
+    question: project ? t('workspace.learn.questionFor', { project }) : t('workspace.learn.question'),
+    why: t('workspace.learn.why'),
+    yes: t('workspace.learn.yes'),
+    no: t('workspace.learn.no'),
   }
 }
 
@@ -43,7 +44,7 @@ export function LearnAsks(): React.JSX.Element | null {
   const answer = (id: string, yes: boolean): void => void ask(() => commands.maintenanceProjectAgent(id, yes)).then(told)
 
   return (
-    <section className="remind" role="alert" aria-label="Project learning">
+    <section className="remind" role="alert" aria-label={t('workspace.learn.label')}>
       <div className="remind__list">
         {asked.map((one) => {
           const said = learnQuestion(one.name)

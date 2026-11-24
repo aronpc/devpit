@@ -2,6 +2,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-libra
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import type { Paused } from '../gen/bindings'
+import { setLocale } from '../i18n'
 import { PauseControl } from './PauseControl'
 import { pauseOptions } from './usePause'
 
@@ -27,6 +28,7 @@ afterEach(() => {
   cleanup()
   vi.clearAllMocks()
   state = { on: false, until: null }
+  setLocale('en')
 })
 
 describe('pausing devpit', () => {
@@ -53,5 +55,16 @@ describe('pausing devpit', () => {
     expect(hour!.until! - now).toBe(3600)
     expect(new Date(morning!.until! * 1000).getHours()).toBe(9)
     expect(forever!.until).toBeNull()
+  })
+
+  it('says the whole pause in Portuguese, moment and all', async () => {
+    setLocale('pt-BR')
+    render(<PauseControl />)
+    await act(async () => heard['pause:changed']!({ on: true, until: null }))
+    expect(screen.getByText('Pausado até você retomar · Retomar')).toBeTruthy()
+    const at = new Date(2026, 9, 1, 18, 0).getTime() / 1000 + 3600
+    await act(async () => heard['pause:changed']!({ on: true, until: at }))
+    const hour = new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' }).format(new Date(at * 1000))
+    expect(screen.getByText(`Pausado até ${hour} · Retomar`)).toBeTruthy()
   })
 })

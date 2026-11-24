@@ -17,6 +17,7 @@ pub const LONGEST: usize = 64 * 1024;
 /// What syncs: how devpit looks and behaves, the same on every machine.
 pub const SYNCED: &[&str] = &[
     key::THEME,
+    key::LANGUAGE,
     key::CONFIRM_STOP,
     key::TERMINAL_CONTRAST,
     key::SHORTCUT_KEYS,

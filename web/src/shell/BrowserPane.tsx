@@ -8,6 +8,7 @@ import type { Tab } from './strip'
 import { useShell } from './useShell'
 import { listen } from './useShortcut'
 import { onCarried } from './window'
+import { t } from '../i18n'
 
 /*
  * A page, in a webview that is not ours.
@@ -257,8 +258,8 @@ export function BrowserPane({ tab }: { tab: Tab }): React.JSX.Element {
         <button
           type="button"
           className="browser__act"
-          aria-label="Back"
-          title="Back"
+          aria-label={t('workspace.browserPane.back')}
+          title={t('workspace.browserPane.back')}
           disabled={!at}
           onClick={() => void ask(() => commands.browserBack(tab.id))}
         >
@@ -267,8 +268,8 @@ export function BrowserPane({ tab }: { tab: Tab }): React.JSX.Element {
         <button
           type="button"
           className="browser__act"
-          aria-label="Forward"
-          title="Forward"
+          aria-label={t('workspace.browserPane.forward')}
+          title={t('workspace.browserPane.forward')}
           disabled={!at}
           onClick={() => void ask(() => commands.browserForward(tab.id))}
         >
@@ -277,8 +278,8 @@ export function BrowserPane({ tab }: { tab: Tab }): React.JSX.Element {
         <button
           type="button"
           className="browser__act"
-          aria-label="Reload"
-          title="Reload"
+          aria-label={t('workspace.browserPane.reload')}
+          title={t('workspace.browserPane.reload')}
           disabled={!at}
           onClick={() => at && go(at)}
         >
@@ -287,8 +288,8 @@ export function BrowserPane({ tab }: { tab: Tab }): React.JSX.Element {
         <button
           type="button"
           className="browser__act"
-          aria-label="Stop"
-          title="Stop"
+          aria-label={t('workspace.browserPane.stop')}
+          title={t('workspace.browserPane.stop')}
           disabled={!at}
           onClick={() => void ask(() => commands.browserStop(tab.id))}
         >
@@ -311,8 +312,8 @@ export function BrowserPane({ tab }: { tab: Tab }): React.JSX.Element {
           >
             <input
               className="browser__address"
-              aria-label="Address"
-              placeholder="localhost:3000"
+              aria-label={t('workspace.browserPane.address')}
+              placeholder={t('workspace.browserPane.addressExample')}
               spellCheck={false}
               value={typed}
               onChange={(event) => setTyped(event.target.value)}
@@ -322,8 +323,8 @@ export function BrowserPane({ tab }: { tab: Tab }): React.JSX.Element {
         <button
           type="button"
           className="browser__act"
-          aria-label="Find in page"
-          title="Find in page"
+          aria-label={t('workspace.browserPane.find')}
+          title={t('workspace.browserPane.find')}
           aria-pressed={finding}
           disabled={!at}
           onClick={() => setFinding((was) => !was)}
@@ -341,8 +342,8 @@ export function BrowserPane({ tab }: { tab: Tab }): React.JSX.Element {
         <button
           type="button"
           className="browser__act"
-          aria-label="Browser menu"
-          title="Browser menu"
+          aria-label={t('workspace.browserPane.menu')}
+          title={t('workspace.browserPane.menu')}
           aria-haspopup="menu"
           ref={dots}
           onClick={() => {
@@ -368,7 +369,7 @@ export function BrowserPane({ tab }: { tab: Tab }): React.JSX.Element {
       <div className="browser__page" ref={box} data-pane-id={tab.id} />
       {granted && drove && (
         <div className="browser__drove" role="status">
-          The agent {drove}
+          {t('workspace.browserPane.agentDid', { what: drove })}
         </div>
       )}
       {refused && (

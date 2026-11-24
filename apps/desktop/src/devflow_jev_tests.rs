@@ -326,6 +326,7 @@ fn project(dir: &Path) -> (Store, Project) {
 
 fn epic_of(project: &Project) -> String {
     let said = crate::devflow_plan::respond(
+        devpit_core::locale::Locale::En,
         None,
         "devflow_brief",
         project,
@@ -381,6 +382,7 @@ fn the_plans_fail_is_advice_unless_the_project_opts_in_and_enforce_holds_it() {
         );
         let plan = |apply: bool| {
             crate::devflow_plan::respond_judged(
+                devpit_core::locale::Locale::En,
                 None,
                 "devflow_plan",
                 &project,
@@ -450,6 +452,7 @@ fn the_board_create_runs_the_plan_rubric_and_only_an_opted_in_enforce_refuses() 
             &[],
         );
         crate::devflow_plan::respond(
+            devpit_core::locale::Locale::En,
             None,
             "devflow_plan",
             &project,
@@ -504,6 +507,7 @@ fn a_plan_says_where_decisions_stands_and_makes_its_cards_in_each_standing() {
         let epic = epic_of(&project);
         let plan = |apply: bool| {
             crate::devflow_plan::respond(
+                devpit_core::locale::Locale::En,
                 None,
                 "devflow_plan",
                 &project,
@@ -604,7 +608,8 @@ fn without_a_key_devflow_works_as_it_does_without_jev() {
     assert!(!said.acts());
     let ask = |apply: bool| {
         crate::devflow_plan::respond_judged(
-            None,
+ devpit_core::locale::Locale::En,
+ None,
             "devflow_plan",
             &project,
             &json!({ "epic": epic, "apply": apply, "cards": [{ "key": "s1", "title": "Open a link" }] }),

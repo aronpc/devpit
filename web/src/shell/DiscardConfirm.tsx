@@ -1,6 +1,7 @@
 import type { Change } from '../gen/bindings'
 import { discardLoses, type DiscardLoss } from './changes'
 import { Confirm } from './Confirm'
+import { t } from '../i18n'
 
 /*
  * The confirmation text for one discard, apart from `Changes.tsx` because the
@@ -11,21 +12,19 @@ import { Confirm } from './Confirm'
 const body = (worst: DiscardLoss, many: boolean): React.ReactNode => {
   switch (worst) {
     case 'nothing':
-      return many
-        ? 'Restores them exactly as git already has them — nothing is lost.'
-        : 'Restores it exactly as git already has it — nothing is lost.'
+      return t(many ? 'workspace.discard.nothingMany' : 'workspace.discard.nothingOne')
     case 'edits':
       return (
         <>
-          <b>Every uncommitted edit in {many ? 'these files' : 'this file'} is lost.</b>{' '}
-          {many ? 'They go' : 'It goes'} back to what git already has.
+          <b>{t(many ? 'workspace.discard.editsLostMany' : 'workspace.discard.editsLostOne')}</b>{' '}
+          {t(many ? 'workspace.discard.goBackMany' : 'workspace.discard.goBackOne')}
         </>
       )
     case 'file':
       return (
         <>
-          Git has no earlier copy of {many ? 'some of these files' : 'this file'}.{' '}
-          <b>Discarding deletes {many ? 'those' : 'it'} for good.</b>
+          {t(many ? 'workspace.discard.noCopyMany' : 'workspace.discard.noCopyOne')}{' '}
+          <b>{t(many ? 'workspace.discard.deletesMany' : 'workspace.discard.deletesOne')}</b>
         </>
       )
   }
@@ -51,8 +50,8 @@ export function DiscardConfirm({
   const one = changes.length === 1 ? changes[0] : undefined
   return (
     <Confirm
-      title={one ? `Discard ${one.path}?` : `Discard ${changes.length} files?`}
-      danger="Discard"
+      title={one ? t('workspace.discard.titleOne', { path: one.path }) : t('workspace.discard.titleMany', { count: changes.length })}
+      danger={t('workspace.discard.action')}
       body={body(loss(changes), one === undefined)}
       onClose={onClose}
       onConfirm={onConfirm}

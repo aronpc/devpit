@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import type { Card, CardSession, Doing } from '../gen/bindings'
+import { t } from '../i18n'
 import { ask, commands } from './live'
 import { afterLooking, afterState, type Unread } from './unread'
 import { useShell } from './useShell'
@@ -10,18 +11,9 @@ import { useShell } from './useShell'
  * goes when pressed.
  */
 
-const SAYS: Readonly<Record<Doing, string>> = {
-  open: 'An agent is open on this card — what it is doing shows once it reports. Only the project open in this window is followed.',
-  working: 'An agent is working on this card',
-  waiting: 'An agent is waiting on you',
-  done: 'An agent finished',
-  failed: 'A run on this card failed',
-  gone: 'The session on this card ended',
-}
-
-/** The words for a tile's dot. */
+/** The words for a tile's dot, read when drawn so they follow the chosen language. */
 export const doingLabel = (doing: Doing, unread: boolean): string =>
-  doing === 'done' && unread ? 'An agent finished, and nobody has looked yet' : SAYS[doing]
+  t(doing === 'done' && unread ? 'card.doing.doneUnread' : `card.doing.${doing}`)
 
 /** The session a dot takes somebody to: one waiting on them, in a terminal they can reach. */
 export function waitingSession(sessions: readonly CardSession[]): CardSession | null {

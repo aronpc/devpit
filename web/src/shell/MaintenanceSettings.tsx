@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useState } from 'react'
 
 import type { CleanRun, Maintenance } from '../gen/bindings'
+import { t } from '../i18n'
 import { bytes } from './disk'
 import { ask, commands } from './live'
 import { PrefRow } from './PrefRow'
@@ -23,11 +24,11 @@ interface Change {
 }
 
 function kept(days: number): string {
-  return days === 0 ? 'Until deleted' : `${days} days`
+  return days === 0 ? t('workspace.maintenance.untilDeleted') : t('workspace.maintenance.days', { count: days })
 }
 
 function lastRun(run: CleanRun, nowMs: number): string {
-  return `Last run ${ago(run.at, nowMs)}: removed ${run.removed}, freed ${bytes(run.freedBytes ?? 0) ?? '0 B'}.`
+  return t('workspace.maintenance.lastRun', { ago: ago(run.at, nowMs), removed: run.removed, freed: bytes(run.freedBytes ?? 0) ?? '0 B' })
 }
 
 export function MaintenanceSettings(): React.JSX.Element {
@@ -80,18 +81,18 @@ export function MaintenanceSettings(): React.JSX.Element {
   const last = shown?.last ?? null
   return (
     <>
-      <div className="acc__sub">Background activity</div>
+      <div className="acc__sub">{t('workspace.maintenance.background')}</div>
       <PrefSwitch
         on={shown?.powerSaver ?? false}
         onFlip={() => shown && write({ powerSaver: !shown.powerSaver })}
-        title="Power saver"
-        said="Background checks run four times less often while nobody is at the window or this machine runs on battery. Off, devpit is balanced, as it always was."
-        more={shown?.onBattery ? 'This machine is on battery now.' : undefined}
+        title={t('workspace.maintenance.powerSaver')}
+        said={t('workspace.maintenance.powerSaverSaid')}
+        more={shown?.onBattery ? t('workspace.maintenance.onBattery') : undefined}
       />
 
-      <div className="acc__sub">Logs and run artifacts</div>
-      <PrefRow title="Keep logs and run artifacts" said="devpit's logs, and the runs and reviews Devflow keeps for each card. The newest run of each card always stays.">
-        <select aria-label="Keep logs and run artifacts" value={shown?.keepDays ?? 0} disabled={!shown} onChange={(event) => write({ keepDays: Number(event.target.value) })}>
+      <div className="acc__sub">{t('workspace.maintenance.logs')}</div>
+      <PrefRow title={t('workspace.maintenance.keep')} said={t('workspace.maintenance.keepSaid')}>
+        <select aria-label={t('workspace.maintenance.keep')} value={shown?.keepDays ?? 0} disabled={!shown} onChange={(event) => write({ keepDays: Number(event.target.value) })}>
           {KEEP_DAYS.map((days) => (
             <option key={days} value={days}>
               {kept(days)}
@@ -100,20 +101,20 @@ export function MaintenanceSettings(): React.JSX.Element {
         </select>
       </PrefRow>
       {shown && shown.keepDays > 0 && (
-        <PrefRow title="Clean up now" said={last ? lastRun(last, heardAt) : `Not run yet. It also runs on its own, for what is older than ${shown.keepDays} days.`}>
+        <PrefRow title={t('workspace.maintenance.cleanNow')} said={last ? lastRun(last, heardAt) : t('workspace.maintenance.notRun', { count: shown.keepDays })}>
           <button className="btn" disabled={busy} onClick={cleanNow}>
-            {busy ? 'Deleting…' : 'Delete now'}
+            {busy ? t('workspace.maintenance.deleting') : t('workspace.maintenance.deleteNow')}
           </button>
         </PrefRow>
       )}
       {error && <p className="pref__d">{error}</p>}
 
-      <div className="acc__sub">Labs</div>
+      <div className="acc__sub">{t('workspace.maintenance.labs')}</div>
       <PrefSwitch
         on={shown?.projectAgent ?? true}
         onFlip={() => shown && write({ projectAgent: !shown.projectAgent })}
-        title="Project agent"
-        said="Beta. An agent that knows one project. On, it is offered to each project linked to an orchestrator: devpit asks you as a project is linked, and reads a project only once you turn it on for it, below or from its Project agent page. The orchestrator and the project's sessions ask it, and it draws lessons when a card is done."
+        title={t('workspace.maintenance.projectAgent')}
+        said={t('workspace.maintenance.projectAgentSaid')}
       />
       {shown?.projectAgent &&
         shown.projectAgentProjects.map((one) => (
@@ -121,15 +122,15 @@ export function MaintenanceSettings(): React.JSX.Element {
             <PrefSwitch
               on={one.on}
               onFlip={() => turn(one.id, !one.on)}
-              title={`Project agent in ${one.name}`}
-              said={one.on ? 'Learns and answers for this project.' : 'Off: no agent learns or answers for this project. On, it learns the project once.'}
+              title={t('workspace.maintenance.agentIn', { name: one.name })}
+              said={one.on ? t('workspace.maintenance.agentOn') : t('workspace.maintenance.agentOff')}
             />
             {one.on && (
               <PrefSwitch
                 on={one.acceptFacts}
                 onFlip={() => acceptFacts(one.id, !one.acceptFacts)}
-                title={`Accept facts that rest only on files in ${one.name}`}
-                said="A fact saved from Ask the project whose sources are all files of the project enters its memory without waiting, marked as accepted automatically and undone from its page, as the facts its own read finds do. Lessons and decisions always wait for you."
+                title={t('workspace.maintenance.facts', { name: one.name })}
+                said={t('workspace.maintenance.factsSaid')}
               />
             )}
           </Fragment>
@@ -137,8 +138,8 @@ export function MaintenanceSettings(): React.JSX.Element {
       <PrefSwitch
         on={shown?.canvas ?? true}
         onFlip={() => shown && write({ canvas: !shown.canvas })}
-        title="Canvas"
-        said="Beta. The Canvas plugin, a whiteboard a project can install. Off, it is not offered."
+        title={t('workspace.maintenance.canvas')}
+        said={t('workspace.maintenance.canvasSaid')}
       />
     </>
   )

@@ -66,16 +66,21 @@ pub(crate) fn turn_cwd(fixed: Option<&str>, asked: &str) -> Result<String, RpcEr
     }
 }
 
-/// What a chat's process is started with: the account's variables, and the
-/// conversation, which its hooks carry back so a question reaches this chat.
+/// What a chat's process is started with: the account's variables, the
+/// conversation, which its hooks carry back so a question reaches this chat,
+/// and the turn's `locale` — held for the process's life, so the stdio MCP
+/// server it starts answers in it whatever the settings say after.
 pub(crate) fn env_of(
+    locale: crate::session_locale::SessionLocale,
     profile: &devpit_rpc::Profile,
     conversation_id: &str,
 ) -> Vec<(String, String)> {
-    with_chat(
+    let mut env = with_chat(
         devpit_agentcli::running::runner(profile).env,
         conversation_id,
-    )
+    );
+    env.push(locale.var());
+    env
 }
 
 fn with_chat(mut env: Vec<(String, String)>, conversation_id: &str) -> Vec<(String, String)> {

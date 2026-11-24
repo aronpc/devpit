@@ -29,12 +29,81 @@ const MAX_MESSAGE_BYTES: usize = 1024 * 1024;
 const MAX_SESSION_MESSAGE_ID_CHARACTERS: usize = 100;
 const MAX_SESSION_MESSAGE_TEXT_CHARACTERS: usize = 4000;
 
+/// The variable a session's own process carries its language in, inherited
+/// by this server from the process that started it. A session's language is
+/// the one it was born in, whatever the app's settings have said since: the
+/// server never asks the app, only this.
+pub const LOCALE_ENV: &str = "DEVPIT_LOCALE";
+
+/// The language this server answers in, as `said` left it: `pt-BR` is
+/// Brazilian Portuguese, and anything else — nothing said included — is
+/// English, which is the base and the default.
+pub fn locale_of(said: Option<&str>) -> &'static str {
+    match said {
+        Some("pt-BR") => "pt-BR",
+        _ => "en",
+    }
+}
+
+/// [`locale_of`], of this process's own environment: the session's own
+/// answer, read once and held for the server's life. Without it, English.
+pub fn locale() -> &'static str {
+    locale_of(std::env::var(LOCALE_ENV).ok().as_deref())
+}
+
 /// One tool: its name, what it says it does, its input, and the app's method.
 pub(crate) struct Tool {
     pub(crate) name: &'static str,
     pub(crate) method: &'static str,
     pub(crate) description: &'static str,
     pub(crate) input: fn() -> Value,
+}
+
+/// A tool's pt-BR words: what it says it does, and its parameters'
+/// descriptions by the key each sits under in its schema. The words live in
+/// the `*_pt_br.rs` catalogs by name, so this file stays the English base.
+pub(crate) struct Said {
+    pub(crate) description: &'static str,
+    pub(crate) params: &'static [(&'static str, &'static str)],
+}
+
+/// The words `tool` is listed in when the session's language is `language`:
+/// pt-BR takes its description and its parameters' from the catalog, by
+/// name, and nothing else moves — not a key, a type, a `required`. Any other
+/// language, none said included, is English, the base and the default, and
+/// the tool is listed exactly as written.
+pub(crate) fn described(language: &str, tool: &Tool, mut input: Value) -> (&'static str, Value) {
+    let said = (locale_of(Some(language)) == "pt-BR")
+        .then(|| {
+            crate::mcp_pt_br::said(tool.name)
+                .or_else(|| crate::devflow_pt_br::said(tool.name))
+                .or_else(|| crate::rest_pt_br::assistant(tool.name))
+        })
+        .flatten();
+    let Some(said) = said else {
+        return (tool.description, input);
+    };
+    says(said.params, "", &mut input);
+    says(crate::rest_pt_br::lean(tool.name), "", &mut input);
+    (said.description, input)
+}
+
+/// Walks a schema saying in pt-BR what a parameter's `description` says, by
+/// the key the parameter sits under — wherever it sits, `items` and
+/// `additionalProperties` included. A key with no description in the base
+/// gets none: the catalog translates, it never adds.
+pub(crate) fn says(params: &[(&'static str, &'static str)], under: &str, value: &mut Value) {
+    let Some(fields) = value.as_object_mut() else {
+        return;
+    };
+    for (key, field) in fields.iter_mut() {
+        says(params, key, field);
+    }
+    if let Some((_, text)) = params.iter().find(|(key, _)| *key == under) {
+        if fields.contains_key("description") {
+            fields.insert("description".to_owned(), json!(text));
+        }
+    }
 }
 
 pub(crate) const TOOLS: [Tool; 38] = [
@@ -517,6 +586,21 @@ fn parent_argv() -> Option<String> {
     None
 }
 
+/// The tools `seat` is offered, said in `language`: the list `tools/list`
+/// answers with.
+pub(crate) fn tools_said(offer: &Offer, seat: &Seat, language: &str) -> Vec<Value> {
+    let offered = offer.tools(&STAGED);
+    let relayed = crate::devflow::relayed(&STAGED, &offered, seat);
+    TOOLS
+        .iter()
+        .chain(offered)
+        .chain(relayed)
+        .chain(crate::assistant::offered(seat))
+        .chain(crate::consult::offered(seat))
+        .filter_map(|tool| crate::listing::listed(tool, seat, language))
+        .collect()
+}
+
 /// One JSON-RPC message in, at most one out. `ask` is the app.
 #[cfg(test)]
 pub(crate) fn handle(
@@ -574,18 +658,7 @@ pub(crate) fn handle_giving(
         }),
         "ping" => json!({}),
         "tools/list" if !offered => json!({ "tools": [] }),
-        "tools/list" => {
-            let offered = offer.tools(&STAGED);
-            let relayed = crate::devflow::relayed(&STAGED, &offered, seat);
-            json!({ "tools": TOOLS
-                .iter()
-                .chain(offered)
-                .chain(relayed)
-                .chain(crate::assistant::offered(seat))
-                .chain(crate::consult::offered(seat))
-                .filter_map(|tool| crate::listing::listed(tool, seat))
-                .collect::<Vec<_>>() })
-        }
+        "tools/list" => json!({ "tools": tools_said(offer, seat, locale()) }),
         "resources/list" => {
             let mut listed = crate::apps::listed();
             if let Some(all) = listed["resources"].as_array_mut() {

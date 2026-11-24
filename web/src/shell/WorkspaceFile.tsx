@@ -9,6 +9,7 @@ import { PdfView } from './PdfView'
 import { Picture } from './Picture'
 import { Streamed } from './Streamed'
 import { useWorkspaceFile } from './useWorkspace'
+import { t } from '../i18n'
 
 /*
  * One workspace file, shown beside the list.
@@ -43,30 +44,30 @@ export function WorkspaceFile({
         </span>
         {kind === 'markdown' && (
           <button className="chip" onClick={() => setSource((was) => !was)}>
-            {source ? 'Preview' : 'Source'}
+            {source ? t('workspace.workspaceFile.preview') : t('workspace.workspaceFile.source')}
           </button>
         )}
         <button className="chip" onClick={() => void ask(() => commands.pathOpen(full))}>
-          Open
+          {t('workspace.workspaceFile.open')}
         </button>
         <button className="chip" onClick={() => void ask(() => commands.pathReveal(full))}>
-          Reveal
+          {t('workspace.workspaceFile.reveal')}
         </button>
-        <button className="sq26" onClick={onClose} aria-label="Close preview" title="Close preview">
+        <button className="sq26" onClick={onClose} aria-label={t('workspace.workspaceFile.close')} title={t('workspace.workspaceFile.close')}>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
         </button>
       </div>
 
       <div className="fb__sideb">
-        {loading && <div className="exempty__t">Reading…</div>}
+        {loading && <div className="exempty__t">{t('workspace.workspaceFile.reading')}</div>}
         {error && <div className="exempty__t">{error}</div>}
 
         {file?.notShown && (
           <div className="exempty">
             <span className="exempty__t">{file.notShown}</span>
-            <span className="exempty__d">{bytes(file.bytes) ?? 'empty'}</span>
+            <span className="exempty__d">{bytes(file.bytes) ?? t('workspace.workspaceFile.empty')}</span>
             <button className="btn" onClick={() => void ask(() => commands.pathReveal(full))}>
-              Show in the finder
+              {t('workspace.workspaceFile.showInFinder')}
             </button>
           </div>
         )}

@@ -117,3 +117,14 @@ fn a_runner_hands_the_environment_over_as_pairs() {
         ]
     );
 }
+
+/// The session's language is devpit's to set at the session's birth: a
+/// profile's own `DEVPIT_LOCALE` never reaches the process.
+#[test]
+fn a_profile_cannot_set_the_sessions_language() {
+    let speaking = profile(&[], &[("DEVPIT_LOCALE", "en"), ("TOKEN", "x")]);
+    assert_eq!(
+        runner(&speaking).env,
+        [("TOKEN".to_owned(), "x".to_owned())]
+    );
+}

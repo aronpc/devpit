@@ -84,7 +84,7 @@ pub fn ask(root: &Path, method: &str, params: Value, cwd: &Path) -> Result<Value
     let author = std::env::var("DEVPIT_AGENT_ID").unwrap_or_default();
     // The account the asking session runs on, which its reviewers follow.
     let config_dir = std::env::var("CLAUDE_CONFIG_DIR").ok();
-    let body = json!({ "method": method, "params": params, "cwd": cwd.display().to_string(), "author": author, "configDir": config_dir }).to_string();
+    let body = json!({ "method": method, "params": params, "cwd": cwd.display().to_string(), "author": author, "configDir": config_dir, "locale": crate::mcp::locale() }).to_string();
     let mut stream = TcpStream::connect(&address).map_err(|_| closed())?;
     let _ = stream.set_read_timeout(Some(wait_for(method)));
     let _ = stream.set_write_timeout(Some(WAIT));

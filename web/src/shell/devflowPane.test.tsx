@@ -132,7 +132,7 @@ vi.mock('./live', () => ({
   },
 }))
 
-const { DevflowPane, LOOK_EVERY_MS, OUTSIDE } = await import('./DevflowPane')
+const { DevflowPane, LOOK_EVERY_MS, outsideSaid } = await import('./DevflowPane')
 
 afterEach(() => {
   standing = null
@@ -266,7 +266,7 @@ describe('the Devflow screen', () => {
     fireEvent.click(await screen.findByRole('switch', { name: 'Context' }))
     await waitFor(() => expect(called).toHaveBeenCalledWith('edit', 'prj_api', 'stages.context.enabled', 'false'))
     await act(async () => heard['devflow:changed']?.('prj_api'))
-    expect(screen.queryByText(OUTSIDE)).toBeNull()
+    expect(screen.queryByText(outsideSaid())).toBeNull()
   })
 
   it('reads a file changed outside again, and says so', async () => {
@@ -275,7 +275,7 @@ describe('the Devflow screen', () => {
     expect(await screen.findByText('On here')).toBeTruthy()
     current = active('version: 1\nenabled: true\nreview:\n  reviewers: []\n', { reviewers: [] })
     await act(async () => window.dispatchEvent(new Event('focus')))
-    expect(await screen.findByText(OUTSIDE)).toBeTruthy()
+    expect(await screen.findByText(outsideSaid())).toBeTruthy()
     expect(screen.queryByRole('combobox', { name: 'Persona' })).toBeNull()
   })
 })

@@ -2092,7 +2092,7 @@ export const commands = {
 	 *  Answering with the whole object rather than nothing means the screen never
 	 *  has to predict what a write did to the rest of it.
 	 */
-	settingsWrite: (theme: "system" | "light" | "dark" | null, automaticUpdates: boolean | null, confirmStop: boolean | null, terminalContrast: number | null, focusMode: boolean | null, errorReports: boolean | null, island: boolean | null) => typedError<Settings, RpcError>(__TAURI_INVOKE("settings_write", { theme, automaticUpdates, confirmStop, terminalContrast, focusMode, errorReports, island })),
+	settingsWrite: (theme: "system" | "light" | "dark" | null, language: "system" | "en" | "pt_br" | null, automaticUpdates: boolean | null, confirmStop: boolean | null, terminalContrast: number | null, focusMode: boolean | null, errorReports: boolean | null, island: boolean | null) => typedError<Settings, RpcError>(__TAURI_INVOKE("settings_write", { theme, language, automaticUpdates, confirmStop, terminalContrast, focusMode, errorReports, island })),
 	/**
 	 *  `settings.finish_onboarding` — the first run is done.
 	 * 
@@ -4443,6 +4443,16 @@ export type LabsProject = {
 	asked: boolean,
 };
 
+/**
+ *  The language the person wants devpit's own words in.
+ * 
+ *  `System` is not a language: it is the choice to take whichever language
+ *  the machine is already speaking. Stored and spoken in the same short
+ *  names, so what the store holds and what the interface sends are one
+ *  vocabulary.
+ */
+export type Language = "system" | "en" | "pt_br";
+
 export type LayoutNode = { type: "leaf"; id: string; 
 /**  `session:window` on our private tmux server. */
 tmuxTarget: string; kind: PaneKind; agent: AgentPresence; 
@@ -5794,7 +5804,13 @@ binary?: boolean;
  *  The host shows the stops waiting on the person's click; absent
  *  from an older one.
  */
-stops?: boolean } | 
+stops?: boolean; 
+/**
+ *  The language the host resolved, `en` or `pt-BR`: the Remote has no
+ *  settings of its own to read it from. Empty from an older host, and
+ *  the viewer then stays in English.
+ */
+locale?: string } | 
 /**
  *  The device proved its pairing code and waits for the person at the
  *  machine to allow it. An older viewer passes it by.
@@ -6325,6 +6341,17 @@ export type SessionsOnCard = {
 
 export type Settings = {
 	theme: Theme,
+	/**
+	 *  The language the person chose for devpit's own words. `System` until
+	 *  they choose.
+	 */
+	language: Language,
+	/**
+	 *  The language those words are in once the choice met the machine:
+	 *  `en` or `pt-BR`. Resolved in the core and sent here, so the interface
+	 *  never has to guess from the browser it happens to run in.
+	 */
+	locale: string,
 	/**  Unix seconds, or null while the first run has not been finished. */
 	onboardedAt: number | null,
 	/**

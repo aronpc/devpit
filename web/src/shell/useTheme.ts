@@ -21,7 +21,7 @@ export function useTheme(setConfirmStop: (asked: boolean | null) => void): {
   const setTheme = useCallback((next: Theme) => {
     setThemeState(next)
     document.documentElement.dataset.theme = next
-    void inOrder('settings', () => ask(() => commands.settingsWrite(next, null, null, null, null, null, null)))
+    void inOrder('settings', () => ask(() => commands.settingsWrite(next, null, null, null, null, null, null, null)))
   }, [])
 
   useEffect(() => {

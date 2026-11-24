@@ -282,13 +282,15 @@ fn close(app: &AppHandle, project_id: &str, card_id: &str) -> Result<(), String>
     let day = crate::project_agent::today();
     project_memory::measure(root, &day, &source, rounds.len(), repeated(&kept))?;
     let profile = crate::project_agent::linked_profile(&listed.projects, &project.id)?;
-    let (command, env, mcp) = crate::project_agent::waking(&profile)?;
+    let locale = app.state::<Agents>().locale_for(project_id);
+    let (command, env, mcp) = crate::project_agent::waking(&profile, locale)?;
     let wake = Wake {
         command: &command,
         env: &env,
         root,
         name: &project.name,
         mcp_config: mcp.as_deref(),
+        locale,
     };
     let prompt = asking(&source, &card.title, &comments, findings.as_ref());
     if propose_from(

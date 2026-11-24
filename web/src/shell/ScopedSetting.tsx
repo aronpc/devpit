@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 
 import type { Project, ProjectSettings, Scoped } from '../gen/bindings'
-import { MODES, modeName } from './chat'
+import { modeName, modes } from './chat'
+import { t } from '../i18n'
 import { ask, commands } from './live'
 import { PrefRow } from './PrefRow'
 
@@ -15,24 +16,24 @@ import { PrefRow } from './PrefRow'
 type Field = 'model' | 'permissionMode' | 'branchPattern'
 
 const TITLE: Record<Field, string> = {
-  model: 'Default model',
-  permissionMode: 'Permission mode',
-  branchPattern: 'Branch name for this project',
+  model: 'workspace.scoped.model',
+  permissionMode: 'workspace.scoped.permission',
+  branchPattern: 'workspace.scoped.branch',
 }
 
 const NONE: Record<Field, string> = {
-  model: "the CLI's own",
-  permissionMode: MODES[0].label,
-  branchPattern: 'the name above',
+  model: 'workspace.scoped.noneModel',
+  permissionMode: '',
+  branchPattern: 'workspace.scoped.noneBranch',
 }
 
 /** What a scope gets for `field` without a value of its own, and from where. */
 function inherited(shown: ProjectSettings, field: Field, project: boolean): string {
   const repo = project ? shown.repo[field] : null
-  if (repo) return `${named(field, repo)} from .devpit/settings.json`
+  if (repo) return t('workspace.scoped.fromRepo', { value: named(field, repo) })
   const machine = project ? shown.machine[field] : null
-  if (machine) return `${named(field, machine)} from all projects`
-  return NONE[field]
+  if (machine) return t('workspace.scoped.fromAll', { value: named(field, machine) })
+  return field === 'permissionMode' ? modes()[0].label : t(NONE[field])
 }
 
 function named(field: Field, value: string): string {
@@ -69,17 +70,17 @@ export function ScopedSetting({ field }: { field: Field }): React.JSX.Element {
   const fallback = shown ? inherited(shown, field, project) : ''
   return (
     <PrefRow
-      title={TITLE[field]}
+      title={t(TITLE[field])}
       said={
         <>
-          {project ? 'This project only; empty takes ' : 'Every project without its own; empty is '}
-          {fallback}.{shown?.repoProblem && ` ${shown.repoProblem}; it is left out.`}
+          {t(project ? 'workspace.scoped.projectOnly' : 'workspace.scoped.everyProject', { fallback })}
+          {shown?.repoProblem && ` ${t('workspace.scoped.leftOut', { problem: shown.repoProblem })}`}
           {error && ` ${error}`}
         </>
       }
     >
-      <select aria-label={`Applying settings for (${TITLE[field]})`} value={scope} onChange={(event) => setScope(event.target.value)}>
-        <option value="">All projects</option>
+      <select aria-label={t('workspace.scoped.applying', { setting: t(TITLE[field]) })} value={scope} onChange={(event) => setScope(event.target.value)}>
+        <option value="">{t('workspace.scoped.all')}</option>
         {projects.map((one) => (
           <option key={one.id} value={one.id}>
             {one.name}
@@ -87,17 +88,17 @@ export function ScopedSetting({ field }: { field: Field }): React.JSX.Element {
         ))}
       </select>
       {field === 'permissionMode' ? (
-        <select aria-label={TITLE[field]} value={value} disabled={!editable} onChange={(event) => save(event.target.value)}>
-          <option value="">As {fallback}</option>
-          {MODES.map((mode) => (
+        <select aria-label={t(TITLE[field])} value={value} disabled={!editable} onChange={(event) => save(event.target.value)}>
+          <option value="">{t('workspace.scoped.as', { fallback })}</option>
+          {modes().map((mode) => (
             <option key={mode.id} value={mode.id}>
               {mode.label}
             </option>
           ))}
         </select>
       ) : (
-        editable && (
-          <input key={`${scope}:${value}`} className="voice__in" aria-label={TITLE[field]} placeholder={fallback} defaultValue={value} onBlur={(event) => event.target.value.trim() !== value && save(event.target.value)} />
+        editable && ( // ui-text: ok a condition the walk misreads as words
+          <input key={`${scope}:${value}`} className="voice__in" aria-label={t(TITLE[field])} placeholder={fallback} defaultValue={value} onBlur={(event) => event.target.value.trim() !== value && save(event.target.value)} />
         )
       )}
     </PrefRow>

@@ -15,7 +15,10 @@ use devflow_engine::evidence::Card;
 use devflow_engine::review::{self, Asked, Given, Reach};
 use devflow_engine::runs::{self, Runs};
 use devflow_engine::{layers, Config, State};
+use devpit_core::locale::Locale;
 use devpit_rpc::{Declared, Project};
+
+use crate::devflow_dialect::dialect_in;
 use serde::Deserialize;
 use serde_json::{json, Value};
 use tauri::AppHandle;
@@ -39,6 +42,7 @@ pub(crate) struct Pull {
 pub(crate) type Ask<'a> = &'a dyn Fn(&Path, u64) -> Result<Pull, String>;
 
 pub(crate) fn respond(
+    locale: Locale,
     _app: Option<&AppHandle>,
     project: &Project,
     state: &State,
@@ -47,7 +51,7 @@ pub(crate) fn respond(
 ) -> Result<Value, String> {
     let program = crate::devflow_review::program_for(profile);
     let reach = |agent| crate::devflow_review::reach_as(agent, profile, program.as_deref());
-    respond_with(project, state, asked, &reach, &pull, profile)
+    respond_with(locale, project, state, asked, &reach, &pull, profile)
 }
 
 /// A pull request of the project's GitHub repository; other hosts are not read.
@@ -155,6 +159,7 @@ fn resolved(root: &Path, asked: &Standalone, ask: Ask) -> Result<Resolved, Strin
 }
 
 pub(crate) fn respond_with(
+    locale: Locale,
     project: &Project,
     state: &State,
     asked: Standalone,
@@ -215,7 +220,7 @@ pub(crate) fn respond_with(
     let runs = Runs {
         home: home.devflow_reviews(),
         checkout: reading.clone(),
-        dialect: &crate::devflow_dialect::DEVPIT,
+        dialect: dialect_in(locale),
     };
     let secrets = crate::kept_out::what_devpit_gave(&store);
     let redact = |text: &str| crate::kept_out::kept_out(text, &secrets);
@@ -265,7 +270,7 @@ pub(crate) fn respond_with(
         redact: &redact,
         jev: None,
         personas: review::Personas {
-            dialect: &crate::devflow_dialect::DEVPIT,
+            dialect: dialect_in(locale),
             personal: personal.as_deref(),
             teams: &teams,
         },
@@ -292,7 +297,7 @@ pub(crate) fn respond_with(
     }
     answer["reviewed"] = json!(label);
     answer["next"] = json!(adhoc::next_in(
-        &crate::devflow_dialect::DEVPIT,
+        dialect_in(locale),
         &asked.subject,
         &label,
         &done.stamp,

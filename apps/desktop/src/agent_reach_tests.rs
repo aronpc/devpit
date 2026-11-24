@@ -1,10 +1,19 @@
 use super::*;
 
+use devpit_core::locale::Locale;
+
+use crate::session_locale::SessionLocale;
+
+/// The session of most tests: born in English, the base.
+fn en() -> SessionLocale {
+    SessionLocale::of(Locale::En)
+}
+
 #[test]
 fn claude_is_given_a_config_file_it_reads_for_this_session_only() {
     let dir = tempfile::tempdir().expect("tempdir");
     let config = dir.path().join("mcp.json");
-    let flags = mcp_flags("claude", Path::new("/opt/devpit"), &config).expect("flags");
+    let flags = mcp_flags(en(), "claude", Path::new("/opt/devpit"), &config).expect("flags");
     assert_eq!(flags, format!("--mcp-config='{}'", config.display()));
     let written: serde_json::Value =
         serde_json::from_str(&std::fs::read_to_string(&config).expect("read")).expect("json");
@@ -20,6 +29,7 @@ fn claude_is_given_a_config_file_it_reads_for_this_session_only() {
 fn codex_is_given_the_server_as_overrides_on_its_own_line() {
     let dir = tempfile::tempdir().expect("tempdir");
     let flags = mcp_flags(
+        en(),
         "codex",
         Path::new("/opt/devpit"),
         &dir.path().join("mcp.json"),
@@ -46,6 +56,7 @@ fn codex_is_given_the_server_as_overrides_on_its_own_line() {
 fn codex_hands_devpits_server_the_pane_it_runs_in() {
     let dir = tempfile::tempdir().expect("tempdir");
     let flags = mcp_flags(
+        en(),
         "codex",
         Path::new("/opt/devpit"),
         &dir.path().join("mcp.json"),
@@ -74,6 +85,7 @@ fn an_agent_with_no_way_to_be_given_it_gets_nothing() {
     let dir = tempfile::tempdir().expect("tempdir");
     assert_eq!(
         mcp_flags(
+            en(),
             "gemini",
             Path::new("/opt/devpit"),
             &dir.path().join("m.json")
@@ -88,6 +100,7 @@ fn a_path_it_cannot_quote_is_not_carried() {
     let dir = tempfile::tempdir().expect("tempdir");
     assert_eq!(
         mcp_flags(
+            en(),
             "codex",
             Path::new("/opt/it's/devpit"),
             &dir.path().join("m.json")
@@ -135,9 +148,11 @@ fn on_windows_the_shim_is_a_batch_file_that_passes_everything_on() {
 fn on_windows_the_tools_are_reached_through_forward_slashes() {
     let dir = tempfile::tempdir().expect("tempdir");
     let config = dir.path().join("mcp.json");
-    let flags = mcp_flags("codex", Path::new(r"C:\devpit\devpit.exe"), &config).expect("flags");
+    let flags =
+        mcp_flags(en(), "codex", Path::new(r"C:\devpit\devpit.exe"), &config).expect("flags");
     assert!(flags.contains(r#"mcp_servers.devpit.command="C:/devpit/devpit.exe""#));
-    assert!(mcp_flags("claude", Path::new(r"C:\devpit\devpit.exe"), &config).is_some());
+    assert!(flags.contains(r#"DEVPIT_LOCALE="en""#), "{flags}");
+    assert!(mcp_flags(en(), "claude", Path::new(r"C:\devpit\devpit.exe"), &config).is_some());
 }
 
 /// Every file below `dir`, relative to it.
@@ -169,17 +184,17 @@ fn each_cli_is_handed_devpits_server_from_devpits_own_folder_only() {
     std::fs::create_dir_all(home.path().join(".codex")).expect("codex home");
     std::fs::create_dir_all(&root).expect("root");
     let exe = Path::new("/opt/devpit");
-    let codex = chat_mcp_in(&root, exe, "codex", "codex").expect("codex");
-    let opencode = chat_mcp_in(&root, exe, "acp", "opencode").expect("opencode");
-    chat_mcp_in(&root, exe, "claude", "claude").expect("claude");
-    crate::shell_launch::gemini_settings(&root).expect("gemini");
+    let codex = chat_mcp_in(en(), &root, exe, "codex", "codex").expect("codex");
+    let opencode = chat_mcp_in(en(), &root, exe, "acp", "opencode").expect("opencode");
+    chat_mcp_in(en(), &root, exe, "claude", "claude").expect("claude");
+    crate::shell_launch::gemini_settings(en(), &root).expect("gemini");
 
     assert_eq!(
         files_under(home.path()),
         [
             ".devpit/gemini-hooks.json",
-            ".devpit/mcp-codex.json",
-            ".devpit/mcp-opencode.json",
+            ".devpit/mcp-codex-en.json",
+            ".devpit/mcp-opencode-en.json",
             ".devpit/mcp.json",
         ]
     );
@@ -199,6 +214,7 @@ fn each_cli_is_handed_devpits_server_from_devpits_own_folder_only() {
     assert_eq!(server["args"][0], "mcp");
     assert_eq!(server["env"]["DEVPIT_AGENT_ID"], "gemini");
     assert_eq!(server["env"]["DEVPIT_PANE"], "${DEVPIT_PANE}");
+    assert_eq!(server["env"]["DEVPIT_LOCALE"], "${DEVPIT_LOCALE}");
 }
 
 /// The agent names the file: one devpit does not know names none.
@@ -206,15 +222,84 @@ fn each_cli_is_handed_devpits_server_from_devpits_own_folder_only() {
 fn a_chat_for_an_agent_devpit_does_not_know_gets_no_file() {
     let root = tempfile::tempdir().expect("tempdir");
     let exe = Path::new("/opt/devpit");
-    assert_eq!(chat_mcp_in(root.path(), exe, "acp", "../escape"), None);
-    assert_eq!(chat_mcp_in(root.path(), exe, "", "aider"), None);
+    assert_eq!(
+        chat_mcp_in(en(), root.path(), exe, "acp", "../escape"),
+        None
+    );
+    assert_eq!(chat_mcp_in(en(), root.path(), exe, "", "aider"), None);
     assert!(files_under(root.path()).is_empty());
+}
+
+/// Claude's config file is every Claude session's, so no session's language
+/// can be written into it: one session's would be every session's. The
+/// language rides the session's own environment instead.
+#[test]
+fn the_language_never_rides_claudes_shared_config_file() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let config = dir.path().join("mcp.json");
+    mcp_flags(en(), "claude", Path::new("/opt/devpit"), &config).expect("flags");
+    let written: serde_json::Value =
+        serde_json::from_str(&std::fs::read_to_string(&config).expect("read")).expect("json");
+    assert!(
+        written["mcpServers"]["devpit"]["env"]["DEVPIT_LOCALE"].is_null(),
+        "{written}"
+    );
+}
+
+/// Codex hands a server only what its own line says, so the session's
+/// language is baked into the env on that line — each session's line its own.
+#[test]
+fn codex_is_told_the_sessions_language_on_its_own_line() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let flags = mcp_flags(
+        SessionLocale::of(Locale::PtBr),
+        "codex",
+        Path::new("/opt/devpit"),
+        &dir.path().join("m.json"),
+    )
+    .expect("flags");
+    assert!(
+        flags
+            .contains(r#"mcp_servers.devpit.env={DEVPIT_AGENT_ID="codex", DEVPIT_LOCALE="pt-BR"}"#),
+        "{flags}"
+    );
+}
+
+/// A chat's server is handed its session's language in a file of the
+/// language's own, per agent: never the file every Claude session reads.
+#[test]
+fn a_chats_server_file_is_of_its_language_and_carries_it() {
+    let root = tempfile::tempdir().expect("tempdir");
+    let exe = Path::new("/opt/devpit");
+    for (driver, agent) in [("codex", "codex"), ("acp", "opencode")] {
+        let config = chat_mcp_in(
+            SessionLocale::of(Locale::PtBr),
+            root.path(),
+            exe,
+            driver,
+            agent,
+        )
+        .expect("a chat");
+        let name = std::path::Path::new(&config)
+            .file_name()
+            .expect("a file")
+            .to_string_lossy()
+            .into_owned();
+        assert!(name.contains("pt-BR"), "{name}");
+        assert_ne!(name, "mcp.json", "{name}");
+        let written: serde_json::Value =
+            serde_json::from_str(&std::fs::read_to_string(&config).expect("read")).expect("json");
+        assert_eq!(
+            written["mcpServers"]["devpit"]["env"]["DEVPIT_LOCALE"],
+            "pt-BR"
+        );
+    }
 }
 
 /// Every server devpit hands out waits past devpit's own longest answer.
 #[test]
 fn the_server_waits_on_a_tool_as_long_as_devpit_may_take() {
-    let timeout = server("/opt/devpit", "codex")["timeout"]
+    let timeout = server(en(), "/opt/devpit", "codex")["timeout"]
         .as_u64()
         .expect("ms");
     assert_eq!(u128::from(timeout), tool_timeout().as_millis());

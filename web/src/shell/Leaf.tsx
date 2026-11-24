@@ -3,6 +3,7 @@ import { Terminal } from '@xterm/xterm'
 import '@xterm/xterm/css/xterm.css'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
+import { t } from '../i18n'
 import { attachPane, retryIn, type Pane } from './attach'
 import { UNAVAILABLE } from './paneSocket'
 import { writeBatcher, type Batcher } from './writeBatcher'
@@ -362,7 +363,7 @@ export function Leaf({
             if (wait === null) return void (failed && setError(failed))
             disconnect()
             tries += 1
-            if (failed === UNAVAILABLE && wait > 0) setError(`${failed}; trying again`)
+            if (failed === UNAVAILABLE && wait > 0) setError(t('workspace.leaf.trying'))
             again = setTimeout(() => visible && connect(), wait)
           },
         },
@@ -388,7 +389,7 @@ export function Leaf({
         /* Every step above talks to the backend, and a rejection here used to
            vanish: the pane mounted, drew a cursor, and never attached. */
         (thrown: unknown) => {
-          if (!dropped && mine === attempt) setError(reason(thrown, 'the terminal could not be opened'))
+          if (!dropped && mine === attempt) setError(reason(thrown, t('workspace.leaf.cannotOpen')))
         },
       )
     }

@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 
 import type { LayoutNode } from '../gen/bindings'
+import { t } from '../i18n'
 import { draggedTo, sides } from './splits'
 
 /*
@@ -103,7 +104,7 @@ function Boundary({
         className="split__bar"
         role="separator"
         aria-orientation={down ? 'horizontal' : 'vertical'}
-        aria-label="Resize"
+        aria-label={t('workspace.split.resize')}
         data-dragging={String(dragging !== null)}
         onPointerDown={start}
       />

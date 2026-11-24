@@ -1,4 +1,10 @@
 use super::{ended_since, lines, Gathered};
+use crate::session_locale::SessionLocale;
+use devpit_core::locale::Locale;
+
+fn en() -> SessionLocale {
+    SessionLocale::of(Locale::En)
+}
 
 #[test]
 fn the_comeback_briefing_says_the_sessions_the_merged_prs_and_the_decisions_waiting() {
@@ -17,7 +23,7 @@ fn the_comeback_briefing_says_the_sessions_the_merged_prs_and_the_decisions_wait
         drafts: 1,
         plans: 0,
     };
-    let said = lines(&gathered);
+    let said = lines(en(), &gathered);
     assert!(said.len() <= 5, "{said:?}");
     assert_eq!(
         said,
@@ -32,7 +38,7 @@ fn the_comeback_briefing_says_the_sessions_the_merged_prs_and_the_decisions_wait
 #[test]
 fn a_quiet_absence_is_said_as_quiet() {
     assert_eq!(
-        lines(&Gathered::default()),
+        lines(en(), &Gathered::default()),
         [
             "Sessions: none ran.",
             "Merged: no pull request.",
@@ -50,4 +56,33 @@ fn only_a_session_that_ended_during_the_absence_counts_as_ended() {
     let ten_minutes_after = (left + 600) as f64 * 1000.0;
     assert!(!ended_since(three_days_before, left));
     assert!(ended_since(ten_minutes_after, left));
+}
+
+#[test]
+fn the_briefing_speaks_the_sessions_language_with_its_plurals() {
+    let _turn = crate::locale_turn::settled(Locale::En);
+    let gathered = Gathered {
+        running: 1,
+        waiting: 2,
+        merged: vec![("api".to_owned(), 12, "Corrige".to_owned())],
+        memory: 1,
+        plans: 2,
+        ..Gathered::default()
+    };
+    assert_eq!(
+        lines(SessionLocale::of(Locale::PtBr), &gathered),
+        [
+            "Sessões: 1 em andamento, 2 esperando você.",
+            "Mesclados: api #12 Corrige.",
+            "Decisões esperando: 1 proposta de memória, 2 planos para aprovar.",
+        ]
+    );
+    assert_eq!(
+        lines(SessionLocale::of(Locale::PtBr), &Gathered::default()),
+        [
+            "Sessões: nenhuma rodou.",
+            "Mesclados: nenhum pull request.",
+            "Decisões esperando: nenhuma.",
+        ]
+    );
 }

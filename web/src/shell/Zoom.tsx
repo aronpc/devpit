@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 
+import { t } from '../i18n'
 import { ask, commands } from './live'
 import { went } from './problems'
 import { abandoned } from './typing'
@@ -11,7 +12,7 @@ export function Zoomable({ src, name, path = null, className }: { src: string; n
   const [open, setOpen] = useState(false)
   return (
     <>
-      <button className="zoomin" title="Enlarge" aria-label={`Enlarge ${name}`} onClick={() => setOpen(true)}>
+      <button className="zoomin" title={t('workspace.zoom.enlarge')} aria-label={t('workspace.zoom.enlargeName', { name })} onClick={() => setOpen(true)}>
         <img className={className} src={src} alt={name} />
       </button>
       {open && <Zoom src={src} name={name} path={path} onClose={() => setOpen(false)} />}
@@ -33,7 +34,7 @@ function Zoom({ src, name, path, onClose }: { src: string; name: string; path: s
   const open = (): void => void ask(() => (path ? commands.pathOpen(path) : commands.urlOpen(src))).then(went)
 
   return createPortal(
-    <div className="zoom" role="dialog" aria-label={`${name}, enlarged`} onClick={onClose}>
+    <div className="zoom" role="dialog" aria-label={t('workspace.zoom.enlarged', { name })} onClick={onClose}>
       <img className="zoom__img" src={src} alt={name} onClick={(event) => event.stopPropagation()} />
       <div className="zoom__bar" onClick={(event) => event.stopPropagation()}>
         <span className="zoom__name" title={path ?? undefined}>
@@ -41,14 +42,14 @@ function Zoom({ src, name, path, onClose }: { src: string; name: string; path: s
         </span>
         {(path || web) && (
           <button className="btn" onClick={open}>
-            Open
+            {t('workspace.zoom.open')}
           </button>
         )}
         <a className="btn" href={src} download={name}>
-          Save
+          {t('workspace.zoom.save')}
         </a>
         <button className="btn" onClick={onClose}>
-          Close
+          {t('workspace.zoom.close')}
         </button>
       </div>
     </div>,

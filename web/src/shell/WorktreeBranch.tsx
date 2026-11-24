@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 
 import type { WorktreeBranch as Branch } from '../gen/bindings'
+import { t } from '../i18n'
+import { tRich } from '../i18n/rich'
 import { ask, commands } from './live'
 import { committed } from './typing'
 
@@ -9,6 +11,9 @@ import { committed } from './typing'
  * placeholder; the example under the field is the backend's own rendering,
  * and a refusal keeps what was typed, as the folder field above does.
  */
+
+/* The placeholders a pattern takes, shown as written. */
+const token = (name: string): React.JSX.Element => <code>{`{${name}}`}</code>
 
 export function WorktreeBranch(): React.JSX.Element {
   const [branch, setBranch] = useState<Branch | null>(null)
@@ -37,11 +42,14 @@ export function WorktreeBranch(): React.JSX.Element {
   return (
     <section className="wtb">
       <div className="wtb__head">
-        <span className="pref__t">Branch name</span>
+        <span className="pref__t">{t('workspace.worktreeBranch.title')}</span>
         <span className="pref__d">
-          What a new card&rsquo;s branch is called: <code>{'{type}'}</code> is fix for a bug and
-          feat otherwise, <code>{'{number}'}</code> the card&rsquo;s number, <code>{'{slug}'}</code>{' '}
-          its first words and <code>{'{id}'}</code> the end of its id.
+          {tRich('workspace.worktreeBranch.said', {
+            type: token('type'),
+            number: token('number'),
+            slug: token('slug'),
+            id: token('id'),
+          })}
         </span>
       </div>
 
@@ -51,7 +59,7 @@ export function WorktreeBranch(): React.JSX.Element {
           value={draft}
           spellCheck={false}
           placeholder={branch?.default}
-          aria-label="Branch name"
+          aria-label={t('workspace.worktreeBranch.title')}
           onChange={(event) => {
             setDraft(event.target.value)
             setSaved(false)
@@ -62,7 +70,7 @@ export function WorktreeBranch(): React.JSX.Element {
         />
         {branch && branch.typed !== '' && (
           <button className="btn" onClick={() => save('')}>
-            Reset
+            {t('workspace.worktreeBranch.reset')}
           </button>
         )}
       </div>
@@ -72,8 +80,8 @@ export function WorktreeBranch(): React.JSX.Element {
       ) : (
         branch && (
           <p className="wtb__ex">
-            &ldquo;Fix the login redirect&rdquo;, card 42, gets <code>{branch.example}</code>
-            {saved && <span className="wtb__ok">Saved</span>}
+            {tRich('workspace.worktreeBranch.example', { branch: <code>{branch.example}</code> })}
+            {saved && <span className="wtb__ok">{t('workspace.worktreeBranch.saved')}</span>}
           </p>
         )
       )}

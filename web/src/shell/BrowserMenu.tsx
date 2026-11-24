@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 
 import type { Kept, Store, Taken } from '../gen/bindings'
-import { type Family, grouped, hostOf, type Viewport, VIEWPORTS } from './browsing'
+import { type Family, grouped, hostOf, type Viewport, viewportLabel, VIEWPORTS } from './browsing'
 import { ask, commands } from './live'
+import { t } from '../i18n'
 
 /*
  * Everything a browser pane can be told to do, in one panel.
@@ -195,9 +196,9 @@ export function BrowserMenu({
       if (answer.error !== null) return setRefused(answer.error)
       const taken = answer.data as Taken
       onSaid(
-        `Brought ${taken.count} ${taken.count === 1 ? 'cookie' : 'cookies'} from ${from}${
-          domains.length ? ` for ${domains.join(', ')}` : ''
-        }. Reload the page to use them.`,
+        domains.length
+          ? t('workspace.browserMenu.broughtFor', { count: taken.count, from, domains: domains.join(', ') })
+          : t('workspace.browserMenu.brought', { count: taken.count, from }),
       )
       onDone()
     })
@@ -219,7 +220,7 @@ export function BrowserMenu({
       if (answer.error !== null) return setRefused(answer.error)
       setHolding(null)
       onDone()
-      onSaid(`“${session}” was signed out. It is holding nothing now.`)
+      onSaid(t('workspace.browserMenu.signedOut', { session }))
       onSession(session)
     })
   }
@@ -228,7 +229,7 @@ export function BrowserMenu({
   const named = Array.from(new Set([...sessions, session]))
 
   return (
-    <div className="bmenu__panel" role="menu" aria-label="Browser menu">
+    <div className="bmenu__panel" role="menu" aria-label={t('workspace.browserMenu.panel')}>
       {named.map((one) => (
         <Row
           key={one}
@@ -244,7 +245,7 @@ export function BrowserMenu({
       <div className="bmenu__rule" />
 
       {naming === null ? (
-        <Row label="New session…" onPick={() => setNaming('')} />
+        <Row label={t('workspace.browserMenu.newSession')} onPick={() => setNaming('')} />
       ) : (
         <form
           className="bmenu__new"
@@ -255,15 +256,15 @@ export function BrowserMenu({
         >
           <input
             className="bmenu__in"
-            aria-label="Name the session"
-            placeholder="work"
+            aria-label={t('workspace.browserMenu.nameSession')}
+            placeholder={t('workspace.browserMenu.nameExample')}
             spellCheck={false}
             autoFocus
             value={naming}
             onChange={(event) => setNaming(event.target.value)}
           />
           <button className="bmenu__ok" type="submit" disabled={!naming.trim()}>
-            Make
+            {t('workspace.browserMenu.make')}
           </button>
         </form>
       )}
@@ -271,15 +272,15 @@ export function BrowserMenu({
       <div className="bmenu__rule" />
 
       <Flyout
-        label="Bring a signed-in session"
-        what={only.trim() ? `Cookies for ${only.trim()}` : 'Every cookie in the profile'}
+        label={t('workspace.browserMenu.bring')}
+        what={only.trim() ? t('workspace.browserMenu.cookiesFor', { site: only.trim() }) : t('workspace.browserMenu.everyCookie')}
       >
         <label className="bmenu__only">
-          <span className="bmenu__k">Only</span>
+          <span className="bmenu__k">{t('workspace.browserMenu.only')}</span>
           <input
             className="bmenu__in"
-            aria-label="Limit the import to one site"
-            placeholder="every site"
+            aria-label={t('workspace.browserMenu.limitImport')}
+            placeholder={t('workspace.browserMenu.everySite')}
             spellCheck={false}
             value={only}
             onChange={(event) => setOnly(event.target.value)}
@@ -287,13 +288,13 @@ export function BrowserMenu({
         </label>
         <div className="bmenu__rule" />
 
-        {families === null && <p className="bmenu__note">Looking…</p>}
+        {families === null && <p className="bmenu__note">{t('workspace.browserMenu.looking')}</p>}
         {families?.length === 0 && (
-          <p className="bmenu__note">devpit found no browser profiles on this machine.</p>
+          <p className="bmenu__note">{t('workspace.browserMenu.noProfiles')}</p>
         )}
         {families?.map((one) =>
           one.profiles.length > 1 ? (
-            <Flyout key={one.family} label={`From ${one.family}`}>
+            <Flyout key={one.family} label={t('workspace.browserMenu.from', { family: one.family })}>
               {one.profiles.map((profile) => (
                 <Row
                   key={profile.path}
@@ -306,7 +307,7 @@ export function BrowserMenu({
           ) : (
             <Row
               key={one.family}
-              label={`From ${one.family}`}
+              label={t('workspace.browserMenu.from', { family: one.family })}
               what={one.profiles[0]?.warning || undefined}
               onPick={() => bring(one.profiles[0]?.path ?? '', one.family)}
             />
@@ -319,16 +320,15 @@ export function BrowserMenu({
             over did not thereby mean their bank, which is in the same file.
             The field above is how they say so. */}
         <p className="bmenu__note">
-          A profile is read whole and only what is named above is kept. Nothing is imported until
-          a profile is picked.
+          {t('workspace.browserMenu.profileNote')}
         </p>
       </Flyout>
 
       <div className="bmenu__rule" />
 
-      <Flyout label="Page width" what={viewport?.label ?? 'The whole pane'}>
+      <Flyout label={t('workspace.browserMenu.pageWidth')} what={viewport ? viewportLabel(viewport) : t('workspace.browserMenu.wholePane')}>
         <Row
-          label="The whole pane"
+          label={t('workspace.browserMenu.wholePane')}
           chosen={viewport === null}
           onPick={() => {
             onViewport(null)
@@ -339,7 +339,7 @@ export function BrowserMenu({
         {VIEWPORTS.map((one) => (
           <Row
             key={one.id}
-            label={one.label}
+            label={viewportLabel(one)}
             what={`${one.width} × ${one.height}`}
             chosen={viewport?.id === one.id}
             onPick={() => {
@@ -353,19 +353,18 @@ export function BrowserMenu({
             and reports touch, and both need an engine hook this webview does
             not have. */}
         <p className="bmenu__note">
-          A width, not a device: the page is held narrower. Its user agent and touch support do
-          not change.
+          {t('workspace.browserMenu.widthNote')}
         </p>
       </Flyout>
 
       <div className="bmenu__rule" />
 
       <Row
-        label="Let an agent drive this page"
+        label={t('workspace.browserMenu.drive')}
         what={
           granted
-            ? 'On. What it does is said in the pane as it happens.'
-            : 'Off. An agent asking about this page is refused, and hears why.'
+            ? t('workspace.browserMenu.driveOn')
+            : t('workspace.browserMenu.driveOff')
         }
         chosen={granted}
         onPick={() => {
@@ -377,11 +376,11 @@ export function BrowserMenu({
       <div className="bmenu__rule" />
 
       <Row
-        label={`Sign out of “${session}”`}
+        label={t('workspace.browserMenu.signOut', { session })}
         what={
           holding?.used === true
-            ? `Removes ${kb} KB — its cookies, storage and logins. The other sessions are untouched.`
-            : 'This session is holding nothing yet.'
+            ? t('workspace.browserMenu.signOutUsed', { kb })
+            : t('workspace.browserMenu.signOutEmpty')
         }
         tone="grave"
         disabled={holding?.used !== true}

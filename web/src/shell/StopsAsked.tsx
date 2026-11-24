@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react'
 import type { LiveSession, StopAsked } from '../gen/bindings'
 import { ask, commands } from './live'
 import { onCarried } from './window'
+import { t } from '../i18n'
 
 /*
  * The stops the orchestrator asked for that the person's own words did not
@@ -42,7 +43,7 @@ export function StopsAsked({
     setStopping(true)
     void ask(() => commands.orchestratorStopsConfirm(profileId, shown)).then((done) => {
       setStopping(false)
-      const changed = (done.data?.changed ?? []).map((one) => `Not stopped, it would lose more now: ${one}`)
+      const changed = (done.data?.changed ?? []).map((one) => t('workspace.stopsAsked.changed', { name: one }))
       const said = [done.error, ...(done.data?.failed ?? []), ...changed].filter(Boolean)
       setSaid(said.length > 0 ? said.join(' · ') : null)
       read()
@@ -57,18 +58,18 @@ export function StopsAsked({
 
   const many = shown.length > 1
   return (
-    <section className="wprompt" aria-label="Asked to stop">
+    <section className="wprompt" aria-label={t('workspace.stopsAsked.label')}>
       {shown.length > 0 && (
         <>
-          <p className="wprompt__t">{many ? `Stop these ${shown.length} sessions?` : 'Stop this session?'} Work in flight is lost.</p>
+          <p className="wprompt__t">{many ? t('workspace.stopsAsked.stopMany', { count: shown.length }) : t('workspace.stopsAsked.stopOne')} {t('workspace.stopsAsked.lost')}</p>
           {shown.map((one) => (
             <div className="wprompt__i" key={`${one.name}:${one.pid ?? ''}`}>
               <p className="wprompt__who">
                 <span className="osess__name">{one.name}</span>
-                <span className="osess__where">{sessions.find((live) => live.name === one.name)?.projectName ?? 'outside devpit'}</span>
+                <span className="osess__where">{sessions.find((live) => live.name === one.name)?.projectName ?? t('workspace.stopsAsked.outside')}</span>
                 {many && (
-                  <button className="wprompt__o wprompt__esc" disabled={stopping} aria-label={`Keep ${one.name} running`} onClick={() => keep([one.name])}>
-                    Keep
+                  <button className="wprompt__o wprompt__esc" disabled={stopping} aria-label={t('workspace.stopsAsked.keepLabel', { name: one.name })} onClick={() => keep([one.name])}>
+                    {t('workspace.stopsAsked.keep')}
                   </button>
                 )}
               </p>
@@ -77,10 +78,10 @@ export function StopsAsked({
           ))}
           <div className="wprompt__opts">
             <button className="wprompt__o" disabled={stopping} onClick={stopAll}>
-              {many ? `Stop all ${shown.length}` : 'Stop it'}
+              {many ? t('workspace.stopsAsked.stopAll', { count: shown.length }) : t('workspace.stopsAsked.stopIt')}
             </button>
             <button className="wprompt__o wprompt__esc" disabled={stopping} onClick={() => keep(shown.map((one) => one.name))}>
-              Keep running
+              {t('workspace.stopsAsked.keepRunning')}
             </button>
           </div>
         </>
@@ -88,7 +89,7 @@ export function StopsAsked({
       {said && (
         <p className="osess__said">
           {said}{' '}
-          <button className="wprompt__o wprompt__esc" aria-label="Dismiss" onClick={() => setSaid(null)}>
+          <button className="wprompt__o wprompt__esc" aria-label={t('workspace.stopsAsked.dismiss')} onClick={() => setSaid(null)}>
             ×
           </button>
         </p>

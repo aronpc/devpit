@@ -1,13 +1,15 @@
+import { t } from '../i18n'
 import { useCopied } from './useCopied'
 
 /* Copies `text`, and says so for a moment where it was clicked. */
-export function CopyButton({ text, className, label = 'Copy' }: { text: string; className: string; label?: string }): React.JSX.Element {
+export function CopyButton({ text, className, label }: { text: string; className: string; label?: string }): React.JSX.Element {
   const [copied, copy] = useCopied()
+  const said = label ?? t('common.copy')
   return (
     <button
       className={className}
-      aria-label={copied ? 'Copied' : label}
-      title={copied ? 'Copied' : label}
+      aria-label={copied ? t('common.copied') : said}
+      title={copied ? t('common.copied') : said}
       onClick={() => copy(text)}
     >
       {copied ? (

@@ -1,4 +1,6 @@
 import type { SpendDay, TokenCounts } from '../gen/bindings'
+import { t } from '../i18n'
+import { formatNumber } from '../i18n/format'
 
 /*
  * How the usage screen says its numbers.
@@ -10,8 +12,9 @@ export const n = (value: number | null): number => value ?? 0
 /** Dollars to the cent, and a cost too small for a cent said as such. */
 export function dollars(value: number | null): string {
   const usd = n(value)
-  if (usd > 0 && usd < 0.01) return '<$0.01'
-  return `$${usd.toFixed(2)}`
+  const money = (amount: number): string => formatNumber(amount, { style: 'currency', currency: 'USD' })
+  if (usd > 0 && usd < 0.01) return `<${money(0.01)}`
+  return money(usd)
 }
 
 /** Every token of every kind. */
@@ -21,32 +24,33 @@ export const allTokens = (counts: TokenCounts): number =>
 /** A token count a person can read at a glance: 950, 12.4K, 3.1M. */
 export function tokens(value: number | null): string {
   const count = n(value)
-  if (count >= 1_000_000_000) return `${(count / 1_000_000_000).toFixed(1)}B`
-  if (count >= 1_000_000) return `${(count / 1_000_000).toFixed(1)}M`
-  if (count >= 1_000) return `${(count / 1_000).toFixed(1)}K`
-  return String(Math.round(count))
+  const tenth = (amount: number): string => formatNumber(amount, { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+  if (count >= 1_000_000_000) return `${tenth(count / 1_000_000_000)}B`
+  if (count >= 1_000_000) return `${tenth(count / 1_000_000)}M`
+  if (count >= 1_000) return `${tenth(count / 1_000)}K`
+  return formatNumber(Math.round(count))
 }
 
 /** When a quota window resets, from now: "resets in 2h 14m". */
 export function resetIn(resetsAt: number | null, nowMs: number): string | null {
   if (resetsAt === null) return null
   const minutes = Math.max(0, Math.round((resetsAt * 1000 - nowMs) / 60_000))
-  if (minutes === 0) return 'resets now'
+  if (minutes === 0) return t('usage.resetsNow')
   const days = Math.floor(minutes / 1_440)
   const hours = Math.floor((minutes % 1_440) / 60)
   const rest = minutes % 60
-  if (days > 0) return `resets in ${days}d ${hours}h`
-  if (hours > 0) return `resets in ${hours}h ${rest}m`
-  return `resets in ${rest}m`
+  if (days > 0) return t('usage.resetsDays', { days, hours })
+  if (hours > 0) return t('usage.resetsHours', { hours, minutes: rest })
+  return t('usage.resetsMinutes', { minutes: rest })
 }
 
 /** How long ago something happened, from now. */
 export function ago(atSeconds: number | null, nowMs: number): string {
   const minutes = Math.max(0, Math.round((nowMs - n(atSeconds) * 1000) / 60_000))
-  if (minutes < 1) return 'just now'
-  if (minutes < 60) return `${minutes}m ago`
-  if (minutes < 1_440) return `${Math.floor(minutes / 60)}h ago`
-  return `${Math.floor(minutes / 1_440)}d ago`
+  if (minutes < 1) return t('usage.justNow')
+  if (minutes < 60) return t('usage.agoMinutes', { count: minutes })
+  if (minutes < 1_440) return t('usage.agoHours', { count: Math.floor(minutes / 60) })
+  return t('usage.agoDays', { count: Math.floor(minutes / 1_440) })
 }
 
 export type Metric = 'cost' | 'tokens'

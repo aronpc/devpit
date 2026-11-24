@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import type { WouldRun } from '../gen/bindings'
 import { ask, commands } from './live'
 import { wouldRunWords } from './wouldRun'
+import { t } from '../i18n'
 
 /*
  * What a check would do, before anybody runs it.
@@ -45,35 +46,35 @@ export function WouldRunCard({
       </p>
     )
   }
-  if (!would) return <p className="chk__no">Reading…</p>
+  if (!would) return <p className="chk__no">{t('workspace.wouldRunCard.reading')}</p>
 
   const said = wouldRunWords(would)
   return (
     <dl className="chk__ran">
-      <dt>Would run</dt>
+      <dt>{t('workspace.wouldRunCard.wouldRun')}</dt>
       <dd>{would.command ? <code>{would.command}</code> : said.noCommand}</dd>
-      <dt>In</dt>
+      <dt>{t('workspace.wouldRunCard.in')}</dt>
       <dd>{would.inDirectory ? <code>{would.inDirectory}</code> : said.noDirectory}</dd>
-      <dt>Stops after</dt>
+      <dt>{t('workspace.wouldRunCard.stopsAfter')}</dt>
       <dd>{said.timeout}</dd>
-      <dt>With</dt>
+      <dt>{t('workspace.wouldRunCard.with')}</dt>
       {/* Names only. What is in them is not something a preview shows. */}
       <dd>{would.declaredEnv.join(', ')}</dd>
       {said.identity && (
         <>
-          <dt>Profile · model</dt>
+          <dt>{t('workspace.wouldRunCard.identity')}</dt>
           <dd>{said.identity}</dd>
         </>
       )}
       {said.check && (
         <>
-          <dt>Check</dt>
+          <dt>{t('workspace.wouldRunCard.check')}</dt>
           <dd>{said.check}</dd>
         </>
       )}
       {would.irreversible && (
         <>
-          <dt>Careful</dt>
+          <dt>{t('workspace.wouldRunCard.careful')}</dt>
           <dd>{said.irreversible}</dd>
         </>
       )}

@@ -2,7 +2,7 @@ use serde_json::json;
 
 use super::{
     asks_to_stop, authorises, by_devpit, forwarded, from_channel, last_heard, last_said,
-    on_proposals, said_in, From, Heard, Verdict, FROM_THE_REMOTE,
+    on_proposals, said_in, without_notices, From, Heard, Verdict, FROM_THE_REMOTE,
 };
 
 /// A log, one entry per line, in the shapes Claude Code 2.1.294 writes.
@@ -636,4 +636,21 @@ fn a_message_queued_into_a_running_turn_is_a_barrier_unless_the_persons() {
         last_said(&log(&persons)).map(|said| said.id),
         Some("u1".to_owned())
     );
+}
+
+/// devpit's notice above the person's words, in every language devpit
+/// speaks, is cut before they are read: a translated marker would leave it
+/// in front of the yes, and the yes would stop counting.
+#[test]
+fn devpits_notice_in_any_language_is_cut_before_the_persons_words() {
+    use devpit_core::locale::Locale;
+    for locale in [Locale::En, Locale::PtBr] {
+        let notice = devpit_core::i18n::t_for(locale, "sinceNotice.line", &[("said", "api ended")]);
+        let text = format!("{notice}\n\nsim, pode enviar");
+        assert_eq!(
+            without_notices(&text).map(|(said, _)| said),
+            Some("sim, pode enviar"),
+            "{locale:?}: {notice}"
+        );
+    }
 }

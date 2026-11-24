@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 
 import type { IslandSession, IslandStep, Touch } from '../gen/bindings'
+import { t } from '../i18n'
 import { ofPath } from '../shell/languages'
 import { ask, commands } from '../shell/live'
 import { Painted } from '../shell/Painted'
@@ -60,11 +61,11 @@ export function Preview({ session, step }: { session: IslandSession; step: Islan
             <span className="isl-peek__path">{`\u200e${fromRoot(path, session.root)}`}</span>
           </>
         ) : (
-          <span className="isl-peek__tab">{step ? verbOf(step.tool) : 'Nothing yet'}</span>
+          <span className="isl-peek__tab">{step ? verbOf(step.tool) : t('island.preview.nothingYet')}</span>
         )}
       </div>
       <div className="isl-peek__code">
-        {!touch && <div className="isl-peek__none">{step ? 'Nothing to show for this step' : 'Steps show here as they run'}</div>}
+        {!touch && <div className="isl-peek__none">{step ? t('island.preview.nothingForStep') : t('island.preview.stepsShowHere')}</div>}
         {touch?.kind === 'edit' &&
           changed(touch.before, touch.after).map((one, at) => (
             <div className="isl-peek__ln" data-mark={one.mark} key={at}>
@@ -118,7 +119,7 @@ function ReadLines({
     void ask(() => commands.islandPeek(session.sessionId, touch.path)).then((answer) => {
       if (!current) return
       if (answer.data?.text != null) setText(answer.data.text)
-      else setRefused(answer.data?.notShown ?? answer.error ?? 'Not shown')
+      else setRefused(answer.data?.notShown ?? answer.error ?? t('island.preview.notShown'))
     })
     return () => {
       current = false
@@ -126,7 +127,7 @@ function ReadLines({
   }, [session.sessionId, touch.path])
 
   if (refused) return <div className="isl-peek__none">{refused}</div>
-  if (text === null) return <div className="isl-peek__none">Reading…</div>
+  if (text === null) return <div className="isl-peek__none">{t('island.preview.reading')}</div>
   return (
     <>
       {linesFrom(text, touch.offset).map((one, at) => (

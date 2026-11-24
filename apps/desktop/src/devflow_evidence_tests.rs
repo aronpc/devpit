@@ -56,7 +56,8 @@ fn running_a_cards_checks_keeps_the_run_and_attaches_it_to_the_card() {
     let root = dir.path().canonicalize().expect("root");
     let (store, project, card) = devflow_on(&root);
     let said = crate::devflow::respond_from(
-        None,
+ devpit_core::locale::Locale::En,
+ None,
         "devflow_evidence",
         &project,
         &root, None,
@@ -130,6 +131,7 @@ fn a_card_of_another_project_is_not_this_ones_to_run() {
         .create_card(&elsewhere, &lane, "Theirs", "")
         .expect("card");
     let refused = crate::devflow::respond_from(
+        devpit_core::locale::Locale::En,
         None,
         "devflow_evidence",
         &project,

@@ -4,6 +4,7 @@ import { canPaint, counter, occurrences, paint, rangesIn, stepped, unpaint, type
 import { ask, commands } from './live'
 import { discloseMessage } from './useDisclosed'
 import { abandoned, committed } from './typing'
+import { t } from '../i18n'
 
 /*
  * Finding a word in the conversation, from a bar over it.
@@ -130,8 +131,8 @@ export function ChatFind({
       <input
         className="cfind__in"
         ref={field}
-        aria-label="Find in the conversation"
-        placeholder="Find in the conversation"
+        aria-label={t('sessions.find.conversation')}
+        placeholder={t('sessions.find.conversation')}
         spellCheck={false}
         value={what}
         onChange={(event) => setWhat(event.target.value)}
@@ -148,13 +149,13 @@ export function ChatFind({
         }}
       />
       {found && <span className="cfind__n" aria-live="polite">{counter(at, found.length)}</span>}
-      <button className="browser__act" type="button" aria-label="Previous match" title="Previous match" onClick={() => step(true)}>
+      <button className="browser__act" type="button" aria-label={t('sessions.find.prev')} title={t('sessions.find.prev')} onClick={() => step(true)}>
         ‹
       </button>
-      <button className="browser__act" type="submit" aria-label="Next match" title="Next match">
+      <button className="browser__act" type="submit" aria-label={t('sessions.find.next')} title={t('sessions.find.next')}>
         ›
       </button>
-      <button className="browser__act" type="button" aria-label="Close find" title="Close find" onClick={onDone}>
+      <button className="browser__act" type="button" aria-label={t('sessions.find.close')} title={t('sessions.find.close')} onClick={onDone}>
         ✕
       </button>
     </form>

@@ -1,3 +1,6 @@
+import { t } from '../i18n'
+import { formatDate } from '../i18n/format'
+
 /*
  * A card's deadline, and how near it is.
  *
@@ -32,17 +35,17 @@ export function nearness(due: number | null, now = Date.now() / 1000): Nearness 
   return 'later'
 }
 
-/** The date, in the reader's locale — the year only when it is not this one,
+/** The date, in the locale the person chose — the year only when it is not this one,
  *  and the time when one was chosen. */
 export function dueLabel(due: number | null, now = Date.now() / 1000, timed = false): string {
   if (!due) return ''
   const at = new Date(due * 1000)
   const near = nearness(due, now)
-  const time = timed ? at.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }) : ''
-  if (near === 'today') return time ? `today ${time}` : 'today'
+  const time = timed ? formatDate(at, { hour: '2-digit', minute: '2-digit' }) : ''
+  if (near === 'today') return time ? t('workspace.due.todayAt', { time }) : t('workspace.due.today')
 
   const thisYear = at.getFullYear() === new Date(now * 1000).getFullYear()
-  const day = at.toLocaleDateString(undefined, {
+  const day = formatDate(at, {
     month: 'short',
     day: 'numeric',
     ...(thisYear ? {} : { year: 'numeric' }),

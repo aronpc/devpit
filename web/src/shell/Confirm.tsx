@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 
+import { t } from '../i18n'
 import { abandoned } from './typing'
 
 /* One dialog for anything that cannot be undone. The body has to name what
@@ -37,10 +38,10 @@ export function Confirm({
         <p className="ask__d">{body}</p>
         <div className="ask__row">
           <button className="btn" onClick={onClose}>
-            Cancel
+            {t('workspace.confirm.cancel')}
           </button>
           <button className="btn btn--danger" onClick={onConfirm}>
-            {danger ?? 'Delete'}
+            {danger ?? t('workspace.confirm.delete')}
           </button>
         </div>
       </div>

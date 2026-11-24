@@ -144,7 +144,7 @@ describe('holding the page at a width', () => {
   })
 
   it('centres the page and leaves the top alone', () => {
-    const at = inset(hole, { id: 'm', label: 'M', width: 400, height: 800 })
+    const at = inset(hole, { id: 'm', width: 400, height: 800 })
     expect(at.width).toBe(400)
     expect(at.x).toBe(350)
     expect(at.y).toBe(40)

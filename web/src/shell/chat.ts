@@ -8,6 +8,8 @@ import type {
   Profile,
   TurnEnd,
 } from '../gen/bindings'
+import { formatDate } from '../i18n/format'
+import { t } from '../i18n'
 import { inBrowser } from '../transport'
 import { millis, outcome, took } from './turnFold'
 import { inTauri } from './window'
@@ -169,7 +171,7 @@ export function money(usd: number): string | null {
 
 /* What a conversation spent, for an agent that may not say: one that reports
    no cost reads as unavailable, never as nothing spent. */
-export const spent = (usd: number, metered: boolean): string | null => money(usd) ?? (metered ? null : 'n/a')
+export const spent = (usd: number, metered: boolean): string | null => money(usd) ?? (metered ? null : t('workspace.meter.na'))
 
 /* What the agent may do without asking.
 
@@ -184,27 +186,23 @@ export interface Mode {
   readonly what: string
 }
 
-export const MODES: readonly Mode[] = [
-  { id: 'manual', label: 'Supervised', what: 'Ask before commands and file changes' },
-  { id: 'acceptEdits', label: 'Accept edits', what: 'Edits go through; ask before anything else' },
-  { id: 'bypassPermissions', label: 'Full access', what: 'Commands and edits without asking' },
-  { id: 'plan', label: 'Plan', what: 'Read and propose a plan; nothing changes until you approve it' },
+/* A function, so the words follow the language the person chose. */
+export const modes = (): readonly Mode[] => [
+  { id: 'manual', label: t('sessions.mode.manual.label'), what: t('sessions.mode.manual.what') },
+  { id: 'acceptEdits', label: t('sessions.mode.acceptEdits.label'), what: t('sessions.mode.acceptEdits.what') },
+  { id: 'bypassPermissions', label: t('sessions.mode.bypassPermissions.label'), what: t('sessions.mode.bypassPermissions.what') },
+  { id: 'plan', label: t('sessions.mode.plan.label'), what: t('sessions.mode.plan.what') },
 ]
 
 export const modeName = (id: string): string =>
-  MODES.find((mode) => mode.id === id)?.label ?? id
+  modes().find((mode) => mode.id === id)?.label ?? id
 
 /* How hard the agent is asked to think, as words rather than the CLI's own
    tokens: `xhigh` is an argument, not a label. */
-const EFFORTS: Readonly<Record<string, string>> = {
-  low: 'Low',
-  medium: 'Medium',
-  high: 'High',
-  xhigh: 'Extra high',
-  max: 'Max',
-}
+const EFFORT_LEVELS = ['low', 'medium', 'high', 'xhigh', 'max']
 
-export const effortName = (effort: string): string => EFFORTS[effort] ?? effort
+export const effortName = (effort: string): string =>
+  EFFORT_LEVELS.includes(effort) ? t(`sessions.effort.${effort}`) : effort
 
 /* Which mode stops to ask. The session is told to hold its tools only in that
    one — a turn held in a mode that never asks would wait for a question that
@@ -261,8 +259,8 @@ export function putBackFrom(messages: readonly Message[], turnId: string): numbe
   return new Set(changes.flatMap((part) => part.files.map((file) => file.path))).size
 }
 
-/* A time of day in the person's own format. */
-export const clock = (ms: number): string => new Date(ms).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+/* A time of day in the language the person chose, not the machine's. */
+export const clock = (ms: number): string => formatDate(ms, { hour: '2-digit', minute: '2-digit' })
 
 /* The quiet line under a turn: when it ended, on what, how long, how much. */
 export function metaOf(message: Pick<Message, 'createdAt' | 'ended'>): readonly string[] {
@@ -277,6 +275,6 @@ export function metaOf(message: Pick<Message, 'createdAt' | 'ended'>): readonly 
     ms ? took(ms) : null,
     ended?.tokens ? `${Math.round(ended.tokens / 1000)}k tokens` : null,
     // Tokens counted and no cost: the model is one the price table does not know.
-    ended?.costUsd ? money(ended.costUsd) : ended?.tokens && ended.costUsd == null ? 'cost n/a' : null,
+    ended?.costUsd ? money(ended.costUsd) : ended?.tokens && ended.costUsd == null ? t('sessions.chat.costNa') : null,
   ].filter((one): one is string => Boolean(one))
 }

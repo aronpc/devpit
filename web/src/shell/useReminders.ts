@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import type { Reminder, Reminders } from '../gen/bindings'
+import { t } from '../i18n'
 import { onCameBack } from './cameBack'
 import { ask, commands } from './live'
 import { onCarried } from './window'
@@ -61,8 +62,8 @@ export function laterOptions(now: number): { label: string; until: number }[] {
   tomorrow.setDate(tomorrow.getDate() + 1)
   tomorrow.setHours(9, 0, 0, 0)
   return [
-    { label: '15 min', until: now + 15 * 60 },
-    { label: '1 hour', until: now + 3600 },
-    { label: 'Tomorrow', until: tomorrow.getTime() / 1000 },
+    { label: t('workspace.reminders.min15'), until: now + 15 * 60 },
+    { label: t('workspace.reminders.hour1'), until: now + 3600 },
+    { label: t('workspace.reminders.tomorrow'), until: tomorrow.getTime() / 1000 },
   ]
 }

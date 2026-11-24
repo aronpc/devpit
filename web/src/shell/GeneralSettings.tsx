@@ -1,10 +1,11 @@
+import { t } from '../i18n'
 import { AboutSettings } from './AboutSettings'
 import { ActivityDefault } from './ActivityPick'
 import { ArchiveSettings } from './ArchiveSettings'
 import { CalendarSettings } from './CalendarSettings'
 import { DeskSettings } from './DeskSettings'
 import { DiagnosticsPane } from './DiagnosticsPane'
-import { DisplaySettings } from './DisplaySettings'
+import { DisplaySettings, LanguageSettings } from './DisplaySettings'
 import { ErrorReportsPreview } from './ErrorReportsPreview'
 import { IslandSettings } from './IslandSettings'
 import { MaintenanceSettings } from './MaintenanceSettings'
@@ -40,69 +41,71 @@ export function GeneralPanes({
   return (
     <>
       <section className="prefs__in" hidden={pane !== 'general'}>
-        <h1 className="prefs__h">General</h1>
+        <h1 className="prefs__h">{t('prefs.nav.general')}</h1>
         <div className="pref">
-          <span className="pref__body"><span className="pref__t">Local by default</span><span className="pref__d">Projects, conversations and settings are kept on this computer.</span></span>
+          <span className="pref__body"><span className="pref__t">{t('workspace.general.localTitle')}</span><span className="pref__d">{t('workspace.general.localHint')}</span></span>
         </div>
 
-        <div className="acc__sub">On this desktop</div>
+        <LanguageSettings />
+
+        <div className="acc__sub">{t('workspace.general.desktop')}</div>
         <DeskSettings />
         <DisplaySettings />
         <OpenApps />
 
-        <div className="acc__sub">Updates and privacy</div>
-        <PrefSwitch on={on('automaticUpdates')} onFlip={flip('automaticUpdates')} title="Automatic updates" said="Check in the background and offer to install." />
+        <div className="acc__sub">{t('workspace.general.updatesPrivacy')}</div>
+        <PrefSwitch on={on('automaticUpdates')} onFlip={flip('automaticUpdates')} title={t('workspace.general.autoUpdates')} said={t('workspace.general.autoUpdatesSaid')} />
         <UpdateSettings />
-        <PrefSwitch on={on('errorReports')} onFlip={flip('errorReports')} title="Error reports" said={<>Send devpit&rsquo;s own errors, without paths or your work, anonymously and only while devpit sits idle. Turning it off deletes what was kept.</>}>
+        <PrefSwitch on={on('errorReports')} onFlip={flip('errorReports')} title={t('workspace.general.errorReports')} said={t('workspace.general.errorReportsSaid')}>
           {on('errorReports') && <ErrorReportsPreview />}
         </PrefSwitch>
       </section>
 
       <section className="prefs__in" hidden={pane !== 'notifications'}>
-        <h1 className="prefs__h">Notifications</h1>
+        <h1 className="prefs__h">{t('prefs.nav.notifications')}</h1>
         <IslandSettings on={on('island')} onFlip={flip('island')} />
         <PauseSettings />
-        <PrefSwitch on={on('reminders')} onFlip={flip('reminders')} title="Reminders" said="A card's date goes off at its time, as a banner here and a notification." more="A date with no time goes off at nine that morning. An agent can set one when you ask it to remind you." />
-        <PrefSwitch on={on('focusMode')} onFlip={flip('focusMode')} title="Focus mode" said="Unfinished. A door for one project: what arrives from another waits until you come out." />
+        <PrefSwitch on={on('reminders')} onFlip={flip('reminders')} title={t('workspace.general.reminders')} said={t('workspace.general.remindersSaid')} more={t('workspace.general.remindersMore')} />
+        <PrefSwitch on={on('focusMode')} onFlip={flip('focusMode')} title={t('workspace.general.focus')} said={t('workspace.general.focusSaid')} />
       </section>
 
       <section className="prefs__in" hidden={pane !== 'sessions'}>
-        <h1 className="prefs__h">Sessions</h1>
+        <h1 className="prefs__h">{t('prefs.nav.sessions')}</h1>
         <SessionRelaySettings />
         <ActivityDefault />
         <ChatKeySettings />
         <ScopedSetting field="permissionMode" />
-        <PrefSwitch on={on('confirmStop')} onFlip={flip('confirmStop')} title="Ask before stopping a terminal" said={<>A terminal still running something asks before it is closed. Its &ldquo;Don&rsquo;t ask again&rdquo; turns this off; this turns it back on.</>} />
+        <PrefSwitch on={on('confirmStop')} onFlip={flip('confirmStop')} title={t('workspace.general.confirmStop')} said={t('workspace.general.confirmStopSaid')} />
       </section>
 
       <section className="prefs__in" hidden={pane !== 'voice'}>
-        <h1 className="prefs__h">Voice</h1>
+        <h1 className="prefs__h">{t('prefs.nav.voice')}</h1>
         <VoiceSettings />
       </section>
 
       <section className="prefs__in" hidden={pane !== 'remote'}>
-        <h1 className="prefs__h">Remote</h1>
+        <h1 className="prefs__h">{t('prefs.nav.remote')}</h1>
         <RemoteSettings />
         <CalendarSettings />
       </section>
 
       <section className="prefs__in" hidden={pane !== 'maintenance'}>
-        <h1 className="prefs__h">Maintenance</h1>
+        <h1 className="prefs__h">{t('prefs.nav.maintenance')}</h1>
         <MaintenanceSettings />
       </section>
 
       <section className="prefs__in" hidden={pane !== 'diagnostics'}>
-        <h1 className="prefs__h">Diagnostics</h1>
+        <h1 className="prefs__h">{t('prefs.nav.diagnostics')}</h1>
         {pane === 'diagnostics' && <DiagnosticsPane />}
       </section>
 
       <section className="prefs__in" hidden={pane !== 'about'}>
-        <h1 className="prefs__h">About</h1>
+        <h1 className="prefs__h">{t('prefs.nav.about')}</h1>
         <AboutSettings />
       </section>
 
       <section className="prefs__in" hidden={pane !== 'archive'}>
-        <h1 className="prefs__h">Archive</h1>
+        <h1 className="prefs__h">{t('prefs.nav.archive')}</h1>
         {pane === 'archive' && <ArchiveSettings />}
       </section>
     </>

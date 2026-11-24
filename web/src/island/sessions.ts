@@ -1,3 +1,4 @@
+import { t } from '../i18n'
 import type { IslandChange, IslandQuestion, IslandSession, IslandStep, Question, Touch } from '../gen/bindings'
 
 /*
@@ -91,11 +92,12 @@ export function moodOfAll(sessions: readonly IslandSession[], questions: readonl
 export const holds = (sessions: readonly IslandSession[], questions: readonly Ask[]): boolean =>
   questions.length > 0 || sessions.some((one) => one.state === 'waiting')
 
-/** A tool's verb, as a step reads: `Edit invoice.ts`, `Run npm test`. */
+/** A tool's verb (its catalog key under `island.verb.`), as a step reads: `Edit invoice.ts`, `Run npm test`. */
 export function verbOf(tool: string): string {
   const mcp = /^mcp__[^_]+(?:_[^_]+)*__(.+)$/.exec(tool)
   if (mcp) return mcp[1].replace(/[_-]+/g, ' ')
-  return VERBS[tool] ?? tool
+  const verb = VERBS[tool]
+  return verb ? t(`island.verb.${verb}`) : tool
 }
 
 const VERBS: Readonly<Record<string, string>> = {
@@ -108,20 +110,20 @@ const VERBS: Readonly<Record<string, string>> = {
   Grep: 'Search',
   Glob: 'Find',
   WebFetch: 'Fetch',
-  WebSearch: 'Search the web',
+  WebSearch: 'SearchWeb',
   Agent: 'Delegate',
   Task: 'Delegate',
   TodoWrite: 'Plan',
-  Skill: 'Use skill',
+  Skill: 'UseSkill',
   AskUserQuestion: 'Ask',
-  ExitPlanMode: 'Propose a plan',
+  ExitPlanMode: 'ProposePlan',
 }
 
 /** One step, in words. */
 export const stepWords = (step: IslandStep): string => (step.target ? `${verbOf(step.tool)} ${step.target}` : verbOf(step.tool))
 
 /** What a session is called on the island: its card, else its project, else its folder. */
-export const nameOf = (session: IslandSession): string => session.card ?? session.project ?? 'Agent'
+export const nameOf = (session: IslandSession): string => session.card ?? session.project ?? t('island.agent')
 
 /**
  * Every session's name, told apart: two sessions in one project with no card
@@ -145,21 +147,21 @@ export function labelled(sessions: readonly IslandSession[]): ReadonlyMap<string
 export function nowWords(session: IslandSession, now: number): string {
   const mood = moodOf(session, now)
   const last = session.steps.at(-1)
-  if (mood === 'waiting') return 'Waiting on you'
-  if (mood === 'thinking') return 'Thinking'
+  if (mood === 'waiting') return t('island.now.waiting')
+  if (mood === 'thinking') return t('island.now.thinking')
   if (mood === 'working' && last) return stepWords(last)
-  if (session.state === 'failed') return session.said ?? 'Stopped on an error'
-  if (session.state === 'done') return session.said ?? 'Done'
-  return 'Idle'
+  if (session.state === 'failed') return session.said ?? t('island.now.failed')
+  if (session.state === 'done') return session.said ?? t('island.now.done')
+  return t('island.now.idle')
 }
 
 /** The pill's count: who waits, else who works. */
 export function headline(sessions: readonly IslandSession[], questions: readonly Ask[]): string {
   const waiting = sessions.filter((one) => one.state === 'waiting').length + questions.length
-  if (waiting > 0) return waiting === 1 ? '1 waiting' : `${waiting} waiting`
+  if (waiting > 0) return t('island.headline.waiting', { count: waiting })
   const working = sessions.filter((one) => one.state === 'working').length
-  if (working > 0) return working === 1 ? '1 working' : `${working} working`
-  return sessions.length === 0 ? 'Quiet' : 'All done'
+  if (working > 0) return t('island.headline.working', { count: working })
+  return sessions.length === 0 ? t('island.headline.quiet') : t('island.headline.allDone')
 }
 
 /** What a question asks to do, in words: the tool and what it would run on. */

@@ -1,4 +1,19 @@
+use devpit_core::locale::Locale;
+
 use super::{said, Act, Entry, Go, Look, Recent, Waiting, LONGEST, MOST, RECENT};
+
+/// Every label the menu offers, in order.
+fn labels(entries: &[Entry]) -> Vec<&str> {
+    entries
+        .iter()
+        .filter_map(|entry| match entry {
+            Entry::Act { label, .. } | Entry::Go { label, .. } | Entry::Heading(label) => {
+                Some(label.as_str())
+            }
+            _ => None,
+        })
+        .collect()
+}
 
 fn session(n: usize, pane: Option<&str>) -> Waiting {
     Waiting::Session {
@@ -40,6 +55,7 @@ fn gos(entries: &[Entry]) -> Vec<(&str, &Go)> {
 /// opens on devpit itself rather than on an empty heading.
 #[test]
 fn nothing_waiting_is_a_plain_icon_and_no_waiting_section() {
+    let _turn = crate::locale_turn::settled(Locale::En);
     let shown = said(&[], &[], false);
     assert_eq!(shown.look, Look::Plain);
     assert_eq!(shown.title, None);
@@ -61,6 +77,7 @@ fn nothing_waiting_is_a_plain_icon_and_no_waiting_section() {
 /// says how many more devpit holds.
 #[test]
 fn the_menu_lists_the_first_few_waiting_and_counts_them_all() {
+    let _turn = crate::locale_turn::settled(Locale::En);
     let waiting: Vec<Waiting> = (0..MOST + 2).map(|n| session(n, Some("%1"))).collect();
     let shown = said(&waiting, &[], false);
 
@@ -84,6 +101,7 @@ fn the_menu_lists_the_first_few_waiting_and_counts_them_all() {
 /// reminder at its card.
 #[test]
 fn each_waiting_thing_goes_where_it_is_dealt_with() {
+    let _turn = crate::locale_turn::settled(Locale::En);
     let waiting = [
         session(1, Some("%7")),
         session(2, None),
@@ -136,6 +154,7 @@ fn each_waiting_thing_goes_where_it_is_dealt_with() {
 /// counted: the pause quiets devpit, it does not make the work go away.
 #[test]
 fn a_pause_fades_the_icon_and_offers_resume() {
+    let _turn = crate::locale_turn::settled(Locale::En);
     let shown = said(&[session(1, None)], &[], true);
     assert_eq!(shown.look, Look::Paused);
     assert_eq!(shown.title.as_deref(), Some("1"));
@@ -153,6 +172,7 @@ fn a_pause_fades_the_icon_and_offers_resume() {
 /// them in; Settings and Quit always.
 #[test]
 fn projects_and_a_new_terminal_only_with_a_project() {
+    let _turn = crate::locale_turn::settled(Locale::En);
     let none = said(&[], &[], false);
     assert!(!acts(&none.entries).contains(&Act::Terminal));
     assert!(!none
@@ -188,6 +208,7 @@ fn projects_and_a_new_terminal_only_with_a_project() {
 /// Quit is the last line, so it is never the item under a hurried click.
 #[test]
 fn quit_is_last() {
+    let _turn = crate::locale_turn::settled(Locale::En);
     let shown = said(&[session(1, None)], &[project(1)], false);
     assert_eq!(
         shown.entries.last(),
@@ -201,6 +222,7 @@ fn quit_is_last() {
 /// A long title is one short line in the menu.
 #[test]
 fn a_long_title_is_cut_to_one_line() {
+    let _turn = crate::locale_turn::settled(Locale::En);
     let waiting = [Waiting::Due {
         project_id: "p".to_owned(),
         card_id: "c".to_owned(),
@@ -246,4 +268,71 @@ fn a_menu_id_reads_back_as_its_target() {
         assert_eq!(Go::from_id(act.id()), None);
     }
     assert_eq!(Go::from_id("go:{not json"), None);
+}
+
+/// The menu and the tooltip are the person's words: every label comes from
+/// the catalog, in whichever language the process settled on. English says
+/// what it always said; Portuguese says it in Portuguese.
+#[test]
+fn the_menu_and_tooltip_are_said_in_the_persons_language() {
+    let waiting = [session(1, None), session(2, None)];
+    let recent = [project(0)];
+
+    {
+        let _turn = crate::locale_turn::settled(Locale::PtBr);
+        let shown = said(&waiting, &recent, false);
+        assert_eq!(shown.tooltip, "devpit — 2 esperando você");
+        assert_eq!(
+            shown.entries.first(),
+            Some(&Entry::Heading("Esperando você (2)".to_owned()))
+        );
+        let offered = labels(&shown.entries);
+        for label in [
+            "Abrir o devpit",
+            "Novo terminal",
+            "Pausar por uma hora",
+            "Configurações…",
+            "Abrir no navegador",
+            "Sair do devpit",
+        ] {
+            assert!(offered.contains(&label), "{label} missing: {offered:?}");
+        }
+        let paused = said(&[session(1, None)], &[], true);
+        assert_eq!(paused.tooltip, "devpit — pausado");
+        assert!(labels(&paused.entries).contains(&"Retomar"));
+
+        let more: Vec<Waiting> = (0..MOST + 1).map(|n| session(n, None)).collect();
+        assert!(labels(&said(&more, &[], false).entries).contains(&"Mais 1 no devpit"));
+        let draft = [Waiting::Draft {
+            profile: "claude".to_owned(),
+            session: "api-fix".to_owned(),
+        }];
+        assert!(
+            labels(&said(&draft, &[], false).entries).contains(&"Enviar o rascunho para api-fix")
+        );
+        let due = [Waiting::Due {
+            project_id: "p".to_owned(),
+            card_id: "c".to_owned(),
+            title: "Ship the release".to_owned(),
+        }];
+        assert!(labels(&said(&due, &[], false).entries).contains(&"Vencido: Ship the release"));
+    }
+
+    {
+        let _turn = crate::locale_turn::settled(Locale::En);
+        let shown = said(&waiting, &recent, false);
+        assert_eq!(shown.tooltip, "devpit — 2 waiting on you");
+        let offered = labels(&shown.entries);
+        for label in [
+            "Waiting on you (2)",
+            "Open devpit",
+            "New terminal",
+            "Pause for an hour",
+            "Settings…",
+            "Open in browser",
+            "Quit devpit",
+        ] {
+            assert!(offered.contains(&label), "{label} missing: {offered:?}");
+        }
+    }
 }

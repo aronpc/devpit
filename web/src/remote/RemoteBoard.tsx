@@ -1,6 +1,7 @@
 import { useState } from 'react'
 
 import type { Board, RemoteIn } from '../gen/bindings'
+import { t } from '../i18n'
 
 /*
  * The project's board: what waits on you first, then lanes and their cards. A
@@ -27,7 +28,7 @@ export function RemoteBoard({
   const [title, setTitle] = useState('')
   const [starting, setStarting] = useState<string | null>(null)
   const [prompt, setPrompt] = useState('')
-  if (!board || !project) return <p className="rm__said">Reading the board…</p>
+  if (!board || !project) return <p className="rm__said">{t('remote.board.reading')}</p>
 
   const start = (card: string | null, anyway = false): void => {
     if (!prompt.trim()) return
@@ -40,25 +41,25 @@ export function RemoteBoard({
     <>
       {waiting > 0 && (
         <button className="rm__row rm__waitbar" onClick={onWaiting}>
-          {waiting} waiting on you
+          {t('remote.board.waitingOnYou', { count: waiting })}
         </button>
       )}
       {typing && (
         <div className="rm__new">
-          <input value={title} placeholder="New card" aria-label="New card" onChange={(event) => setTitle(event.target.value)} />
+          <input value={title} placeholder={t('remote.board.newCard')} aria-label={t('remote.board.newCard')} onChange={(event) => setTitle(event.target.value)} />
           <button className="rm__btn" disabled={!title.trim()} onClick={() => (send({ t: 'cardCreate', project, title }), setTitle(''))}>
-            Add
+            {t('remote.board.add')}
           </button>
           <button className="rm__btn" onClick={() => setStarting(starting === '' ? null : '')}>
-            New session
+            {t('remote.board.newSession')}
           </button>
         </div>
       )}
       {starting !== null && (
         <div className="rm__new">
-          <textarea value={prompt} rows={3} placeholder={starting ? 'What should the session do on this card?' : 'What should the session do?'} onChange={(event) => setPrompt(event.target.value)} />
+          <textarea value={prompt} rows={3} placeholder={starting ? t('remote.board.promptCard') : t('remote.board.prompt')} onChange={(event) => setPrompt(event.target.value)} />
           <button className="rm__btn" disabled={!prompt.trim()} onClick={() => start(starting || null)}>
-            Start
+            {t('remote.board.start')}
           </button>
         </div>
       )}
@@ -76,7 +77,7 @@ export function RemoteBoard({
                   {typing && (
                     <>
                       <select
-                        aria-label={`Move ${card.title}`}
+                        aria-label={t('remote.board.move', { title: card.title })}
                         value={column.id}
                         onChange={(event) => send({ t: 'cardMove', project, card: card.id, column: event.target.value })}
                       >
@@ -88,8 +89,8 @@ export function RemoteBoard({
                             </option>
                           ))}
                       </select>
-                      <button className="rm__btn" onClick={() => (setStarting(card.id), setPrompt(`Work on this card: ${card.title}`))}>
-                        Start a session
+                      <button className="rm__btn" onClick={() => (setStarting(card.id), setPrompt(t('remote.board.workOn', { title: card.title })))}>
+                        {t('remote.board.startSession')}
                       </button>
                     </>
                   )}

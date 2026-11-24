@@ -1,4 +1,4 @@
-import { MODES } from './chat'
+import { modes } from './chat'
 
 /*
  * The permission mode and effort last picked on each profile, so a new
@@ -50,6 +50,6 @@ export function reopened(conversationId: string, stored: Modes, profileId: strin
 
 /** The first of `stored` and `last` this build offers. */
 export function opening(stored: Modes, last: Modes): Modes {
-  const permission = [stored.permission, last.permission].find((one) => MODES.some((mode) => mode.id === one))
+  const permission = [stored.permission, last.permission].find((one) => modes().some((mode) => mode.id === one))
   return { permission, effort: stored.effort ?? last.effort }
 }

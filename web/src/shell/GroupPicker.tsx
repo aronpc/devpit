@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 
+import { t } from '../i18n'
 import { ChevronDown, Plus } from './GitIcons'
 import { abandoned, committed } from './typing'
 
@@ -45,13 +46,13 @@ export function GroupPicker({
   return (
     <div className="gpick" ref={box}>
       <button className="gpick__b" aria-haspopup="listbox" aria-expanded={open} onClick={() => setOpen((was) => !was)}>
-        <span className={value ? 'gpick__v' : 'gpick__v gpick__v--none'}>{value || 'No group'}</span>
+        <span className={value ? 'gpick__v' : 'gpick__v gpick__v--none'}>{value || t('workspace.groupPicker.none')}</span>
         <ChevronDown />
       </button>
       {open && (
         <div className="gpick__list" role="listbox">
           <button className="gpick__o" role="option" aria-selected={!value} onClick={() => pick('')}>
-            No group
+            {t('workspace.groupPicker.none')}
           </button>
           {groups.map((group) => (
             <button key={group} className="gpick__o" role="option" aria-selected={group === value} onClick={() => pick(group)}>
@@ -62,13 +63,13 @@ export function GroupPicker({
           {typing === null ? (
             <button className="gpick__o gpick__o--new" onClick={() => setTyping('')}>
               <Plus size={12} />
-              New group…
+              {t('workspace.groupPicker.new')}
             </button>
           ) : (
             <input
               className="gpick__new"
               autoFocus
-              placeholder="Group name"
+              placeholder={t('workspace.groupPicker.name')}
               value={typing}
               onChange={(event) => setTyping(event.target.value)}
               onKeyDown={(event) => {

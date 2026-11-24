@@ -5,6 +5,7 @@ import { elapsed, running, taskLabel, tasksOf, wakeupOf } from './backgroundTask
 import { checklistOf, done } from './checklist'
 import { useMessagesPick, type ChatMessages } from './chatMessages'
 import { ask, commands } from './live'
+import { t } from '../i18n'
 
 /*
  * What the turn has going on, above the composer where the hands are: work it
@@ -59,14 +60,14 @@ export function ComposerStatus({
       {count > 0 && (
         <button className="chip bgt__chip" aria-expanded={open} onClick={() => setOpen((was) => !was)}>
           {tasks.length > 0 && <span className="arow__live" aria-hidden="true" />}
-          {count} in background
+          {t('workspace.composerStatus.inBackground', { count })}
         </button>
       )}
       {open && count > 0 && (
-        <div className="bgp" role="region" aria-label="In the background">
+        <div className="bgp" role="region" aria-label={t('workspace.composerStatus.region')}>
           {tasks.map((task) => (
             <div className="bgt__row" key={task.id}>
-              <span className="arow__live" aria-label="Running" />
+              <span className="arow__live" aria-label={t('workspace.composerStatus.running')} />
               <span className="bgt__k">{taskLabel(task)}</span>
               <span className="bgt__d" title={task.description}>
                 {task.description}
@@ -74,16 +75,16 @@ export function ComposerStatus({
               <span className="bgt__t">{elapsed(since.current.get(task.id) ?? now, now)}</span>
               <button
                 className="chip"
-                aria-label={`Stop ${task.description}`}
+                aria-label={t('workspace.composerStatus.stopLabel', { task: task.description })}
                 onClick={() => void ask(() => commands.chatStopTask(conversationId, task.id))}
               >
-                Stop
+                {t('workspace.composerStatus.stop')}
               </button>
             </div>
           ))}
           {wakeup && (
             <div className="bgt__row">
-              <span className="bgt__k">Wakeup</span>
+              <span className="bgt__k">{t('workspace.composerStatus.wakeup')}</span>
               <span className="bgt__d" title={wakeup.reason}>
                 {wakeup.reason}
               </span>
@@ -96,7 +97,7 @@ export function ComposerStatus({
       {list.items.length > 0 && (
         <details className="ckl">
           <summary className="ckl__h">
-            {list.items.filter(done).length} of {list.items.length} done
+            {t('workspace.composerStatus.done', { done: list.items.filter(done).length, total: list.items.length })}
           </summary>
           {list.items.map((item) => (
             <div className="ckl__i" key={item.id} data-done={done(item) || undefined} data-changed={list.changed.includes(item.id) || undefined}>

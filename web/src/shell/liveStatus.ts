@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 
 import type { LiveSession } from '../gen/bindings'
+import { t } from '../i18n'
 import { ask, commands } from './live'
 import { onHappening } from './window'
 
@@ -120,4 +121,5 @@ export function stateOf(sessions: readonly LiveSession[], name: string): 'waitin
   return found.status === 'busy' ? 'busy' : 'idle'
 }
 
-export const STATE_WORDS = { waiting: 'waiting on you', busy: 'working', idle: 'idle', gone: 'not running' } as const
+/** A session's state as the person reads it. */
+export const stateWord = (state: 'waiting' | 'busy' | 'idle' | 'gone'): string => t(`sessions.state.${state}`)

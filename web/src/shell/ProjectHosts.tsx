@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 
 import type { Host, HostLink, HostLinks } from '../gen/bindings'
+import { t } from '../i18n'
 import { ask, commands } from './live'
 
 /*
@@ -39,28 +40,28 @@ export function ProjectHosts({ projectId }: { projectId: string }): React.JSX.El
   const chosen = hosts.find((one) => one.id === hostId)
   return (
     <details className="pdlg__f wtsetup" open={links.length > 0}>
-      <summary>Hosts</summary>
-      <p className="wtsetup__d">Where this project is on each host it runs on. devpit checks the folder is there and never creates one.</p>
+      <summary>{t('workspace.projectHosts.title')}</summary>
+      <p className="wtsetup__d">{t('workspace.projectHosts.said')}</p>
       {links.map((one) => (
         <div key={one.hostId} className="wtsetup__row">
           <span className="wtsetup__d">
             <b>{one.hostName}</b> <span className={`host__env host__env--${one.environment}`}>{one.environment}</span> <code>{one.path}</code>
           </span>
-          <button className="btn" aria-label={`Unlink ${one.hostName}`} onClick={() => unlink(one)}>Unlink</button>
+          <button className="btn" aria-label={t('workspace.projectHosts.unlinkLabel', { name: one.hostName })} onClick={() => unlink(one)}>{t('workspace.projectHosts.unlink')}</button>
         </div>
       ))}
       <label className="wtsetup__f">
-        <span>Host</span>
-        <select aria-label="Host to link" value={hostId} onChange={(event) => setHostId(event.target.value)}>
-          <option value="">Choose a host…</option>
+        <span>{t('workspace.projectHosts.host')}</span>
+        <select aria-label={t('workspace.projectHosts.hostToLink')} value={hostId} onChange={(event) => setHostId(event.target.value)}>
+          <option value="">{t('workspace.projectHosts.chooseHost')}</option>
           {hosts.map((one) => <option key={one.id} value={one.id}>{one.name} ({one.environment})</option>)}
         </select>
       </label>
       <label className="wtsetup__f">
-        <span>Path</span>
-        <input aria-label="Path on the host" spellCheck={false} placeholder={chosen ? `${chosen.workRoot}/…` : 'the project\u2019s folder there'} value={path} onChange={(event) => setPath(event.target.value)} />
+        <span>{t('workspace.projectHosts.path')}</span>
+        <input aria-label={t('workspace.projectHosts.pathOnHost')} spellCheck={false} placeholder={chosen ? `${chosen.workRoot}/…` : t('workspace.projectHosts.pathHint')} value={path} onChange={(event) => setPath(event.target.value)} />
       </label>
-      <button className="btn" disabled={busy || !hostId || !path.trim()} onClick={link}>{busy ? 'Checking…' : 'Link'}</button>
+      <button className="btn" disabled={busy || !hostId || !path.trim()} onClick={link}>{busy ? t('workspace.projectHosts.checking') : t('workspace.projectHosts.link')}</button>
       {said && <p className="wtsetup__d voice__bad" role="alert">{said}</p>}
     </details>
   )

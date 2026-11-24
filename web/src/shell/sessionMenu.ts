@@ -1,4 +1,5 @@
 import type { ConversationMarks } from '../gen/bindings'
+import { t } from '../i18n'
 import type { Entry } from './fileMenu'
 import { isSettled, snoozeUntil } from './settling'
 
@@ -28,22 +29,22 @@ export interface SessionHands {
    chat with nothing said yet, has nothing to keep them on. */
 const marking = ({ mark, close }: SessionHands, marks: ConversationMarks, now: Date): readonly SessionEntry[] => [
   { rule: true },
-  { label: marks.pinned ? 'Unpin' : 'Pin', run: (id) => mark(id, { pinned: !marks.pinned }) },
+  { label: t(marks.pinned ? 'workspace.menu.session.unpin' : 'workspace.menu.session.pin'), run: (id) => mark(id, { pinned: !marks.pinned }) },
   isSettled(marks, now.getTime() / 1000)
-    ? { label: 'Back to in progress', run: (id) => mark(id, { settled: false, snoozedUntil: null }) }
-    : { label: 'Settle', run: (id) => mark(id, { settled: true }) },
-  { label: 'Snooze for an hour', run: (id) => mark(id, { snoozedUntil: snoozeUntil('hour', now) }) },
-  { label: 'Snooze until tomorrow', run: (id) => mark(id, { snoozedUntil: snoozeUntil('tomorrow', now) }) },
-  { label: 'Mark unread', run: (id) => mark(id, { unread: true }) },
+    ? { label: t('workspace.menu.session.back'), run: (id) => mark(id, { settled: false, snoozedUntil: null }) }
+    : { label: t('workspace.menu.session.settle'), run: (id) => mark(id, { settled: true }) },
+  { label: t('workspace.menu.session.hour'), run: (id) => mark(id, { snoozedUntil: snoozeUntil('hour', now) }) },
+  { label: t('workspace.menu.session.tomorrow'), run: (id) => mark(id, { snoozedUntil: snoozeUntil('tomorrow', now) }) },
+  { label: t('workspace.menu.session.unread'), run: (id) => mark(id, { unread: true }) },
   /* Out of every list, and its tab closes; Settings → Archive brings it back. */
-  { label: 'Archive', run: (id) => (mark(id, { archived: true }), close(id)) },
+  { label: t('workspace.menu.session.archive'), run: (id) => (mark(id, { archived: true }), close(id)) },
 ]
 
 export const sessionMenu = (hands: SessionHands, marks?: ConversationMarks, now = new Date()): readonly SessionEntry[] => [
-  { label: 'Open', key: '↵', run: hands.focus },
+  { label: t('workspace.menu.session.open'), key: '↵', run: hands.focus },
   { rule: true },
-  { label: 'Rename', shortcut: 'rename', run: hands.rename },
+  { label: t('workspace.menu.session.rename'), shortcut: 'rename', run: hands.rename },
   ...(marks ? marking(hands, marks, now) : []),
   { rule: true },
-  { label: 'Close session', bad: true, run: hands.close },
+  { label: t('workspace.menu.session.close'), bad: true, run: hands.close },
 ]

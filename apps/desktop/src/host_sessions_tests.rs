@@ -3,6 +3,9 @@ use serde_json::json;
 use super::*;
 use crate::fake_host::FakeHost;
 
+fn en() -> crate::session_locale::SessionLocale {
+    crate::session_locale::SessionLocale::of(devpit_core::locale::Locale::En)
+}
 fn host(environment: &str) -> HostRow {
     HostRow {
         id: "host_1".to_owned(),
@@ -259,6 +262,7 @@ fn a_start_on_a_host_is_planned_with_the_production_gate_and_brief() {
     };
     let plan = |host, confirmed| {
         planned(
+            en(),
             &store,
             dir.path(),
             &project,
@@ -311,8 +315,16 @@ fn an_empty_brief_starts_nothing_on_a_host() {
         confirmed: false,
     };
 
-    let refused =
-        planned(&store, dir.path(), &project, "claude", "claude", &asked).expect_err("planned");
+    let refused = planned(
+        en(),
+        &store,
+        dir.path(),
+        &project,
+        "claude",
+        "claude",
+        &asked,
+    )
+    .expect_err("planned");
 
     assert!(refused.contains("brief"), "{refused}");
 }

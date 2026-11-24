@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
 
+import { t } from '../i18n'
 import { moveQuestion } from './board'
 import { Confirm } from './Confirm'
 import { ask, commands } from './live'
@@ -25,7 +26,7 @@ export function MoveConfirm({
 }): React.JSX.Element {
   return createPortal(
     <div onPointerDown={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
-      <Confirm title="Move this card?" body={question} danger="Move it anyway" onClose={onClose} onConfirm={onConfirm} />
+      <Confirm title={t('card.moveAsk')} body={question} danger={t('card.moveAnyway')} onClose={onClose} onConfirm={onConfirm} />
     </div>,
     document.body,
   )
@@ -66,8 +67,8 @@ export function CardLane({
   return (
     <>
       <label className="cardp__lane">
-        <span className="fld__l">Lane</span>
-        <select className="cardp__select" aria-label="Lane" value={columnId} onChange={(event) => void move(event.target.value, false)}>
+        <span className="fld__l">{t('card.lane')}</span>
+        <select className="cardp__select" aria-label={t('card.lane')} value={columnId} onChange={(event) => void move(event.target.value, false)}>
           {lanes.map((lane) => (
             <option key={lane.id} value={lane.id}>
               {lane.name}

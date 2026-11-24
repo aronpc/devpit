@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 
+import { t } from '../i18n'
 import type { Lane } from './board'
 import { ArchivedPane, UndoArchive } from './BoardShelf'
 import { InlineAdd } from './InlineAdd'
@@ -18,14 +19,14 @@ export function NewColumn({ onAdd }: { onAdd: (name: string) => void }): React.J
   return open ? (
     <InlineAdd
       className="blane__newin"
-      label="New column name"
-      placeholder="Column name"
+      label={t('board.newColumnName')}
+      placeholder={t('board.columnName')}
       onAdd={onAdd}
       onDone={() => setOpen(false)}
     />
   ) : (
     <button className="btn" onClick={() => setOpen(true)}>
-      + Column
+      {t('board.addColumn')}
     </button>
   )
 }
@@ -75,17 +76,17 @@ export function BoardToolbar({
       <input
         className="btools__filter"
         type="search"
-        aria-label="Filter cards"
-        placeholder="Filter cards"
+        aria-label={t('board.filterCards')}
+        placeholder={t('board.filterCards')}
         value={query}
         onChange={(event) => onQuery(event.target.value)}
       />
       <span className="btools__gap" />
       <button className="btn" onClick={() => setShowing('runs')}>
-        Runs
+        {t('board.runs')}
       </button>
       <button className="btn" onClick={() => setShowing('archived')}>
-        {count === null ? 'Archived' : `Archived (${count})`}
+        {count === null ? t('board.archived') : t('board.archivedCount', { count })}
       </button>
       <NewColumn onAdd={onAddColumn} />
 

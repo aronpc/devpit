@@ -6,6 +6,7 @@ import { PatchView } from './PatchView'
 import type { Tab } from './strip'
 import { useShell } from './useShell'
 import { viewPrefs } from './viewPrefs'
+import { t } from '../i18n'
 
 /* The merge editor is CodeMirror and its merge view: loaded with the first
    file diff opened, not with the window. */
@@ -34,12 +35,12 @@ export function DiffPane({ tab }: { tab: Tab }): React.JSX.Element {
   const bar = (controls: React.ReactNode): React.JSX.Element => (
     <div className="pane__bar dbar">
       <span className="pane__t">
-        <b>{path?.split('/').pop() ?? 'Diff'}</b>
-        {ofCommit ? ' · this commit' : ' · against HEAD'}
+        <b>{path?.split('/').pop() ?? t('workspace.diffPane.diff')}</b>
+        {ofCommit ? t('workspace.diffPane.thisCommit') : t('workspace.diffPane.againstHead')}
       </span>
       <span className="drag" />
       {controls}
-      <button className="sq26" onClick={() => close(tab.id)} aria-label="Close diff" title="Close diff">
+      <button className="sq26" onClick={() => close(tab.id)} aria-label={t('workspace.diffPane.close')} title={t('workspace.diffPane.close')}>
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
       </button>
     </div>
@@ -81,10 +82,10 @@ function CommitDiff({
     <>
       {bar(
         <>
-          <button className="dbtn" aria-pressed={spaces} onClick={() => setSpaces((was) => !was)} title={spaces ? 'Hide whitespace' : 'Show whitespace'}>
-            Whitespace
+          <button className="dbtn" aria-pressed={spaces} onClick={() => setSpaces((was) => !was)} title={spaces ? t('workspace.diffPane.hideSpaces') : t('workspace.diffPane.showSpaces')}>
+            {t('workspace.diffPane.whitespace')}
           </button>
-          <button className="dbtn" aria-pressed={split} onClick={() => setSplit((was) => !was)} title={split ? 'Unified' : 'Side by side'}>
+          <button className="dbtn" aria-pressed={split} onClick={() => setSplit((was) => !was)} title={split ? t('workspace.diffPane.unified') : t('workspace.diffPane.sideBySide')}>
             {split ? <Rows /> : <Columns />}
           </button>
         </>,

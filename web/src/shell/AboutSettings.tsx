@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 
 import type { AppInfo } from '../gen/bindings'
+import { t } from '../i18n'
+import { useLocale } from '../i18n/LocaleRoot'
 import { ask, commands } from './live'
 import { went } from './problems'
 
@@ -8,13 +10,16 @@ import { went } from './problems'
    licences are read. */
 
 const LINKS: readonly (readonly [string, string, string])[] = [
-  ['Privacy', 'What devpit keeps on this computer and what it ever sends.', 'https://devpit.app/privacy'],
-  ['Licence', 'devpit is open source, under the Apache License 2.0.', 'https://github.com/jholhewres/devpit/blob/main/LICENSE'],
-  ['Open-source notices', 'The notices of the work devpit includes.', 'https://github.com/jholhewres/devpit/blob/main/NOTICE'],
+  ['about.privacy', 'about.privacySaid', 'https://devpit.app/privacy'],
+  ['about.licence', 'about.licenceSaid', 'https://github.com/jholhewres/devpit/blob/main/LICENSE'],
+  ['about.notices', 'about.noticesSaid', 'https://github.com/jholhewres/devpit/blob/main/NOTICE'],
 ]
 
 export function AboutSettings(): React.JSX.Element {
   const [info, setInfo] = useState<AppInfo | null>(null)
+  /* Hears the locale, so the rows re-say themselves when it changes. */
+  useLocale()
+
   useEffect(() => {
     void ask(() => commands.appInfo()).then((answer) => setInfo(answer.data))
   }, [])
@@ -22,19 +27,19 @@ export function AboutSettings(): React.JSX.Element {
     <>
       <div className="pref">
         <span className="pref__body">
-          <span className="pref__t">Version</span>
-          <span className="pref__d">{info ? `devpit ${info.version}${info.dev ? ' (dev)' : ''} · ${info.platform}` : 'Reading…'}</span>
+          <span className="pref__t">{t('about.version')}</span>
+          <span className="pref__d">{info ? `devpit ${info.version}${info.dev ? ' (dev)' : ''} · ${info.platform}` : t('about.reading')}</span>
         </span>
       </div>
       {LINKS.map(([title, said, url]) => (
         <div className="pref" key={title}>
           <span className="pref__body">
-            <span className="pref__t">{title}</span>
-            <span className="pref__d">{said}</span>
+            <span className="pref__t">{t(title)}</span>
+            <span className="pref__d">{t(said)}</span>
           </span>
           <span className="prefs__acts">
             <button className="btn" onClick={() => void ask(() => commands.urlOpen(url)).then(went)}>
-              Open
+              {t('about.open')}
             </button>
           </span>
         </div>

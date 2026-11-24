@@ -1,4 +1,5 @@
 import type { Message, Part } from '../gen/bindings'
+import { t } from '../i18n'
 
 /*
  * A conversation as markdown: what was said, or what was said and every tool
@@ -8,7 +9,14 @@ import type { Message, Part } from '../gen/bindings'
 
 export type Exported = 'messages' | 'tools'
 
-const WHO: Record<Message['role'], string> = { user: 'You', assistant: 'Agent', system: 'System' }
+/* Who said it, as the catalog key for their name. */
+const WHO: Record<Message['role'], string> = {
+  user: 'sessions.chat.you',
+  assistant: 'sessions.chat.agent',
+  system: 'sessions.chat.system',
+}
+
+const who = (role: Message['role']): string => t(WHO[role])
 
 /* One backtick longer than any run inside, so nothing in the body can close it. */
 export function fenced(body: string, language = ''): string {
@@ -39,7 +47,7 @@ function partOf(part: Part, tools: boolean): string | null {
     case 'tool_call':
       return tools ? `**${part.name}**\n\n${fenced(pretty(part.input), 'json')}` : null
     case 'tool_result':
-      return tools ? `${part.is_error ? 'Failed' : 'Result'}:\n\n${fenced(part.output)}` : null
+      return tools ? `${t(part.is_error ? 'sessions.chat.failed' : 'sessions.chat.result')}:\n\n${fenced(part.output)}` : null
     case 'command':
       return tools ? fenced(part.content) : null
     default:
@@ -50,7 +58,7 @@ function partOf(part: Part, tools: boolean): string | null {
 export function markdownOf(title: string, messages: readonly Message[], what: Exported): string {
   const said = messages.flatMap((message) => {
     const parts = message.parts.map((part) => partOf(part, what === 'tools')).filter((one): one is string => Boolean(one))
-    return parts.length ? [`## ${WHO[message.role]}\n\n${parts.join('\n\n')}`] : []
+    return parts.length ? [`## ${who(message.role)}\n\n${parts.join('\n\n')}`] : []
   })
   return `${[`# ${title.replace(/\n/g, ' ')}`, ...said].join('\n\n')}\n`
 }

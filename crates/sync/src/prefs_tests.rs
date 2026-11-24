@@ -56,7 +56,12 @@ fn what_belongs_to_one_machine_never_syncs() {
     ] {
         assert!(!syncs(name), "{name} synced");
     }
-    for name in [key::THEME, key::SHORTCUT_KEYS, key::TERMINAL_CONTRAST] {
+    for name in [
+        key::THEME,
+        key::LANGUAGE,
+        key::SHORTCUT_KEYS,
+        key::TERMINAL_CONTRAST,
+    ] {
         assert!(syncs(name), "{name} did not sync");
     }
 }

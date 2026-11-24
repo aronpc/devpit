@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 
+import { t } from '../i18n'
 import { AgentMark } from './AgentMark'
 import type { Card, KnownAgent } from '../gen/bindings'
 import { ask, commands } from './live'
@@ -83,12 +84,12 @@ export function useReachable(): Reachable {
       ),
       {
         key: 'prefs',
-        name: 'Settings',
+        name: t('workspace.palette.settings'),
         meta: keysLabel('settings'),
         icon: GEAR,
         go: () => openPrefs('general'),
       },
-      { key: 'keys', name: 'Keyboard shortcuts', meta: keysLabel('shortcuts'), icon: KEYBOARD, go: openKeysSheet },
+      { key: 'keys', name: t('workspace.palette.shortcuts'), meta: keysLabel('shortcuts'), icon: KEYBOARD, go: openKeysSheet },
     ],
     [show, openPrefs, offers, plugins],
   )
@@ -105,7 +106,7 @@ export function useReachable(): Reachable {
       agents.map((agent) => ({
         key: `agent:${agent.id}`,
         name: agent.label,
-        meta: agent.installed ? launchShown(agent.launch) : 'not installed',
+        meta: agent.installed ? launchShown(agent.launch) : t('workspace.palette.notInstalled'),
         icon: <AgentMark agent={agent.id} />,
         go: () => {
           if (!agent.installed) return
@@ -123,7 +124,7 @@ export function useReachable(): Reachable {
         .filter((tab) => tab.kind === 'term' || tab.kind === 'chat')
         .map((tab) => ({
           key: `tab:${tab.id}`,
-          name: tab.title ?? (tab.kind === 'term' ? 'Terminal' : 'Chat'),
+          name: tab.title ?? (tab.kind === 'term' ? t('workspace.palette.sessionTerminal') : t('workspace.palette.sessionChat')),
           meta: tab.kind,
           icon: PANES.find((pane) => pane.name === tab.kind)!.icon,
           go: () => focus(tab.id),

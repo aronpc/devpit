@@ -19,6 +19,10 @@ use devpit_rpc::Profile;
 
 use crate::declaring::quoted;
 
+/// The variable a session's language rides in, which devpit sets itself at
+/// each session's birth: a profile's own would speak over it.
+pub const LOCALE_ENV: &str = "DEVPIT_LOCALE";
+
 /// What a profile becomes when something runs it.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Runner {
@@ -45,6 +49,7 @@ pub fn runner(profile: &Profile) -> Runner {
         env: profile
             .env
             .iter()
+            .filter(|var| var.name != LOCALE_ENV)
             .map(|var| (var.name.clone(), var.value.clone()))
             .collect(),
     }

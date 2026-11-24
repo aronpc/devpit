@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 
 import type { DevflowPrefs } from '../gen/bindings'
+import { t } from '../i18n'
+import { tRich } from '../i18n/rich'
 import { ask, commands } from './live'
 import { PrefSwitch } from './PrefSwitch'
 import { useKnownAgents } from './useKnownAgents'
@@ -32,28 +34,31 @@ function CodexInstall(): React.JSX.Element | null {
   return (
     <div className="pref pref--stack">
       <div className="pref__body">
-        <span className="pref__t">Devflow&rsquo;s skills in Codex</span>
-        <span className="pref__d">
-          Codex sessions get the stages as <code>$devflow-&lt;stage&gt;</code>. Its hooks need nothing installed: they ride devpit&rsquo;s own launch line.
-        </span>
+        <span className="pref__t">{t('devflow.settings.codexTitle')}</span>
+        <span className="pref__d">{tRich('devflow.settings.codexBody', {
+          skill: <code>$devflow-&lt;stage&gt;</code>, // ui-text: ok identifier
+        })}</span>
         {sure ? (
           <>
             <span className="pref__d">
-              This runs <code>codex plugin marketplace add &lt;devpit home&gt;/devflow-plugin/codex</code>, then <code>codex plugin add devflow@devpit</code>, which writes Codex&rsquo;s own configuration for every session it starts.
+              {tRich('devflow.settings.codexSure', {
+                add: <code>codex plugin marketplace add &lt;devpit home&gt;/devflow-plugin/codex</code>, // ui-text: ok identifier
+                plugin: <code>codex plugin add devflow@devpit</code>, // ui-text: ok identifier
+              })}
             </span>
             <div className="voice__row">
               <button className="btn" onClick={() => setSure(false)} disabled={busy}>
-                Cancel
+                {t('devflow.cancel')}
               </button>
               <button className="btn btn--go" onClick={install} disabled={busy}>
-                Install
+                {t('devflow.install')}
               </button>
             </div>
           </>
         ) : (
           <div className="voice__row">
             <button className="btn" onClick={() => setSure(true)}>
-              Install for Codex…
+              {t('devflow.settings.codexInstall')}
             </button>
           </div>
         )}
@@ -81,17 +86,17 @@ export function DevflowSettings(): React.JSX.Element {
         on={prefs?.enabled ?? true}
         disabled={!prefs}
         onFlip={() => prefs && set(!prefs.enabled, null)}
-        title="Devflow"
-        said="Briefing, context, plan, execution, review and completion, served to agents through devpit's MCP. Off, every project's agents see exactly the tools they had before Devflow, and sessions already open hear it."
+        title={t('devflow.settings.title')}
+        said={t('devflow.settings.said')}
       />
       <div className="pref">
         <span className="pref__body">
-          <span className="pref__t">A new project&rsquo;s setup starts from</span>
-          <span className="pref__d">What the Devflow screen offers first, and what devpit_devflow_setup uses when an agent names no preset. Nothing is written until someone says yes.</span>
+          <span className="pref__t">{t('devflow.settings.presetTitle')}</span>
+          <span className="pref__d">{t('devflow.settings.presetBody')}</span>
         </span>
-        <select aria-label="A new setup starts from" value={prefs?.preset ?? 'recommended'} disabled={!prefs} onChange={(event) => set(null, event.target.value)}>
-          <option value="recommended">Recommended</option>
-          <option value="custom">Custom</option>
+        <select aria-label={t('devflow.settings.presetLabel')} value={prefs?.preset ?? 'recommended'} disabled={!prefs} onChange={(event) => set(null, event.target.value)}>
+          <option value="recommended">{t('devflow.settings.recommended')}</option>
+          <option value="custom">{t('devflow.settings.custom')}</option>
         </select>
       </div>
       <CodexInstall />

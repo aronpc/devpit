@@ -1,6 +1,7 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import type { Attachment, Conversation, Frame, Message, Profile } from '../gen/bindings'
+import { setLocale } from '../i18n'
 import {
   applied,
   appliedAll,
@@ -8,9 +9,10 @@ import {
   batched,
   steered,
   choices,
+  clock,
   fixedTo,
   effortName,
-  MODES,
+  modes,
   modeName,
   money,
   ready,
@@ -203,7 +205,7 @@ describe('what the agent is actually sent', () => {
 
 describe('what the agent may do without asking', () => {
   it('offers the mode that stops to ask, now that there is somewhere to answer', () => {
-    expect(MODES.map((mode) => mode.id)).toContain('manual')
+    expect(modes().map((mode) => mode.id)).toContain('manual')
   })
 
   it('knows which mode stops to ask', () => {
@@ -217,7 +219,7 @@ describe('what a permission mode says it does', () => {
   /* "Ask" names nothing on its own; the row exists so you know what you are
      agreeing to. */
   it('every mode explains itself', () => {
-    for (const mode of MODES) {
+    for (const mode of modes()) {
       expect(mode.what.length).toBeGreaterThan(10)
     }
   })
@@ -332,5 +334,21 @@ describe('a turn that is over', () => {
     const after = settled(was)
     expect(after.map((m) => m.streaming)).toEqual([false, false])
     expect(settled(after)).toBe(after)
+  })
+})
+
+/* The time under a turn in the language the person chose, not the machine's:
+   a 24-hour clock in pt-BR even on a runner under LC_ALL=en_US. */
+describe("a turn's clock in the chosen language", () => {
+  const at = new Date(2026, 0, 20, 15, 5).getTime()
+  afterEach(() => setLocale('en'))
+
+  it('reads in pt-BR when pt-BR is chosen', () => {
+    setLocale('pt-BR')
+    expect(clock(at)).toBe('15:05')
+  })
+
+  it('reads in English when English is chosen', () => {
+    expect(clock(at)).toMatch(/^03:05\sPM$/)
   })
 })

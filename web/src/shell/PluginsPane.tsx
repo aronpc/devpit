@@ -15,6 +15,7 @@ import {
 import { ask, commands } from './live'
 import { usePlugins } from './usePlugins'
 import { useShell } from './useShell'
+import { t } from '../i18n'
 
 /*
  * The capabilities devpit ships, and which this project installed and has on.
@@ -65,11 +66,11 @@ export function PluginsPane(): React.JSX.Element {
       <div className="pane__bar">
         <span className="pane__ico">{CAPABILITIES_ICON(12)}</span>
         <span className="pane__t">
-          <b>Capabilities</b>
+          <b>{t('workspace.plugins.title')}</b>
           {said ? ` · ${said}` : ''}
         </span>
         <span className="drag"></span>
-        <button className="sq26" onClick={() => close('plugins')} aria-label="Close Capabilities" title="Close Capabilities">
+        <button className="sq26" onClick={() => close('plugins')} aria-label={t('workspace.plugins.closeLabel')} title={t('workspace.plugins.closeLabel')}>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
         </button>
       </div>
@@ -77,15 +78,14 @@ export function PluginsPane(): React.JSX.Element {
       <div className="list">
         <div className="list__in capset">
           <p className="list__note">
-            Built into devpit, installed per project. On, a capability gets its own place in the
-            sidebar; off, it leaves and its files stay.
+            {t('workspace.plugins.note')}
           </p>
 
           {!project ? (
-            <Quiet title="No project open." detail="Capabilities are chosen per project." />
+            <Quiet title={t('workspace.plugins.noProject')} detail={t('workspace.plugins.noProjectDetail')} />
           ) : plugins === null && error === null ? (
             /* The shape of a card while the catalogue is read, so the grid does not jump when it lands. */
-            <div className="capgrid" aria-busy="true" aria-label="Reading capabilities">
+            <div className="capgrid" aria-busy="true" aria-label={t('workspace.plugins.reading')}>
               <div className="capcard capcard--ghost">
                 <span className="capcard__ghost"></span>
                 <span className="capcard__ghost"></span>
@@ -93,9 +93,9 @@ export function PluginsPane(): React.JSX.Element {
               </div>
             </div>
           ) : plugins === null ? (
-            <Quiet title="Capabilities could not be read." detail={error} />
+            <Quiet title={t('workspace.plugins.unread')} detail={error} />
           ) : plugins.length === 0 ? (
-            <Quiet title="This build has no capabilities." />
+            <Quiet title={t('workspace.plugins.none')} />
           ) : (
             <>
               {error && (
@@ -112,12 +112,12 @@ export function PluginsPane(): React.JSX.Element {
                 <input
                   className="list__search"
                   type="search"
-                  aria-label="Search capabilities"
-                  placeholder="Search capabilities"
+                  aria-label={t('workspace.plugins.search')}
+                  placeholder={t('workspace.plugins.search')}
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
                 />
-                <div className="list__seg" role="tablist" aria-label="Show capabilities">
+                <div className="list__seg" role="tablist" aria-label={t('workspace.plugins.show')}>
                   {CAPABILITY_FILTERS.map((one) => (
                     <button
                       key={one.id}
@@ -126,12 +126,12 @@ export function PluginsPane(): React.JSX.Element {
                       aria-selected={filter === one.id}
                       onClick={() => setFilter(one.id)}
                     >
-                      {one.label}
+                      {t(one.labelKey)}
                     </button>
                   ))}
                 </div>
               </div>
-              {shown.length === 0 && <Quiet title="No capability matches." detail="Try another word, or show all." />}
+              {shown.length === 0 && <Quiet title={t('workspace.plugins.noMatch')} detail={t('workspace.plugins.noMatchDetail')} />}
               <div className="capgrid">
                 {shown.map((plugin) => {
                   const opens = opensFor(plugin.manifest.id)

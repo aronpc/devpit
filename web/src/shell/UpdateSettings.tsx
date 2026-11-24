@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 
 import type { UpdateStatus } from '../gen/bindings'
+import { t } from '../i18n'
+import { useLocale } from '../i18n/LocaleRoot'
 import { ask, commands } from './live'
 import { PrefRow } from './PrefRow'
 import { SHOW_THE_UPDATE } from './UpdateCard'
@@ -25,30 +27,30 @@ import { useUpdateStatus } from './useUpdateStatus'
  */
 
 function said(status: UpdateStatus | null): string {
-  if (!status) return 'devpit checks for a newer version while it is open.'
+  if (!status) return t('updates.checks')
   switch (status.type) {
     case 'idle':
-      return 'This is the newest devpit.'
+      return t('updates.newest')
     case 'checking':
-      return 'Checking…'
+      return t('updates.checking')
     case 'available':
-      return `devpit ${status.version} is out. Update downloads it, and the update card takes it from there.`
+      return t('updates.available', { version: status.version })
     case 'downloading':
-      return `Downloading the update · ${status.percent}%`
+      return t('updates.downloading', { percent: status.percent })
     case 'ready':
-      return `devpit ${status.version} is downloaded and installs when devpit restarts.`
+      return t('updates.ready', { version: status.version })
     case 'waiting':
-      return 'The update installs once the work in flight is done.'
+      return t('updates.waiting')
     case 'installing':
-      return 'Installing…'
+      return t('updates.installing')
     case 'manualInstall':
-      return 'The package is downloaded. The update card has the command that installs it.'
+      return t('updates.manual')
     case 'externallyManaged':
-      return 'This copy is looked after by your system, so update it there.'
+      return t('updates.external')
     case 'failed':
       return status.message
     default:
-      return 'devpit checks for a newer version while it is open.'
+      return t('updates.checks')
   }
 }
 
@@ -63,6 +65,7 @@ function fromATestFeed(status: UpdateStatus | null): boolean {
 const ON_THE_CARD = new Set<UpdateStatus['type']>(['downloading', 'ready', 'waiting', 'manualInstall'])
 
 export function UpdateSettings(): React.JSX.Element {
+  useLocale()
   const { closePrefs } = useShell()
   const [status, setStatus] = useUpdateStatus()
   const [version, setVersion] = useState('')
@@ -77,7 +80,7 @@ export function UpdateSettings(): React.JSX.Element {
     setStatus(
       answer.data ?? {
         type: 'failed',
-        message: answer.error ?? 'the check said nothing',
+        message: answer.error ?? t('updates.nothing'),
         recoverable: true,
       },
     )
@@ -124,14 +127,14 @@ export function UpdateSettings(): React.JSX.Element {
     <PrefRow
       title={
         <>
-          Updates{version && ` · you have ${version}`}
-          {fromATestFeed(status) && ' · test feed'}
+          {t('updates.title')}{version && t('updates.youHave', { version })}
+          {fromATestFeed(status) && t('updates.testFeed')}
         </>
       }
       said={said(status)}
     >
       <button className="btn" disabled={busy} onClick={onTheCard ? toTheCard : offered ? update : check}>
-        {busy ? 'Working…' : onTheCard ? 'Show the update' : offered ? 'Update' : 'Check now'}
+        {busy ? t('updates.working') : onTheCard ? t('updates.show') : offered ? t('updates.update') : t('updates.checkNow')}
       </button>
     </PrefRow>
   )

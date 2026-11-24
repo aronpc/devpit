@@ -46,7 +46,7 @@ describe('sessions that ended', () => {
   it('are listed with what they left, read, and resumed as the same conversation', async () => {
     render(<EndedSessions profileId="claude" running={0} />)
     fireEvent.click(await screen.findByText('Ended · 2'))
-    expect(screen.getByText(/12 file\(s\) not committed/)).toBeTruthy()
+    expect(screen.getByText(/12 files not committed/)).toBeTruthy()
     fireEvent.click(screen.getByText('a7'))
     expect(await screen.findByText('Phase 1: halfway, tests next.')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Resume' }))

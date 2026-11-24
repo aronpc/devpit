@@ -1,7 +1,9 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 
 import type { PluginManifest } from '../gen/bindings'
+import { setLocale, t } from '../i18n'
 import {
+  CAPABILITY_FILTERS,
   addsInWords,
   capabilityName,
   enabledCount,
@@ -146,5 +148,19 @@ describe('shownCapabilities', () => {
     expect(ids(shownCapabilities(catalogue, '  DIAGRAMS ', 'all'))).toEqual(['excalidraw', 'mermaid'])
     expect(ids(shownCapabilities(catalogue, 'diagrams', 'on'))).toEqual(['excalidraw'])
     expect(ids(shownCapabilities(catalogue, 'nothing', 'all'))).toEqual([])
+  })
+})
+
+/* The filter tabs name themselves in the language the person chose. */
+describe('the capability filters', () => {
+  afterEach(() => setLocale('en'))
+
+  it('read in pt-BR when pt-BR is chosen', () => {
+    setLocale('pt-BR')
+    expect(CAPABILITY_FILTERS.map((one) => t(one.labelKey))).toEqual(['Todas', 'Ativas', 'Instaladas', 'Não instaladas'])
+  })
+
+  it('read in English when English is chosen', () => {
+    expect(CAPABILITY_FILTERS.map((one) => t(one.labelKey))).toEqual(['All', 'On', 'Installed', 'Not installed'])
   })
 })

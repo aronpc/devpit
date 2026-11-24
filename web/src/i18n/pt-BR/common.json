@@ -1,0 +1,10 @@
+{
+  "greet.hello": "Olá, {name}",
+  "board.cards": {
+    "one": "{count} cartão",
+    "other": "{count} cartões"
+  },
+  "common.copy": "Copiar",
+  "common.copied": "Copiado",
+  "common.pickOne": "Escolha um"
+}

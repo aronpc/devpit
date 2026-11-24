@@ -1,4 +1,5 @@
 import type { Context } from '../gen/bindings'
+import { t } from '../i18n'
 
 /* Where a reading starts to deserve attention, and where it is urgent: the
    CLI compacts on its own near the top, and a person would rather choose. */
@@ -16,8 +17,8 @@ const thousands = (tokens: number): string =>
 export function ContextMeter({ context, metered = true }: { context: Context | null; metered?: boolean }): React.JSX.Element | null {
   if (!context) {
     return metered ? null : (
-      <span className="pcorner__ctx" title="This agent does not report how full its context is">
-        n/a
+      <span className="pcorner__ctx" title={t('workspace.meter.unreported')}>
+        {t('workspace.meter.na')}
       </span>
     )
   }
@@ -28,7 +29,7 @@ export function ContextMeter({ context, metered = true }: { context: Context | n
     <span
       className="pcorner__ctx"
       data-level={level}
-      title={`Context: ${thousands(context.used)} of ${thousands(context.window)} tokens${level ? ' — /compact frees it' : ''}`}
+      title={t(level ? 'workspace.meter.usedFull' : 'workspace.meter.used', { used: thousands(context.used), window: thousands(context.window) })}
     >
       <svg width="13" height="13" viewBox="0 0 14 14" aria-hidden="true">
         <circle cx="7" cy="7" r="5" fill="none" stroke="currentColor" strokeOpacity="0.25" strokeWidth="2" />

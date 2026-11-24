@@ -1,6 +1,7 @@
 import { useState } from 'react'
 
 import type { RemoteIn, RemoteProject } from '../gen/bindings'
+import { t } from '../i18n'
 
 /*
  * A secret kept from the phone: the value goes to the machine over this
@@ -23,7 +24,7 @@ export function RemoteSecret({
   const [name, setName] = useState('')
   const [value, setValue] = useState('')
 
-  if (!typing) return <p className="rm__said">This device may only watch. Allow it to type on the machine to keep a secret from here.</p>
+  if (!typing) return <p className="rm__said">{t('remote.secret.watchOnly')}</p>
 
   const named = name.trim().toUpperCase()
   const keep = (): void => {
@@ -34,7 +35,7 @@ export function RemoteSecret({
   return (
     <div className="rm__vault">
       <label className="rm__field">
-        <span>Project</span>
+        <span>{t('remote.secret.project')}</span>
         <select value={into} onChange={(event) => setInto(event.target.value)}>
           {projects.map((one) => (
             <option key={one.id} value={one.id}>
@@ -44,16 +45,23 @@ export function RemoteSecret({
         </select>
       </label>
       <label className="rm__field">
-        <span>Name</span>
-        <input value={name} placeholder="JEV_API_KEY" autoCapitalize="characters" autoComplete="off" spellCheck={false} onChange={(event) => setName(event.target.value)} />
+        <span>{t('remote.secret.name')}</span>
+        <input
+          value={name}
+          placeholder="JEV_API_KEY" // ui-text: ok an example variable name, not a sentence
+          autoCapitalize="characters"
+          autoComplete="off"
+          spellCheck={false}
+          onChange={(event) => setName(event.target.value)}
+        />
       </label>
       <label className="rm__field">
-        <span>Value</span>
+        <span>{t('remote.secret.value')}</span>
         <input type="password" autoComplete="off" value={value} onChange={(event) => setValue(event.target.value)} />
       </label>
-      <p className="rm__dim">Kept in the project’s .env, readable by you alone and kept out of git. Paste a key here, never in a chat.</p>
+      <p className="rm__dim">{t('remote.secret.kept')}</p>
       <button className="rm__btn rm__btn--go" disabled={!into || !named || !value} onClick={keep}>
-        Keep it
+        {t('remote.secret.keep')}
       </button>
     </div>
   )

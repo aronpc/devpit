@@ -2,6 +2,7 @@ import { act, cleanup, fireEvent, render, renderHook, screen, waitFor } from '@t
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import type { Board, Card, CardHappening } from '../gen/bindings'
+import { setLocale } from '../i18n'
 import { doingLabel, useCardUnread, useVisit, waitingSession } from './cardDoing'
 import { Tile } from './Lane'
 import { useBoard } from './useBoard'
@@ -108,6 +109,18 @@ describe("a tile's dot", () => {
 
     result.current(card('b'))
     expect(onOpen).toHaveBeenCalledWith('b')
+  })
+})
+
+describe("a tile's dot in Portuguese", () => {
+  afterEach(() => setLocale('en'))
+
+  it('says what the sessions are doing in the chosen language', () => {
+    setLocale('pt-BR')
+    expect(doingLabel('working', false)).toBe('Um agente está trabalhando neste cartão')
+    expect(doingLabel('waiting', false)).toBe('Um agente está esperando você')
+    expect(doingLabel('done', true)).toBe('Um agente terminou, e ninguém olhou ainda')
+    expect(doingLabel('gone', false)).toBe('A sessão deste cartão terminou')
   })
 })
 

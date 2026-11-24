@@ -14,13 +14,14 @@ use devflow_engine::folder::{self, State};
 use devflow_engine::layers::{self, Home, Layered};
 use devflow_engine::preset::{self, Preset};
 use devflow_engine::{proposal, setup, Ask, Proposal};
+use devpit_core::locale::Locale;
 use devpit_core::{preference, Store};
 use devpit_rpc::{Credentials, Project};
 use serde_json::{json, Map, Value};
 use tauri::AppHandle;
 
 use crate::devflow_asks::{self as asks, globally_on, made};
-use crate::devflow_dialect::{file, layout, DEVPIT};
+use crate::devflow_dialect::{dialect_in, file, layout, DEVPIT};
 
 pub(crate) const METHODS: [&str; 14] = [
     "devflow_offer",
@@ -93,6 +94,7 @@ pub(crate) fn state_word(state: &State, active: bool) -> &'static str {
 /// One of Devflow's methods, asked by the agent standing in `cwd`, from a
 /// session whose `CLAUDE_CONFIG_DIR` is `config_dir`.
 pub(crate) fn respond_from(
+    locale: Locale,
     app: Option<&AppHandle>,
     method: &str,
     project: &Project,
@@ -112,7 +114,9 @@ pub(crate) fn respond_from(
         "devflow_setup" => setup_of(app, &store, project, root, &state, params, By::Agent),
         "devflow_set" => set_of(app, &store, project, root, &state, params),
         // Answered where the stage is off too: a hook there says nothing.
-        "devflow_gate" => crate::devflow_gate::respond(app, &store, project, &state, cwd, params),
+        "devflow_gate" => {
+            crate::devflow_gate::respond(locale, app, &store, project, &state, cwd, params)
+        }
         "devflow_session" => crate::devflow_gate::session(&store, project, &state, cwd, params),
         "devflow_stage" => {
             stages_on(&store, project, &state)?;
@@ -128,10 +132,10 @@ pub(crate) fn respond_from(
         }
         "devflow_review" if params.get("card").is_none_or(Value::is_null) => {
             on_demand_here(&store, project, &state)?;
-            let asked = devflow_engine::adhoc::standalone_in(&DEVPIT, params)?
+            let asked = devflow_engine::adhoc::standalone_in(dialect_in(locale), params)?
                 .ok_or("a card's review is asked with its card")?;
             let profile = crate::devflow_profile::runnable(&store, &project.id, config_dir)?;
-            crate::devflow_adhoc::respond(app, project, &state, asked, profile.as_ref())
+            crate::devflow_adhoc::respond(locale, app, project, &state, asked, profile.as_ref())
         }
         "devflow_publish" => {
             on_demand_here(&store, project, &state)?;
@@ -139,7 +143,7 @@ pub(crate) fn respond_from(
         }
         "devflow_plan" if crate::devflow_plan::on_demand(params) => {
             on_demand_here(&store, project, &state)?;
-            crate::devflow_plan::previewed(params)
+            crate::devflow_plan::previewed(locale, params)
         }
         "devflow_skills" => crate::devflow_skills::respond(
             method,
@@ -170,7 +174,7 @@ pub(crate) fn respond_from(
                             profile.as_ref(),
                         )
                     }
-                    _ => crate::devflow_plan::respond(app, method, project, params),
+                    _ => crate::devflow_plan::respond(locale, app, method, project, params),
                 }
             }
             (Some(stages), _) => {

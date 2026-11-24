@@ -475,13 +475,15 @@ fn read_one(app: &AppHandle, project_id: &str) -> Result<usize, String> {
         return Ok(0);
     }
     let profile = crate::project_agent::linked_profile(&listed.projects, project_id)?;
-    let (command, env, mcp) = crate::project_agent::waking(&profile)?;
+    let locale = app.state::<Agents>().locale_for(project_id);
+    let (command, env, mcp) = crate::project_agent::waking(&profile, locale)?;
     let wake = Wake {
         command: &command,
         env: &env,
         root: Path::new(&project.root_path),
         name: &project.name,
         mcp_config: mcp.as_deref(),
+        locale,
     };
     let agents = app.state::<Agents>();
     // Never in the middle of an answer: the person or a session asked first.

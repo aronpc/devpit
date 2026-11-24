@@ -1,4 +1,6 @@
 import type { Change } from '../gen/bindings'
+import { t } from '../i18n'
+import { formatNumber } from '../i18n/format'
 
 /*
  * The one button at the top of the Changes panel.
@@ -31,7 +33,7 @@ export function primary(changes: readonly Change[], message: string): Primary {
   const loose = changes.length - staged
 
   if (changes.length === 0) {
-    return { doing: 'nothing', label: 'Commit', why: 'Nothing has changed.', disabled: true, files: 0 }
+    return { doing: 'nothing', label: t('workspace.changes.commit'), why: t('workspace.changes.nothingHasChanged'), disabled: true, files: 0 }
   }
 
   /* Staging comes first only while the index is empty, which is the step in
@@ -40,29 +42,28 @@ export function primary(changes: readonly Change[], message: string): Primary {
      thing to do — and the panel says how many are left out, in a row directly
      under the button, which is where that warning belongs. */
   if (staged === 0) {
-    return { doing: 'stage', label: 'Stage All', why: null, disabled: false, files: loose }
+    return { doing: 'stage', label: t('workspace.changes.stageAllButton'), why: null, disabled: false, files: loose }
   }
 
   if (message.trim().length === 0) {
     return {
       doing: 'commit',
-      label: `Commit ${staged}`,
-      why: 'Say what changed, and why.',
+      label: t('workspace.changes.commitCount', { count: staged }),
+      why: t('workspace.changes.sayWhat'),
       disabled: true,
       files: staged,
     }
   }
 
-  return { doing: 'commit', label: `Commit ${staged}`, why: null, disabled: false, files: staged }
+  return { doing: 'commit', label: t('workspace.changes.commitCount', { count: staged }), why: null, disabled: false, files: staged }
 }
 
 /**
  * Thousands, so six thousand lines does not read as six hundred.
  *
- * In whatever the window's locale is: a thousand separator is one of the few
- * things a person reads without looking, and `en-US` was hardcoded here for
- * no reason but the machine it was written on.
+ * In the locale the person chose, which the core resolved; a caller with
+ * its own words to say names one out loud.
  */
-export function counted(lines: number): string {
-  return lines.toLocaleString()
+export function counted(lines: number, locale?: string): string {
+  return formatNumber(lines, {}, locale)
 }

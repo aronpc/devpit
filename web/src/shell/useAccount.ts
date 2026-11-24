@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import type { Account, SignIn } from '../gen/bindings'
+import { t } from '../i18n'
 import { ask, commands } from './live'
 
 /* Who this install is signed in as, and how it gets there.
@@ -75,7 +76,7 @@ export function useAccount(): Membership {
 
     const started = await ask(() => commands.accountSignIn())
     if (!started.data) {
-      setFailed(started.error ?? 'The accounts server could not be reached.')
+      setFailed(started.error ?? t('workspace.signIn.serverDown'))
       return
     }
     setSigningIn(started.data)
@@ -94,7 +95,7 @@ export function useAccount(): Membership {
         if (asked.data.state === 'expired') {
           stopPolling()
           setSigningIn(null)
-          setFailed('That sign-in expired. Try again.')
+          setFailed(t('workspace.signIn.expiredTryAgain'))
         }
       })
     }, started.data.intervalSeconds * 1000)

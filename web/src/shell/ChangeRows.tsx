@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 
 import type { Change } from '../gen/bindings'
+import { t } from '../i18n'
 import { ChangeMenu } from './ChangeMenu'
 import { menuPoint } from './menuRules'
 import { bare, foldered, folders, paths, type Node } from './changeTree'
@@ -92,8 +93,8 @@ export function ChangeRows({
                 className="gitrow__act"
                 disabled={busy}
                 onClick={() => onDiscard(change)}
-                title={change.status === 'untracked' ? 'Delete' : 'Discard'}
-                aria-label={`Discard ${change.path}`}
+                title={change.status === 'untracked' ? t('workspace.changes.deleteOne') : t('workspace.changes.discardOne')}
+                aria-label={t('workspace.changes.discardFileAria', { path: change.path })}
               >
                 {change.status === 'untracked' ? <Trash /> : <Undo />}
               </button>
@@ -101,8 +102,8 @@ export function ChangeRows({
                 className="gitrow__act"
                 disabled={busy}
                 onClick={() => onStage([change.path])}
-                title={staged ? 'Take out of the commit' : 'Put in the commit'}
-                aria-label={`${staged ? 'Unstage' : 'Stage'} ${change.path}`}
+                title={staged ? t('workspace.changes.takeOut') : t('workspace.changes.putIn')}
+                aria-label={t(staged ? 'workspace.changes.unstageFileAria' : 'workspace.changes.stageFileAria', { path: change.path })}
               >
                 {staged ? <Minus /> : <Plus />}
               </button>
@@ -146,8 +147,8 @@ export function ChangeRows({
               className="gitrow__act"
               disabled={busy}
               onClick={() => onStage(paths([node]))}
-              title={staged ? 'Take all of these out' : 'Put all of these in'}
-              aria-label={`${staged ? 'Unstage' : 'Stage'} everything in ${node.path}`}
+              title={staged ? t('workspace.changes.takeAllOut') : t('workspace.changes.putAllIn')}
+              aria-label={t(staged ? 'workspace.changes.unstageEverythingIn' : 'workspace.changes.stageEverythingIn', { path: node.path })}
             >
               {staged ? <Minus /> : <Plus />}
             </button>
@@ -167,7 +168,7 @@ export function ChangeRows({
             setShut((was) => (was.size > 0 ? new Set() : new Set(folders(tree))))
           }
         >
-          {shut.size > 0 ? 'Expand all' : 'Collapse all'}
+          {shut.size > 0 ? t('workspace.changes.expandAll') : t('workspace.changes.collapseAll')}
         </button>
       )}
       {rows(tree, 0)}

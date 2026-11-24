@@ -11,19 +11,24 @@
 //! No dependency on the rest of the app: the caller hands over where devpit
 //! keeps its state, and everything else is a socket and some JSON.
 
+#[cfg(test)]
+mod agent_rules_tests;
 pub mod apps;
 mod assistant;
 pub mod cli;
 pub mod client;
 mod consult;
 pub mod devflow;
+mod devflow_pt_br;
 pub mod events;
 pub mod guide;
 pub mod hook;
 mod lean;
 mod listing;
 pub mod mcp;
+mod mcp_pt_br;
 pub mod remote_mcp;
+mod rest_pt_br;
 pub mod skills;
 mod slim;
 

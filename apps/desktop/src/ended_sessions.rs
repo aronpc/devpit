@@ -215,7 +215,13 @@ fn resumed_line(
     session_id: &str,
 ) -> Result<String, RpcError> {
     resumed(
-        &crate::shell_launch::to_start_in(profile_id, Some(project_id))?,
+        // A session resumed is a session born again, in the language of the
+        // moment it is resumed, not of the one that ended.
+        &crate::shell_launch::to_start_in(
+            crate::session_locale::SessionLocale::capture(),
+            profile_id,
+            Some(project_id),
+        )?,
         name,
         crate::restoring::resume_flag_of(profile_id),
         session_id,

@@ -8,7 +8,11 @@ fn a_switched_orchestrator_keeps_its_notes_and_links_and_is_handed_over_once() {
     let store = crate::projects::store().expect("store");
     let dir = tempfile::tempdir().expect("tempdir");
     let folder = dir.path();
-    crate::orchestrator::seed(folder).expect("seeded");
+    crate::orchestrator::seed(
+        folder,
+        crate::session_locale::SessionLocale::of(devpit_core::locale::Locale::En),
+    )
+    .expect("seeded");
     std::fs::write(
         folder.join("context/now.md"),
         "# Now\n\napi-worker is busy on #42\n",

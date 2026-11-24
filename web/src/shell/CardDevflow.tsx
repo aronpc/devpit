@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 
 import type { DevflowCardEvidence, DevflowExploit, DevflowReviewed } from '../gen/bindings'
+import { t } from '../i18n'
 import { decisionsLine, decisionsTone } from './devflowDecisions'
 import { ask, commands } from './live'
 import { useShell } from './useShell'
@@ -12,11 +13,11 @@ import { onCarried } from './window'
  * the files that run attached. Nothing at all for a card Devflow never ran on.
  */
 
-const seconds = (ms: number): string => (ms >= 60000 ? `${Math.floor(ms / 60000)} min ${Math.round((ms % 60000) / 1000)} s` : `${Math.round(ms / 1000)} s`)
+const seconds = (ms: number): string => (ms >= 60000 ? t('card.minSec', { min: Math.floor(ms / 60000), sec: Math.round((ms % 60000) / 1000) }) : t('card.sec', { sec: Math.round(ms / 1000) }))
 
 export function reviewerSaid(one: DevflowReviewed): string {
-  if (one.status !== 'answered') return `skipped${one.reason ? ` — ${one.reason}` : ''}`
-  const said = [`${one.findings} ${one.findings === 1 ? 'finding' : 'findings'}`]
+  if (one.status !== 'answered') return one.reason ? t('card.skippedWhy', { reason: one.reason }) : t('card.skipped')
+  const said = [t('card.findings', { count: one.findings })]
   if (one.durationMs != null) said.push(seconds(one.durationMs))
   if (one.costUsd != null) said.push(`$${one.costUsd.toFixed(2)}`)
   return said.join(' · ')
@@ -54,13 +55,13 @@ export function CardDevflow({ cardId }: { cardId: string }): React.JSX.Element |
   }
   return (
     <section>
-      <h2 className="cardp__h">Devflow</h2>
+      <h2 className="cardp__h">{t('card.devflow')}</h2>
       {gate && (
         <div className="crun" data-state={gate.passed ? 'ok' : 'failed'} title={gate.missing.join('\n')}>
           <span className="crun__b">
-            <span className="crun__t">Gate {gate.passed ? 'passed' : 'not passed'}</span>
+            <span className="crun__t">{gate.passed ? t('card.gatePassed') : t('card.gateNotPassed')}</span>
             <span className="crun__s">
-              {gate.withEvidence} of {gate.criteria} criteria with evidence{gate.missing[0] ? ` · ${gate.missing[0]}` : ''}
+              {t('card.withEvidence', { count: gate.criteria, done: gate.withEvidence })}{gate.missing[0] ? ` · ${gate.missing[0]}` : ''}
             </span>
           </span>
         </div>
@@ -78,16 +79,16 @@ export function CardDevflow({ cardId }: { cardId: string }): React.JSX.Element |
       {evidence.decisions && evidence.decisions.state !== 'off' && (
         <div className="crun" data-state={decisionsTone(evidence.decisions)}>
           <span className="crun__b">
-            <span className="crun__t">Decisions</span>
+            <span className="crun__t">{t('card.decisions')}</span>
             <span className="crun__s">{decisionsLine(evidence.decisions)}</span>
           </span>
         </div>
       )}
-      {evidence.verdict && <p className="crun__s">Review: {evidence.verdict === 'request_changes' ? 'changes requested' : evidence.verdict}</p>}
+      {evidence.verdict && <p className="crun__s">{t('card.review', { verdict: evidence.verdict === 'request_changes' ? t('card.changesRequested') : evidence.verdict })}</p>}
       {evidence.exploits.map((one) => (
         <div className="crun" key={one.test} data-state="failed" title={one.test}>
           <span className="crun__b">
-            <span className="crun__t">Exploit confirmed{one.title ? ` · ${one.title}` : ''}</span>
+            <span className="crun__t">{t('card.exploit')}{one.title ? ` · ${one.title}` : ''}</span>
             <span className="crun__s">{exploitSaid(one)}</span>
           </span>
         </div>

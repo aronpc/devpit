@@ -1,4 +1,5 @@
 import type { FoundIn, Message } from '../gen/bindings'
+import { t } from '../i18n'
 
 /*
  * Finding a word in a conversation, all of it.
@@ -18,7 +19,7 @@ export function occurrences(hits: readonly FoundIn[]): Occurrence[] {
 
 /* "3 of 17": the match shown, counted from the top, of all of them. */
 export function counter(at: number, all: number): string {
-  return all === 0 ? 'No results' : `${at + 1} of ${all}`
+  return all === 0 ? t('sessions.find.none') : t('sessions.find.of', { at: at + 1, all })
 }
 
 /* The next match from `at`, round the ends either way. */

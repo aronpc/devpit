@@ -7,6 +7,7 @@
 
 use std::io::ErrorKind;
 
+use devpit_core::locale::Locale;
 use devpit_core::tree;
 use devpit_rpc::{ErrorCode, FileNode, GitStatus, ProjectTree, RpcError};
 
@@ -23,7 +24,8 @@ pub(crate) fn tree_error(err: devpit_core::TreeError) -> RpcError {
         devpit_core::TreeError::Unreadable { ref source, .. } => match source.kind() {
             ErrorKind::NotFound => RpcError::new(ErrorCode::NotFound, err.to_string()),
             ErrorKind::PermissionDenied => RpcError::forbidden(err.to_string()),
-            _ => RpcError::internal(err.to_string()),
+            // The report is never translated.
+            _ => RpcError::internal(err.said(Locale::En)),
         },
         devpit_core::TreeError::AlreadyExists { .. } => {
             RpcError::new(ErrorCode::Conflict, err.to_string())

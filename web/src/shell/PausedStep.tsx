@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 
 import type { Run, RunSwitchOptions } from '../gen/bindings'
 import { ask, commands } from './live'
+import { t } from '../i18n'
 
 export function RunIdentity({ run }: { run: Run }): React.JSX.Element | null {
   const model = run.model
@@ -44,7 +45,7 @@ export function PausedStep({
       {options && <p className="pstep__why">{options.reason}</p>}
       {problem && <p className="wtb__no">{problem}</p>}
       {options?.profiles.length === 0 && (
-        <p className="pstep__none">No other profile can run this step.</p>
+        <p className="pstep__none">{t('workspace.pausedStep.noOtherProfile')}</p>
       )}
       {options && options.profiles.length > 0 && (
         <div className="pstep__profiles">
@@ -52,11 +53,11 @@ export function PausedStep({
             <button
               className="btn btn--sm"
               key={profile.id}
-              aria-label={`Switch to ${profile.label}`}
+              aria-label={t('workspace.pausedStep.switchTo', { profile: profile.label })}
               disabled={switching}
               onClick={() => switchTo(profile.id)}
             >
-              Switch to {profile.label}
+              {t('workspace.pausedStep.switchTo', { profile: profile.label })}
               {profile.model && ` · ${profile.model}`}
             </button>
           ))}

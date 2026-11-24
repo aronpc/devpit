@@ -2,9 +2,10 @@ import { createContext, useContext, useEffect, useRef, useState } from 'react'
 
 import { imagesOf, isCut, namedImages, textOf, WholeContext } from './cutOutput'
 import { ask, commands } from './live'
-import { acts, actionLabel, grouped, groupTarget, headline, isGroup, ranAs, rowLabel, type Act, type Group, type Kind } from './acts'
+import { acts, actionLabel, grouped, groupTarget, headline, isGroup, ranState, rowLabel, type Act, type Group, type Kind } from './acts'
 import { shownRows, useActivity } from './activity'
 import type { Part } from '../gen/bindings'
+import { t } from '../i18n'
 import { editDiff } from './editCard'
 import { EditCard } from './EditCardView'
 import { Markdown } from './MarkdownView'
@@ -89,7 +90,7 @@ function AgentRow({ act }: { act: Act }): React.JSX.Element {
         <span className="arow__k">{actionLabel(act.kind)}</span>
         {act.target && <span className="arow__d">{act.target}</span>}
         <Ran act={act} />
-        {act.done ? <Chevron open={open} className="arow__v" /> : <span className="arow__live" aria-label="Running" />}
+        {act.done ? <Chevron open={open} className="arow__v" /> : <span className="arow__live" aria-label={t('acts.running')} />}
       </button>
       {open && (
         <div className="arow__body">
@@ -173,13 +174,15 @@ function LeafRow({ act }: { act: Act }): React.JSX.Element {
   )
 }
 
-/* A subagent's state and the CLI's count of how long it ran. */
+/* A subagent's state and the CLI's count of how long it ran. The state the
+   style reads is an id; the word beside it is the catalog's. */
 function Ran({ act }: { act: Act }): React.JSX.Element | null {
   if (act.kind !== 'agent') return null
-  const state = ranAs(act)
+  const state = ranState(act)
+  const said = t(`acts.state.${state}`)
   return (
-    <span className="arow__t" data-state={state.toLowerCase()}>
-      {act.durationMs != null ? `${state} · ${took(act.durationMs)}` : state}
+    <span className="arow__t" data-state={state}>
+      {act.durationMs != null ? `${said} · ${took(act.durationMs)}` : said}
     </span>
   )
 }
@@ -198,12 +201,12 @@ function Whole({ callId, output }: { callId: string; output: string }): React.JS
     const text = textOf(whole)
     return (
       <>
-        {shown.map((src, at) => <Zoomable key={at} src={src} name={`Image ${at + 1} of the output`} className="asec__img" />)}
-        {text.trim() && <Section label="Output, in full" body={text} />}
+        {shown.map((src, at) => <Zoomable key={at} src={src} name={t('acts.imageName', { n: at + 1 })} className="asec__img" />)}
+        {text.trim() && <Section label={t('acts.outputFull')} body={text} />}
       </>
     )
   }
-  const said = images.length ? `Show ${images.length === 1 ? 'the image' : `${images.length} images`} (${kb(images)})` : 'Show it all'
+  const said = images.length ? t('acts.showImages', { count: images.length, size: kb(images) }) : t('acts.showAll')
   return (
     <div className="asec">
       <button
@@ -212,7 +215,7 @@ function Whole({ callId, output }: { callId: string; output: string }): React.JS
           setError(null)
           void ask(() => commands.chatPartFull(where.projectId, where.conversationId, messageId, callId)).then((asked) => {
             if (asked.data?.kind === 'tool_result') setWhole(asked.data.output)
-            else setError(asked.error ?? 'that output is not in the transcript')
+            else setError(asked.error ?? t('acts.notInTranscript'))
           })
         }}
       >
@@ -235,15 +238,15 @@ interface Piece {
 }
 
 function sections(act: Act): readonly Piece[] {
-  if (act.kind === 'think') return act.output.trim() ? [{ label: 'Thought', body: act.output }] : []
+  if (act.kind === 'think') return act.output.trim() ? [{ label: t('acts.thought'), body: act.output }] : []
   const out: Piece[] = []
   const command = act.kind === 'run' ? commandOf(act.input) : ''
-  if (command) out.push({ label: 'Command', body: command })
+  if (command) out.push({ label: t('acts.command'), body: command })
   /* The whole input, unless the command said all of it. */
   if (act.input.trim() && act.input.trim() !== '{}' && !(command && onlyCommand(act.input))) {
-    out.push({ label: 'Input', body: pretty(act.input) })
+    out.push({ label: t('acts.input'), body: pretty(act.input) })
   }
-  if (act.output.trim()) out.push({ label: 'Output', body: act.output })
+  if (act.output.trim()) out.push({ label: t('acts.output'), body: act.output })
   return out
 }
 
@@ -286,8 +289,8 @@ function Section({ label, body }: Piece): React.JSX.Element {
         <span>{label}</span>
         <button
           className="asec__c"
-          aria-label={copied ? 'Copied' : `Copy ${label.toLowerCase()}`}
-          title={copied ? 'Copied' : `Copy ${label.toLowerCase()}`}
+          aria-label={copied ? t('acts.copied') : t('acts.copy', { what: label.toLowerCase() })}
+          title={copied ? t('acts.copied') : t('acts.copy', { what: label.toLowerCase() })}
           onClick={() => {
             void navigator.clipboard?.writeText(body)
             setCopied(true)
@@ -338,10 +341,10 @@ function State({ act, open, hasBody }: { act: Act; open: boolean; hasBody: boole
   if (hasBody) return <Chevron open={open} className="arow__v" />
   if (act.failed) {
     return (
-      <svg className="arow__x" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" aria-label="Failed"><circle cx="12" cy="12" r="9" /><path d="M12 8v5M12 16.5v.01" /></svg>
+      <svg className="arow__x" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" aria-label={t('acts.failed')}><circle cx="12" cy="12" r="9" /><path d="M12 8v5M12 16.5v.01" /></svg>
     )
   }
-  if (!act.done) return <span className="arow__live" aria-label="Running" />
+  if (!act.done) return <span className="arow__live" aria-label={t('acts.running')} />
   return null
 }
 

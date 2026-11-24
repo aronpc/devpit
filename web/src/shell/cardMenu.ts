@@ -1,3 +1,4 @@
+import { t } from '../i18n'
 import type { SessionEntry } from './sessionMenu'
 import { keyLabel } from './tileKeys'
 
@@ -25,14 +26,14 @@ export interface CardHands {
 }
 
 export const cardMenu = (hands: CardHands): readonly SessionEntry[] => [
-  { label: 'Open', key: keyLabel('open'), run: hands.open },
-  { label: 'Rename', key: keyLabel('rename'), run: hands.rename },
-  ...(hands.moveTo ? [{ label: 'Move to…', key: keyLabel('moveTo'), run: hands.moveTo }] : []),
+  { label: t('card.menu.open'), key: keyLabel('open'), run: hands.open },
+  { label: t('card.menu.rename'), key: keyLabel('rename'), run: hands.rename },
+  ...(hands.moveTo ? [{ label: t('card.menu.moveTo'), key: keyLabel('moveTo'), run: hands.moveTo }] : []),
   { rule: true },
-  hands.play ? { label: 'Run step', run: hands.play } : { label: 'Open a terminal', run: hands.terminal },
-  { label: 'Chat about this card', run: hands.chat },
-  ...(hands.copyBranch ? [{ label: 'Copy branch', run: hands.copyBranch }] : []),
+  hands.play ? { label: t('card.menu.runStep'), run: hands.play } : { label: t('card.menu.terminal'), run: hands.terminal },
+  { label: t('card.menu.chat'), run: hands.chat },
+  ...(hands.copyBranch ? [{ label: t('card.menu.copyBranch'), run: hands.copyBranch }] : []),
   { rule: true },
-  { label: 'Archive', key: keyLabel('archive'), run: hands.archive },
-  { label: 'Delete…', bad: true, run: hands.remove },
+  { label: t('card.menu.archive'), key: keyLabel('archive'), run: hands.archive },
+  { label: t('card.menu.delete'), bad: true, run: hands.remove },
 ]

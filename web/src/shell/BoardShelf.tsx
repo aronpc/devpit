@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 
+import { t } from '../i18n'
+import { formatDate } from '../i18n/format'
 import type { ArchivedCard, DeleteRefusal } from '../gen/bindings'
 import { CardEnding, type Ending } from './CardHeader'
 import { ask, commands } from './live'
@@ -45,9 +47,9 @@ export function UndoArchive({
 
   return createPortal(
     <div className="undo" role="status">
-      <span>{problem ?? 'Card archived.'}</span>
+      <span>{problem ?? t('board.cardArchived')}</span>
       <button className="undo__b" onClick={undo}>
-        Undo
+        {t('board.undo')}
       </button>
     </div>,
     document.body,
@@ -105,31 +107,31 @@ export function ArchivedPane({
 
   return (
     <div className="cardp" data-open="true" onClick={(event) => event.target === event.currentTarget && onClose()}>
-      <div className="cardp__box runsp" role="dialog" aria-modal="true" aria-label="Archived cards">
+      <div className="cardp__box runsp" role="dialog" aria-modal="true" aria-label={t('board.archivedCards')}>
         <header className="runsp__top">
-          <h2 className="runsp__t">Archived</h2>
-          <button className="sq26" onClick={onClose} aria-label="Close archived" title="Close archived">
+          <h2 className="runsp__t">{t('board.archived')}</h2>
+          <button className="sq26" onClick={onClose} aria-label={t('board.closeArchived')} title={t('board.closeArchived')}>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
           </button>
         </header>
 
         {error && <p className="wtb__no">{error}</p>}
-        {cards.length === 0 && !error && <p className="runsp__none">Nothing is archived.</p>}
+        {cards.length === 0 && !error && <p className="runsp__none">{t('board.nothingArchived')}</p>}
         {cards.map((card) => (
           <div className="crun" key={card.id}>
             <span className="crun__b">
               <span className="crun__t">{card.title}</span>
               <span className="crun__o">
-                {card.columnName ?? 'a lane that is gone'}
-                {card.archivedAt !== null && ` · archived ${new Date(card.archivedAt * 1000).toLocaleString()}`}
+                {card.columnName ?? t('board.laneGone')}
+                {card.archivedAt !== null && ` · ${t('board.archivedAt', { when: formatDate(card.archivedAt * 1000, { dateStyle: 'short', timeStyle: 'short' }) })}`}
               </span>
             </span>
             <span className="pin__acts">
               <button className="btn" onClick={() => restore(card.id)}>
-                Restore
+                {t('board.restore')}
               </button>
               <button className="btn" data-danger onClick={() => setEnding({ cardId: card.id, ending: { what: 'delete' } })}>
-                Delete…
+                {t('board.deleteEllipsis')}
               </button>
             </span>
           </div>
@@ -140,7 +142,7 @@ export function ArchivedPane({
         <CardEnding
           ending={ending.ending}
           detail={null}
-          summary="It goes for good, with its comments, pinned files and runs. Its checkout and branch stay where they are."
+          summary={t('board.deleteSummary')}
           remove={(force) => remove(ending.cardId, force)}
           onAsk={(next) => setEnding(next ? { cardId: ending.cardId, ending: next } : null)}
           onProblem={setError}

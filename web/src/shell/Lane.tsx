@@ -1,3 +1,4 @@
+import { t } from '../i18n'
 import { Confirm } from './Confirm'
 import { dueLabel, nearness } from './due'
 import type { Lane as LaneData } from './board'
@@ -85,6 +86,7 @@ export const Tile = memo(function Tile({
   const spent = money(card.costUsd ?? 0)
   const blocking = stillBlocking(card.blockedBy)
   const closed = closedLabel(card)
+  const runLabel = stepName ? t('lane.runStep', { name: stepName }) : t('lane.runCardStep')
   const criteria = card.criteria ?? []
   const ticked = criteria.filter((one) => one.done).length
   return (
@@ -100,8 +102,8 @@ export const Tile = memo(function Tile({
       {onPlay && (
         <button
           className="tile__play"
-          aria-label={`Run ${stepName ?? "this card's step"}`}
-          title={`Run ${stepName ?? "this card's step"}`}
+          aria-label={runLabel}
+          title={runLabel}
           onPointerDown={(event) => event.stopPropagation()}
           onClick={(event) => {
             event.stopPropagation()
@@ -119,8 +121,8 @@ export const Tile = memo(function Tile({
       {progress && run?.state === 'running' && <div className="tile__log">{progress}</div>}
       {closed && <div className="tile__closed">{closed}</div>}
       {blocking.length > 0 && (
-        <div className="tile__blocked" title={`Blocked by ${blocking.map(named).join(', ')}`}>
-          Blocked by {blocking.map(named).join(', ')}
+        <div className="tile__blocked" title={t('lane.blockedBy', { names: blocking.map(named).join(', ') })}>
+          {t('lane.blockedBy', { names: blocking.map(named).join(', ') })}
         </div>
       )}
       <div className="tile__m">
@@ -166,31 +168,31 @@ export const Tile = memo(function Tile({
           <span
             className="tile__n tile__progress"
             data-done={card.progress.done === card.progress.total}
-            title={`${card.progress.done} of ${card.progress.total} cards done`}
+            title={t('lane.cardsDone', { count: card.progress.total, done: card.progress.done })}
           >
             <Stack />
             {card.progress.done}/{card.progress.total}
           </span>
         )}
         {criteria.length > 0 && (
-          <span className="tile__n" title={`${ticked} of ${criteria.length} criteria met`}>
+          <span className="tile__n" title={t('lane.criteriaMet', { count: criteria.length, done: ticked })}>
             <CheckBox />
             {ticked}/{criteria.length}
           </span>
         )}
         {(card.planWaiting ?? 0) > 0 && (
-          <span className="tile__plan" title={`A plan of ${card.planWaiting} cards waits for you on this card`}>
-            Plan · {card.planWaiting}
+          <span className="tile__plan" title={t('lane.planWaits', { count: card.planWaiting ?? 0 })}>
+            {t('lane.plan', { count: card.planWaiting ?? 0 })}
           </span>
         )}
         {card.comments > 0 && (
-          <span className="tile__n" title={`${card.comments} comments`}>
+          <span className="tile__n" title={t('lane.comments', { count: card.comments })}>
             <Speech />
             {card.comments}
           </span>
         )}
         {card.pinned > 0 && (
-          <span className="tile__n" title={`${card.pinned} files`}>
+          <span className="tile__n" title={t('lane.files', { count: card.pinned })}>
             <Clip />
             {card.pinned}
           </span>
@@ -227,9 +229,9 @@ export function RunConfirm({
   return createPortal(
     <div onPointerDown={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
       <Confirm
-        title={`Run ${stepName ?? 'this step'}?`}
-        body="This step is marked as having no undo. It runs against this card's own checkout, on its own branch — but what it does from there is its own."
-        danger={`Run ${stepName ?? 'it'}`}
+        title={stepName ? t('lane.runStepAsk', { name: stepName }) : t('lane.runThisStepAsk')}
+        body={t('lane.noUndoBody')}
+        danger={stepName ? t('lane.runStep', { name: stepName }) : t('lane.runIt')}
         onClose={onClose}
         onConfirm={onConfirm}
       />
@@ -251,7 +253,7 @@ function TileRename({ title, onDone }: { title: string; onDone: (title: string |
       className="tile__rename"
       autoFocus
       defaultValue={title}
-      aria-label="Card title"
+      aria-label={t('lane.cardTitle')}
       onPointerDown={(event) => event.stopPropagation()}
       onKeyDown={(event) => {
         event.stopPropagation()
@@ -337,7 +339,7 @@ export function LaneHead({
         contentEditable={renaming}
         suppressContentEditableWarning
         role="textbox"
-        aria-label={`${lane.column.name} name`}
+        aria-label={t('lane.nameOf', { name: lane.column.name })}
         aria-readonly={!renaming}
         onDoubleClick={() => setRenaming(true)}
         onKeyDown={(event) => {
@@ -404,14 +406,14 @@ export function LaneFoot({
       {adding ? (
         <InlineAdd
           className="tile__new"
-          label="New card title"
-          placeholder="Card title"
+          label={t('lane.newCardTitle')}
+          placeholder={t('lane.cardTitle')}
           onAdd={onAddCard}
           onDone={() => onAdding(false)}
         />
       ) : (
         <button className="tile__add" onClick={() => onAdding(true)}>
-          + Add card
+          {t('lane.addCard')}
         </button>
       )}
       <div className="blane__fill" />
