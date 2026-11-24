@@ -5,7 +5,7 @@
 .bell__b { position: relative; width: 26px; height: 26px; border-radius: 7px; display: flex; align-items: center; justify-content: center; color: var(--text-2); }
 .bell__b:hover { background: var(--overlay-strong); color: var(--text); }
 .bell__n { position: absolute; top: 1px; right: 0; min-width: 14px; height: 14px; padding: 0 3px; border-radius: 7px; background: var(--accent); color: var(--on-inverse); font-size: 9.5px; font-weight: 600; line-height: 14px; text-align: center; font-variant-numeric: tabular-nums; }
-.bell__pop { position: absolute; right: 0; top: calc(100% + 6px); z-index: 200; width: 340px; border-radius: var(--radius-lg); background: var(--glass-solid); box-shadow: var(--e3), var(--top); animation: pop-in 130ms cubic-bezier(0.2, 0.7, 0.3, 1) both; overflow: hidden; }
+.bell__pop { position: absolute; right: 0; top: calc(100% + 6px); z-index: 200; width: 340px; border-radius: var(--radius-lg); background: var(--glass-solid); box-shadow: var(--e3), var(--top); animation: pop-in var(--dur-2) var(--ease-out) both; overflow: hidden; }
 .bell__top { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-bottom: 1px solid var(--border); }
 .bell__t { font-size: 12px; color: var(--text); }
 .bell__none { padding: 26px 16px; text-align: center; font-size: 12px; line-height: 1.55; color: var(--text-3); }

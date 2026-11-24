@@ -102,7 +102,6 @@
   --syn-property: #8fb3c9;
 
   --on-accent: #2a1109;
-  --scroll-thumb: #333333;
   --scrim: rgb(0 0 0 / 0.5);
   --shade: rgb(0 0 0 / 0.5);
   --shade-deep: rgb(0 0 0 / 0.6);
@@ -185,12 +184,24 @@
   --dur-2: 140ms;
   --dur-3: 180ms;
   --dur-4: 240ms;
+  /* A mark that has to be seen landing, and how long a pointer rests before a
+     panel or a tip answers it. */
+  --dur-mark: 600ms;
+  --intent: 250ms;
+  --intent-late: 300ms;
+  /* Loops: a spinner, a blink, a breath. */
+  --loop-1: 0.8s;
+  --loop-2: 1.2s;
+  --loop-3: 1.6s;
+  --loop-4: 2.4s;
 
   /* One ring for every control, drawn only for the keyboard: outside the
      control by a hair, or inside it where a scroller would cut it. A field
      shows the same colour on its own edge, since a field is focused by a
      click as much as by a key. */
   --focus: var(--accent);
+  --scroll-thumb: color-mix(in srgb, var(--text) 18%, transparent);
+  --scroll-thumb-hover: color-mix(in srgb, var(--text) 34%, transparent);
   --focus-ring: 2px solid var(--focus);
   --focus-offset: 1px;
   --focus-inset: -2px;
@@ -256,7 +267,6 @@
   --syn-property: #3c6a86;
 
   --on-accent: #fff6f2;
-  --scroll-thumb: #c8c2b8;
   --scrim: rgb(38 32 26 / 0.34);
   --shade: rgb(64 54 44 / 0.14);
   --shade-deep: rgb(64 54 44 / 0.20);
@@ -310,8 +320,7 @@
     --syn-type: #5f6636;
     --syn-property: #3c6a86;
     --on-accent: #fff6f2;
-    --scroll-thumb: #c8c2b8;
-    --scrim: rgb(38 32 26 / 0.34);
+      --scrim: rgb(38 32 26 / 0.34);
     --shade: rgb(64 54 44 / 0.14);
     --shade-deep: rgb(64 54 44 / 0.20);
     --dots: hsla(30, 12%, 20%, 0.10);

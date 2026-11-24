@@ -22,7 +22,7 @@
 .apps__list > .oapp + .oapp { margin-top: 0; border-top: 1px solid var(--border); }
 /* Over the list rather than pushing it down: a menu that reflows the rows
    behind it moves the row you were about to click. */
-.apps__menu { position: absolute; right: 0; top: calc(100% + 5px); z-index: 20; min-width: 190px; padding: 5px; border-radius: var(--radius-lg); background: var(--glass-solid); box-shadow: var(--e3), var(--top); animation: pop-in 130ms cubic-bezier(0.2, 0.7, 0.3, 1) both; }
+.apps__menu { position: absolute; right: 0; top: calc(100% + 5px); z-index: 20; min-width: 190px; padding: 5px; border-radius: var(--radius-lg); background: var(--glass-solid); box-shadow: var(--e3), var(--top); animation: pop-in var(--dur-2) var(--ease-out) both; }
 .apps__opt { width: 100%; height: 30px; padding: 0 9px; border-radius: 7px; display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 12.5px; color: var(--text-2); }
 .apps__opt:hover:not(:disabled) { background: var(--sidebar-item); color: var(--text); }
 .apps__opt:disabled { color: var(--text-3); }

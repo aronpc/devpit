@@ -135,17 +135,33 @@ svg {
   flex: none;
 }
 
-/* Scrollbars are chrome, not content: thin, and only where something scrolls. */
+/* Scrollbars are chrome, not content: thin, and only where something scrolls.
+   One mechanism for every scroller, the one each engine the app runs in reads;
+   a scroller that also set `scrollbar-width` would drop these in Chromium. */
 ::-webkit-scrollbar {
-  width: 9px;
-  height: 9px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--scroll-thumb);
+  background-color: var(--scroll-thumb);
   border-radius: 999px;
   border: 2px solid transparent;
   background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scroll-thumb-hover);
+}
+
+/* The columns a person reads down keep their thumb out of sight until the
+   pointer is over them. */
+:where(.side__scroll, .rail__list, .rail__orchrows, .scroll, .blane__list, .prefs__nav, .prefs__main)::-webkit-scrollbar-thumb {
+  background-color: transparent;
+}
+
+:where(.side__scroll, .rail__list, .rail__orchrows, .scroll, .blane__list, .prefs__nav, .prefs__main):hover::-webkit-scrollbar-thumb {
+  background-color: var(--scroll-thumb);
 }
 
 ::-webkit-scrollbar-track {

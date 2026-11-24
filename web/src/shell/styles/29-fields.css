@@ -7,7 +7,7 @@
  */
 .hist__find, .git__find, .fb__find, .sk__find, .prefs__find, .mgr__find, .resume__find {
   border-radius: 6px;
-  transition: border-color 120ms ease, background-color 120ms ease, box-shadow 120ms ease;
+  transition: border-color var(--dur-1) ease, background-color var(--dur-1) ease, box-shadow var(--dur-1) ease;
 }
 .hist__find:hover, .git__find:hover, .fb__find:hover, .sk__find:hover, .prefs__find:hover, .mgr__find:hover, .resume__find:hover {
   border-color: var(--border-strong);

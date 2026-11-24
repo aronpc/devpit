@@ -17,7 +17,7 @@
    a card are three different things, and picking after the fact means
    retyping the title. */
 .newmenu { position: relative; }
-.newmenu__pop { position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 60; padding: 4px; border-radius: var(--radius-lg); background: var(--glass-solid); box-shadow: var(--e3), var(--top); animation: pop 130ms ease-out both; }
+.newmenu__pop { position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 60; padding: 4px; border-radius: var(--radius-lg); background: var(--glass-solid); box-shadow: var(--e3), var(--top); animation: pop var(--dur-2) ease-out both; }
 .newmenu__pop[hidden] { display: none; }
 @keyframes pop { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
 .newmenu__item { width: 100%; height: 34px; padding: 0 10px; border-radius: 7px; display: flex; align-items: center; gap: 9px; text-align: left; }
@@ -33,7 +33,7 @@
 
 .searchslot { height: 42px; flex: none; }
 
-.side__scroll { flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--scroll-thumb) transparent; }
+.side__scroll { flex: 1; min-height: 0; overflow-y: auto; }
 
 /* Both lines start at the same left edge. The kind icon used to lead
    line one, which pushed the title 17px right of the badge under it and
@@ -52,7 +52,7 @@
 .st-wait { color: var(--warning); }
 .st-fail { color: var(--danger); }
 .st-ok { color: var(--success); }
-.spin { animation: spin 1.4s linear infinite; }
+.spin { animation: spin var(--loop-3) linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* A nav link is the same action row as New Task, pressed when its pane
@@ -109,12 +109,12 @@
 body[data-account='in'] .signin { display: none; }
 body[data-account='out'] .acct { display: none; }
 
-.gear { width: 30px; height: 30px; flex: none; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--text-3); transition: background-color 120ms ease, color 120ms ease; }
+.gear { width: 30px; height: 30px; flex: none; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--text-3); transition: background-color var(--dur-1) ease, color var(--dur-1) ease; }
 .gear:hover { background: var(--sidebar-item); color: var(--text); }
 
 /* Signed out: the invitation, and the reason for it on the second line —
    a bare "Sign in" asks for something without saying what it buys. */
-.signin { flex: 1; min-width: 0; height: 38px; padding: 0 9px; border-radius: 10px; display: flex; align-items: center; gap: 10px; text-align: left; background: color-mix(in srgb, var(--accent) 12%, transparent); border: 1px solid color-mix(in srgb, var(--accent) 26%, transparent); transition: background-color 130ms ease, border-color 130ms ease; }
+.signin { flex: 1; min-width: 0; height: 38px; padding: 0 9px; border-radius: 10px; display: flex; align-items: center; gap: 10px; text-align: left; background: color-mix(in srgb, var(--accent) 12%, transparent); border: 1px solid color-mix(in srgb, var(--accent) 26%, transparent); transition: background-color var(--dur-2) ease, border-color var(--dur-2) ease; }
 .signin:hover { background: color-mix(in srgb, var(--accent) 18%, transparent); border-color: color-mix(in srgb, var(--accent) 40%, transparent); }
 .signin__ico { flex: none; color: var(--accent); display: flex; }
 .signin__body { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
@@ -123,7 +123,7 @@ body[data-account='out'] .acct { display: none; }
 
 /* Signed in: the same footprint, so the sidebar does not jump. */
 .acct { flex: 1; min-width: 0; position: relative; }
-.acct__row { width: 100%; height: 38px; padding: 0 8px; border-radius: 10px; display: flex; align-items: center; gap: 9px; text-align: left; transition: background-color 120ms ease; }
+.acct__row { width: 100%; height: 38px; padding: 0 8px; border-radius: 10px; display: flex; align-items: center; gap: 9px; text-align: left; transition: background-color var(--dur-1) ease; }
 .acct__row:hover, .acct__row[aria-expanded='true'] { background: var(--sidebar-item); }
 .acct__av { width: 24px; height: 24px; flex: none; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10.5px; font-weight: 600; letter-spacing: 0.02em; color: var(--on-accent); background: var(--accent); }
 .acct__av--lg { width: 34px; height: 34px; font-size: 12.5px; }
@@ -133,7 +133,7 @@ body[data-account='out'] .acct { display: none; }
 .acct__chev { flex: none; color: var(--text-3); display: flex; }
 
 /* Upwards, because the row it belongs to sits on the floor. */
-.acct__pop { position: absolute; left: 0; right: 0; bottom: calc(100% + 6px); z-index: 60; padding: 4px; border-radius: var(--radius-lg); background: var(--glass-solid); box-shadow: var(--e3), var(--top); animation: pop-in 130ms cubic-bezier(0.2, 0.7, 0.3, 1) both; }
+.acct__pop { position: absolute; left: 0; right: 0; bottom: calc(100% + 6px); z-index: 60; padding: 4px; border-radius: var(--radius-lg); background: var(--glass-solid); box-shadow: var(--e3), var(--top); animation: pop-in var(--dur-2) var(--ease-out) both; }
 .acct__pop[hidden] { display: none; }
 /* The rule under it came off the sync line that used to sit here; without
    one, the avatar block runs straight into the first menu item. */
@@ -145,7 +145,7 @@ body[data-account='out'] .acct { display: none; }
 /* A theme swatch has to show its own theme, so these previews are painted
    in literal colours — the only place in the sheet that is allowed to. */
 .thm { display: flex; gap: 10px; }
-.thm__c { flex: 1; padding: 8px 8px 10px; border-radius: 12px; background: var(--raised); border: 1px solid var(--border); transition: border-color 130ms ease; }
+.thm__c { flex: 1; padding: 8px 8px 10px; border-radius: 12px; background: var(--raised); border: 1px solid var(--border); transition: border-color var(--dur-2) ease; }
 .thm__c:hover { border-color: var(--border-strong); }
 .thm__c[aria-checked='true'] { border-color: var(--accent); }
 .thm__p { height: 74px; border-radius: 8px; overflow: hidden; display: flex; }
@@ -171,7 +171,7 @@ body[data-account='out'] .acct { display: none; }
 /* Switching projects is not free here: sessions keep running in the one
    you leave. So the row that offers the switch says what is still alive
    in it — the fact this picker has to carry that nobody else's does. */
-.pickpop { position: absolute; left: 10px; top: calc(100% - 3px); width: 288px; z-index: 70; padding: 4px; border-radius: var(--radius-lg); background: var(--glass-solid); box-shadow: var(--e3), var(--top); animation: pop-in 130ms cubic-bezier(0.2, 0.7, 0.3, 1) both; }
+.pickpop { position: absolute; left: 10px; top: calc(100% - 3px); width: 288px; z-index: 70; padding: 4px; border-radius: var(--radius-lg); background: var(--glass-solid); box-shadow: var(--e3), var(--top); animation: pop-in var(--dur-2) var(--ease-out) both; }
 .pickpop[hidden] { display: none; }
 .pickpop__q { height: 32px; margin: 2px 2px 6px; padding: 0 8px; border-radius: 8px; background: var(--inset); border: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
 .pickpop__q svg { flex: none; color: var(--text-3); }
@@ -188,7 +188,7 @@ body[data-account='out'] .acct { display: none; }
 .prow__p { font-size: 10.5px; font-family: var(--mono); color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .prow__live { flex: none; display: flex; align-items: center; gap: 5px; font-size: 10.5px; color: var(--text-2); }
 .prow__live[data-live='0'] { display: none; }
-.prow__dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: breathe 2.4s ease-in-out infinite; }
+.prow__dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: breathe var(--loop-4) ease-in-out infinite; }
 @keyframes breathe { 0%, 100% { opacity: 1 } 50% { opacity: 0.35 } }
 .pickpop__none { padding: 16px 8px 18px; text-align: center; font-size: 12px; color: var(--text-3); }
 .pickpop__sep { height: 1px; margin: 4px; background: var(--border); }
@@ -198,13 +198,13 @@ body[data-account='out'] .acct { display: none; }
    might be a session, a card, a file or a command, and you do not know
    which before you start typing. */
 .cmd { position: absolute; inset: 0; z-index: 420; display: none; justify-content: center; padding-top: 12vh; background: var(--scrim); }
-.cmd[data-open='true'] { display: flex; animation: fade-in 120ms ease both; }
-.cmd__box { width: 560px; max-width: calc(100vw - 40px); max-height: 60vh; display: flex; flex-direction: column; border-radius: var(--radius-xl); background: var(--raised); box-shadow: var(--e3), var(--top); overflow: hidden; animation: pop-in 150ms cubic-bezier(0.2, 0.7, 0.3, 1) both; }
+.cmd[data-open='true'] { display: flex; animation: fade-in var(--dur-1) ease both; }
+.cmd__box { width: 560px; max-width: calc(100vw - 40px); max-height: 60vh; display: flex; flex-direction: column; border-radius: var(--radius-xl); background: var(--raised); box-shadow: var(--e3), var(--top); overflow: hidden; animation: pop-in var(--dur-2) var(--ease-out) both; }
 .cmd__q { flex: none; height: 46px; display: flex; align-items: center; gap: 10px; padding: 0 12px; border-bottom: 1px solid var(--border); }
 .cmd__q svg { flex: none; color: var(--text-3); }
 .cmd__in { flex: 1; min-width: 0; background: none; border: none; outline: none; font: inherit; font-size: 14px; color: var(--text); }
 .cmd__in::placeholder { color: var(--ghost); }
-.cmd__body { flex: 1; min-height: 0; overflow-y: auto; padding: 6px; scrollbar-width: thin; scrollbar-color: var(--scroll-thumb) transparent; }
+.cmd__body { flex: 1; min-height: 0; overflow-y: auto; padding: 6px; }
 .cmd__g { padding: 8px 8px 4px; font-size: 10.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-3); }
 .cmd__g[hidden] { display: none; }
 .cmd__r { width: 100%; height: 36px; padding: 0 8px; border-radius: 8px; display: flex; align-items: center; gap: 10px; text-align: left; }
@@ -253,10 +253,10 @@ body[data-account='out'] .acct { display: none; }
 .prefs__hrow { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 0 0 18px; }
 .prefs__hrow .prefs__h { margin: 0; }
 
-.addpj__box { position: relative; width: 420px; padding: 24px 22px 20px; border-radius: var(--radius-xl); background: var(--raised); box-shadow: var(--e3), var(--top); animation: pop-in 160ms cubic-bezier(0.2, 0.7, 0.3, 1) both; }
+.addpj__box { position: relative; width: 420px; padding: 24px 22px 20px; border-radius: var(--radius-xl); background: var(--raised); box-shadow: var(--e3), var(--top); animation: pop-in var(--dur-3) var(--ease-out) both; }
 .addpj__t { margin: 0 0 4px; font-size: 15px; font-weight: 560; color: var(--text); }
 .addpj__d { margin: 0 0 16px; font-size: 12.5px; color: var(--text-3); }
-.addpj__o { display: flex; align-items: flex-start; gap: 13px; width: 100%; text-align: left; padding: 14px; border-radius: 11px; background: var(--overlay); border: 1px solid var(--border); transition: background-color 130ms ease, border-color 130ms ease; }
+.addpj__o { display: flex; align-items: flex-start; gap: 13px; width: 100%; text-align: left; padding: 14px; border-radius: 11px; background: var(--overlay); border: 1px solid var(--border); transition: background-color var(--dur-2) ease, border-color var(--dur-2) ease; }
 .addpj__o + .addpj__o { margin-top: 8px; }
 .addpj__o:hover { background: var(--overlay-strong); border-color: color-mix(in srgb, var(--accent) 40%, transparent); }
 .addpj__o svg { flex: none; margin-top: 1px; color: var(--text-3); }
@@ -268,8 +268,8 @@ body[data-account='out'] .acct { display: none; }
    word actually does, because "remove" and "delete" are the same word
    to most people and only one of them is true here. */
 .ask { position: absolute; inset: 0; z-index: 460; display: none; align-items: center; justify-content: center; background: var(--scrim); }
-.ask[data-open='true'] { display: flex; animation: fade-in 130ms ease both; }
-.ask__box { width: 400px; padding: 22px 22px 18px; border-radius: var(--radius-xl); background: var(--raised); box-shadow: var(--e3), var(--top); animation: pop-in 160ms cubic-bezier(0.2, 0.7, 0.3, 1) both; }
+.ask[data-open='true'] { display: flex; animation: fade-in var(--dur-2) ease both; }
+.ask__box { width: 400px; padding: 22px 22px 18px; border-radius: var(--radius-xl); background: var(--raised); box-shadow: var(--e3), var(--top); animation: pop-in var(--dur-3) var(--ease-out) both; }
 .ask__t { margin: 0 0 8px; font-size: 15px; font-weight: 560; color: var(--text); }
 /* Says a second step is coming, so the first confirm is not read as the last. */
 .ask__step { margin: 0 0 6px; font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.04em; color: var(--ghost); }
@@ -280,7 +280,7 @@ body[data-account='out'] .acct { display: none; }
 .ask__warn svg { flex: none; margin-top: 1px; color: var(--warning); }
 .ask__opt { display: flex; gap: 10px; width: 100%; text-align: left; margin-top: 12px; padding: 11px; border-radius: 9px; background: var(--overlay); }
 .ask__opt:hover { background: var(--overlay-strong); }
-.box { width: 15px; height: 15px; flex: none; margin-top: 1px; border-radius: 4px; border: 1px solid var(--border-strong); display: flex; align-items: center; justify-content: center; color: transparent; transition: background-color 120ms ease, border-color 120ms ease; }
+.box { width: 15px; height: 15px; flex: none; margin-top: 1px; border-radius: 4px; border: 1px solid var(--border-strong); display: flex; align-items: center; justify-content: center; color: transparent; transition: background-color var(--dur-1) ease, border-color var(--dur-1) ease; }
 .ask__opt[aria-checked='true'] .box { background: var(--danger); border-color: var(--danger); color: var(--on-danger); }
 .ask__ot { display: block; font-size: 12.5px; color: var(--text); }
 .ask__od { display: block; margin-top: 3px; font-size: 11.5px; line-height: 1.5; color: var(--text-3); }
@@ -289,12 +289,12 @@ body[data-account='out'] .acct { display: none; }
 /* The sign-in sheet. Nothing is collected here in the prototype — the
    three buttons stand in for the identity providers. */
 .auth { position: absolute; inset: 0; z-index: 400; display: none; align-items: center; justify-content: center; background: var(--scrim); }
-.auth[data-open='true'] { display: flex; animation: fade-in 140ms ease both; }
-.auth__box { position: relative; width: 348px; padding: 28px 26px 22px; border-radius: var(--radius-xl); background: var(--raised); box-shadow: var(--e3), var(--top); display: flex; flex-direction: column; align-items: center; animation: pop-in 170ms cubic-bezier(0.2, 0.7, 0.3, 1) both; }
+.auth[data-open='true'] { display: flex; animation: fade-in var(--dur-2) ease both; }
+.auth__box { position: relative; width: 348px; padding: 28px 26px 22px; border-radius: var(--radius-xl); background: var(--raised); box-shadow: var(--e3), var(--top); display: flex; flex-direction: column; align-items: center; animation: pop-in var(--dur-3) var(--ease-out) both; }
 .auth__mark { width: 56px; height: 56px; border-radius: 17px; overflow: hidden; box-shadow: var(--glow); }
 .auth__t { margin: 15px 0 0; font-size: 16.5px; font-weight: 560; letter-spacing: -0.01em; color: var(--text); }
 .auth__d { margin: 7px 0 18px; font-size: 12px; line-height: 1.55; color: var(--text-3); text-align: center; }
-.auth__b { width: 100%; height: 38px; border-radius: 9px; display: flex; align-items: center; justify-content: center; gap: 9px; font-size: 13px; color: var(--text); background: var(--overlay); border: 1px solid var(--border); transition: background-color 120ms ease; }
+.auth__b { width: 100%; height: 38px; border-radius: 9px; display: flex; align-items: center; justify-content: center; gap: 9px; font-size: 13px; color: var(--text); background: var(--overlay); border: 1px solid var(--border); transition: background-color var(--dur-1) ease; }
 .auth__b + .auth__b { margin-top: 7px; }
 .auth__b:hover { background: var(--overlay-strong); }
 .auth__b svg { flex: none; color: var(--text-2); }
@@ -332,7 +332,7 @@ button.fld__b:hover:not(:disabled) { border-color: var(--border-strong); }
 .acc__body { flex: 1; min-width: 0; }
 .acc__t { display: block; font-size: 13px; color: var(--text); }
 .acc__d { display: block; margin-top: 3px; font-size: 11.5px; color: var(--text-3); }
-.acc__act { flex: none; height: 26px; padding: 0 10px; border-radius: 7px; font-size: 11.5px; color: var(--text-2); background: var(--overlay); border: 1px solid var(--border); transition: background-color 120ms ease; }
+.acc__act { flex: none; height: 26px; padding: 0 10px; border-radius: 7px; font-size: 11.5px; color: var(--text-2); background: var(--overlay); border: 1px solid var(--border); transition: background-color var(--dur-1) ease; }
 .acc__act:hover { background: var(--overlay-strong); color: var(--text); }
 .acc__act--danger { color: var(--danger); }
 .acc__tag { flex: none; font-size: 11px; color: var(--text-3); }

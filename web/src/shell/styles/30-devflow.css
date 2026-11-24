@@ -93,7 +93,7 @@
   font-family: inherit;
   font-size: 13px;
   outline: none;
-  transition: border-color 120ms ease, box-shadow 120ms ease, background-color 120ms ease;
+  transition: border-color var(--dur-1) ease, box-shadow var(--dur-1) ease, background-color var(--dur-1) ease;
 }
 .dfscreen select {
   appearance: none;
@@ -125,7 +125,7 @@
 .dfstage:not(:last-child)::after { content: ''; position: absolute; left: 14px; top: 48px; bottom: -22px; width: 2px; border-radius: 1px; background: var(--border-strong); }
 .dfstage__n { position: relative; z-index: 1; width: 30px; height: 30px; margin-top: 14px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--on-accent); background: var(--accent); box-shadow: 0 0 0 4px var(--canvas); }
 .dfstage[data-off] .dfstage__n { color: var(--text-3); background: var(--raised); border: 1px solid var(--border-strong); }
-.dfstage__card { min-width: 0; padding: 16px 18px; border-radius: 12px; background: var(--raised); border: 1px solid var(--border-strong); transition: border-color 140ms ease, opacity 140ms ease; }
+.dfstage__card { min-width: 0; padding: 16px 18px; border-radius: 12px; background: var(--raised); border: 1px solid var(--border-strong); transition: border-color var(--dur-2) ease, opacity var(--dur-2) ease; }
 .dfstage__card:hover { border-color: color-mix(in srgb, var(--text) 22%, transparent); }
 .dfstage__head { display: flex; align-items: flex-start; gap: 12px; }
 .dfstage__what { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
@@ -172,7 +172,7 @@
 /* Severities: one control, five settings, the ones that hold lit by how
    bad they are. */
 .dfseg { display: inline-flex; flex-wrap: wrap; padding: 3px; gap: 2px; border-radius: 9px; background: var(--inset); border: 1px solid var(--border-strong); }
-.dfseg__b { height: 28px; padding: 0 12px; border-radius: 6px; font-size: 12.5px; font-weight: 500; color: var(--text-3); text-transform: capitalize; transition: background-color 120ms ease, color 120ms ease; }
+.dfseg__b { height: 28px; padding: 0 12px; border-radius: 6px; font-size: 12.5px; font-weight: 500; color: var(--text-3); text-transform: capitalize; transition: background-color var(--dur-1) ease, color var(--dur-1) ease; }
 .dfseg__b:hover { color: var(--text); background: var(--overlay-strong); }
 .dfseg__b[data-on] { color: var(--text); background: var(--overlay-strong); box-shadow: inset 0 0 0 1px var(--border-strong); }
 .dfseg__b[data-on][data-severity='critical'], .dfseg__b[data-on][data-severity='high'] { color: var(--danger); background: color-mix(in srgb, var(--danger) 14%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--danger) 35%, transparent); }
@@ -191,7 +191,7 @@
 .dfsteps__i:last-child { flex: none; }
 .dfsteps__i:not(:last-child)::after { content: ''; flex: 1; height: 2px; margin: 0 10px; border-radius: 1px; background: var(--border-strong); }
 .dfsteps__i[data-state='done']:not(:last-child)::after { background: color-mix(in srgb, var(--accent) 55%, transparent); }
-.dfsteps__b { display: flex; align-items: center; gap: 9px; padding: 4px 10px 4px 4px; border-radius: 999px; transition: background-color 120ms ease; }
+.dfsteps__b { display: flex; align-items: center; gap: 9px; padding: 4px 10px 4px 4px; border-radius: 999px; transition: background-color var(--dur-1) ease; }
 .dfsteps__b:hover { background: var(--overlay-strong); }
 .dfsteps__n { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12.5px; font-weight: 600; color: var(--text-3); border: 1.5px solid var(--border-strong); background: var(--raised); }
 .dfsteps__name { font-size: 13.5px; font-weight: 500; color: var(--text-3); }

@@ -21,7 +21,7 @@
 /* The quiet line under a turn: when, on what, how long, how much. */
 .tmeta { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-xs); font-variant-numeric: tabular-nums; color: var(--ghost); }
 /* What can be done with a message, where the pointer or the keyboard is. */
-.hbar { display: flex; align-items: center; gap: 2px; opacity: 0; transition: opacity 120ms linear; }
+.hbar { display: flex; align-items: center; gap: 2px; opacity: 0; transition: opacity var(--dur-1) linear; }
 .turn:hover .hbar, .turn:focus-within .hbar, .said:hover .hbar, .said:focus-within .hbar { opacity: 1; }
 /* Under the bubble, in the gap before the next message: it takes no height. */
 .said__bar { position: absolute; top: 100%; right: 0; }
@@ -85,13 +85,13 @@ select.chip { appearance: none; border: 0; background: none; font-family: inheri
 .ctools__icon:hover:not(:disabled) { color: var(--text); background: var(--overlay); }
 .ctools__icon:disabled { opacity: .45; }
 .ctools__rec { display: inline-flex; align-items: center; gap: 8px; height: 28px; padding: 0 4px 0 10px; border-radius: var(--radius-pill); font: var(--fs-sm) var(--mono); color: var(--text); background: color-mix(in srgb, var(--danger) 10%, var(--surface)); }
-.ctools__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--danger); animation: ctools-beat 1.2s ease-in-out infinite; }
+.ctools__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--danger); animation: ctools-beat var(--loop-2) ease-in-out infinite; }
 @keyframes ctools-beat { 50% { opacity: .35; } }
 @media (prefers-reduced-motion: reduce) { .ctools__dot { animation: none; } }
 .ctools__btn { height: 22px; padding: 0 8px; border-radius: var(--radius-pill); font-size: var(--fs-sm); color: var(--text-2); }
 .ctools__btn:hover { color: var(--text); background: var(--overlay); }
 .ctools__btn--go { color: var(--text); background: color-mix(in srgb, var(--accent) 18%, transparent); }
-.ctools__wait { width: 12px; height: 12px; border: 2px solid var(--text-3); border-top-color: transparent; border-radius: 50%; animation: ctools-spin .8s linear infinite; }
+.ctools__wait { width: 12px; height: 12px; border: 2px solid var(--text-3); border-top-color: transparent; border-radius: 50%; animation: ctools-spin var(--loop-1) linear infinite; }
 @keyframes ctools-spin { to { transform: rotate(1turn); } }
 .ctools__said { display: inline-flex; align-items: center; gap: 6px; max-width: 360px; margin-right: 6px; font-size: var(--fs-sm); color: var(--text-2); }
 .ctools__x { color: var(--text-3); font-size: var(--fs-xs); }
@@ -131,7 +131,7 @@ select.chip { appearance: none; border: 0; background: none; font-family: inheri
 .ctl__l { max-width: 190px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ctl__v { color: var(--ghost); flex: none; }
 
-.ctlmenu { position: absolute; bottom: calc(100% + 5px); left: 0; z-index: 120; min-width: 230px; max-width: 330px; padding: 4px; border-radius: var(--radius-lg); background: var(--glass-solid); box-shadow: var(--e3), var(--top); animation: pop 130ms ease-out both; }
+.ctlmenu { position: absolute; bottom: calc(100% + 5px); left: 0; z-index: 120; min-width: 230px; max-width: 330px; padding: 4px; border-radius: var(--radius-lg); background: var(--glass-solid); box-shadow: var(--e3), var(--top); animation: pop var(--dur-2) ease-out both; }
 .ctlmenu--down { top: calc(100% + 5px); bottom: auto; left: auto; right: 0; }
 .ctlmenu__s { padding: 6px 10px 2px; font-size: var(--fs-2xs); font-weight: 500; color: var(--text-3); }
 .ctlmenu__i { display: flex; align-items: flex-start; gap: 8px; width: 100%; padding: 6px 8px; border-radius: var(--radius-sm); text-align: left; }
@@ -148,10 +148,10 @@ select.chip { appearance: none; border: 0; background: none; font-family: inheri
 /* The account and model picker. One list, because a model belongs to an
    account and picking one across accounts would be changing the account. */
 /* Two columns: the account down the left, its models to the right. */
-.mpick { position: absolute; bottom: calc(100% + 5px); left: 0; z-index: 120; display: flex; width: 540px; max-width: calc(100vw - 32px); max-height: min(420px, 66vh); border-radius: var(--radius-lg); background: var(--glass-solid); box-shadow: var(--e3), var(--top); overflow: hidden; animation: pop 130ms ease-out both; }
+.mpick { position: absolute; bottom: calc(100% + 5px); left: 0; z-index: 120; display: flex; width: 540px; max-width: calc(100vw - 32px); max-height: min(420px, 66vh); border-radius: var(--radius-lg); background: var(--glass-solid); box-shadow: var(--e3), var(--top); overflow: hidden; animation: pop var(--dur-2) ease-out both; }
 /* Wide enough for a name and what makes it that account: a mark alone could
    not tell two accounts of one CLI apart. */
-.mpick__rail { flex: none; display: flex; flex-direction: column; gap: 2px; width: 168px; padding: 6px; border-right: 1px solid var(--border); background: var(--canvas); overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--scroll-thumb) transparent; }
+.mpick__rail { flex: none; display: flex; flex-direction: column; gap: 2px; width: 168px; padding: 6px; border-right: 1px solid var(--border); background: var(--canvas); overflow-y: auto; }
 .mpick__tab { position: relative; flex: none; display: flex; align-items: center; gap: 9px; width: 100%; min-height: 36px; padding: 5px 8px; border-radius: var(--radius-sm); text-align: left; color: var(--text-3); }
 .mpick__tab:hover { background: var(--overlay); color: var(--text-2); }
 .mpick__tab[data-on='true'] { background: var(--overlay-strong); color: var(--text); }
@@ -169,7 +169,7 @@ select.chip { appearance: none; border: 0; background: none; font-family: inheri
 .mpick__q { flex: none; display: flex; align-items: center; gap: 8px; margin: 9px 10px 4px; padding: 0 9px; height: 32px; border-radius: var(--radius-md); background: var(--inset); color: var(--text-3); }
 .mpick__in { flex: 1; min-width: 0; border: 0; background: none; color: var(--text); font-family: inherit; font-size: var(--fs-sm); outline: none; }
 .mpick__in::placeholder { color: var(--ghost); }
-.mpick__list { flex: 0 1 auto; min-height: 0; overflow-y: auto; padding: 5px 7px 8px; scrollbar-width: thin; scrollbar-color: var(--scroll-thumb) transparent; }
+.mpick__list { flex: 0 1 auto; min-height: 0; overflow-y: auto; padding: 5px 7px 8px; }
 .mpick__none { display: grid; place-items: center; padding: 28px 0; font-size: var(--fs-xs); color: var(--ghost); }
 .mpick__r { display: flex; align-items: center; gap: 6px; min-height: 34px; padding: 3px 4px 3px 4px; border-radius: var(--radius-md); outline: none; }
 .mpick__r[data-at='true'], .mpick__r:focus-visible { background: var(--overlay-strong); }
@@ -186,7 +186,7 @@ select.chip { appearance: none; border: 0; background: none; font-family: inheri
 .mpick__foot { flex: none; margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 7px 12px; border-top: 1px solid var(--border); font-size: var(--fs-xs); color: var(--text-3); }
 .mpick__dir { flex: 1; min-width: 0; font-family: var(--mono); font-size: var(--fs-2xs); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mpick__hint { flex: none; margin: 0; padding: 0 12px 9px; font-size: var(--fs-xs); line-height: 1.45; color: var(--ghost); }
-.mpick__star { flex: none; display: grid; place-items: center; width: 24px; height: 24px; border-radius: var(--radius-sm); color: var(--ghost); opacity: 0; transition: opacity 100ms ease; }
+.mpick__star { flex: none; display: grid; place-items: center; width: 24px; height: 24px; border-radius: var(--radius-sm); color: var(--ghost); opacity: 0; transition: opacity var(--dur-1) ease; }
 /* The star is there when it means something: on a favourite, or on the row being looked at. */
 .mpick__r:hover .mpick__star, .mpick__r[data-at='true'] .mpick__star, .mpick__star[data-on='true'] { opacity: 1; }
 .mpick__star:hover { background: var(--overlay); }
@@ -246,7 +246,7 @@ select.chip { appearance: none; border: 0; background: none; font-family: inheri
 .arow__t[data-state='failed'] { color: var(--danger); }
 /* Alive: the same pulse as the composer's dots, so one language means one
    thing across the pane. */
-.arow__live { flex: none; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: breathe 1.2s ease-in-out infinite; }
+.arow__live { flex: none; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: breathe var(--loop-2) ease-in-out infinite; }
 .arow__body { display: flex; flex-direction: column; gap: 8px; min-width: 0; padding: 8px 12px; border-top: 1px solid var(--border); }
 .arow__think { font-size: var(--fs-sm); line-height: 1.55; color: var(--text-2); }
 
@@ -262,7 +262,7 @@ select.chip { appearance: none; border: 0; background: none; font-family: inheri
 .ascroll__v { margin: 0; padding: 2px 8px 2px 0; max-height: 320px; overflow: auto; overscroll-behavior: contain; font-family: var(--mono); font-size: var(--fs-2xs); line-height: 1.55; color: var(--text-2); white-space: pre-wrap; word-break: break-word; }
 /* The fade says there is more, without a scrollbar having to appear over the
    text to say it. */
-.ascroll__f { position: absolute; left: 0; right: 8px; height: 20px; pointer-events: none; opacity: 0; transition: opacity 120ms linear; }
+.ascroll__f { position: absolute; left: 0; right: 8px; height: 20px; pointer-events: none; opacity: 0; transition: opacity var(--dur-1) linear; }
 .ascroll__f[data-on='true'] { opacity: 1; }
 .ascroll__f--t { top: 0; background: linear-gradient(to bottom, var(--act), transparent); }
 .ascroll__f--b { bottom: 0; background: linear-gradient(to top, var(--act), transparent); }
@@ -271,9 +271,9 @@ select.chip { appearance: none; border: 0; background: none; font-family: inheri
 .working { display: flex; align-items: center; gap: 8px; height: 22px; font-size: var(--fs-xs); font-weight: 500; color: var(--text-3); }
 .working__dots { display: flex; align-items: center; gap: 3px; }
 .working__what { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.working__dots i { width: 4px; height: 4px; border-radius: 50%; background: currentColor; animation: breathe 1.2s ease-in-out infinite; }
-.working__dots i:nth-child(2) { animation-delay: 120ms; }
-.working__dots i:nth-child(3) { animation-delay: 240ms; }
+.working__dots i { width: 4px; height: 4px; border-radius: 50%; background: currentColor; animation: breathe var(--loop-2) ease-in-out infinite; }
+.working__dots i:nth-child(2) { animation-delay: var(--dur-1); }
+.working__dots i:nth-child(3) { animation-delay: var(--intent); }
 @keyframes breathe { 0%, 100% { opacity: .3; } 50% { opacity: 1; } }
 .sessions__none { padding: 2px 10px 8px; font-size: var(--fs-xs); color: var(--ghost); }
 
@@ -310,7 +310,7 @@ select.chip { appearance: none; border: 0; background: none; font-family: inheri
    is an agent rather than any other program someone started. */
 .card__run { display: flex; align-items: center; gap: 5px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-xs); color: var(--text-2); }
 .card__run[data-agent='true'] { color: var(--accent); }
-.card__dot { flex: none; width: 5px; height: 5px; border-radius: 50%; background: currentColor; animation: breathe 1.6s ease-in-out infinite; }
+.card__dot { flex: none; width: 5px; height: 5px; border-radius: 50%; background: currentColor; animation: breathe var(--loop-3) ease-in-out infinite; }
 
 /* What a command came to, in the terminal's own margin. A bar and not a dot:
    it has to be findable while scrolling past, and a dot at this size is a
@@ -318,7 +318,7 @@ select.chip { appearance: none; border: 0; background: none; font-family: inheri
 .cmdmark { width: 3px; height: 100%; border-radius: 0 var(--radius-xs) var(--radius-xs) 0; }
 .cmdmark--ok { background: var(--success); }
 .cmdmark--failed { background: var(--danger); }
-.cmdmark--running { background: var(--accent); animation: breathe 1.6s ease-in-out infinite; }
+.cmdmark--running { background: var(--accent); animation: breathe var(--loop-3) ease-in-out infinite; }
 
 /* `/resume`: every earlier conversation, filtered as it is typed. */
 .resume { padding: 6px; }
@@ -331,7 +331,7 @@ select.chip { appearance: none; border: 0; background: none; font-family: inheri
 .resume__scope:hover { color: var(--text); }
 .resume__scope[aria-pressed='true'] { color: var(--accent); }
 .resume__find { height: 32px; padding: 0 10px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--composer); color: var(--text); font: inherit; font-size: var(--fs-md); outline: none; }
-.resume__list { max-height: min(360px, 50vh); overflow-y: auto; display: flex; flex-direction: column; gap: 2px; scrollbar-width: thin; scrollbar-color: var(--scroll-thumb) transparent; }
+.resume__list { max-height: min(360px, 50vh); overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
 .resume__o { display: flex; flex-direction: column; gap: 2px; padding: 6px 8px; border-radius: var(--radius-md); text-align: left; }
 .resume__o[aria-selected='true'] { background: var(--overlay-strong); }
 .resume__t { font-size: var(--fs-md); color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -340,7 +340,7 @@ select.chip { appearance: none; border: 0; background: none; font-family: inheri
 
 /* An orchestrator's shortcut, answered where the slash menu opens: devpit's
    own reading of the sessions, kept open and current until it is closed. */
-.oans { gap: 2px; padding: 6px 8px 8px; max-height: min(420px, 55vh); overflow-y: auto; scrollbar-width: thin; }
+.oans { gap: 2px; padding: 6px 8px 8px; max-height: min(420px, 55vh); overflow-y: auto; }
 .oans__top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .oans__t { margin: 0; font: 600 var(--fs-sm) var(--mono); color: var(--text-2); }
 .oans__g { display: flex; flex-direction: column; gap: 2px; margin-top: 4px; }
@@ -398,7 +398,7 @@ select.chip { appearance: none; border: 0; background: none; font-family: inheri
 .limitb__row { display: flex; gap: var(--space-2); }
 
 /* A block of an answer still arriving fades in as it lands; the ones above it keep their nodes and do not. */
-.reply[data-fade] .md > * { animation: reply-in 180ms ease-out both; }
+.reply[data-fade] .md > * { animation: reply-in var(--dur-3) ease-out both; }
 @keyframes reply-in { from { opacity: 0; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .reply[data-fade] .md > * { animation: none; } }
 

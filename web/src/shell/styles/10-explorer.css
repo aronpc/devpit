@@ -15,7 +15,7 @@
   box-shadow: var(--e2);
   font-size: 11.5px; color: var(--text-2);
   opacity: 0; pointer-events: none;
-  transition: opacity 120ms ease 220ms, transform 120ms ease 220ms;
+  transition: opacity var(--dur-1) ease var(--intent), transform var(--dur-1) ease var(--intent);
 }
 .tip:hover::after { opacity: 1; transform: translateX(-50%) translateY(0); }
 
@@ -45,7 +45,7 @@
 .rp { display: flex; flex-direction: column; min-height: 0; min-width: 0; overflow: hidden; background: var(--sidebar); border-left: 1px solid var(--border-strong); }
 .rp__bar { height: 38px; flex: none; display: flex; align-items: center; gap: 2px; padding: 0 6px 0 8px; border-bottom: 1px solid var(--border); }
 .rp__title { font-size: 12.5px; color: var(--text-2); }
-.tree { flex: 1; min-height: 0; overflow-y: auto; padding: 2px 0 10px; scrollbar-width: thin; scrollbar-color: var(--scroll-thumb) transparent; }
+.tree { flex: 1; min-height: 0; overflow-y: auto; padding: 2px 0 10px; }
 .row { display: flex; align-items: center; gap: 5px; width: 100%; min-width: 0; overflow: hidden; height: 24px; padding-right: 9px; text-align: left; font-size: 12.5px; color: var(--text-2); white-space: nowrap; }
 .row:hover { background: var(--sidebar-item); }
 .row[aria-current='true'] { background: var(--sidebar-item); color: var(--text); }
@@ -61,7 +61,7 @@
 
 
 /* Every project's board, beside an orchestrator's chat. */
-.oboards { display: flex; flex-direction: column; gap: 10px; height: 100%; overflow-y: auto; padding: 0 8px 16px; scrollbar-width: thin; }
+.oboards { display: flex; flex-direction: column; gap: 10px; height: 100%; overflow-y: auto; padding: 0 8px 16px; }
 .oboards__lempty { padding: 2px 6px 4px 32px; font-size: 11.5px; color: var(--text-3); }
 .oboards__p { display: flex; flex-direction: column; gap: 1px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
 .oboards__p:last-child { border-bottom: 0; }
@@ -76,7 +76,7 @@
 .oboards__card { display: block; width: 100%; padding: 3px 6px; border-radius: 5px; font-size: 12px; color: var(--text-2); text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* A project's artifacts: kept outside its repository. */
-.arts { display: flex; flex-direction: column; gap: 8px; height: 100%; overflow-y: auto; padding: 0 8px 16px; scrollbar-width: thin; }
+.arts { display: flex; flex-direction: column; gap: 8px; height: 100%; overflow-y: auto; padding: 0 8px 16px; }
 .arts__bad { flex: none; font-size: 11.5px; color: var(--danger); padding: 2px 6px; border-radius: 5px; }
 .arts__bad:hover { color: var(--on-danger); background: var(--danger); }
 .arts[data-drop] { box-shadow: inset 0 0 0 1px var(--accent); background: color-mix(in srgb, var(--accent) 6%, transparent); }
@@ -98,7 +98,7 @@
 
 /* An orchestrator's sessions: how each stands, what to do with it, what passed. */
 .rtab--lead { order: -1; }
-.sess { display: flex; flex-direction: column; gap: 12px; height: 100%; overflow-y: auto; padding: 0 8px 16px; scrollbar-width: thin; }
+.sess { display: flex; flex-direction: column; gap: 12px; height: 100%; overflow-y: auto; padding: 0 8px 16px; }
 .sess__sum { display: flex; gap: 8px; }
 .sess__note { margin: 0; font-size: 12px; line-height: 1.5; color: var(--text-3); }
 .sess__wait { color: var(--warning); font-weight: 600; }
@@ -174,7 +174,7 @@
   background: var(--raised); box-shadow: var(--e2);
   font-size: 11.5px; font-weight: 400; color: var(--text-2);
   opacity: 0; pointer-events: none; transform: translateY(-3px);
-  transition: opacity 120ms ease 220ms, transform 120ms ease 220ms;
+  transition: opacity var(--dur-1) ease var(--intent), transform var(--dur-1) ease var(--intent);
 }
 .phead__act:hover::after { opacity: 1; transform: none; }
 .pempty { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 28px 16px; text-align: center; }

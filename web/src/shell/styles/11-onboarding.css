@@ -1,6 +1,6 @@
 /* The first run, and the empty state. One screen, because they are one
    situation: devpit with no project has nothing to show. */
-.onb { position: absolute; inset: 0; z-index: 380; display: flex; align-items: center; justify-content: center; background: var(--canvas); animation: fade-in 180ms ease both; }
+.onb { position: absolute; inset: 0; z-index: 380; display: flex; align-items: center; justify-content: center; background: var(--canvas); animation: fade-in var(--dur-3) ease both; }
 .onb__box { width: 460px; max-width: calc(100vw - 48px); display: flex; flex-direction: column; align-items: center; text-align: center; }
 /* The mark's corners are in the file. Clipping it again to a different
    radius cuts a second, mismatched edge just inside the first. */
@@ -17,7 +17,7 @@
 
 .onb__t { margin: 0; font-size: 20px; font-weight: 560; letter-spacing: -0.015em; color: var(--text); }
 .onb__d { margin: 9px 0 22px; font-size: 12.5px; line-height: 1.6; color: var(--text-3); max-width: 400px; }
-.onb__go { height: 38px; min-width: 190px; padding: 0 20px; border-radius: 9px; font-size: 13px; font-weight: 550; color: var(--on-accent); background: var(--accent); transition: filter 130ms ease; }
+.onb__go { height: 38px; min-width: 190px; padding: 0 20px; border-radius: 9px; font-size: 13px; font-weight: 550; color: var(--on-accent); background: var(--accent); transition: filter var(--dur-2) ease; }
 .onb__go:hover { filter: brightness(1.07); }
 .onb__skip { margin-top: 10px; height: 30px; padding: 0 12px; border-radius: 8px; font-size: 12px; color: var(--text-3); }
 .onb__skip:hover { color: var(--text); background: var(--overlay); }
@@ -28,7 +28,7 @@
    biggest thing on screen; the pulse says the app is still listening. */
 .onb__code { margin: 4px 0 18px; padding: 12px 20px; border-radius: 10px; background: var(--inset); border: 1px solid var(--border-strong); color: var(--text); font-family: var(--mono); font-size: 21px; letter-spacing: 0.18em; }
 .onb__wait { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 12px; color: var(--text-3); }
-.onb__pulse { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); animation: onb-pulse 1.4s ease-in-out infinite; }
+.onb__pulse { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); animation: onb-pulse var(--loop-3) ease-in-out infinite; }
 @keyframes onb-pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.35; transform: scale(0.8); } }
 .onb__failed { margin: 0 0 16px; padding: 8px 12px; border-radius: 8px; background: hsl(4 66% 65% / 0.1); border: 1px solid hsl(4 66% 65% / 0.35); color: var(--danger); font-size: 12px; line-height: 1.5; max-width: 400px; }
 @media (prefers-reduced-motion: reduce) { .onb__pulse { animation: none; } }

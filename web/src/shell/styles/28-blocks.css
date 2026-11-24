@@ -6,7 +6,7 @@
   --term-font: "SF Mono", "Menlo", "Monaco", "Cascadia Mono", "Consolas", "DejaVu Sans Mono", "Liberation Mono", "Symbols Nerd Font Mono", "MesloLGS Nerd Font", "JetBrainsMono Nerd Font", monospace;
   display: flex; flex-direction: column; height: 100%; min-height: 0; min-width: 0;
 }
-.bterm__list { flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 6px 0 4px; scrollbar-width: thin; scrollbar-color: var(--scroll-thumb) transparent; }
+.bterm__list { flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 6px 0 4px; }
 .bterm__live { display: flex; flex-direction: column; min-height: 0; flex: 1 1 auto; }
 /* At the prompt the live terminal steps out of the way — kept, attached, at
    its last size, so the next command comes back to it without a resize. */
@@ -38,10 +38,10 @@
 .blk__meta { flex: none; display: flex; align-items: center; gap: 10px; font-size: 11px; color: var(--text-3); font-variant-numeric: tabular-nums; }
 .blk__cwd { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--term-font); }
 .blk__code { color: var(--danger); font-weight: 600; }
-.blk__more { flex: none; width: 22px; height: 20px; border-radius: 5px; color: var(--text-3); opacity: 0; transition: opacity 100ms ease; line-height: 1; }
+.blk__more { flex: none; width: 22px; height: 20px; border-radius: 5px; color: var(--text-3); opacity: 0; transition: opacity var(--dur-1) ease; line-height: 1; }
 .blk__more:hover { background: var(--overlay-strong); color: var(--text); }
 .blk__out { padding: 0 14px 8px 14px; }
-.blk__pre { margin: 0; font-family: var(--term-font); font-size: 13px; line-height: 1.35; color: var(--text); white-space: pre; overflow-x: auto; scrollbar-width: thin; }
+.blk__pre { margin: 0; font-family: var(--term-font); font-size: 13px; line-height: 1.35; color: var(--text); white-space: pre; overflow-x: auto; }
 .blk__line { min-height: 1.35em; }
 .blk__note { padding: 2px 0 4px; font-size: 12px; color: var(--text-3); }
 .blk__all { display: block; margin: 0 0 4px; padding: 0; font-size: 11.5px; color: var(--accent); }
@@ -81,7 +81,7 @@
 .abar__row { display: flex; align-items: center; gap: 8px; min-width: 0; height: 36px; padding: 0 12px 0 14px; }
 .abar__agent { flex: none; font-size: 12.5px; font-weight: 600; color: var(--accent); }
 .abar__gap { flex: 1; }
-.abar__b { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 12.5px; color: var(--text-2); transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease; }
+.abar__b { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 12.5px; color: var(--text-2); transition: background-color var(--dur-1) ease, border-color var(--dur-1) ease, color var(--dur-1) ease; }
 .abar__b:hover, .abar__b[data-on='true'] { background: var(--overlay-strong); color: var(--text); border-color: var(--border-strong); }
 .abar__compose { padding: 8px 10px 0 12px; }
 .abar__field { width: 100%; resize: none; padding: 8px 10px; border: 1px solid var(--border-strong); border-radius: 8px; background: var(--composer, var(--canvas)); color: var(--text); font: inherit; font-size: 13px; line-height: 1.45; outline: none; }

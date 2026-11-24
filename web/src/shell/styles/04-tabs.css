@@ -25,7 +25,7 @@
 .tabs__rail { display: flex; align-items: center; gap: 3px; min-width: 0; overflow-x: auto; overflow-y: hidden; scroll-behavior: smooth; }
 /* No visible bar: it would eat a third of a 30px strip to say something the
    strip already says by being cut off. Wheel and trackpad still scroll it. */
-.tabs__rail { scrollbar-width: none; }
+.tabs__rail { }
 .tabs__rail::-webkit-scrollbar { display: none; }
 /* One long filename must not be allowed to take the whole strip. */
 .tab__n { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

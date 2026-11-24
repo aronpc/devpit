@@ -9,14 +9,14 @@
 .btools__filter { width: 220px; height: 28px; padding: 0 9px; border-radius: 7px; background: var(--inset); border: 1px solid var(--border); font: inherit; font-size: 12.5px; color: var(--text); }
 .btools__filter:focus { outline: none; border-color: var(--focus); box-shadow: var(--focus-field); }
 .btools__gap { flex: 1; }
-.board { flex: 1; min-height: 0; overflow-x: auto; display: flex; gap: 10px; padding: 4px 12px 14px; align-items: stretch; scrollbar-width: thin; scrollbar-color: var(--scroll-thumb) transparent; }
+.board { flex: 1; min-height: 0; overflow-x: auto; display: flex; gap: 10px; padding: 4px 12px 14px; align-items: stretch; }
 
-.blane { position: relative; width: 236px; flex: none; display: flex; flex-direction: column; min-height: 0; border-radius: 10px; padding: 0 4px 4px; transition: background-color 160ms ease; }
+.blane { position: relative; width: 236px; flex: none; display: flex; flex-direction: column; min-height: 0; border-radius: 10px; padding: 0 4px 4px; transition: background-color var(--dur-3) ease; }
 /* The lane under the pointer, and only while a card is in the air. */
 .blane[data-over='true'] { background: var(--overlay); }
 .blane__top { height: 30px; flex: none; display: flex; align-items: center; gap: 6px; padding: 0 4px; cursor: grab; }
 .blane__label { font-size: 12.5px; font-weight: 550; color: var(--text-2); }
-.blane__n { font-size: 11.5px; color: var(--ghost); font-variant-numeric: tabular-nums; transition: color 160ms ease; }
+.blane__n { font-size: 11.5px; color: var(--ghost); font-variant-numeric: tabular-nums; transition: color var(--dur-3) ease; }
 .blane[data-over='true'] .blane__n { color: var(--accent); }
 /* The list takes only the height its cards need; the filler below it is
    what keeps the lane a drop target all the way down. Letting the list
@@ -24,7 +24,7 @@
    away from the card it would sit after. Past the lane's height it scrolls,
    or the cards ran on over Add card. The side padding keeps a hovered
    tile's lift and shadow inside the clip. */
-.blane__list { flex: 0 1 auto; min-height: 24px; display: flex; flex-direction: column; gap: 6px; padding: 2px 4px 6px; margin: 0 -4px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--scroll-thumb) transparent; }
+.blane__list { flex: 0 1 auto; min-height: 24px; display: flex; flex-direction: column; gap: 6px; padding: 2px 4px 6px; margin: 0 -4px; overflow-y: auto; overscroll-behavior: contain; }
 /* Where a long lane draws its next cards, once it comes near the view. */
 .blane__more { flex: none; height: 1px; }
 .blane__fill { flex: 1; min-height: 8px; }
@@ -35,7 +35,7 @@
   background: var(--raised); border: 1px solid var(--border);
   border-radius: 9px; padding: 9px 10px; flex: none;
   touch-action: none;
-  transition: border-color 140ms ease, box-shadow 140ms ease, transform 140ms ease, opacity 140ms ease;
+  transition: border-color var(--dur-2) ease, box-shadow var(--dur-2) ease, transform var(--dur-2) ease, opacity var(--dur-2) ease;
 }
 .tile:hover { transform: translateY(-1px); box-shadow: var(--e2); }
 /* The original stays in place, dimmed, so the column keeps its shape. */
@@ -55,7 +55,7 @@
 
 /* Where it will land, opened before the drop so the answer is visible
    while there is still time to change it. */
-.slot { flex: none; border-radius: 9px; border: 1px dashed color-mix(in srgb, var(--accent) 50%, transparent); background: color-mix(in srgb, var(--accent) 7%, transparent); animation: slot-in 140ms ease-out both; }
+.slot { flex: none; border-radius: 9px; border: 1px dashed color-mix(in srgb, var(--accent) 50%, transparent); background: color-mix(in srgb, var(--accent) 7%, transparent); animation: slot-in var(--dur-2) ease-out both; }
 @keyframes slot-in { from { opacity: 0; transform: scaleY(0.82); } to { opacity: 1; transform: none; } }
 
 .tile__t { font-size: 12.5px; color: var(--text); line-height: 1.42; }
@@ -79,9 +79,9 @@
 /* A card that just landed, and what rises into view. */
 @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 @keyframes landed { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent); } 100% { box-shadow: 0 0 0 9px transparent; } }
-.tile--landed { animation: landed 620ms ease-out; }
+.tile--landed { animation: landed var(--dur-mark) ease-out; }
 
-.tile__add { flex: none; height: 30px; border-radius: 9px; border: 1px dashed var(--border-strong); color: var(--text-3); font-size: 11.5px; transition: color 140ms ease, border-color 140ms ease; }
+.tile__add { flex: none; height: 30px; border-radius: 9px; border: 1px dashed var(--border-strong); color: var(--text-3); font-size: 11.5px; transition: color var(--dur-2) ease, border-color var(--dur-2) ease; }
 .tile__add:hover { color: var(--text-2); border-color: var(--ghost); }
 /* Where a card or a lane is named as it is made. */
 .tile__new, .blane__newin { flex: none; height: 30px; padding: 0 10px; border-radius: 9px; border: 1px solid color-mix(in srgb, var(--accent) 60%, transparent); background: var(--raised); font: inherit; font-size: 12.5px; color: var(--text); }
@@ -116,7 +116,7 @@
 .lstep { position: relative; margin-left: auto; }
 .lstep__b { display: inline-flex; align-items: center; gap: 5px; height: 20px; padding: 0 7px; border-radius: 6px; font-size: 10.5px; color: var(--text-3); }
 .lstep__b:hover { background: var(--overlay-strong); color: var(--text-2); }
-.lstep__pop { position: absolute; right: 0; top: calc(100% + 5px); z-index: 40; min-width: 210px; padding: 6px; border-radius: var(--radius-lg); background: var(--glass-solid); box-shadow: var(--e3), var(--top); animation: pop-in 130ms cubic-bezier(0.2, 0.7, 0.3, 1) both; }
+.lstep__pop { position: absolute; right: 0; top: calc(100% + 5px); z-index: 40; min-width: 210px; padding: 6px; border-radius: var(--radius-lg); background: var(--glass-solid); box-shadow: var(--e3), var(--top); animation: pop-in var(--dur-2) var(--ease-out) both; }
 .lstep__pop--wide { width: 290px; max-height: 70vh; padding: 12px; overflow-y: auto; }
 /* The fields of a step that are prose and not a line: what to ask an agent,
    and the schema its answer has to match. */
@@ -143,7 +143,7 @@
 .tile__plan { padding: 0 6px; border-radius: 4px; background: var(--accent-soft); color: var(--accent-ink); font-size: 10.5px; }
 
 /* Right after an archive, the one thing worth offering is taking it back. */
-.undo { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); z-index: 300; display: flex; align-items: center; gap: 14px; padding: 7px 8px 7px 14px; border-radius: var(--radius-lg); background: var(--glass-solid); box-shadow: var(--e3), var(--top); font-size: 12.5px; color: var(--text); animation: rise 180ms ease-out both; }
+.undo { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); z-index: 300; display: flex; align-items: center; gap: 14px; padding: 7px 8px 7px 14px; border-radius: var(--radius-lg); background: var(--glass-solid); box-shadow: var(--e3), var(--top); font-size: 12.5px; color: var(--text); animation: rise var(--dur-3) ease-out both; }
 .undo__b { padding: 3px 9px; border-radius: 6px; font-size: 12px; font-weight: 550; color: var(--accent); }
 .undo__b:hover { background: var(--overlay-strong); }
 /* The same place says why something asked for did not happen (`Problem`). */
@@ -166,7 +166,7 @@ body[data-dragging='true'] .tile:hover { transform: none; box-shadow: none; }
    board, which puts it above any one of them rather than inside one. Same
    z-index band and same ground, so the project underneath does not show
    through. */
-.mgr { position: absolute; inset: 0; z-index: 350; background: var(--canvas); display: flex; flex-direction: column; min-height: 0; padding: 20px 24px 0; overflow: hidden; animation: pane-in 160ms cubic-bezier(0.2, 0.7, 0.3, 1) both; }
+.mgr { position: absolute; inset: 0; z-index: 350; background: var(--canvas); display: flex; flex-direction: column; min-height: 0; padding: 20px 24px 0; overflow: hidden; animation: pane-in var(--dur-3) var(--ease-out) both; }
 .mgr__back { align-self: flex-start; display: flex; align-items: center; gap: 6px; margin-bottom: 10px; padding: 4px 9px 4px 6px; border-radius: 7px; color: var(--text-2); font-size: 12px; background: transparent; border: 1px solid transparent; }
 .mgr__back:hover { background: var(--overlay); color: var(--text); }
 .mgr__top { flex: none; margin-bottom: 16px; }
@@ -181,7 +181,7 @@ body[data-dragging='true'] .tile:hover { transform: none; box-shadow: none; }
    the end of the row that decided it. */
 .mgr__n { margin-left: auto; font-variant-numeric: tabular-nums; }
 .mgr__no { margin: 0 0 16px; font-size: 12.5px; line-height: 1.55; color: var(--text-3); }
-.mgr__board { flex: 1; min-height: 0; display: flex; gap: 10px; overflow-x: auto; padding-bottom: 16px; scrollbar-width: thin; scrollbar-color: var(--scroll-thumb) transparent; }
+.mgr__board { flex: 1; min-height: 0; display: flex; gap: 10px; overflow-x: auto; padding-bottom: 16px; }
 .mgr__lane { min-height: 0; }
 /* Its lanes are not carried, so their heads are not handles. */
 .mgr__lane .blane__top { cursor: auto; }

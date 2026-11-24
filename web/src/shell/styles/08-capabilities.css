@@ -5,11 +5,11 @@
    file you already have in mind; this is for looking around, so it adds
    the columns a tree has no room for. */
 .fx { flex: 1; min-height: 0; display: flex; }
-.fx__tree { width: 218px; flex: none; overflow-y: auto; border-right: 1px solid var(--border); padding: 4px 0 10px; scrollbar-width: thin; scrollbar-color: var(--scroll-thumb) transparent; }
+.fx__tree { width: 218px; flex: none; overflow-y: auto; border-right: 1px solid var(--border); padding: 4px 0 10px; }
 .fx__main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .fx__crumb { height: 30px; flex: none; display: flex; align-items: center; gap: 5px; padding: 0 12px; font-family: var(--mono); font-size: 11.5px; color: var(--text-3); border-bottom: 1px solid var(--border); }
 .fx__crumb b { color: var(--text-2); font-weight: 500; }
-.fx__list { flex: 1; overflow-y: auto; padding: 4px 0 12px; scrollbar-width: thin; scrollbar-color: var(--scroll-thumb) transparent; }
+.fx__list { flex: 1; overflow-y: auto; padding: 4px 0 12px; }
 .fxrow { display: grid; grid-template-columns: 1fr 44px 74px 96px; align-items: center; gap: 10px; width: 100%; padding: 0 14px; height: 27px; text-align: left; font-size: 12.5px; color: var(--text-2); }
 .fxrow:hover { background: var(--overlay); }
 .fxrow__n { display: flex; align-items: center; gap: 7px; min-width: 0; overflow: hidden; }
@@ -45,7 +45,7 @@
 .cap__file { margin-top: 5px; display: flex; align-items: center; gap: 5px; font-family: var(--mono); font-size: 10.5px; color: var(--ghost); }
 .cap:hover .cap__file { color: var(--text-3); }
 
-.list { flex: 1; overflow-y: auto; padding: 6px 0 18px; scrollbar-width: thin; scrollbar-color: var(--scroll-thumb) transparent; }
+.list { flex: 1; overflow-y: auto; padding: 6px 0 18px; }
 /* Left-aligned and as wide as the pane: a narrow centred column left half the
    window empty beside a list that had more to show. Prose keeps a measure. */
 .list__in { padding: 0 20px; }
@@ -60,17 +60,17 @@
 .list__h:first-child { margin-top: 2px; }
 .list__h span { margin-left: 7px; color: var(--ghost); font-weight: 500; letter-spacing: 0; }
 
-.cap { display: flex; align-items: flex-start; gap: 11px; width: 100%; text-align: left; padding: 10px; border-radius: 9px; border: 1px solid transparent; transition: background-color 140ms ease, border-color 140ms ease; }
+.cap { display: flex; align-items: flex-start; gap: 11px; width: 100%; text-align: left; padding: 10px; border-radius: 9px; border: 1px solid transparent; transition: background-color var(--dur-2) ease, border-color var(--dur-2) ease; }
 .cap:hover { background: var(--overlay); border-color: var(--border); }
-.cap__ico { width: 28px; height: 28px; flex: none; border-radius: 8px; background: var(--raised); display: flex; align-items: center; justify-content: center; color: var(--text-2); transition: color 160ms ease, background-color 160ms ease; }
+.cap__ico { width: 28px; height: 28px; flex: none; border-radius: 8px; background: var(--raised); display: flex; align-items: center; justify-content: center; color: var(--text-2); transition: color var(--dur-3) ease, background-color var(--dur-3) ease; }
 .cap__body { flex: 1; min-width: 0; }
 .cap__top { display: flex; align-items: center; gap: 8px; }
 .cap__name { font-size: 13px; color: var(--text); }
 .cap__ver { font-family: var(--mono); font-size: 10.5px; color: var(--ghost); }
 .cap__what { margin-top: 3px; font-size: 12px; color: var(--text-3); line-height: 1.45; }
 
-.sw { position: relative; width: 30px; height: 18px; flex: none; margin-top: 4px; border-radius: 9px; background: var(--overlay-strong); transition: background-color 160ms ease; }
-.sw::after { content: ''; position: absolute; top: 3px; left: 3px; width: 12px; height: 12px; border-radius: 50%; background: var(--text-3); transition: transform 170ms cubic-bezier(0.2, 0.75, 0.3, 1), background-color 160ms ease; }
+.sw { position: relative; width: 30px; height: 18px; flex: none; margin-top: 4px; border-radius: 9px; background: var(--overlay-strong); transition: background-color var(--dur-3) ease; }
+.sw::after { content: ''; position: absolute; top: 3px; left: 3px; width: 12px; height: 12px; border-radius: 50%; background: var(--text-3); transition: transform var(--dur-3) var(--ease-out), background-color var(--dur-3) ease; }
 
 /* ── Capabilities, as cards ──────────────────────────────────────────
    Wider than the other lists, because a grid of two reads as a choice
@@ -80,11 +80,11 @@
 .capset__problem { margin: 0 0 12px; font-size: 12px; color: var(--danger); }
 .capset__said { margin: 0 0 12px; font-size: 12px; color: var(--text-2); }
 .capgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
-.capcard { display: flex; flex-direction: column; min-width: 0; padding: 14px 14px 10px; border-radius: 11px; background: var(--overlay); border: 1px solid var(--border); transition: border-color 160ms ease, background-color 160ms ease; }
+.capcard { display: flex; flex-direction: column; min-width: 0; padding: 14px 14px 10px; border-radius: 11px; background: var(--overlay); border: 1px solid var(--border); transition: border-color var(--dur-3) ease, background-color var(--dur-3) ease; }
 .capcard:hover { border-color: var(--border-strong); }
 .capcard[data-on='true'] { border-color: color-mix(in srgb, var(--accent) 40%, var(--border)); background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 9%, transparent), transparent 64%), var(--overlay); }
 .capcard__head { display: flex; align-items: center; gap: 11px; }
-.capcard__ico { width: 34px; height: 34px; flex: none; border-radius: 9px; display: flex; align-items: center; justify-content: center; color: var(--text-2); background: var(--raised); border: 1px solid var(--border); transition: color 160ms ease, background-color 160ms ease, border-color 160ms ease; }
+.capcard__ico { width: 34px; height: 34px; flex: none; border-radius: 9px; display: flex; align-items: center; justify-content: center; color: var(--text-2); background: var(--raised); border: 1px solid var(--border); transition: color var(--dur-3) ease, background-color var(--dur-3) ease, border-color var(--dur-3) ease; }
 .capcard[data-on='true'] .capcard__ico { color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, var(--raised)); border-color: color-mix(in srgb, var(--accent) 30%, transparent); }
 .capcard__id { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .capcard__name { font-size: 13.5px; font-weight: 500; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -105,23 +105,23 @@
 .capcard__state::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--ghost); }
 .capcard[data-on='true'] .capcard__state { color: var(--text-2); }
 .capcard[data-on='true'] .capcard__state::before { background: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); }
-.capcard__open, .capcard__install { margin-left: auto; height: 26px; padding: 0 8px 0 10px; border-radius: 7px; display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text); background: color-mix(in srgb, var(--accent) 15%, transparent); border: 1px solid color-mix(in srgb, var(--accent) 32%, transparent); transition: background-color 120ms ease, border-color 120ms ease; }
+.capcard__open, .capcard__install { margin-left: auto; height: 26px; padding: 0 8px 0 10px; border-radius: 7px; display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text); background: color-mix(in srgb, var(--accent) 15%, transparent); border: 1px solid color-mix(in srgb, var(--accent) 32%, transparent); transition: background-color var(--dur-1) ease, border-color var(--dur-1) ease; }
 .capcard__open:hover, .capcard__install:hover { background: color-mix(in srgb, var(--accent) 24%, transparent); border-color: color-mix(in srgb, var(--accent) 50%, transparent); }
-.capcard__open svg, .capcard__install svg { color: var(--accent); transition: transform 140ms ease; }
+.capcard__open svg, .capcard__install svg { color: var(--accent); transition: transform var(--dur-2) ease; }
 .capcard__open:hover svg { transform: translateX(2px); }
 /* Not installed reads as a place something could go: an outline, no fill, a hollow dot. */
 .capcard[data-installed='false'] { border-style: dashed; background: transparent; }
 .capcard[data-installed='false'] .capcard__ico { background: transparent; border-style: dashed; }
 .capcard[data-installed='false'] .capcard__state::before { background: transparent; box-shadow: inset 0 0 0 1px var(--ghost); }
 /* Quiet and at the far end from Open: the dialogs guard it, distance keeps a reach for Open off it. */
-.capcard__uninstall { height: 24px; padding: 0 7px; margin-left: 2px; border-radius: 6px; font-size: 11.5px; color: var(--ghost); transition: color 120ms ease, background-color 120ms ease; }
+.capcard__uninstall { height: 24px; padding: 0 7px; margin-left: 2px; border-radius: 6px; font-size: 11.5px; color: var(--ghost); transition: color var(--dur-1) ease, background-color var(--dur-1) ease; }
 .capcard__uninstall:hover { color: var(--danger); background: color-mix(in srgb, var(--danger) 10%, transparent); }
 .capcard--ghost { gap: 10px; min-height: 150px; }
-.capcard__ghost { height: 10px; border-radius: 3px; background: linear-gradient(90deg, var(--overlay) 25%, var(--overlay-strong) 37%, var(--overlay) 63%); background-size: 380% 100%; animation: shimmer 1.25s ease-in-out infinite; }
+.capcard__ghost { height: 10px; border-radius: 3px; background: linear-gradient(90deg, var(--overlay) 25%, var(--overlay-strong) 37%, var(--overlay) 63%); background-size: 380% 100%; animation: shimmer var(--loop-2) ease-in-out infinite; }
 .capcard__ghost:first-child { width: 45%; height: 14px; }
 .capcard__ghost:last-child { width: 70%; }
 
-.browse { width: 100%; margin-top: 6px; height: 36px; border-radius: 9px; border: 1px dashed var(--border-strong); display: flex; align-items: center; justify-content: center; gap: 7px; font-size: 12.5px; color: var(--text-3); transition: color 140ms ease, border-color 140ms ease; }
+.browse { width: 100%; margin-top: 6px; height: 36px; border-radius: 9px; border: 1px dashed var(--border-strong); display: flex; align-items: center; justify-content: center; gap: 7px; font-size: 12.5px; color: var(--text-3); transition: color var(--dur-2) ease, border-color var(--dur-2) ease; }
 .browse:hover { color: var(--text-2); border-color: var(--ghost); }
 
 /* Read-only rows: no hover lift, because nothing here responds to a
@@ -140,10 +140,10 @@
   .capcard__ghost { animation: none; }
 }
 
-.skills { flex: 1; overflow-y: auto; padding: 6px 0 16px; scrollbar-width: thin; scrollbar-color: var(--scroll-thumb) transparent; }
+.skills { flex: 1; overflow-y: auto; padding: 6px 0 16px; }
 .skills__in { max-width: 620px; margin: 0 auto; padding: 0 16px; }
 .skills__note { font-size: 12.5px; color: var(--text-3); line-height: 1.5; margin: 2px 0 14px; }
-.skill { display: flex; align-items: flex-start; gap: 10px; padding: 10px 10px; border-radius: 9px; border: 1px solid transparent; transition: background-color 140ms ease, border-color 140ms ease; }
+.skill { display: flex; align-items: flex-start; gap: 10px; padding: 10px 10px; border-radius: 9px; border: 1px solid transparent; transition: background-color var(--dur-2) ease, border-color var(--dur-2) ease; }
 .skill:hover { background: var(--overlay); border-color: var(--border); }
 .skill__ico { width: 26px; height: 26px; flex: none; border-radius: 7px; background: var(--raised); display: flex; align-items: center; justify-content: center; color: var(--text-2); margin-top: 1px; }
 .skill__body { flex: 1; min-width: 0; }
@@ -160,7 +160,7 @@
 /* A file, open in the middle. */
 .pane--file { background: var(--inset); }
 .pane--file .pane__bar { border-bottom: 1px solid var(--border); }
-.code { flex: 1; overflow: auto; padding: 8px 0 12px; font-family: var(--mono); font-size: 11.5px; line-height: 1.65; scrollbar-width: thin; scrollbar-color: var(--scroll-thumb) transparent; }
+.code { flex: 1; overflow: auto; padding: 8px 0 12px; font-family: var(--mono); font-size: 11.5px; line-height: 1.65; }
 .ln { display: flex; }
 .ln__n { width: 38px; flex: none; text-align: right; padding-right: 12px; color: var(--ghost); font-variant-numeric: tabular-nums; user-select: none; }
 .ln__c { white-space: pre; padding-right: 14px; }

@@ -1,17 +1,17 @@
 /* ── Motion ──────────────────────────────────────────────────────────
    A pane appearing is a navigation, and a navigation with no motion
    reads as a repaint — you cannot tell whether the thing swapped or the
-   window blinked. Short and small on purpose: 160ms and six pixels is
-   enough to be read as movement and not enough to be waited on. */
-@keyframes pane-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-.pane[data-show='true'] { animation: pane-in 160ms cubic-bezier(0.2, 0.7, 0.3, 1) both; }
-.blank { animation: pane-in 200ms cubic-bezier(0.2, 0.7, 0.3, 1) both; }
+   window blinked. Short and small on purpose: a few frames and four pixels
+   are enough to be read as movement and not enough to be waited on. */
+@keyframes pane-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.pane[data-show='true'] { animation: pane-in var(--dur-3) var(--ease-out) both; }
+.blank { animation: pane-in var(--dur-3) var(--ease-out) both; }
 
 /* The columns closing is the one geometry change a person asks for
    directly, so it is the one that may animate. */
-.win { transition: grid-template-columns 200ms cubic-bezier(0.2, 0.7, 0.3, 1); }
-.tab { transition: background-color 120ms ease, color 120ms ease; }
-.rtab, .segb, .act, .card, .row { transition: background-color 120ms ease, color 120ms ease; }
+.win { transition: grid-template-columns var(--dur-4) var(--ease-panel); }
+.tab { transition: background-color var(--dur-1) ease, color var(--dur-1) ease; }
+.rtab, .segb, .act, .card, .row { transition: background-color var(--dur-1) ease, color var(--dur-1) ease; }
 
 /* ── Loading ─────────────────────────────────────────────────────────
    Reading a file crosses a process boundary, so it can be slow enough to
@@ -21,7 +21,7 @@
 .skel { padding: 12px 0 0; }
 .skel__ln { height: 11px; margin: 0 14px 9px; border-radius: 3px;
   background: linear-gradient(90deg, var(--overlay) 25%, var(--overlay-strong) 37%, var(--overlay) 63%);
-  background-size: 380% 100%; animation: shimmer 1.25s ease-in-out infinite; }
+  background-size: 380% 100%; animation: shimmer var(--loop-2) ease-in-out infinite; }
 @keyframes shimmer { from { background-position: 130% 0; } to { background-position: -30% 0; } }
 .loading .code, .loading .fx__list { display: none; }
 .loading .skel { display: block; }

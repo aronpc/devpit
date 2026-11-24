@@ -9,7 +9,7 @@ button.ecard__p:hover { color: var(--text); text-decoration: underline; }
 .ecard__n { flex: none; font-variant-numeric: tabular-nums; }
 .ecard__add { color: var(--success); }
 .ecard__del { color: var(--danger); }
-.ecard__b { margin: 0; max-height: 320px; overflow: auto; scrollbar-width: thin; scrollbar-color: var(--scroll-thumb) transparent; }
+.ecard__b { margin: 0; max-height: 320px; overflow: auto; }
 .ecard__err { margin: 0; padding: 8px 10px; font-family: var(--mono); font-size: var(--fs-xs); white-space: pre-wrap; color: var(--danger); }
 .ecard__c { flex: none; padding: 0 4px; border-radius: var(--radius-xs); font-family: var(--ui); font-size: var(--fs-xs); color: var(--text-3); }
 .ecard__c:hover { color: var(--text); background: var(--overlay-strong); }
@@ -44,7 +44,7 @@ button.pcorner__card:hover { color: var(--text); background: var(--overlay-stron
 .pcorner__ctx[data-level='filling'] { color: var(--warning); }
 .pcorner__ctx[data-level='full'] { color: var(--danger); }
 /* Over a terminal the corner would cover its last columns, so it waits for the pointer. */
-.pane[data-pane='term'] .pcorner { opacity: 0; transition: opacity 120ms; background: var(--terminal); }
+.pane[data-pane='term'] .pcorner { opacity: 0; transition: opacity var(--dur-1); background: var(--terminal); }
 .pane[data-pane='term']:hover .pcorner, .pane[data-pane='term'] .pcorner:focus-within { opacity: 1; }
 /* The thread starts under the corner, not behind it. */
 .chead { flex: none; display: flex; align-items: center; min-height: 36px; padding: 0 var(--space-2); border-bottom: 1px solid var(--border); }
@@ -111,7 +111,7 @@ button.chead__t:hover { background: var(--overlay); }
 /* Skills picked for the turn, as pills beside the attachments. */
 .pills { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin: 0 0 4px; }
 .pills__p { font-family: var(--mono); font-size: var(--fs-xs); color: var(--accent); }
-.pills__menu { position: absolute; left: 0; bottom: calc(100% + 4px); z-index: 30; display: flex; flex-direction: column; min-width: 200px; max-height: 240px; overflow-y: auto; padding: 4px; border-radius: var(--radius-lg); background: var(--glass-solid); box-shadow: var(--e3), var(--top); scrollbar-width: thin; }
+.pills__menu { position: absolute; left: 0; bottom: calc(100% + 4px); z-index: 30; display: flex; flex-direction: column; min-width: 200px; max-height: 240px; overflow-y: auto; padding: 4px; border-radius: var(--radius-lg); background: var(--glass-solid); box-shadow: var(--e3), var(--top); }
 .pills__o { padding: 4px 8px; border-radius: var(--radius-sm); text-align: left; font-family: var(--mono); font-size: var(--fs-sm); color: var(--text-2); }
 .pills__o:hover, .pills__o[aria-selected='true'] { background: var(--overlay-strong); color: var(--text); }
 
@@ -133,7 +133,7 @@ button.chead__t:hover { background: var(--overlay); }
 .peek__grip:hover, .peek__grip:active { background: color-mix(in srgb, var(--accent) 35%, transparent); }
 .peek__bar { flex: none; display: flex; align-items: center; gap: 4px; height: 38px; padding: 0 8px 0 14px; border-bottom: 1px solid var(--border); }
 .peek__name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-sm); font-weight: 600; color: var(--text); }
-.peek__body { flex: 1; min-height: 0; overflow: auto; padding: 16px 20px 24px; scrollbar-width: thin; }
+.peek__body { flex: 1; min-height: 0; overflow: auto; padding: 16px 20px 24px; }
 .peek__text { margin: 0; font: var(--fs-sm)/1.55 var(--mono); color: var(--text-2); white-space: pre-wrap; overflow-wrap: anywhere; }
 .peek__note { color: var(--text-3); font-size: var(--fs-md); }
 .md__path { padding: 0; border: 0; background: none; }

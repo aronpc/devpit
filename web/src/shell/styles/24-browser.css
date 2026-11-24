@@ -73,7 +73,7 @@
      reach the rest. */
   max-height: calc(100vh - 8px); overflow-y: auto;
 }
-.bmenu__panel { animation: pop 130ms ease-out both; }
+.bmenu__panel { animation: pop var(--dur-2) ease-out both; }
 
 .bmenu__has { position: relative; }
 /* Always leftwards: every bit of room this window has is on that side, and a

@@ -69,36 +69,36 @@ function raw(css: string, kind: Kind): string[] {
  * a part that loses some lowers its number here, and a new value fails.
  */
 const BUDGET: Record<string, Partial<Record<Kind, number>>> = {
-  '01-frame.css': { size: 23, radius: 13, height: 10, motion: 3 },
-  '02-sheet.css': { size: 13, radius: 1, motion: 3 },
-  '03-sidebar.css': { size: 73, radius: 33, height: 21, motion: 20 },
+  '01-frame.css': { size: 23, radius: 13, height: 10 },
+  '02-sheet.css': { size: 13, radius: 1 },
+  '03-sidebar.css': { size: 73, radius: 33, height: 21 },
   '04-tabs.css': { size: 8, radius: 6, height: 5 },
-  '05-motion.css': { radius: 1, motion: 6 },
-  '06-settings.css': { size: 93, radius: 31, height: 17, motion: 7 },
-  '07-board.css': { size: 29, radius: 17, height: 9, motion: 9 },
-  '08-capabilities.css': { size: 39, radius: 21, height: 14, motion: 12 },
-  '09-tree.css': { size: 21, radius: 9, height: 12, motion: 2 },
-  '10-explorer.css': { size: 43, radius: 24, height: 16, motion: 2 },
-  '11-onboarding.css': { size: 8, radius: 5, height: 2, motion: 3 },
+  '05-motion.css': { radius: 1 },
+  '06-settings.css': { size: 93, radius: 31, height: 17 },
+  '07-board.css': { size: 29, radius: 17, height: 9 },
+  '08-capabilities.css': { size: 39, radius: 21, height: 14 },
+  '09-tree.css': { size: 21, radius: 9, height: 12 },
+  '10-explorer.css': { size: 43, radius: 24, height: 16 },
+  '11-onboarding.css': { size: 8, radius: 5, height: 2 },
   '12-editor.css': { size: 8, radius: 7, height: 1 },
-  '13-markdown.css': { size: 14, radius: 9, height: 3, motion: 1 },
-  '14-chat.css': { height: 22, motion: 14 },
+  '13-markdown.css': { size: 14, radius: 9, height: 3 },
+  '14-chat.css': { height: 22 },
   '15-splits.css': {},
-  '16-agent-pane.css': { size: 12, radius: 2, height: 3, motion: 2 },
-  '17-worktrees.css': { size: 13, radius: 7, height: 3, motion: 1 },
-  '18-card.css': { size: 62, radius: 19, height: 3, motion: 1 },
-  '19-bell.css': { size: 6, radius: 2, height: 1, motion: 1 },
+  '16-agent-pane.css': { size: 12, radius: 2, height: 3 },
+  '17-worktrees.css': { size: 13, radius: 7, height: 3 },
+  '18-card.css': { size: 63, radius: 19, height: 3 },
+  '19-bell.css': { size: 6, radius: 2, height: 1 },
   '20-files.css': { size: 8, radius: 3, height: 6 },
-  '21-turn.css': { height: 9, motion: 1 },
+  '21-turn.css': { height: 9 },
   '22-plugins.css': { size: 4, radius: 2, height: 2 },
-  '23-update.css': { size: 7, radius: 5, height: 2, motion: 1 },
-  '24-browser.css': { size: 11, radius: 7, height: 1, motion: 1 },
-  '25-git.css': { size: 15, radius: 5, height: 6, motion: 3 },
-  '26-rail.css': { size: 25, radius: 15, height: 15, motion: 15 },
-  '27-history.css': { size: 9, radius: 4, height: 2, motion: 1 },
-  '28-blocks.css': { size: 18, radius: 9, height: 8, motion: 2 },
-  '29-fields.css': { radius: 1, motion: 1 },
-  '30-devflow.css': { size: 48, radius: 20, height: 8, motion: 4 },
+  '23-update.css': { size: 7, radius: 5, height: 2 },
+  '24-browser.css': { size: 11, radius: 7, height: 1 },
+  '25-git.css': { size: 15, radius: 5, height: 6 },
+  '26-rail.css': { size: 25, radius: 15, height: 15 },
+  '27-history.css': { size: 9, radius: 4, height: 2 },
+  '28-blocks.css': { size: 18, radius: 9, height: 8 },
+  '29-fields.css': { radius: 1 },
+  '30-devflow.css': { size: 48, radius: 20, height: 8 },
   '31-schedules.css': { size: 3, radius: 2, height: 1 },
   '32-ask.css': { size: 13, radius: 6 },
   '33-glass.css': {},
@@ -147,5 +147,20 @@ describe("the shell's scales", () => {
     const tokens = read('src/theme/tokens.css')
     const used = new Set([...read(`${STYLES}/${part}`).matchAll(/var\((--(?:fs|fw|lh|track|radius|space|ctl|ctl-r|dur|ease|e\d|focus|icon)[a-z0-9-]*)\)/g)].map((m) => m[1]))
     expect([...used].filter((name) => !tokens.includes(`${name}:`))).toEqual([])
+  })
+
+  it.each(PARTS)('%s leaves scrollbars to the one mechanism in index.css', (part) => {
+    /* A scroller that sets scrollbar-width or scrollbar-color drops the
+       ::-webkit-scrollbar rules in Chromium, and two scrollers look different. */
+    expect(read(`${STYLES}/${part}`).match(/scrollbar-(width|color)\s*:/g) ?? []).toEqual([])
+  })
+
+  it('stops every animation and transition, pseudo-elements included, when less motion is asked for', () => {
+    const index = read('src/index.css')
+    const reduced = index.slice(index.indexOf('@media (prefers-reduced-motion: reduce)'))
+    const block = reduced.slice(0, reduced.indexOf('}\n}') + 3)
+    expect(block).toMatch(/\*,\s*\*::before,\s*\*::after\s*\{/)
+    expect(block).toMatch(/animation-duration:\s*0\.01ms !important/)
+    expect(block).toMatch(/transition-duration:\s*0\.01ms !important/)
   })
 })

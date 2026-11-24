@@ -54,7 +54,7 @@
 .stage__more { width: 30px; height: 30px; border-radius: 0 7px 7px 0; background: var(--overlay-strong); display: flex; align-items: center; justify-content: center; color: var(--text-3); }
 .stage__more:hover { background: var(--overlay-strong); color: var(--text); }
 
-.git__body { flex: 1; min-height: 0; overflow-y: auto; padding: 12px 0 8px; scrollbar-width: thin; scrollbar-color: var(--scroll-thumb) transparent; }
+.git__body { flex: 1; min-height: 0; overflow-y: auto; padding: 12px 0 8px; }
 .sect { display: flex; align-items: center; gap: 6px; width: 100%; height: 26px; padding: 0 10px; text-align: left; }
 .sect:hover { background: var(--sidebar-item); }
 .sect__chev { color: var(--text-3); flex: none; }
@@ -79,7 +79,7 @@
 .gitrow--dir:hover .gitrow__n { color: var(--text-2); }
 /* The chevron turns rather than swapping for a second glyph: one shape that
    moves reads as the same control in two states. */
-.gitrow__chev { transition: transform 120ms ease; }
+.gitrow__chev { transition: transform var(--dur-1) ease; }
 .gitrow__chev[data-open='true'] { transform: rotate(90deg); }
 .gitrow__all { margin: 0 10px 4px auto; display: block; font-size: 11px; color: var(--ghost); }
 .gitrow__all:hover { color: var(--text-2); }
@@ -88,7 +88,7 @@
    are what the panel is for. Focus brings them back for the keyboard, and a
    machine with no hover keeps them. */
 .gitrow { position: relative; }
-.gitrow__does { position: absolute; right: 0; top: 0; bottom: 0; display: flex; align-items: center; gap: 6px; padding: 0 10px 0 14px; background: linear-gradient(to right, transparent, var(--sidebar-item) 14px); opacity: 0; pointer-events: none; transition: opacity 100ms ease; }
+.gitrow__does { position: absolute; right: 0; top: 0; bottom: 0; display: flex; align-items: center; gap: 6px; padding: 0 10px 0 14px; background: linear-gradient(to right, transparent, var(--sidebar-item) 14px); opacity: 0; pointer-events: none; transition: opacity var(--dur-1) ease; }
 .gitrow:hover .gitrow__does, .gitrow__does:focus-within { opacity: 1; pointer-events: auto; }
 @media (hover: none) { .gitrow__does { opacity: 1; pointer-events: auto; } }
 

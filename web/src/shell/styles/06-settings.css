@@ -3,7 +3,7 @@
    beside the work, and giving them a column would invite fiddling with
    the machine while an agent is mid-turn behind it. */
 .prefs { position: absolute; inset: 0; z-index: 350; display: none; background: var(--canvas); }
-.prefs[data-open='true'] { display: grid; grid-template-columns: 264px 1fr; animation: pane-in 160ms cubic-bezier(0.2, 0.7, 0.3, 1) both; }
+.prefs[data-open='true'] { display: grid; grid-template-columns: 264px 1fr; animation: pane-in var(--dur-3) var(--ease-out) both; }
 
 /* The padding lives on the children, not here: the scrolling list has to
    reach the column's edge or its scrollbar sits in a gutter of its own. */
@@ -35,7 +35,7 @@
 .prefs__comm:hover { background: var(--sidebar-item); color: var(--text-2); }
 .prefs__comm svg { flex: none; }
 
-.prefs__main { min-width: 0; min-height: 0; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--scroll-thumb) transparent; }
+.prefs__main { min-width: 0; min-height: 0; overflow-y: auto; }
 /* Wider than prose: these panes are rows of controls, and a 780px column
    pushed four buttons and two numbers into the same handspan. */
 .prefs__in { max-width: 1080px; margin: 0 auto; padding: 34px 36px 60px; }
@@ -74,7 +74,7 @@
 .prefmore { margin-top: 6px; font-size: 12.5px; line-height: 1.5; color: var(--text-3); }
 .prefmore__s { display: inline-flex; align-items: center; gap: 6px; list-style: none; font-size: 12px; color: var(--text-2); border-radius: 5px; }
 .prefmore__s::-webkit-details-marker { display: none; }
-.prefmore__s::before { content: ''; border-left: 4.5px solid currentColor; border-top: 3.5px solid transparent; border-bottom: 3.5px solid transparent; transition: transform 140ms ease; }
+.prefmore__s::before { content: ''; border-left: 4.5px solid currentColor; border-top: 3.5px solid transparent; border-bottom: 3.5px solid transparent; transition: transform var(--dur-2) ease; }
 .prefmore[open] > .prefmore__s::before { transform: rotate(90deg); }
 .prefmore__s:hover { color: var(--text); }
 .prefmore__s:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -150,7 +150,7 @@
 .sk__find { flex: 1; min-width: 0; height: var(--ctl-m); flex: none; border-radius: var(--ctl-r-m); background: var(--inset); border: 1px solid var(--border-ctl); display: flex; align-items: center; gap: 8px; padding: 0 10px; font-size: 12.5px; color: var(--ghost); }
 .sk__h { padding: 14px 12px 6px; font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-3); display: flex; gap: 7px; }
 .sk__h span { color: var(--ghost); font-weight: 500; letter-spacing: 0; }
-.sk__rows { flex: 1; min-height: 0; overflow-y: auto; padding-bottom: 8px; scrollbar-width: thin; scrollbar-color: var(--scroll-thumb) transparent; }
+.sk__rows { flex: 1; min-height: 0; overflow-y: auto; padding-bottom: 8px; }
 .skrow { display: flex; align-items: flex-start; gap: 9px; width: 100%; padding: 8px 12px; text-align: left; }
 .skrow:hover { background: var(--sidebar-item); }
 .skrow[aria-current='true'] { background: var(--sidebar-item); }
@@ -161,7 +161,7 @@
 .skrow__d { display: block; margin-top: 2px; font-size: 11.5px; color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sk__foot { flex: none; height: 30px; display: flex; align-items: center; padding: 0 10px; border-top: 1px solid var(--border); font-family: var(--mono); font-size: 10.5px; color: var(--ghost); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; }
 
-.sk__doc { min-width: 0; min-height: 0; overflow-y: auto; padding: 26px 28px 60px; scrollbar-width: thin; scrollbar-color: var(--scroll-thumb) transparent; }
+.sk__doc { min-width: 0; min-height: 0; overflow-y: auto; padding: 26px 28px 60px; }
 .sk__top { display: flex; align-items: flex-start; gap: 12px; }
 /* Its own switch, not the settings row: .pref is width:100% and it was
    squeezing the title beside it to one word per line. */
@@ -240,15 +240,15 @@
 
 /* Install, then switch on. A toggle on something that is not installed is
    a switch wired to nothing — the row has to offer the step it is at. */
-.cap__get { flex: none; margin-top: 2px; height: 26px; padding: 0 11px; border-radius: 7px; font-size: 12px; color: var(--text-2); background: var(--overlay-strong); white-space: nowrap; transition: background-color 140ms ease, color 140ms ease; }
+.cap__get { flex: none; margin-top: 2px; height: 26px; padding: 0 11px; border-radius: 7px; font-size: 12px; color: var(--text-2); background: var(--overlay-strong); white-space: nowrap; transition: background-color var(--dur-2) ease, color var(--dur-2) ease; }
 .cap__get:hover { background: color-mix(in srgb, var(--accent) 20%, var(--overlay-strong)); color: var(--text); }
 .cap__get[data-busy='true'] { color: var(--text-3); pointer-events: none; }
-.cap__get[data-busy='true'] svg { animation: spin 1s linear infinite; }
+.cap__get[data-busy='true'] svg { animation: spin var(--loop-1) linear infinite; }
 .cap__size { font-family: var(--mono); font-size: 10.5px; color: var(--ghost); }
 
 .ctx { position: fixed; z-index: 400; min-width: 176px; padding: 4px; border-radius: var(--radius-lg);
   background: var(--glass-solid);
-  box-shadow: var(--e3), var(--top); animation: pop 120ms ease-out both; }
+  box-shadow: var(--e3), var(--top); animation: pop var(--dur-1) ease-out both; }
 .ctx[hidden] { display: none; }
 .ctx__i { width: 100%; height: 30px; padding: 0 9px; border-radius: 6px; display: flex; align-items: center; gap: 9px; text-align: left; font-size: 12.5px; color: var(--text-2); }
 .ctx__i:hover, .ctx__i:focus-visible { background: var(--overlay-strong); color: var(--text); outline: none; }
@@ -271,7 +271,7 @@
 .pane__t { font-size: 12px; color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pane__t b { color: var(--text-2); font-weight: 500; }
 
-.scroll { flex: 1; min-width: 0; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--scroll-thumb) transparent; }
+.scroll { flex: 1; min-width: 0; overflow-y: auto; }
 code { font-family: var(--mono); font-size: 0.87em; color: var(--code-text); background: var(--code-wash); padding: 1.5px 4px; border-radius: 4px; }
 
 /* Terminal */
@@ -283,7 +283,7 @@ code { font-family: var(--mono); font-size: 0.87em; color: var(--code-text); bac
   color: var(--text);
 }
 .pane--term .pane__bar { border-bottom: 1px solid var(--border); }
-.termbody { flex: 1; overflow-y: auto; padding: 8px 12px 12px; font-family: var(--mono); font-size: 12px; line-height: 1.62; white-space: pre-wrap; scrollbar-width: thin; scrollbar-color: var(--scroll-thumb) transparent; }
+.termbody { flex: 1; overflow-y: auto; padding: 8px 12px 12px; font-family: var(--mono); font-size: 12px; line-height: 1.62; white-space: pre-wrap; }
 /* robbyrussell, which is what a fresh oh-my-zsh gives you: an arrow,
    the folder, the branch, and a mark when the tree is dirty. */
 .t-arrow { color: #62c987; font-weight: 700; }
@@ -296,7 +296,7 @@ code { font-family: var(--mono); font-size: 0.87em; color: var(--code-text); bac
 .t-warn { color: var(--warning); }
 .t-acc { color: var(--accent); }
 .t-blue { color: var(--gauge); }
-.caret { display: inline-block; width: 7px; height: 14px; vertical-align: -2px; background: var(--accent); animation: blink 1.1s step-end infinite; }
+.caret { display: inline-block; width: 7px; height: 14px; vertical-align: -2px; background: var(--accent); animation: blink var(--loop-2) step-end infinite; }
 @keyframes blink { 50% { opacity: 0; } }
 
 /* A profile's details, folded: a name and a command are the whole form for most. */
@@ -355,7 +355,7 @@ ul.prefhow > li::before { content: ''; top: 8px; left: 3px; width: 4px; height: 
 /* What a device may do, as chips that are lit or not — the switches' colour,
    not a form's checkbox. Watch is lit and not a button: it cannot be refused. */
 .remote__chips { display: inline-flex; gap: 6px; flex-wrap: wrap; }
-.remote__chip { height: 24px; padding: 0 10px; border-radius: 12px; display: inline-flex; align-items: center; font-size: 12px; color: var(--text-3); background: var(--overlay); border: 1px solid transparent; transition: background-color 120ms ease, border-color 120ms ease; }
+.remote__chip { height: 24px; padding: 0 10px; border-radius: 12px; display: inline-flex; align-items: center; font-size: 12px; color: var(--text-3); background: var(--overlay); border: 1px solid transparent; transition: background-color var(--dur-1) ease, border-color var(--dur-1) ease; }
 button.remote__chip:hover { color: var(--text); background: var(--overlay-strong); }
 .remote__chip[data-on], .remote__chip[aria-pressed='true'] { color: var(--text); background: color-mix(in srgb, var(--accent) 14%, transparent); border-color: color-mix(in srgb, var(--accent) 38%, transparent); }
 .remote__chip[data-on] { opacity: 0.75; }

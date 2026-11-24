@@ -26,7 +26,7 @@
 .fb__find::placeholder { color: var(--ghost); }
 .fb__find:focus-visible { outline: none; border-color: var(--border-strong); }
 
-.fb__list { flex: 1; min-height: 0; overflow-y: auto; padding: 6px 0; scrollbar-width: thin; scrollbar-color: var(--scroll-thumb) transparent; display: flex; flex-direction: column; }
+.fb__list { flex: 1; min-height: 0; overflow-y: auto; padding: 6px 0; display: flex; flex-direction: column; }
 .fb__list:focus-visible { outline: none; }
 .fb__row { display: flex; align-items: center; gap: 9px; flex: none; width: 100%; min-width: 0; height: 30px; padding: 0 12px; text-align: left; font-size: 12.5px; color: var(--text-2); white-space: nowrap; }
 .fb__row:hover { background: var(--overlay); }
@@ -49,5 +49,5 @@
 .fb__side { display: flex; flex-direction: column; min-width: 0; min-height: 0; border-left: 1px solid var(--border); }
 .fb__sideh { flex: none; height: 32px; display: flex; align-items: center; gap: 6px; padding: 0 6px 0 12px; border-bottom: 1px solid var(--border); }
 .fb__sidet { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: var(--text-2); }
-.fb__sideb { flex: 1; min-height: 0; overflow: auto; display: flex; flex-direction: column; scrollbar-width: thin; scrollbar-color: var(--scroll-thumb) transparent; }
+.fb__sideb { flex: 1; min-height: 0; overflow: auto; display: flex; flex-direction: column; }
 

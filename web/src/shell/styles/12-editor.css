@@ -62,7 +62,7 @@
 /* Transparent rather than hidden: the letters are still there, still
    selectable and still what a screen reader reads. The colour comes from
    behind them. */
-.code__edit { overflow: auto; background: none; color: transparent; caret-color: var(--text); resize: none; outline: none; scrollbar-width: thin; scrollbar-color: var(--scroll-thumb) transparent; }
+.code__edit { overflow: auto; background: none; color: transparent; caret-color: var(--text); resize: none; outline: none; }
 .code__edit::selection { background: color-mix(in srgb, var(--accent) 28%, transparent); }
 
 .tok--comment { color: var(--syn-comment); font-style: italic; }

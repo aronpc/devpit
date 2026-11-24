@@ -7,7 +7,7 @@
 .hist__find input { flex: 1; min-width: 0; border: 0; background: none; outline: none; color: var(--text); font: inherit; font-size: 12.5px; }
 .hist__group { display: flex; flex-direction: column; }
 .hist__day { position: sticky; top: 32px; z-index: 1; padding: 8px 14px 4px; font-size: 10.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--text-3); background: var(--sidebar, var(--canvas)); }
-.hist__row { display: flex; flex-direction: column; gap: 3px; width: 100%; min-width: 0; padding: 6px 14px; text-align: left; border-radius: 0; transition: background-color 100ms ease; }
+.hist__row { display: flex; flex-direction: column; gap: 3px; width: 100%; min-width: 0; padding: 6px 14px; text-align: left; border-radius: 0; transition: background-color var(--dur-1) ease; }
 .hist__row:hover, .hist__row[data-menu='true'] { background: var(--sidebar-item); }
 .hist__top { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .hist__s { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12.5px; color: var(--text); }
