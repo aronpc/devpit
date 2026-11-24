@@ -67,9 +67,9 @@ afterEach(() => {
 const request = (from: string, id: string, text: string, conversation = 'conv_1'): ForwardedRequest => ({ from, id, text, conversation })
 
 async function openDestination(): Promise<void> {
-  const view = render(<RailOrchestrators onMenu={vi.fn()} onRemove={vi.fn()} onEdit={vi.fn()} />)
+  const view = render(<RailOrchestrators onMenu={vi.fn()} onRemove={vi.fn()} onEdit={vi.fn()} onHold={vi.fn()} />)
   fireEvent.click(screen.getByTitle('/tmp/destination'))
-  view.rerender(<RailOrchestrators onMenu={vi.fn()} onRemove={vi.fn()} onEdit={vi.fn()} />)
+  view.rerender(<RailOrchestrators onMenu={vi.fn()} onRemove={vi.fn()} onEdit={vi.fn()} onHold={vi.fn()} />)
   await waitFor(() => expect(shown).toHaveBeenCalled())
 }
 
