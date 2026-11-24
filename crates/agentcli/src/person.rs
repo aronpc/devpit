@@ -117,6 +117,9 @@ pub fn last_heard(log: &str) -> Heard {
         let Ok(entry) = serde_json::from_str::<Value>(line) else {
             continue;
         };
+        if queued_from_elsewhere(&entry) {
+            return Heard::Barrier;
+        }
         if entry["type"] != "user" {
             continue;
         }
@@ -127,6 +130,28 @@ pub fn last_heard(log: &str) -> Heard {
         }
     }
     Heard::Nothing
+}
+
+/// A message queued into a running turn, which Claude Code logs as an
+/// attachment rather than a `user` entry: another session's, an idle notice
+/// or one devpit marked is a barrier there too. The person's own is not.
+fn queued_from_elsewhere(entry: &Value) -> bool {
+    let queued = &entry["attachment"];
+    if entry["type"] != "attachment" || queued["type"] != "queued_command" {
+        return false;
+    }
+    let prompt = match &queued["prompt"] {
+        Value::String(text) => text.clone(),
+        Value::Array(blocks) => blocks
+            .iter()
+            .filter_map(|block| block["text"].as_str())
+            .collect::<Vec<_>>()
+            .join("\n"),
+        _ => String::new(),
+    };
+    queued["origin"]["kind"] == "peer"
+        || crate::peers::idle_notice(&prompt).is_some()
+        || without_notices(&prompt).is_none()
 }
 
 /// The person's last words in a log's text, when no barrier stands after them.

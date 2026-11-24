@@ -131,7 +131,7 @@ pub fn woken_by(text: &str) -> Option<PeerEvent> {
 }
 
 /// `[Cross-session idle notice] "name", … Its harness reports: «…»`.
-fn idle_notice(text: &str) -> Option<(String, String)> {
+pub(crate) fn idle_notice(text: &str) -> Option<(String, String)> {
     let rest = text
         .trim_start()
         .strip_prefix("[Cross-session idle notice]")?;

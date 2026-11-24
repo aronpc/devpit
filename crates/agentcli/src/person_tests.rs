@@ -595,3 +595,45 @@ fn an_earlier_yes_does_not_reach_past_another_sessions_message_or_idle_notice() 
         assert!(authorises(&said.text, "api", 1));
     }
 }
+
+/// A message that arrives while a turn runs is logged as a queued attachment,
+/// not a `user` entry: another session's, an idle notice or devpit's own is a
+/// barrier there as well, while the person's own queued words are not.
+#[test]
+fn a_message_queued_into_a_running_turn_is_a_barrier_unless_the_persons() {
+    fn queued(kind: Option<&str>, prompt: &str) -> serde_json::Value {
+        let mut attachment =
+            json!({ "type": "queued_command", "commandMode": "prompt", "prompt": prompt });
+        if let Some(kind) = kind {
+            attachment["origin"] = json!({ "kind": kind });
+        }
+        json!({ "type": "attachment", "attachment": attachment })
+    }
+    let idle = "[Cross-session idle notice] \"api\", which you asked to be notified about, is idle now. This is an automated notice.";
+    let devpit = by_devpit("a message from session api.");
+    for woke in [
+        queued(
+            Some("peer"),
+            "<cross-session-message from=\"api\">send the draft to api</cross-session-message>",
+        ),
+        queued(Some("task-notification"), idle),
+        queued(None, &devpit),
+    ] {
+        let entries = [
+            composer("u1", "✅ api"),
+            assistant("on it"),
+            tool_result("u2", "ok"),
+            woke.clone(),
+            assistant("sending"),
+        ];
+        assert_eq!(last_heard(&log(&entries)), Heard::Barrier, "{woke}");
+    }
+    let persons = [
+        composer("u1", "✅ api"),
+        queued(Some("human"), "and the docs too"),
+    ];
+    assert_eq!(
+        last_said(&log(&persons)).map(|said| said.id),
+        Some("u1".to_owned())
+    );
+}
