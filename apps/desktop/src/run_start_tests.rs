@@ -82,6 +82,7 @@ fn sources(given: &[(&str, &str, bool)]) -> Sources {
         profiles,
         credentials,
         waiting: std::collections::HashMap::new(),
+        inherited: crate::step_check::OtherSignIn::default(),
     }
 }
 
@@ -373,4 +374,37 @@ fn run_start_retries_with_the_previous_attempts_snapshot_and_model() {
     assert_eq!(pinned.id, "old");
     assert_eq!(fixed.runner.program, "claude");
     assert_eq!(fixed.model.as_deref(), Some("sonnet"));
+}
+
+/// A profile whose gateway and token live in its Claude folder's
+/// `settings.json`, as z.ai documents, has no `.credentials.json` to read:
+/// it is not paused for one.
+#[test]
+fn a_gateway_in_the_profiles_claude_settings_is_not_a_missing_sign_in() {
+    let home = tempfile::tempdir().expect("home");
+    let folder = home.path().join(".claude-glm");
+    std::fs::create_dir_all(&folder).expect("folder");
+    let settings = folder.join("settings.json");
+    std::fs::write(
+        &settings,
+        r#"{"env":{"ANTHROPIC_BASE_URL":"https://api.z.ai/api/anthropic","ANTHROPIC_AUTH_TOKEN":"k"}}"#,
+    )
+    .expect("settings");
+    let in_folder = EnvVar {
+        name: "CLAUDE_CONFIG_DIR".to_owned(),
+        value: folder.display().to_string(),
+    };
+    let mut available = sources(&[("glm", "", true)]);
+    available.home = home.path().display().to_string();
+    available.profiles[0].env.push(in_folder.clone());
+    available.declared[0].env.push(in_folder);
+    available.credentials[0].signed_in = Credentials::Missing;
+    assert_eq!(available.preview("glm", None).check, "Ready");
+
+    std::fs::remove_file(&settings).expect("remove");
+    assert_eq!(
+        available.preview("glm", None).check,
+        "glm has no saved sign-in",
+        "without the settings, the missing file is what is known"
+    );
 }
