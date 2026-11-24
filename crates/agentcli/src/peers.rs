@@ -69,7 +69,7 @@ pub fn events(text: &str) -> Vec<PeerEvent> {
         .collect()
 }
 
-fn of_entry(entry: &Value) -> Vec<PeerEvent> {
+pub(crate) fn of_entry(entry: &Value) -> Vec<PeerEvent> {
     let at = entry["timestamp"].as_str().unwrap_or_default().to_owned();
     let content = &entry["message"]["content"];
     match entry["type"].as_str() {

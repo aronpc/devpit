@@ -100,8 +100,9 @@ pub struct Said {
 pub enum Heard {
     /// The person's last words, with no barrier after them.
     Said(Said),
-    /// A turn that is not the person's (a forwarded request, or one devpit
-    /// started) came after their last words: those do not reach past it.
+    /// A turn that is not the person's (a forwarded request, one devpit
+    /// started, or another session's message or idle notice) came after
+    /// their last words: those do not reach past it.
     Barrier,
     /// Nothing the person said.
     Nothing,
@@ -157,6 +158,11 @@ fn person_turn(entry: &Value) -> Turn {
 /// when it is not a turn to read, `Some(None)` when it is a marked turn (a
 /// barrier), `Some(Some(..))` when it is their words.
 fn person_said(entry: &Value) -> Option<Option<Said>> {
+    // Another session's message or idle notice wakes a turn as devpit's own
+    // do, through Claude Code instead: the same barrier, whatever carried it.
+    if !crate::peers::of_entry(entry).is_empty() {
+        return Some(None);
+    }
     if entry["isMeta"] == true || entry["isCompactSummary"] == true {
         return None;
     }
