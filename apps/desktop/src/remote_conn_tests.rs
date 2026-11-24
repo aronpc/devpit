@@ -178,6 +178,28 @@ fn an_allow_without_a_choice_is_refused_for_a_question() {
     assert_eq!(asking.wait("q_denied", hear), crate::asking::Answer::Deny);
 }
 
+/// An older viewer offers only Deny and Allow. Deny still settles a question
+/// to the person, the one read off a terminal's screen where it was read, as
+/// before; Allow is refused with how to answer.
+#[test]
+fn an_older_viewer_can_still_deny_a_question_and_is_told_how_to_answer() {
+    let chat = choice_question("q_chat", 1);
+    let mut screen = choice_question("ask_pane", 1);
+    screen.from = "terminal".to_owned();
+    screen.touch = None;
+    assert!(denies_by_picks(Some(&chat), &chat.id));
+    assert!(
+        !denies_by_picks(Some(&screen), &screen.id),
+        "a terminal's screen question went to the chat registry"
+    );
+    let mut tool = choice_question("q_tool", 1);
+    tool.tool = "Bash".to_owned();
+    assert!(!denies_by_picks(Some(&tool), &tool.id));
+
+    let error = validate_answer(true, Some(&screen)).expect_err("choice required");
+    assert!(error.contains("reload the Remote"), "{error}");
+}
+
 /// A viewer built before ptyd reads the list it always did: a ptyd pane is
 /// one more terminal in the same shape, after the tmux ones.
 #[test]

@@ -70,6 +70,8 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .rm__ask { display: flex; flex-direction: column; gap: 8px; padding: 12px; border: 1px solid color-mix(in srgb, #e3a008 50%, var(--border)); border-radius: 12px; background: var(--surface); }
 .rm__what { padding: 8px; border-radius: 8px; background: color-mix(in srgb, var(--text) 6%, var(--surface)); font-size: 13px; overflow-wrap: anywhere; }
 .rm__acts { display: flex; justify-content: flex-end; gap: 8px; }
+.rm__choices { justify-content: flex-start; flex-wrap: wrap; }
+.rm__btn[aria-pressed='true'] { border-color: var(--good); background: color-mix(in srgb, var(--good) 16%, var(--surface)); }
 .rm__msg { padding: 10px 12px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border); overflow-wrap: anywhere; }
 .rm__msg[data-role='user'] { align-self: flex-end; max-width: 85%; background: color-mix(in srgb, var(--accent) 12%, var(--surface)); }
 .rm__msg p { margin: 0 0 6px; white-space: pre-wrap; }
