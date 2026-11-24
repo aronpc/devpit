@@ -186,9 +186,15 @@
   --dur-3: 180ms;
   --dur-4: 240ms;
 
-  /* One ring for every control, drawn only for the keyboard. */
+  /* One ring for every control, drawn only for the keyboard: outside the
+     control by a hair, or inside it where a scroller would cut it. A field
+     shows the same colour on its own edge, since a field is focused by a
+     click as much as by a key. */
   --focus: var(--accent);
-  --focus-ring: 0 0 0 1px var(--canvas), 0 0 0 3px var(--focus);
+  --focus-ring: 2px solid var(--focus);
+  --focus-offset: 1px;
+  --focus-inset: -2px;
+  --focus-field: 0 0 0 1px var(--focus);
 
   --ui: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Ubuntu, system-ui, sans-serif;
   --mono: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, monospace;

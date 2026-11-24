@@ -7,7 +7,7 @@
 .plg-excalidraw__loading { background: var(--inset); }
 .plg-excalidraw__new { display: flex; gap: 8px; margin: 0 0 12px; }
 .plg-excalidraw__field { flex: 1; min-width: 0; height: 30px; padding: 0 10px; border-radius: 7px; border: 1px solid var(--border); background: var(--inset); color: var(--text); font: inherit; font-size: 12.5px; outline: none; }
-.plg-excalidraw__field:focus { border-color: var(--border-strong); }
+.plg-excalidraw__field:focus { border-color: var(--focus); box-shadow: var(--focus-field); }
 .plg-excalidraw__problem { margin: 0 0 12px; font-size: 12px; color: var(--danger); }
 
 /* A note is the editor, and nothing beside it: a pane of source next to a

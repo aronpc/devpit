@@ -160,12 +160,20 @@ input[type='search']::-webkit-search-cancel-button {
 }
 
 :focus-visible {
-  outline: 1px solid var(--accent);
-  outline-offset: -1px;
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
 }
 
-/* A field that sits inside its own bordered row already shows focus; the
-   ring on the input draws a second edge just inside the first. */
+/* Rows inside something that scrolls or clips take the ring inside their own
+   box, where the edge of the scroller cannot cut it off. */
+:where(.side, .rp, .prefs__nav, .sk__rows, .cmd__body, .tree, .sess, .pickpop, .newmenu__pop, .acct__pop, .ctlmenu, .mpick,
+  .ctx, .bmenu__panel, .bmenu__sub, .gpick__list, .fsel__menu, .slash, .pills__menu, .branchmenu, .bell__pop, .apps__menu,
+  .lstep__pop, .cin__search, .hud, .mcpchip__pop) :focus-visible {
+  outline-offset: var(--focus-inset);
+}
+
+/* A field whose own row or surface already shows it holds the focus: a ring
+   on the input would draw a second edge just inside the first. */
 .cmd__in:focus-visible,
 .pickpop__in:focus-visible,
 .mpick__in:focus-visible,

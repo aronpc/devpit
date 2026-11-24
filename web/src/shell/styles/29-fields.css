@@ -13,7 +13,7 @@
   border-color: var(--border-strong);
 }
 .hist__find:focus-within, .git__find:focus, .fb__find:focus, .sk__find:focus-within, .prefs__find:focus-within, .mgr__find:focus, .resume__find:focus {
-  border-color: var(--border-strong);
+  border-color: var(--focus); box-shadow: var(--focus-field);
   box-shadow: 0 0 0 2px var(--overlay-strong);
   outline: none;
 }

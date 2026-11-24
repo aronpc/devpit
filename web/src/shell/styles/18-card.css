@@ -14,14 +14,14 @@
 .cardp__row { display: flex; align-items: center; gap: 14px; margin: 14px 0 4px; }
 .cardp__due { display: flex; align-items: center; gap: 9px; }
 .cardp__date { height: 28px; padding: 0 8px; border-radius: 7px; background: var(--inset); border: 1px solid var(--border); font: inherit; font-size: 12px; color: var(--text); }
-.cardp__date:focus { outline: none; border-color: var(--accent); }
+.cardp__date:focus { outline: none; border-color: var(--focus); box-shadow: var(--focus-field); }
 .cardp__near { font-size: 11.5px; color: var(--text-3); }
 .cardp__due[data-near='past'] .cardp__near { color: var(--danger); }
 .cardp__due[data-near='today'] .cardp__near { color: var(--warning); }
 .cardp__cost { margin-left: auto; font-size: 11.5px; color: var(--text-3); font-variant-numeric: tabular-nums; }
 .cardp__h { margin: 26px 0 10px; font-size: 11px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-3); }
 .cardp__body { width: 100%; padding: 11px 13px; border-radius: 9px; background: var(--inset); border: 1px solid var(--border); font: inherit; font-size: 13px; line-height: 1.6; color: var(--text); resize: vertical; }
-.cardp__body:focus { outline: none; border-color: var(--accent); }
+.cardp__body:focus { outline: none; border-color: var(--focus); box-shadow: var(--focus-field); }
 /* Two columns once there is room: what the card is on the left, what is done
    with it on the right. Narrower, one column, in reading order. */
 @media (min-width: 900px) {
@@ -29,7 +29,7 @@
   .cardp__grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 340px); gap: 32px; align-items: start; }
 }
 .cardp__lane { display: flex; align-items: center; gap: 9px; margin-bottom: 12px; }
-.cardp__select { height: 28px; padding: 0 8px; border-radius: 7px; background: var(--inset); border: 1px solid var(--border); font: inherit; font-size: 12px; color: var(--text); }
+.cardp__select { height: var(--ctl-s); padding: 0 8px; border-radius: var(--ctl-r-s); background: var(--inset); border: 1px solid var(--border-ctl); font: inherit; font-size: 12px; color: var(--text); }
 .cardp__md { min-height: 64px; padding: 11px 13px; border-radius: 9px; background: var(--inset); border: 1px solid transparent; }
 .cardp__md:hover, .cardp__md:focus-visible { outline: none; border-color: var(--border); }
 .cardp__ph { font-size: 13px; color: var(--text-3); }
@@ -52,7 +52,7 @@
 .dplan__t:focus { outline: none; border-bottom-color: var(--accent); }
 .dplan__by { margin: 0; font-size: 11.5px; color: var(--warning); }
 .dplan__ta { width: 100%; padding: 7px 9px; border-radius: 8px; background: var(--inset); border: 1px solid var(--border); font: inherit; font-size: 12.5px; line-height: 1.5; color: var(--text); resize: vertical; }
-.dplan__ta:focus { outline: none; border-color: var(--accent); }
+.dplan__ta:focus { outline: none; border-color: var(--focus); box-shadow: var(--focus-field); }
 .dplan__verify { align-self: flex-start; padding: 2px 7px; border-radius: 5px; background: var(--inset); font-family: var(--mono); font-size: 11px; color: var(--text-2); }
 .dplan__acts { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
 
@@ -96,8 +96,8 @@
    the row keeps a line of its own under it. */
 .runsp__filters { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; margin-bottom: 18px; padding-bottom: 16px; border-bottom: 1px solid var(--border); font-size: 12px; color: var(--text-3); }
 .runsp__filters label { display: flex; align-items: center; gap: 7px; }
-.runsp__filters select, .runsp__filters input { height: 28px; padding: 0 8px; border-radius: 7px; background: var(--inset); border: 1px solid var(--border); font: inherit; font-size: 12px; color: var(--text); }
-.runsp__filters select:focus, .runsp__filters input:focus { outline: none; border-color: var(--accent); }
+.runsp__filters select, .runsp__filters input { height: var(--ctl-s); padding: 0 8px; border-radius: var(--ctl-r-s); background: var(--inset); border: 1px solid var(--border-ctl); font: inherit; font-size: 12px; color: var(--text); }
+.runsp__filters select:focus, .runsp__filters input:focus { outline: none; border-color: var(--focus); box-shadow: var(--focus-field); }
 .runsp__card { display: block; font-size: 13px; color: var(--text); text-align: left; }
 .runsp__card:hover { text-decoration: underline; }
 /* An empty list is one sentence in a big box: it gets room rather than the
@@ -134,8 +134,8 @@
 .conv__act { font-size: 11px; color: var(--text-3); }
 .conv__act:hover { color: var(--text); }
 .conv__new { margin-top: 10px; }
-.conv__f { width: 100%; padding: 10px 12px; border-radius: 9px; background: var(--inset); border: 1px solid var(--border); font: inherit; font-size: 12.5px; line-height: 1.55; color: var(--text); resize: vertical; }
-.conv__f:focus { outline: none; border-color: var(--accent); }
+.conv__f { width: 100%; padding: 10px 12px; border-radius: var(--ctl-r-m); background: var(--inset); border: 1px solid var(--border-ctl); font: inherit; font-size: 12.5px; line-height: 1.55; color: var(--text); resize: vertical; }
+.conv__f:focus { outline: none; border-color: var(--focus); box-shadow: var(--focus-field); }
 
 /* Play: do this lane's step on this card, now. */
 .play { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }

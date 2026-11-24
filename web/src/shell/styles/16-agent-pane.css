@@ -83,11 +83,8 @@
 .cresult__n { flex: none; min-width: 24px; text-align: right; color: var(--ghost); font-variant-numeric: tabular-nums; }
 .cresult__t { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 
-/* US-008: keyboard navigation for the tree, and a render ceiling.
-   :focus-visible, not :focus — a mouse click on a row must not leave a ring
-   behind, only keyboard focus does. The negative offset keeps the ring
-   inside .row's own box instead of being cut off by its `overflow: hidden`. */
-button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+/* US-008: keyboard navigation for the tree, and a render ceiling. The ring
+   sits inside a row (index.css), where its `overflow: hidden` cannot cut it. */
 .row--more { color: var(--ghost); }
 
 /* US-009: a skeleton for the first fetch — before the tree, Changes, or

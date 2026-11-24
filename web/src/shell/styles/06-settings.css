@@ -10,8 +10,8 @@
 .prefs__side { display: flex; flex-direction: column; min-height: 0; background: var(--sidebar); padding: 12px 0; }
 .prefs__back { height: 32px; flex: none; display: flex; align-items: center; gap: 9px; margin: 0 12px; padding: 0 10px; border-radius: 8px; font-size: 13px; color: var(--text-2); }
 .prefs__back:hover { background: var(--sidebar-item); color: var(--text); }
-.prefs__find { margin: 12px 12px 0; height: 30px; flex: none; border-radius: 8px; background: var(--inset); border: 1px solid var(--border); display: flex; align-items: center; gap: 8px; padding: 0 10px; font-size: 12px; color: var(--ghost); }
-.prefs__find:focus-within { border-color: var(--accent); }
+.prefs__find { margin: 12px 12px 0; height: var(--ctl-m); flex: none; border-radius: var(--ctl-r-m); background: var(--inset); border: 1px solid var(--border-ctl); display: flex; align-items: center; gap: 8px; padding: 0 10px; font-size: 12px; color: var(--ghost); }
+.prefs__find:focus-within { border-color: var(--focus); box-shadow: var(--focus-field); }
 .prefs__find svg { flex: none; }
 .prefs__q { flex: 1; min-width: 0; background: none; border: 0; font: inherit; color: var(--text); }
 .prefs__q::placeholder { color: var(--ghost); }
@@ -147,7 +147,7 @@
 /* Chips wrap in a column 268px wide; the picker draws nothing with one. */
 .sk__inst { padding: 8px 10px 0; }
 .sk__inst:empty { display: none; }
-.sk__find { flex: 1; min-width: 0; height: 30px; flex: none; border-radius: 8px; background: var(--inset); border: 1px solid var(--border); display: flex; align-items: center; gap: 8px; padding: 0 10px; font-size: 12.5px; color: var(--ghost); }
+.sk__find { flex: 1; min-width: 0; height: var(--ctl-m); flex: none; border-radius: var(--ctl-r-m); background: var(--inset); border: 1px solid var(--border-ctl); display: flex; align-items: center; gap: 8px; padding: 0 10px; font-size: 12.5px; color: var(--ghost); }
 .sk__h { padding: 14px 12px 6px; font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-3); display: flex; gap: 7px; }
 .sk__h span { color: var(--ghost); font-weight: 500; letter-spacing: 0; }
 .sk__rows { flex: 1; min-height: 0; overflow-y: auto; padding-bottom: 8px; scrollbar-width: thin; scrollbar-color: var(--scroll-thumb) transparent; }
@@ -319,7 +319,7 @@ code { font-family: var(--mono); font-size: 0.87em; color: var(--code-text); bac
 .voice__row .pref__d { margin-top: 0; }
 .voice__row .btn[data-on] { color: var(--text); border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
 .voice__l { width: 64px; font-size: 12.5px; color: var(--text-2); }
-.voice__in { flex: 1; min-width: 160px; height: 28px; padding: 0 8px; border: 1px solid var(--border-strong); border-radius: 6px; background: var(--surface); color: var(--text); font-size: 12.5px; }
+.voice__in { flex: 1; min-width: 160px; height: var(--ctl-s); padding: 0 8px; border: 1px solid var(--border-ctl); border-radius: var(--ctl-r-s); background: var(--surface); color: var(--text); font-size: 12.5px; }
 .voice__in--short { flex: none; width: 90px; min-width: 0; }
 .voice__val { flex: 1; min-width: 0; font: 12px var(--mono); color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; text-align: left; }
 .voice__bad { color: var(--danger); }
@@ -371,8 +371,8 @@ button.remote__chip:hover { color: var(--text); background: var(--overlay-strong
 /* Settings → Keyboard, and the cheat sheet that prints the same caps. One
    card per group with hairlines between rows: thirty shortcuts as thirty cards
    read as a wall. */
-.kmap__find { height: 30px; max-width: 360px; border-radius: 8px; background: var(--inset); border: 1px solid var(--border); display: flex; align-items: center; gap: 8px; padding: 0 10px; font-size: 12px; color: var(--ghost); }
-.kmap__find:focus-within { border-color: var(--accent); }
+.kmap__find { height: var(--ctl-m); max-width: 360px; border-radius: var(--ctl-r-m); background: var(--inset); border: 1px solid var(--border-ctl); display: flex; align-items: center; gap: 8px; padding: 0 10px; font-size: 12px; color: var(--ghost); }
+.kmap__find:focus-within { border-color: var(--focus); box-shadow: var(--focus-field); }
 .kmap { background: var(--raised); border-radius: 10px; padding: 0 16px; }
 .kmap__row { display: flex; align-items: center; gap: 14px; padding: 10px 0; }
 .kmap__row + .kmap__row { border-top: 1px solid var(--border); }

@@ -105,9 +105,8 @@ select.chip { appearance: none; border: 0; background: none; font-family: inheri
 .asking__in { margin: 0; padding: 8px; border-radius: var(--radius-sm); background: var(--inset); font-family: var(--mono); font-size: var(--fs-xs); line-height: 1.5; max-height: 180px; overflow: auto; white-space: pre-wrap; word-break: break-word; }
 .asking__row { display: flex; gap: 8px; justify-content: flex-end; }
 .asking__why { flex: 1; min-width: 0; padding: 5px 9px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--inset); font: inherit; font-size: var(--fs-sm); color: var(--text); }
-.asking__why:focus { outline: none; border-color: var(--border-strong); }
+.asking__why:focus { outline: none; border-color: var(--focus); box-shadow: var(--focus-field); }
 .asking:focus { outline: none; }
-.asking:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 60%, transparent); outline-offset: 2px; }
 .asking__what { display: inline-block; max-width: 100%; max-height: 180px; overflow: auto; vertical-align: top; font-family: var(--mono); font-size: var(--fs-sm); white-space: pre-wrap; word-break: break-all; }
 .asking__lines { font-size: var(--fs-xs); color: var(--text-3); }
 .asking__grants { margin: 0; padding-left: 18px; font-size: var(--fs-sm); color: var(--text); }
@@ -115,14 +114,13 @@ select.chip { appearance: none; border: 0; background: none; font-family: inheri
 .asking__more > .asking__in { margin-top: 6px; }
 .asking__plan { max-height: 320px; overflow: auto; padding: 4px 10px; border-radius: var(--radius-md); background: var(--inset); font-size: var(--fs-md); }
 .asking__edit { min-height: 160px; max-height: 320px; resize: vertical; padding: var(--space-2); border-radius: var(--radius-md); border: 1px solid var(--border); background: var(--inset); font-family: var(--mono); font-size: var(--fs-sm); line-height: 1.5; color: var(--text); }
-.asking__edit:focus { outline: none; border-color: var(--border-strong); }
+.asking__edit:focus { outline: none; border-color: var(--focus); box-shadow: var(--focus-field); }
 .asking__h { padding: 1px 6px; border-radius: var(--radius-xs); font-size: var(--fs-2xs); text-transform: uppercase; letter-spacing: .04em; color: var(--text-3); background: var(--inset); }
 .asking__step { margin-left: 6px; font-size: var(--fs-xs); color: var(--text-3); }
 .asking__q { margin: 0; font-size: var(--fs-lg); line-height: 1.45; color: var(--text); }
 .asking__opts { display: flex; flex-direction: column; gap: 4px; }
 .asking__opt { display: flex; align-items: center; gap: 9px; padding: 7px 10px; border-radius: var(--radius-md); border: 1px solid var(--border); background: var(--overlay); color: var(--text); font: inherit; font-size: var(--fs-md); text-align: left; }
 .asking__opt:hover { background: var(--overlay-strong); border-color: var(--border-strong); }
-.asking__opt:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 75%, transparent); outline-offset: 1px; }
 .asking__opt[aria-pressed='true'] { border-color: color-mix(in srgb, var(--accent) 70%, transparent); background: color-mix(in srgb, var(--accent) 14%, transparent); }
 .asking__n { min-width: 14px; font-family: var(--mono); font-size: var(--fs-xs); color: var(--text-3); }
 .asking__own { padding: 7px 10px; border-radius: var(--radius-md); border: 1px solid var(--border); background: var(--inset); color: var(--text); font: inherit; font-size: var(--fs-md); }
@@ -215,9 +213,6 @@ select.chip { appearance: none; border: 0; background: none; font-family: inheri
 .chat__again-t { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .chat__again-w { flex: none; font-size: var(--fs-xs); color: var(--ghost); }
 
-/* A control reached by the keyboard says so. `:where` keeps it below any
-   control that draws its own ring. */
-:where(.pane[data-pane='chat']) :where(button, summary, [role='button']):focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 75%, transparent); outline-offset: 2px; }
 
 /* What the agent did, under a rule: a stack of rows you can open. */
 .acts { min-width: 0; font-size: var(--fs-sm); color: var(--text-3); }

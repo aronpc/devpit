@@ -51,7 +51,7 @@ button.pcorner__card:hover { color: var(--text); background: var(--overlay-stron
 .chead .pcorner { position: static; flex: 1; min-width: 0; padding: 0; background: none; }
 .chead__t { flex: 1; min-width: 0; margin-right: auto; padding: 3px 6px; overflow: hidden; text-align: left; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-md); font-weight: 500; color: var(--text); border-radius: var(--radius-sm); }
 button.chead__t:hover { background: var(--overlay); }
-.trow:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 45%, transparent); outline-offset: 2px; border-radius: var(--radius-md); }
+.trow:focus-visible { border-radius: var(--radius-md); }
 /* Reachable remotely: said by colour on the button that turns it off. */
 .rctl[data-on='true'] { color: var(--orchestrate); }
 

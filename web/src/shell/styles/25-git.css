@@ -10,9 +10,9 @@
 .git__row { gap: 4px; min-height: 28px; }
 .git__up { margin-right: 4px; }
 .git__find { height: 26px; padding: 0 8px; border-radius: 6px; border: 1px solid var(--border); background: var(--composer); color: var(--text); font: inherit; font-size: 12px; outline: none; }
-.git__find:focus { border-color: var(--border-strong); }
+.git__find:focus { border-color: var(--focus); box-shadow: var(--focus-field); }
 .git__msg { min-height: 56px; padding: 6px 8px; border-radius: 6px; font-size: 12px; line-height: 1.5; }
-.git__msg:focus { border-color: var(--border-strong); box-shadow: 0 0 0 1px var(--border-strong); }
+.git__msg:focus { border-color: var(--focus); box-shadow: var(--focus-field); }
 .git__go { height: 26px; font-size: 12px; }
 .git__body { padding: 0 0 8px; }
 

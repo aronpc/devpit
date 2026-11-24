@@ -48,9 +48,9 @@
    done, filled with the accent; `.btn--danger` is the one that cannot be
    undone. The hand over all of them is index.css's. */
 .btn {
-  height: 32px;
+  height: var(--ctl-m);
   padding: 0 14px;
-  border-radius: 8px;
+  border-radius: var(--ctl-r-m);
   display: flex;
   align-items: center;
   gap: 7px;
@@ -61,11 +61,10 @@
   background: var(--overlay-strong);
   border: 1px solid var(--border-strong);
   box-shadow: var(--top);
-  transition: background-color 120ms ease, border-color 120ms ease, box-shadow 120ms ease, transform 80ms ease;
+  transition: background-color var(--dur-1) ease, border-color var(--dur-1) ease, box-shadow var(--dur-1) ease, transform var(--dur-2) var(--ease-spring);
 }
 .btn:hover { background: color-mix(in srgb, var(--text) 14%, transparent); border-color: color-mix(in srgb, var(--text) 26%, transparent); color: var(--text); }
-.btn:active:not(:disabled) { transform: translateY(1px); box-shadow: none; }
-.btn:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 75%, transparent); outline-offset: 2px; }
+.btn:active:not(:disabled) { transform: scale(0.97); box-shadow: none; }
 .btn:disabled { opacity: 0.45; box-shadow: none; }
 .btn:disabled:hover { background: var(--overlay-strong); border-color: var(--border-strong); }
 
@@ -75,7 +74,7 @@
 .btn--go svg { color: currentColor; }
 
 /* A small one, for the controls inside a row: a remove, a move, an add. */
-.btn--sm { height: 28px; padding: 0 10px; border-radius: 7px; font-size: 12.5px; gap: 6px; }
+.btn--sm { height: var(--ctl-s); padding: 0 10px; border-radius: var(--ctl-r-s); font-size: 12.5px; gap: 6px; }
 /* A quiet one, for what sits beside the content rather than over it: no face
    until it is pointed at. `data-danger` turns it red on the way to a click. */
 .btn--quiet { color: var(--text-2); background: transparent; border-color: transparent; box-shadow: none; }

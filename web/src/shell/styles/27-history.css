@@ -3,7 +3,7 @@
    badge, then who, when and which. */
 .hist { display: flex; flex-direction: column; padding-bottom: 8px; }
 .hist__find { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 6px; margin: 0 8px 4px; padding: 0 8px; height: 28px; border: 1px solid var(--border); border-radius: 7px; background: var(--composer, var(--canvas)); color: var(--text-3); }
-.hist__find:focus-within { border-color: var(--border-strong); color: var(--text-2); }
+.hist__find:focus-within { border-color: var(--focus); box-shadow: var(--focus-field); color: var(--text-2); }
 .hist__find input { flex: 1; min-width: 0; border: 0; background: none; outline: none; color: var(--text); font: inherit; font-size: 12.5px; }
 .hist__group { display: flex; flex-direction: column; }
 .hist__day { position: sticky; top: 32px; z-index: 1; padding: 8px 14px 4px; font-size: 10.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--text-3); background: var(--sidebar, var(--canvas)); }

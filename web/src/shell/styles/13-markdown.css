@@ -59,7 +59,7 @@
 .branchmenu { position: absolute; top: calc(100% + 6px); right: 0; z-index: 420; display: flex; flex-direction: column; min-width: 240px; max-width: 360px; max-height: min(460px, calc(100vh - 90px)); padding: 4px; border-radius: var(--radius-lg); background: var(--glass-solid); box-shadow: var(--e3), var(--top); }
 .branchmenu__list { min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--scroll-thumb) transparent; }
 .branchmenu__f { flex: none; height: 28px; margin: 2px 2px 6px; padding: 0 8px; border-radius: 6px; border: 1px solid var(--border); background: var(--inset); font: inherit; font-size: 12px; color: var(--text); }
-.branchmenu__f:focus { outline: none; border-color: var(--accent); }
+.branchmenu__f:focus { outline: none; border-color: var(--focus); box-shadow: var(--focus-field); }
 .branchmenu__i { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; width: 100%; padding: 6px 8px; border-radius: 6px; text-align: left; }
 .branchmenu__i:hover { background: var(--overlay); }
 .branchmenu__i[aria-current='true'] { background: var(--overlay-strong); }

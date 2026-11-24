@@ -5,7 +5,7 @@
 .wtb__head { display: flex; flex-direction: column; }
 .wtb__row { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
 .wtb__f { flex: 1; min-width: 0; height: 32px; padding: 0 12px; border-radius: 8px; background: var(--inset); border: 1px solid var(--border); font-family: var(--mono); font-size: 12px; color: var(--text); }
-.wtb__f:focus { outline: none; border-color: var(--accent); }
+.wtb__f:focus { outline: none; border-color: var(--focus); box-shadow: var(--focus-field); }
 .wtb__f::placeholder { font-family: inherit; color: var(--ghost); }
 .wtb__ex { margin-top: 9px; display: flex; align-items: center; gap: 9px; font-size: 11.5px; color: var(--text-3); }
 .wtb__ex code { font-family: var(--mono); font-size: 11px; color: var(--text-2); }
