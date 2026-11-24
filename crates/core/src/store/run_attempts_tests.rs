@@ -212,6 +212,53 @@ fn play_after_paused_failed_or_lost_is_a_retry_chained_to_the_last_attempt() {
     );
 }
 
+/// A retry of an attempt with no snapshot, which every run an older devpit
+/// wrote is: nothing to carry, so it runs under what the caller chose, and
+/// its check sees that rather than an empty profile.
+#[test]
+fn a_retry_of_an_attempt_with_no_snapshot_runs_under_the_callers_choice() {
+    let (_dir, store, card, step) = seeded();
+    let old = store
+        .start_run(&card, &step, None)
+        .expect("a run with no snapshot");
+    store
+        .finish_run(&old, "failed", None, None, None, None)
+        .expect("finish");
+
+    let mut checked = None;
+    let (retry, carried, blocked) = store
+        .begin_checked_attempt(
+            asked(&card, &step),
+            None,
+            under("the step's account", "sonnet"),
+            |carry| {
+                checked = carry.pinned.clone();
+                None
+            },
+        )
+        .expect("begin");
+    assert_eq!(checked.as_deref(), Some("the step's account"));
+    assert_eq!(blocked, None);
+    assert_eq!(carried, under("the step's account", "sonnet"));
+    let attempt = store.attempt_of(&retry).expect("read").expect("there");
+    assert_eq!(
+        (
+            attempt.state.as_str(),
+            attempt.cause.as_deref(),
+            attempt.previous_attempt.as_deref(),
+            attempt.pinned.as_deref(),
+            attempt.requested_model.as_deref()
+        ),
+        (
+            "running",
+            Some("retry"),
+            Some(old.as_str()),
+            Some("the step's account"),
+            Some("sonnet")
+        )
+    );
+}
+
 /// Row 5: a click switching account or model during a pause — attempt N+1,
 /// chained to the paused one, caused `click`, under the retrato and model
 /// the person chose.
