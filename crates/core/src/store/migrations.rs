@@ -114,6 +114,15 @@ pub fn run_up_to(conn: &Connection, version: i64) -> Result<(), StoreError> {
     Ok(())
 }
 
+/// One migration's SQL, for a test that runs it statement by statement.
+#[cfg(test)]
+pub fn sql_of(version: i64) -> &'static str {
+    MIGRATIONS
+        .iter()
+        .find(|m| m.version == version)
+        .map_or("", |m| m.sql)
+}
+
 /// Only the test asks. Same rule as the RPC contract: no caller, no code.
 #[cfg(test)]
 pub fn latest_version() -> i64 {
