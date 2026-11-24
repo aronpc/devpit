@@ -119,6 +119,8 @@ fn the_brief_says_which_build_wrote_it() {
 /// project alone.
 #[test]
 fn starting_brings_every_orchestrator_brief_up_to_this_build() {
+    // The briefs are written in the process's language: hold it English.
+    let _turn = crate::locale_turn::settled(devpit_core::locale::Locale::En);
     let dir = tempfile::tempdir().expect("tempdir");
     let root = dir.path();
     let store = devpit_core::Store::open(&root.join("state.db")).expect("store");
@@ -302,6 +304,8 @@ fn a_folder_born_in_portuguese_gets_the_pt_br_briefs_and_keeps_the_read_headings
 /// next birth is what brings it in.
 #[test]
 fn each_birth_rewrites_the_folder_and_a_switched_language_waits_for_the_next() {
+    // It moves the process's language: no other test may read it meanwhile.
+    let _turn = crate::locale_turn::settled(devpit_core::locale::Locale::En);
     let dir = tempfile::tempdir().expect("tempdir");
     let store = devpit_core::Store::open(&dir.path().join("state.db")).expect("store");
     let folder = dir.path().join("work");
