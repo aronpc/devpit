@@ -135,6 +135,28 @@ fn a_new_turn_clears_the_conversations_end() {
     assert!(!ends.open("q2", Some("conv_a")));
 }
 
+/// A turn nobody here started — a Remote Control message, a followed
+/// session — runs after the last one ended and never passes through the
+/// start of a person's turn: its question waits, and the one the ended turn
+/// left open is over.
+#[test]
+fn a_question_in_a_turn_woken_after_the_last_one_ended_waits() {
+    let ends = Ends::default();
+    ends.started("conv_a");
+    assert!(!ends.open("q_old", Some("conv_a")));
+    assert_eq!(
+        ends.over(Over::TurnEnded("conv_a")),
+        vec!["q_old".to_owned()]
+    );
+    assert!(ends.ended("q_old"));
+
+    assert!(
+        !ends.open("q_woken", Some("conv_a")),
+        "the woken turn's question was born ended"
+    );
+    assert!(!ends.ended("q_woken"));
+}
+
 #[test]
 fn ended_conversations_are_bounded() {
     let ends = Ends::default();
