@@ -60,7 +60,7 @@
   --border-ctl: #757575;
   /* A floating surface: a menu, a popover, the palette. Seen through only where
      the engine can blur it; elsewhere it is --glass-solid. */
-  --glass: rgb(35 35 35 / 0.86);
+  --glass: rgb(35 35 35 / 0.94);
 
   --text: #e2e2e2;
   --text-2: #a3a3a3;
@@ -147,6 +147,9 @@
   --accent-ink: color-mix(in srgb, var(--accent) 78%, var(--text));
   --accent-edge: color-mix(in srgb, var(--accent) 45%, transparent);
   --warning-soft: color-mix(in srgb, var(--warning) 14%, transparent);
+  /* The accent's own light: the brand mark, and the button that starts work. */
+  --glow: 0 12px 32px color-mix(in srgb, var(--accent) 24%, transparent);
+  --glow-sm: 0 2px 8px color-mix(in srgb, var(--accent) 28%, transparent);
   /* A diff paints with these; the colour-blind setting below replaces them. */
   --diff-add: var(--success);
   --diff-del: var(--danger);
@@ -214,7 +217,7 @@
 
   --border: hsla(30, 12%, 20%, 0.12);
   --border-strong: hsla(30, 12%, 20%, 0.22);
-  --glass: rgb(255 255 255 / 0.86);
+  --glass: rgb(255 255 255 / 0.94);
   --border-ctl: #8a8378;
 
   --text: #24211d;
@@ -272,7 +275,7 @@
     --overlay-strong: hsla(30, 12%, 20%, 0.10);
     --border: hsla(30, 12%, 20%, 0.12);
     --border-strong: hsla(30, 12%, 20%, 0.22);
-    --glass: rgb(255 255 255 / 0.86);
+    --glass: rgb(255 255 255 / 0.94);
     --border-ctl: #8a8378;
     --text: #24211d;
     --text-2: #56514a;

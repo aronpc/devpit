@@ -103,7 +103,7 @@ button.chead__t:hover { background: var(--overlay); }
 
 /* Slash commands matching what was typed, above the field they complete. */
 .composer__in { position: relative; }
-.slash { position: absolute; left: 8px; right: 8px; bottom: calc(100% + 4px); z-index: 30; display: flex; flex-direction: column; padding: 4px; border: 1px solid var(--border-strong); border-radius: var(--radius-md); background: var(--raised); box-shadow: 0 8px 24px rgb(0 0 0 / 0.25); }
+.slash { position: absolute; left: 8px; right: 8px; bottom: calc(100% + 4px); z-index: 30; display: flex; flex-direction: column; padding: 4px; border-radius: var(--radius-lg); background: var(--glass-solid); box-shadow: var(--e3), var(--top); }
 .slash__i { padding: 4px 8px; border-radius: var(--radius-sm); text-align: left; font-family: var(--mono); font-size: var(--fs-sm); color: var(--text-2); }
 .slash__i:hover { background: var(--overlay); }
 .slash__i[aria-selected='true'] { background: var(--overlay-strong); color: var(--text); }
@@ -111,7 +111,7 @@ button.chead__t:hover { background: var(--overlay); }
 /* Skills picked for the turn, as pills beside the attachments. */
 .pills { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin: 0 0 4px; }
 .pills__p { font-family: var(--mono); font-size: var(--fs-xs); color: var(--accent); }
-.pills__menu { position: absolute; left: 0; bottom: calc(100% + 4px); z-index: 30; display: flex; flex-direction: column; min-width: 200px; max-height: 240px; overflow-y: auto; padding: 4px; border: 1px solid var(--border-strong); border-radius: var(--radius-md); background: var(--raised); box-shadow: 0 8px 24px rgb(0 0 0 / 0.25); scrollbar-width: thin; }
+.pills__menu { position: absolute; left: 0; bottom: calc(100% + 4px); z-index: 30; display: flex; flex-direction: column; min-width: 200px; max-height: 240px; overflow-y: auto; padding: 4px; border-radius: var(--radius-lg); background: var(--glass-solid); box-shadow: var(--e3), var(--top); scrollbar-width: thin; }
 .pills__o { padding: 4px 8px; border-radius: var(--radius-sm); text-align: left; font-family: var(--mono); font-size: var(--fs-sm); color: var(--text-2); }
 .pills__o:hover, .pills__o[aria-selected='true'] { background: var(--overlay-strong); color: var(--text); }
 
@@ -166,7 +166,7 @@ button.chead__t:hover { background: var(--overlay); }
 /* A session's terminal, opened over the orchestrator's chat: one surface,
    the terminal's own colour edge to edge, sized by its edges and corners. */
 .sterm__scrim { backdrop-filter: blur(2px); }
-.sterm { position: relative; display: flex; flex-direction: column; max-width: calc(100vw - 32px); max-height: calc(100vh - 32px); border: 1px solid var(--border-strong); border-radius: var(--radius-lg); background: var(--terminal); color: var(--text); box-shadow: 0 30px 80px var(--shade), 0 0 0 1px color-mix(in srgb, var(--text) 4%, transparent); overflow: hidden; }
+.sterm { position: relative; display: flex; flex-direction: column; max-width: calc(100vw - 32px); max-height: calc(100vh - 32px); border-radius: var(--radius-xl); background: var(--terminal); color: var(--text); box-shadow: var(--e3), var(--top); overflow: hidden; }
 .sterm[data-dragging] { user-select: none; }
 .sterm__bar { flex: none; display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 6px 0 14px; border-bottom: 1px solid color-mix(in srgb, var(--text) 8%, transparent); background: color-mix(in srgb, var(--text) 3%, var(--terminal)); }
 .sterm__name { font: 600 var(--fs-sm) var(--mono); color: var(--text); }

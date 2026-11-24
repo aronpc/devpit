@@ -37,7 +37,7 @@
   touch-action: none;
   transition: border-color 140ms ease, box-shadow 140ms ease, transform 140ms ease, opacity 140ms ease;
 }
-.tile:hover { border-color: var(--border-strong); transform: translateY(-1px); box-shadow: 0 5px 16px var(--shade); }
+.tile:hover { transform: translateY(-1px); box-shadow: var(--e2); }
 /* The original stays in place, dimmed, so the column keeps its shape. */
 .tile[data-ghost='true'] { opacity: 0.28; }
 .tile[data-ghost='true']:hover { transform: none; box-shadow: none; }
@@ -47,7 +47,7 @@
 .tile--float {
   position: fixed; z-index: 200; margin: 0; pointer-events: none;
   cursor: grabbing;
-  box-shadow: 0 20px 44px var(--shade);
+  box-shadow: var(--e3);
   border-color: var(--border-strong);
   transform: rotate(-1.5deg) scale(1.02);
   transition: none;
@@ -116,7 +116,7 @@
 .lstep { position: relative; margin-left: auto; }
 .lstep__b { display: inline-flex; align-items: center; gap: 5px; height: 20px; padding: 0 7px; border-radius: 6px; font-size: 10.5px; color: var(--text-3); }
 .lstep__b:hover { background: var(--overlay-strong); color: var(--text-2); }
-.lstep__pop { position: absolute; right: 0; top: calc(100% + 5px); z-index: 40; min-width: 210px; padding: 6px; border-radius: 10px; background: var(--raised); border: 1px solid var(--border-strong); box-shadow: 0 16px 36px var(--shade); animation: pop-in 130ms cubic-bezier(0.2, 0.7, 0.3, 1) both; }
+.lstep__pop { position: absolute; right: 0; top: calc(100% + 5px); z-index: 40; min-width: 210px; padding: 6px; border-radius: var(--radius-lg); background: var(--glass-solid); box-shadow: var(--e3), var(--top); animation: pop-in 130ms cubic-bezier(0.2, 0.7, 0.3, 1) both; }
 .lstep__pop--wide { width: 290px; max-height: 70vh; padding: 12px; overflow-y: auto; }
 /* The fields of a step that are prose and not a line: what to ask an agent,
    and the schema its answer has to match. */
@@ -143,7 +143,7 @@
 .tile__plan { padding: 0 6px; border-radius: 4px; background: var(--accent-soft); color: var(--accent-ink); font-size: 10.5px; }
 
 /* Right after an archive, the one thing worth offering is taking it back. */
-.undo { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); z-index: 300; display: flex; align-items: center; gap: 14px; padding: 7px 8px 7px 14px; border-radius: 10px; background: var(--raised); border: 1px solid var(--border-strong); box-shadow: 0 12px 30px var(--shade); font-size: 12.5px; color: var(--text); animation: rise 180ms ease-out both; }
+.undo { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); z-index: 300; display: flex; align-items: center; gap: 14px; padding: 7px 8px 7px 14px; border-radius: var(--radius-lg); background: var(--glass-solid); box-shadow: var(--e3), var(--top); font-size: 12.5px; color: var(--text); animation: rise 180ms ease-out both; }
 .undo__b { padding: 3px 9px; border-radius: 6px; font-size: 12px; font-weight: 550; color: var(--accent); }
 .undo__b:hover { background: var(--overlay-strong); }
 /* The same place says why something asked for did not happen (`Problem`). */

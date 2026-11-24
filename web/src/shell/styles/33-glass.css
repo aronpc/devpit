@@ -1,0 +1,16 @@
+/* ── Glass ───────────────────────────────────────────────────────────
+   Menus and popovers float over whatever is under them, and let a little
+   of it through where the engine can blur it. Where it cannot, they keep
+   the solid surface they were given: a menu that is half see-through and
+   unblurred is a menu you cannot read. Sheets, dialogs and the palette
+   stay solid; the scrim behind them is already doing this job. Last, so
+   it wins over the parts that drew each surface. */
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .branchmenu, .newmenu__pop, .acct__pop, .pickpop, .hud, .mcpchip__pop, .lstep__pop, .bell__pop, .apps__menu,
+  .ctlmenu, .mpick, .slash, .pills__menu, .fsel__menu, .gpick__list, .cin__search, .undo,
+  .ctx, .bmenu__panel, .bmenu__sub, .upd {
+    background: var(--glass);
+    -webkit-backdrop-filter: var(--glass-fx);
+    backdrop-filter: var(--glass-fx);
+  }
+}

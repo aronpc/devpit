@@ -10,10 +10,33 @@ const PARTS = readdirSync(resolve(process.cwd(), STYLES)).filter((name) => name.
 
 type Kind = 'size' | 'radius' | 'height' | 'shadow' | 'motion'
 
+/** A shadow's layers, split at the commas between them and not inside a colour. */
+function layers(value: string): string[] {
+  const out: string[] = []
+  let depth = 0
+  let from = 0
+  for (let at = 0; at < value.length; at += 1) {
+    if (value[at] === '(') depth += 1
+    if (value[at] === ')') depth -= 1
+    if (value[at] === ',' && depth === 0) {
+      out.push(value.slice(from, at))
+      from = at + 1
+    }
+  }
+  return [...out, value.slice(from)]
+}
+
+/* A layer that is blurred is an elevation, and elevation comes from tokens; a
+   ring (no blur) is a border drawn without changing the box, and stays. */
+const casts = (layer: string): boolean => {
+  const lengths = layer.replace(/var\([^)]*\)|[a-z-]+\([^)]*\)/g, '').match(/-?\d*\.?\d+(px|r?em)?/g) ?? []
+  return Number.parseFloat(lengths[2] ?? '0') > 0
+}
+
 /*
  * What counts as a value written by hand instead of taken from tokens.css:
  * a font size or radius as a length, a control's height (18 to 48px) as a
- * length, a shadow that is not made of elevation tokens, a duration or a curve.
+ * length, a blurred shadow, a duration or a curve.
  */
 const RAW: Record<Kind, [RegExp, (value: string) => boolean]> = {
   size: [/(?<![\w-])(?:font-size|font)\s*:\s*([^;}]+)/g, (v) => /\d(px|r?em|pt)\b/.test(v)],
@@ -25,10 +48,7 @@ const RAW: Record<Kind, [RegExp, (value: string) => boolean]> = {
       return px !== null && Number(px[1]) >= 18 && Number(px[1]) <= 48
     },
   ],
-  shadow: [
-    /(?<![\w-])box-shadow\s*:\s*([^;}]+)/g,
-    (v) => !/^\s*(none|inherit|initial|unset)\s*$/.test(v) && v.replace(/var\(--[a-z0-9-]+\)/g, '').replace(/[\s,]/g, '') !== '',
-  ],
+  shadow: [/(?<![\w-])box-shadow\s*:\s*([^;}]+)/g, (v) => layers(v).some(casts)],
   motion: [
     /(?<![\w-])(?:transition|animation)(?:-duration|-timing-function|-delay)?\s*:\s*([^;}]+)/g,
     (v) => /(\d|\.)\d*m?s\b|cubic-bezier\(/.test(v),
@@ -49,38 +69,39 @@ function raw(css: string, kind: Kind): string[] {
  * a part that loses some lowers its number here, and a new value fails.
  */
 const BUDGET: Record<string, Partial<Record<Kind, number>>> = {
-  '01-frame.css': { size: 23, radius: 15, height: 10, shadow: 3, motion: 3 },
-  '02-sheet.css': { size: 13, radius: 4, height: 2, shadow: 3, motion: 4 },
-  '03-sidebar.css': { size: 73, radius: 41, height: 21, shadow: 9, motion: 20 },
-  '04-tabs.css': { size: 8, radius: 6, height: 5, shadow: 1 },
+  '01-frame.css': { size: 23, radius: 13, height: 10, motion: 3 },
+  '02-sheet.css': { size: 13, radius: 3, height: 2, motion: 4 },
+  '03-sidebar.css': { size: 73, radius: 33, height: 21, motion: 20 },
+  '04-tabs.css': { size: 8, radius: 6, height: 5 },
   '05-motion.css': { radius: 1, motion: 6 },
-  '06-settings.css': { size: 93, radius: 36, height: 21, shadow: 1, motion: 7 },
-  '07-board.css': { size: 29, radius: 19, height: 9, shadow: 7, motion: 9 },
-  '08-capabilities.css': { size: 39, radius: 21, height: 14, shadow: 2, motion: 12 },
+  '06-settings.css': { size: 93, radius: 35, height: 21, motion: 7 },
+  '07-board.css': { size: 29, radius: 17, height: 9, motion: 9 },
+  '08-capabilities.css': { size: 39, radius: 21, height: 14, motion: 12 },
   '09-tree.css': { size: 21, radius: 9, height: 12, motion: 2 },
-  '10-explorer.css': { size: 43, radius: 24, height: 16, shadow: 5, motion: 2 },
-  '11-onboarding.css': { size: 8, radius: 5, height: 2, shadow: 1, motion: 3 },
-  '12-editor.css': { size: 8, radius: 7, height: 1, shadow: 1 },
-  '13-markdown.css': { size: 14, radius: 10, height: 3, shadow: 1, motion: 1 },
-  '14-chat.css': { height: 22, shadow: 8, motion: 14 },
-  '15-splits.css': { shadow: 1 },
-  '16-agent-pane.css': { size: 12, radius: 2, height: 3, shadow: 1, motion: 2 },
-  '17-worktrees.css': { size: 13, radius: 8, height: 3, shadow: 1, motion: 1 },
-  '18-card.css': { size: 62, radius: 23, height: 5, shadow: 1, motion: 1 },
-  '19-bell.css': { size: 6, radius: 3, height: 1, shadow: 1, motion: 1 },
+  '10-explorer.css': { size: 43, radius: 24, height: 16, motion: 2 },
+  '11-onboarding.css': { size: 8, radius: 5, height: 2, motion: 3 },
+  '12-editor.css': { size: 8, radius: 7, height: 1 },
+  '13-markdown.css': { size: 14, radius: 9, height: 3, motion: 1 },
+  '14-chat.css': { height: 22, motion: 14 },
+  '15-splits.css': {},
+  '16-agent-pane.css': { size: 12, radius: 2, height: 3, motion: 2 },
+  '17-worktrees.css': { size: 13, radius: 7, height: 3, motion: 1 },
+  '18-card.css': { size: 62, radius: 22, height: 5, motion: 1 },
+  '19-bell.css': { size: 6, radius: 2, height: 1, motion: 1 },
   '20-files.css': { size: 8, radius: 3, height: 6 },
-  '21-turn.css': { height: 9, shadow: 3, motion: 1 },
+  '21-turn.css': { height: 9, motion: 1 },
   '22-plugins.css': { size: 4, radius: 2, height: 2 },
-  '23-update.css': { size: 7, radius: 6, height: 2, shadow: 1, motion: 1 },
-  '24-browser.css': { size: 11, radius: 8, height: 1, shadow: 1, motion: 1 },
-  '25-git.css': { size: 15, radius: 5, height: 6, shadow: 1, motion: 3 },
-  '26-rail.css': { size: 25, radius: 20, height: 18, shadow: 8, motion: 15 },
+  '23-update.css': { size: 7, radius: 5, height: 2, motion: 1 },
+  '24-browser.css': { size: 11, radius: 7, height: 1, motion: 1 },
+  '25-git.css': { size: 15, radius: 5, height: 6, motion: 3 },
+  '26-rail.css': { size: 25, radius: 18, height: 18, motion: 15 },
   '27-history.css': { size: 9, radius: 4, height: 2, motion: 1 },
-  '28-blocks.css': { size: 18, radius: 10, height: 8, shadow: 1, motion: 2 },
-  '29-fields.css': { radius: 1, shadow: 1, motion: 1 },
-  '30-devflow.css': { size: 48, radius: 20, height: 8, shadow: 10, motion: 4 },
+  '28-blocks.css': { size: 18, radius: 9, height: 8, motion: 2 },
+  '29-fields.css': { radius: 1, motion: 1 },
+  '30-devflow.css': { size: 48, radius: 20, height: 8, motion: 4 },
   '31-schedules.css': { size: 3, radius: 2, height: 1 },
   '32-ask.css': { size: 13, radius: 6 },
+  '33-glass.css': {},
 }
 
 const KINDS: Kind[] = ['size', 'radius', 'height', 'shadow', 'motion']
@@ -103,6 +124,7 @@ describe("the shell's scales", () => {
     const tokens = [
       '.a { font-size: var(--fs-sm); border-radius: 50%; font: inherit; height: var(--ctl-m); }',
       '.b { height: 1px; min-height: 28px; line-height: 20px; box-shadow: var(--e1), var(--top); box-shadow: none; }',
+      '.d { box-shadow: 0 0 0 1px var(--border), inset 0 1px 0 rgb(255 255 255 / 0.1); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); }',
       '.c { transition: opacity var(--dur-1) var(--ease-out); /* 120ms */ }',
     ].join('\n')
     for (const kind of KINDS) expect(raw(tokens, kind)).toEqual([])

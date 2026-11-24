@@ -31,12 +31,12 @@
 .efrom__t { margin: 0; font-size: var(--fs-md); line-height: 1.45; color: var(--text); }
 .efrom__row { display: flex; gap: var(--space-2); justify-content: flex-end; }
 /* Over words selected in an answer. */
-.qbtn { position: fixed; z-index: 50; transform: translateX(-50%); padding: 4px 10px; border-radius: var(--radius-sm); border: 1px solid var(--border-strong); background: var(--raised); box-shadow: 0 4px 14px var(--shade); font-size: var(--fs-sm); font-weight: 500; color: var(--text); }
+.qbtn { position: fixed; z-index: 50; transform: translateX(-50%); padding: 4px 10px; border-radius: var(--radius-sm); background: var(--raised); box-shadow: var(--e2); font-size: var(--fs-sm); font-weight: 500; color: var(--text); }
 .qbtn:hover { background: var(--overlay-strong); }
 /* A picture opens over the window, with where it can go from there. */
 .zoomin { display: block; max-width: 100%; padding: 0; cursor: zoom-in; }
 .zoom { position: fixed; inset: 0; z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-3); padding: var(--space-6); background: var(--scrim); }
-.zoom__img { max-width: 100%; max-height: calc(100% - 56px); object-fit: contain; border-radius: var(--radius-sm); box-shadow: 0 10px 40px var(--shade-deep); }
+.zoom__img { max-width: 100%; max-height: calc(100% - 56px); object-fit: contain; border-radius: var(--radius-sm); box-shadow: var(--e3); }
 .zoom__bar { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-1) var(--space-2); border-radius: var(--radius-md); border: 1px solid var(--border); background: var(--raised); }
 .zoom__name { max-width: 40ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-sm); color: var(--text-2); }
 /* The note a forked conversation opens with, naming where it came from. */
@@ -45,7 +45,7 @@
 
 .composer { flex: none; padding: 0 var(--space-3) var(--space-2); }
 .composer__warn { margin: 0 2px 6px; font-size: var(--fs-xs); line-height: 1.5; color: var(--warning); }
-.jumpend { position: absolute; top: -40px; left: 50%; z-index: 2; display: grid; place-items: center; width: 30px; height: 30px; transform: translateX(-50%); border: 1px solid var(--border-strong); border-radius: 50%; background: var(--raised); color: var(--text-2); box-shadow: 0 2px 8px var(--shade); }
+.jumpend { position: absolute; top: -40px; left: 50%; z-index: 2; display: grid; place-items: center; width: 30px; height: 30px; transform: translateX(-50%); border-radius: 50%; background: var(--raised); color: var(--text-2); box-shadow: var(--e2); }
 .jumpend:hover { color: var(--text); }
 .composer__col { position: relative; max-width: var(--chat-max); margin: 0 auto; width: 100%; }
 /* The border lights when the caret is in it, so the thing you are typing in
@@ -100,7 +100,7 @@ select.chip { appearance: none; border: 0; background: none; font-family: inheri
 
 /* A permission question, in the thread rather than over it: a dialog would
    hide the output that says why the agent wants this. */
-.asking { margin-bottom: 8px; padding: 11px 12px; border-radius: var(--radius-lg); border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent); background: var(--raised); box-shadow: 0 10px 24px var(--shade); display: flex; flex-direction: column; gap: 8px; }
+.asking { margin-bottom: 8px; padding: 11px 12px; border-radius: var(--radius-lg); border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent); background: var(--raised); box-shadow: var(--e2); display: flex; flex-direction: column; gap: 8px; }
 .asking__t { font-size: var(--fs-md); color: var(--text); }
 .asking__in { margin: 0; padding: 8px; border-radius: var(--radius-sm); background: var(--inset); font-family: var(--mono); font-size: var(--fs-xs); line-height: 1.5; max-height: 180px; overflow: auto; white-space: pre-wrap; word-break: break-word; }
 .asking__row { display: flex; gap: 8px; justify-content: flex-end; }
@@ -133,7 +133,7 @@ select.chip { appearance: none; border: 0; background: none; font-family: inheri
 .ctl__l { max-width: 190px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ctl__v { color: var(--ghost); flex: none; }
 
-.ctlmenu { position: absolute; bottom: calc(100% + 5px); left: 0; z-index: 120; min-width: 230px; max-width: 330px; padding: 4px; border-radius: var(--radius-lg); background: var(--raised); border: 1px solid var(--border-strong); box-shadow: 0 16px 36px var(--shade); animation: pop 130ms ease-out both; }
+.ctlmenu { position: absolute; bottom: calc(100% + 5px); left: 0; z-index: 120; min-width: 230px; max-width: 330px; padding: 4px; border-radius: var(--radius-lg); background: var(--glass-solid); box-shadow: var(--e3), var(--top); animation: pop 130ms ease-out both; }
 .ctlmenu--down { top: calc(100% + 5px); bottom: auto; left: auto; right: 0; }
 .ctlmenu__s { padding: 6px 10px 2px; font-size: var(--fs-2xs); font-weight: 500; color: var(--text-3); }
 .ctlmenu__i { display: flex; align-items: flex-start; gap: 8px; width: 100%; padding: 6px 8px; border-radius: var(--radius-sm); text-align: left; }
@@ -150,7 +150,7 @@ select.chip { appearance: none; border: 0; background: none; font-family: inheri
 /* The account and model picker. One list, because a model belongs to an
    account and picking one across accounts would be changing the account. */
 /* Two columns: the account down the left, its models to the right. */
-.mpick { position: absolute; bottom: calc(100% + 5px); left: 0; z-index: 120; display: flex; width: 540px; max-width: calc(100vw - 32px); max-height: min(420px, 66vh); border-radius: var(--radius-lg); background: var(--raised); border: 1px solid var(--border-strong); box-shadow: 0 16px 36px var(--shade); overflow: hidden; animation: pop 130ms ease-out both; }
+.mpick { position: absolute; bottom: calc(100% + 5px); left: 0; z-index: 120; display: flex; width: 540px; max-width: calc(100vw - 32px); max-height: min(420px, 66vh); border-radius: var(--radius-lg); background: var(--glass-solid); box-shadow: var(--e3), var(--top); overflow: hidden; animation: pop 130ms ease-out both; }
 /* Wide enough for a name and what makes it that account: a mark alone could
    not tell two accounts of one CLI apart. */
 .mpick__rail { flex: none; display: flex; flex-direction: column; gap: 2px; width: 168px; padding: 6px; border-right: 1px solid var(--border); background: var(--canvas); overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--scroll-thumb) transparent; }
@@ -421,7 +421,7 @@ select.chip { appearance: none; border: 0; background: none; font-family: inheri
 .tdraft__text { margin: 0 0 6px; white-space: pre-wrap; font-size: var(--fs-sm); color: var(--text-2); }
 
 /* Finding in the conversation: a bar over its top-right, under the corner's chips. */
-.cfind { position: absolute; top: 40px; right: 18px; z-index: 31; display: flex; align-items: center; gap: 2px; padding: 3px 4px 3px 8px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--canvas); box-shadow: 0 4px 14px rgb(0 0 0 / 0.12); }
+.cfind { position: absolute; top: 40px; right: 18px; z-index: 31; display: flex; align-items: center; gap: 2px; padding: 3px 4px 3px 8px; border-radius: var(--radius-md); background: var(--canvas); box-shadow: var(--e2); }
 .cfind__in { width: 200px; background: none; border: 0; outline: 0; font: inherit; font-size: var(--fs-sm); color: var(--text); }
 .cfind__n { min-width: 56px; font-size: var(--fs-xs); color: var(--text-3); text-align: right; padding-right: 4px; white-space: nowrap; }
 ::highlight(chat-find) { background-color: color-mix(in srgb, var(--accent) 28%, transparent); }
@@ -433,5 +433,5 @@ select.chip { appearance: none; border: 0; background: none; font-family: inheri
 .prail { position: absolute; top: 44px; bottom: 140px; right: 3px; width: 12px; z-index: 20; }
 .prail__tick { position: absolute; right: 0; width: 10px; height: 3px; padding: 0; border: 0; border-radius: var(--radius-xs); background: var(--text-3); opacity: 0.35; transform: translateY(-50%); }
 .prail__tick:hover, .prail__tick:focus-visible { opacity: 1; width: 12px; background: var(--accent); }
-.prail__peek { display: none; position: absolute; right: 16px; top: 50%; transform: translateY(-50%); width: max-content; max-width: 280px; padding: 5px 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--canvas); color: var(--text-2); font-size: var(--fs-sm); line-height: 1.4; text-align: left; white-space: normal; box-shadow: 0 4px 14px rgb(0 0 0 / 0.12); pointer-events: none; }
+.prail__peek { display: none; position: absolute; right: 16px; top: 50%; transform: translateY(-50%); width: max-content; max-width: 280px; padding: 5px 8px; border-radius: var(--radius-sm); background: var(--canvas); color: var(--text-2); font-size: var(--fs-sm); line-height: 1.4; text-align: left; white-space: normal; box-shadow: var(--e2); pointer-events: none; }
 .prail__tick:hover .prail__peek, .prail__tick:focus-visible .prail__peek { display: block; }

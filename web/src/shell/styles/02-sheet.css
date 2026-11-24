@@ -6,7 +6,7 @@
 .scrim[hidden] { display: none; }
 @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
 
-.sheet { width: 100%; max-width: 620px; max-height: 100%; display: flex; flex-direction: column; background: var(--composer); border: 1px solid var(--border-strong); border-radius: 14px; box-shadow: 0 28px 70px var(--shade-deep); animation: sheet-in 180ms cubic-bezier(0.2, 0.7, 0.3, 1) both; }
+.sheet { width: 100%; max-width: 620px; max-height: 100%; display: flex; flex-direction: column; background: var(--composer); border-radius: var(--radius-xl); box-shadow: var(--e3), var(--top); animation: sheet-in 180ms cubic-bezier(0.2, 0.7, 0.3, 1) both; }
 @keyframes sheet-in { from { opacity: 0; transform: translateY(10px) scale(0.985); } to { opacity: 1; transform: none; } }
 
 .sheet__top { flex: none; display: flex; align-items: center; gap: 8px; padding: 12px 10px 12px 16px; }
@@ -60,7 +60,7 @@
   color: var(--text);
   background: var(--overlay-strong);
   border: 1px solid var(--border-strong);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.04), 0 1px 2px rgb(0 0 0 / 0.18);
+  box-shadow: var(--top);
   transition: background-color 120ms ease, border-color 120ms ease, box-shadow 120ms ease, transform 80ms ease;
 }
 .btn:hover { background: color-mix(in srgb, var(--text) 14%, transparent); border-color: color-mix(in srgb, var(--text) 26%, transparent); color: var(--text); }
@@ -69,7 +69,7 @@
 .btn:disabled { opacity: 0.45; box-shadow: none; }
 .btn:disabled:hover { background: var(--overlay-strong); border-color: var(--border-strong); }
 
-.btn--go { font-weight: 600; color: var(--on-accent); background: var(--accent); border-color: color-mix(in srgb, var(--accent) 80%, #000); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.2), 0 2px 8px color-mix(in srgb, var(--accent) 28%, transparent); }
+.btn--go { font-weight: 600; color: var(--on-accent); background: var(--accent); border-color: color-mix(in srgb, var(--accent) 80%, #000); box-shadow: var(--top), var(--glow-sm); }
 .btn--go:hover { color: var(--on-accent); background: color-mix(in srgb, var(--accent) 88%, #fff); border-color: color-mix(in srgb, var(--accent) 80%, #000); }
 .btn--go:disabled:hover { background: var(--accent); border-color: color-mix(in srgb, var(--accent) 80%, #000); }
 .btn--go svg { color: currentColor; }

@@ -9,10 +9,9 @@
   width: 320px;
   max-width: calc(100vw - 32px);
   padding: 14px 16px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: var(--raised);
-  box-shadow: 0 12px 32px rgb(0 0 0 / 28%);
+  border-radius: var(--radius-xl);
+  background: var(--glass-solid);
+  box-shadow: var(--e3), var(--top);
 }
 .upd__hd { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
 .upd__t { display: block; font-size: 13.5px; font-weight: 560; color: var(--text); }

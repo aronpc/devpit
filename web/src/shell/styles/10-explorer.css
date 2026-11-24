@@ -11,8 +11,8 @@
   content: attr(data-tip); position: absolute; z-index: 80;
   top: calc(100% + 6px); left: 50%; transform: translateX(-50%) translateY(-3px);
   padding: 4px 8px; border-radius: 6px; white-space: nowrap;
-  background: var(--raised); border: 1px solid var(--border-strong);
-  box-shadow: 0 8px 20px var(--shade);
+  background: var(--raised);
+  box-shadow: var(--e2);
   font-size: 11.5px; color: var(--text-2);
   opacity: 0; pointer-events: none;
   transition: opacity 120ms ease 220ms, transform 120ms ease 220ms;
@@ -171,7 +171,7 @@
 .phead__act::after {
   content: attr(data-tip); position: absolute; z-index: 80; top: calc(100% + 6px); right: 0;
   padding: 4px 8px; border-radius: 6px; white-space: nowrap;
-  background: var(--raised); border: 1px solid var(--border-strong); box-shadow: 0 8px 20px var(--shade);
+  background: var(--raised); box-shadow: var(--e2);
   font-size: 11.5px; font-weight: 400; color: var(--text-2);
   opacity: 0; pointer-events: none; transform: translateY(-3px);
   transition: opacity 120ms ease 220ms, transform 120ms ease 220ms;

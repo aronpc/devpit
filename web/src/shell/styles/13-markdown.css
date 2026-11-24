@@ -56,7 +56,7 @@
 /* The branch switcher. Anchored to the button, like every other menu. */
 .branchbox { position: relative; }
 /* A column: the filter stays put while a long list scrolls under it. */
-.branchmenu { position: absolute; top: calc(100% + 6px); right: 0; z-index: 420; display: flex; flex-direction: column; min-width: 240px; max-width: 360px; max-height: min(460px, calc(100vh - 90px)); padding: 4px; border-radius: 10px; border: 1px solid var(--border); background: var(--raised); border-color: var(--border-strong); box-shadow: 0 16px 36px var(--shade); }
+.branchmenu { position: absolute; top: calc(100% + 6px); right: 0; z-index: 420; display: flex; flex-direction: column; min-width: 240px; max-width: 360px; max-height: min(460px, calc(100vh - 90px)); padding: 4px; border-radius: var(--radius-lg); background: var(--glass-solid); box-shadow: var(--e3), var(--top); }
 .branchmenu__list { min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--scroll-thumb) transparent; }
 .branchmenu__f { flex: none; height: 28px; margin: 2px 2px 6px; padding: 0 8px; border-radius: 6px; border: 1px solid var(--border); background: var(--inset); font: inherit; font-size: 12px; color: var(--text); }
 .branchmenu__f:focus { outline: none; border-color: var(--accent); }

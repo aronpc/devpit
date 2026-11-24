@@ -66,9 +66,9 @@
 
 .bmenu__panel, .bmenu__sub {
   min-width: 224px; max-width: 300px;
-  padding: 5px; border-radius: 10px;
-  background: var(--raised); border: 1px solid var(--border-strong);
-  box-shadow: 0 16px 36px var(--shade);
+  padding: 4px; border-radius: var(--radius-lg);
+  background: var(--glass-solid);
+  box-shadow: var(--e3), var(--top);
   /* A long profile list on a short screen ran past the bottom with no way to
      reach the rest. */
   max-height: calc(100vh - 8px); overflow-y: auto;

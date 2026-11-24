@@ -69,7 +69,7 @@
 .cin__field::placeholder { color: var(--ghost); }
 .cin__ghost { position: absolute; inset: 0; color: var(--ghost); pointer-events: none; }
 .cin__typed { color: transparent; }
-.cin__search { position: absolute; left: 10px; right: 10px; bottom: calc(100% + 4px); z-index: 20; display: flex; flex-direction: column; max-height: 300px; overflow-y: auto; padding: 4px; border: 1px solid var(--border-strong); border-radius: 8px; background: var(--raised); box-shadow: 0 8px 24px rgb(0 0 0 / 0.25); }
+.cin__search { position: absolute; left: 10px; right: 10px; bottom: calc(100% + 4px); z-index: 20; display: flex; flex-direction: column; max-height: 300px; overflow-y: auto; padding: 4px; border-radius: var(--radius-lg); background: var(--glass-solid); box-shadow: var(--e3), var(--top); }
 .cin__sq { height: 28px; margin-bottom: 4px; padding: 0 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--composer, var(--canvas)); color: var(--text); font: inherit; font-size: 12.5px; outline: none; }
 .cin__hit { padding: 4px 8px; border-radius: 5px; text-align: left; font-family: var(--term-font); font-size: 12.5px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cin__hit:hover { background: var(--overlay); }

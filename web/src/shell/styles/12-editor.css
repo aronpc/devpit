@@ -94,6 +94,6 @@
 /* A PDF, page under page, drawn by pdf.js. */
 .pdf { padding: 12px 16px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
 .pdf__bar { align-self: stretch; display: flex; align-items: center; justify-content: space-between; font-family: var(--ui, inherit); font-size: 11.5px; color: var(--text-3); }
-.pdf__page { max-width: 100%; border-radius: 4px; background: #fff; box-shadow: 0 1px 4px var(--shade); }
+.pdf__page { max-width: 100%; border-radius: 4px; background: #fff; box-shadow: var(--e1); }
 .pdf__more { margin-bottom: 8px; }
 

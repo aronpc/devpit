@@ -4,7 +4,7 @@
 .onb__box { width: 460px; max-width: calc(100vw - 48px); display: flex; flex-direction: column; align-items: center; text-align: center; }
 /* The mark's corners are in the file. Clipping it again to a different
    radius cuts a second, mismatched edge just inside the first. */
-.onb__mark { width: 76px; height: 76px; box-shadow: 0 16px 44px color-mix(in srgb, var(--accent) 24%, transparent); border-radius: 11px; }
+.onb__mark { width: 76px; height: 76px; box-shadow: var(--glow); border-radius: 11px; }
 .onb__mark .mark { width: 100%; height: 100%; display: block; }
 
 /* Three steps, and which one you are on. A rail rather than a count, because
