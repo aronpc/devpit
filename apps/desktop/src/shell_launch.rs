@@ -593,10 +593,7 @@ fn launch_line(
     project_id: Option<&str>,
     profile_id: Option<&str>,
 ) -> String {
-    // The session's language first, as an assignment in front of the line:
-    // the agent's process is born with it, and the MCP server it starts —
-    // which inherits that environment — answers in it for its life.
-    let mut line = format!("{}{launch}", locale.assignment());
+    let mut line = launch.to_owned();
     if let Some(settings) = settings_flag.and_then(|_| hook_settings(profile_id)) {
         line.push(' ');
         line.push_str(&settings_flag.unwrap_or_default().replace("{}", &settings));
@@ -667,7 +664,7 @@ pub(crate) fn to_start_in(
                     project_id,
                     Some(&found.id),
                 );
-                return Ok(in_account(line, &found.driver, project_id));
+                return Ok(typed(locale, in_account(line, &found.driver, project_id)));
             }
         }
     }
@@ -685,7 +682,17 @@ pub(crate) fn to_start_in(
         project_id,
         Some(agent.id),
     );
-    Ok(in_account(line, agent.id, project_id))
+    Ok(typed(locale, in_account(line, agent.id, project_id)))
+}
+
+/// `line` with the session's language in front of everything, the account's
+/// folder included: the agent's process is born with it, and the MCP server
+/// it starts, which inherits that environment, answers in it for its life.
+/// First, because on PowerShell the assignment is a statement of its own: a
+/// rest PowerShell cannot run then fails whole, as it did before, and never
+/// starts under another account.
+fn typed(locale: crate::session_locale::SessionLocale, line: String) -> String {
+    format!("{}{line}", locale.assignment())
 }
 
 /// `line` in the Claude Code account the project's sessions open in, when it

@@ -413,7 +413,10 @@ mod tests {
         )
         .expect("codex");
         assert!(
-            line.starts_with("DEVPIT_LOCALE='en' codex") && line.ends_with(" 'the brief'"),
+            line.starts_with(&format!(
+                "{}codex",
+                SessionLocale::of(Locale::En).assignment()
+            )) && line.ends_with(" 'the brief'"),
             "{line}"
         );
         assert!(!line.contains("--name"), "{line}");

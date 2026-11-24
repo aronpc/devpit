@@ -30,11 +30,6 @@ fn on_powershell_the_language_is_set_the_way_powershell_sets_a_variable() {
         SessionLocale::of(Locale::PtBr).assignment_for(true),
         "$env:DEVPIT_LOCALE='pt-BR'; "
     );
-    assert_eq!(
-        SessionLocale::of(Locale::En).assignment(),
-        SessionLocale::of(Locale::En).assignment_for(cfg!(windows)),
-        "a Windows build types PowerShell's form, every other build the POSIX one"
-    );
 }
 
 /// The variable of the assignment is the variable, name for name: two

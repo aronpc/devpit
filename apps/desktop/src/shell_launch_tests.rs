@@ -111,8 +111,31 @@ fn an_override_replaces_the_built_in_it_was_opened_from() {
 #[test]
 fn a_launch_line_carries_the_sessions_language_in_front() {
     let locale = crate::session_locale::SessionLocale::of(devpit_core::locale::Locale::PtBr);
-    let line = launch_line(locale, "claude", "claude", None, None, None);
-    assert!(line.starts_with("DEVPIT_LOCALE='pt-BR' claude"), "{line}");
+    let line = typed(
+        locale,
+        launch_line(locale, "claude", "claude", None, None, None),
+    );
+    assert!(
+        line.starts_with(&format!("{}claude", locale.assignment())),
+        "{line}"
+    );
+    assert!(locale.assignment().contains("DEVPIT_LOCALE='pt-BR'"));
+}
+
+/// The language goes in front of the account's folder too: on PowerShell an
+/// assignment is a statement of its own, and one after the folder would let
+/// the agent start in the default account when the folder's fails.
+#[test]
+fn the_language_goes_in_front_of_the_accounts_folder() {
+    let locale = crate::session_locale::SessionLocale::of(devpit_core::locale::Locale::En);
+    let line = typed(
+        locale,
+        crate::claude_accounts::in_dir("claude", "/home/me/.claude-work"),
+    );
+    let rest = line
+        .strip_prefix(&locale.assignment())
+        .unwrap_or_else(|| panic!("the language is not first: {line}"));
+    assert!(rest.starts_with("CLAUDE_CONFIG_DIR="), "{line}");
 }
 
 /// A profile that sets `DEVPIT_LOCALE` itself does not choose the session's
@@ -149,8 +172,11 @@ fn a_profiles_own_locale_never_speaks_over_the_sessions() {
     });
     let said = devpit_agentcli::running::line(&devpit_agentcli::running::runner(&found));
     let locale = crate::session_locale::SessionLocale::of(devpit_core::locale::Locale::PtBr);
-    let line = launch_line(locale, &said, "claude", None, None, None);
-    assert!(line.contains("DEVPIT_LOCALE='pt-BR'"), "{line}");
+    let line = typed(
+        locale,
+        launch_line(locale, &said, "claude", None, None, None),
+    );
+    assert!(line.starts_with(&locale.assignment()), "{line}");
     assert!(!line.contains("DEVPIT_LOCALE='en'"), "{line}");
     assert!(
         line.contains("ANTHROPIC_BASE_URL='https://example.test'"),
