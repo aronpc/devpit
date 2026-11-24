@@ -1,0 +1,121 @@
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+
+import { describe, expect, it } from 'vitest'
+
+/* Read off disk: `?raw` comes back empty under vitest. */
+const css = readFileSync(resolve(process.cwd(), 'src/theme/tokens.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '')
+
+function block(selector: string): Map<string, string> {
+  const open = css.indexOf('{', css.indexOf(selector))
+  const close = css.indexOf('}', open)
+  return new Map([...css.slice(open, close).matchAll(/(--[a-z0-9-]+)\s*:\s*([^;]+);/g)].map((m) => [m[1], m[2].trim()]))
+}
+
+type Rgb = [number, number, number]
+
+const hex = (value: string): Rgb | null => {
+  const m = /^#([0-9a-f]{6})$/i.exec(value)
+  return m ? [0, 2, 4].map((at) => parseInt(m[1].slice(at, at + 2), 16)) as Rgb : null
+}
+
+/** A token's colour in a theme: a hex, or a mix of two tokens in sRGB, as the more-contrast block writes them. */
+function colour(theme: Map<string, string>, name: string): Rgb {
+  const value = theme.get(name)
+  if (!value) throw new Error(`${name} has no value`)
+  const solid = hex(value)
+  if (solid) return solid
+  const mix = /^color-mix\(in srgb, var\((--[a-z0-9-]+)\) (\d+)%, var\((--[a-z0-9-]+)\)\)$/.exec(value)
+  if (!mix) throw new Error(`${name}: ${value} is not a colour this test reads`)
+  const [a, b, share] = [colour(theme, mix[1]), colour(theme, mix[3]), Number(mix[2]) / 100]
+  return a.map((v, i) => v * share + b[i] * (1 - share)) as Rgb
+}
+
+const luminance = ([r, g, b]: Rgb): number => {
+  const lin = (v: number): number => (v / 255 <= 0.03928 ? v / 255 / 12.92 : ((v / 255 + 0.055) / 1.055) ** 2.4)
+  return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b)
+}
+
+/** WCAG 2 contrast between two colours. */
+function contrast(a: Rgb, b: Rgb): number {
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x)
+  return (hi + 0.05) / (lo + 0.05)
+}
+
+const dark = block(':root {')
+const light = new Map([...dark, ...block(":root[data-theme='light']")])
+const more = block(":root[data-contrast='more']")
+const THEMES = {
+  dark,
+  light,
+  'dark, more contrast': new Map([...dark, ...more]),
+  'light, more contrast': new Map([...light, ...more]),
+}
+
+const SURFACES = ['--canvas', '--sidebar', '--raised', '--raised-2', '--composer', '--inset']
+/* What a pair has to reach: text 4.5:1 (AA), a control's edge or an icon 3:1. */
+const PAIRS: [string, string[], number][] = [
+  ['--text', SURFACES, 4.5],
+  ['--text-2', SURFACES, 4.5],
+  ['--text-3', SURFACES, 4.5],
+  ['--ghost', SURFACES, 3],
+  ['--border-ctl', SURFACES, 3],
+  ['--accent', ['--canvas', '--sidebar', '--raised', '--inset'], 4.5],
+  ['--warning', ['--canvas', '--sidebar', '--raised', '--inset'], 4.5],
+  ['--success', ['--canvas', '--sidebar', '--raised', '--inset'], 4.5],
+  ['--danger', ['--canvas', '--sidebar', '--raised', '--inset'], 4.5],
+  ['--on-accent', ['--accent'], 4.5],
+  ['--on-danger', ['--danger'], 4.5],
+]
+
+/* Pairs below their bar today, each named so it can only be fixed, never joined. */
+const KNOWN_BELOW = new Set<string>([
+  'light: --accent on --canvas',
+  'light: --accent on --sidebar',
+  'light: --accent on --inset',
+  'light: --warning on --canvas',
+  'light: --warning on --sidebar',
+  'light: --warning on --inset',
+  'light: --success on --canvas',
+  'light: --success on --sidebar',
+  'light: --success on --inset',
+  'light: --danger on --inset',
+  'light: --on-accent on --accent',
+  'light, more contrast: --accent on --canvas',
+  'light, more contrast: --accent on --sidebar',
+  'light, more contrast: --accent on --inset',
+  'light, more contrast: --warning on --canvas',
+  'light, more contrast: --warning on --sidebar',
+  'light, more contrast: --warning on --inset',
+  'light, more contrast: --success on --canvas',
+  'light, more contrast: --success on --sidebar',
+  'light, more contrast: --success on --inset',
+  'light, more contrast: --danger on --inset',
+  'light, more contrast: --on-accent on --accent',
+])
+
+function below(): string[] {
+  return Object.entries(THEMES).flatMap(([theme, values]) =>
+    PAIRS.flatMap(([ink, grounds, need]) =>
+      grounds
+        .filter((ground) => contrast(colour(values, ink), colour(values, ground)) < need)
+        .map((ground) => `${theme}: ${ink} on ${ground}`),
+    ),
+  )
+}
+
+describe('contrast', () => {
+  it('measures the way WCAG does', () => {
+    expect(contrast([0, 0, 0], [255, 255, 255])).toBeCloseTo(21, 5)
+    expect(contrast([118, 118, 118], [255, 255, 255])).toBeCloseTo(4.54, 2)
+  })
+
+  it('keeps every ink above its bar on every surface, in every theme', () => {
+    expect(below().filter((pair) => !KNOWN_BELOW.has(pair))).toEqual([])
+  })
+
+  it('lists no pair that has since been fixed', () => {
+    const now = new Set(below())
+    expect([...KNOWN_BELOW].filter((pair) => !now.has(pair))).toEqual([])
+  })
+})

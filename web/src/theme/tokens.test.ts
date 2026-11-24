@@ -10,8 +10,8 @@ import { describe, expect, it } from 'vitest'
  */
 const css = readFileSync(resolve(process.cwd(), 'src/theme/tokens.css'), 'utf8')
 
-/** The declarations inside the first block whose selector matches. */
-function tokensIn(selector: string): Set<string> {
+/** The declarations inside the first block whose selector matches, by name. */
+function valuesIn(selector: string): Map<string, string> {
   const at = css.indexOf(selector)
   expect(at, `${selector} is not in tokens.css`).toBeGreaterThan(-1)
   const open = css.indexOf('{', at)
@@ -24,28 +24,43 @@ function tokensIn(selector: string): Set<string> {
       if (depth === 0) break
     }
   }
-  return new Set(
-    [...css.slice(open, close).matchAll(/(--[a-z0-9-]+)\s*:/g)].map((m) => m[1]),
-  )
+  const body = css.slice(open, close).replace(/\/\*[\s\S]*?\*\//g, '')
+  return new Map([...body.matchAll(/(--[a-z0-9-]+)\s*:\s*([^;]+);/g)].map((m) => [m[1], m[2].trim()]))
 }
 
-/* Sizes and faces are the same in every theme; only colour changes. */
-const NOT_A_COLOUR = new Set(['--sidebar-w', '--content-max', '--chat-max', '--files-w', '--ui', '--mono'])
-const notAColour = (token: string): boolean => NOT_A_COLOUR.has(token) || /^--(fs|radius|space)-/.test(token)
+const tokensIn = (selector: string): Set<string> => new Set(valuesIn(selector).keys())
+
+/* A token that writes no colour of its own (a size, a face, a curve, or a mix of
+   other tokens) is the same in every theme, so it lives on `:root` alone. */
+const namesAColour = (value: string): boolean => /#[0-9a-f]{3,8}\b|\b(rgba?|hsla?)\(/i.test(value)
 
 describe('the palette', () => {
-  const dark = tokensIn(':root {')
+  const darkValues = valuesIn(':root {')
+  const dark = new Set([...darkValues].filter(([, value]) => namesAColour(value)).map(([name]) => name))
 
   it('has every dark token in the light theme too', () => {
     const light = tokensIn(":root[data-theme='light']")
-    const missing = [...dark].filter((token) => !notAColour(token) && !light.has(token))
+    const missing = [...dark].filter((token) => !light.has(token))
     expect(missing, 'a token with no light value paints one theme on the other').toEqual([])
   })
 
   it('has every dark token in the system theme too', () => {
     const system = tokensIn(":root[data-theme='system']")
-    const missing = [...dark].filter((token) => !notAColour(token) && !system.has(token))
+    const missing = [...dark].filter((token) => !system.has(token))
     expect(missing).toEqual([])
+  })
+
+  it('tells a colour from a step every theme shares', () => {
+    expect(namesAColour('#1a1a1a')).toBe(true)
+    expect(namesAColour('0 0 0 1px var(--border), 0 1px 2px rgb(0 0 0 / 0.24)')).toBe(true)
+    expect(namesAColour('color-mix(in srgb, var(--accent) 14%, transparent)')).toBe(false)
+    expect(namesAColour('calc(12px * var(--text-scale, 1))')).toBe(false)
+  })
+
+  it('moves every ink and edge toward the text when more contrast is asked for', () => {
+    const more = tokensIn(":root[data-contrast='more']")
+    const edges = ['--text-2', '--text-3', '--ghost', '--border', '--border-strong', '--border-ctl']
+    expect(edges.filter((token) => !more.has(token))).toEqual([])
   })
 
   it('names more than a handful of tokens', () => {

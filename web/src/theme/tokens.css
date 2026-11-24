@@ -45,8 +45,9 @@
   --canvas: #1a1a1a;
   --sidebar: #181818;
   --sidebar-item: hsla(0, 0%, 94.1%, 0.06);
-  --surface: #1a1a1a;
   --raised: #232323;
+  /* A surface on a raised one: a section in a sheet, the open card of a turn. */
+  --raised-2: #2a2a2a;
   --composer: #212121;
   --inset: #151515;
   --terminal: #282c34;
@@ -55,6 +56,11 @@
 
   --border: hsla(220, 10%, 90%, 0.07);
   --border-strong: hsla(220, 10%, 90%, 0.14);
+  /* The edge of a field: 3:1 on every surface, as a control's boundary must be. */
+  --border-ctl: #757575;
+  /* A floating surface: a menu, a popover, the palette. Seen through only where
+     the engine can blur it; elsewhere it is --glass-solid. */
+  --glass: rgb(35 35 35 / 0.86);
 
   --text: #e2e2e2;
   --text-2: #a3a3a3;
@@ -73,6 +79,14 @@
   /* The orchestrator's own colour, apart from the accent a project work wears. */
   --orchestrate: #a595f5;
   --danger: #e2726a;
+  --on-danger: #2a0f0c;
+
+  /* Elevation, a layer at a time. The ring lives in the shadow, so a raised
+     thing needs no border of its own; --top is the light catching its edge. */
+  --e1: 0 0 0 1px var(--border), 0 1px 2px rgb(0 0 0 / 0.24);
+  --e2: 0 0 0 1px var(--border), 0 2px 8px rgb(0 0 0 / 0.28), 0 1px 2px rgb(0 0 0 / 0.2);
+  --e3: 0 0 0 1px var(--border-strong), 0 12px 32px rgb(0 0 0 / 0.42), 0 2px 6px rgb(0 0 0 / 0.24);
+  --top: inset 0 1px 0 hsla(0, 0%, 100%, 0.05);
 
   /* Syntax. Five roles and no more: a lexer knows comments, strings, numbers,
      keywords and the names of types, and a sixth colour would be a claim about
@@ -107,7 +121,8 @@
   --fs-sm: calc(12px * var(--text-scale, 1));
   --fs-md: calc(13px * var(--text-scale, 1));
   --fs-lg: calc(14px * var(--text-scale, 1));
-  --fs-xl: calc(20px * var(--text-scale, 1));
+  --fs-xl: calc(17px * var(--text-scale, 1));
+  --fs-2xl: calc(20px * var(--text-scale, 1));
 
   --radius-xs: 4px;
   --radius-sm: 6px;
@@ -121,6 +136,54 @@
   --space-4: 16px;
   --space-5: 20px;
   --space-6: 24px;
+  --space-8: 32px;
+
+  /* Steps every theme shares: they name no colour of their own. */
+  --surface: var(--canvas);
+  --glass-solid: var(--raised);
+  --glass-fx: saturate(1.5) blur(16px);
+  --accent-soft: color-mix(in srgb, var(--accent) 14%, transparent);
+  --accent-edge: color-mix(in srgb, var(--accent) 45%, transparent);
+  --warning-soft: color-mix(in srgb, var(--warning) 14%, transparent);
+  /* A diff paints with these; the colour-blind setting below replaces them. */
+  --diff-add: var(--success);
+  --diff-del: var(--danger);
+
+  /* The control ruler: four heights, each with the radius that belongs to it
+     (about 30%), so a control nested in another keeps its corners concentric. */
+  --ctl-xs: 20px;
+  --ctl-s: 28px;
+  --ctl-m: 32px;
+  --ctl-l: 40px;
+  --ctl-r-xs: 6px;
+  --ctl-r-s: 8px;
+  --ctl-r-m: 10px;
+  --ctl-r-l: 12px;
+  --radius-xl: 16px;
+  /* One width for every card in a turn. */
+  --chat-card-w: 640px;
+
+  --fw-1: 400;
+  --fw-2: 500;
+  --fw-3: 600;
+  --lh-ui: 1.45;
+  --lh-read: 1.62;
+  --track-title: -0.01em;
+  --track-caps: 0.06em;
+
+  /* Motion: things arrive, they do not leave. Hover, press and menus, sheets,
+     then the panels that move the layout. */
+  --ease-out: cubic-bezier(0.2, 0.7, 0.3, 1);
+  --ease-spring: cubic-bezier(0.3, 1.3, 0.6, 1);
+  --ease-panel: cubic-bezier(0.3, 0.8, 0.2, 1);
+  --dur-1: 120ms;
+  --dur-2: 140ms;
+  --dur-3: 180ms;
+  --dur-4: 240ms;
+
+  /* One ring for every control, drawn only for the keyboard. */
+  --focus: var(--accent);
+  --focus-ring: 0 0 0 1px var(--canvas), 0 0 0 3px var(--focus);
 
   --ui: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Ubuntu, system-ui, sans-serif;
   --mono: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -141,8 +204,8 @@
   --canvas: #f7f6f3;
   --sidebar: #efede9;
   --sidebar-item: hsla(30, 12%, 20%, 0.07);
-  --surface: #f7f6f3;
   --raised: #ffffff;
+  --raised-2: #ffffff;
   --composer: #ffffff;
   --inset: #eae7e2;
   --terminal: #282c34;
@@ -151,6 +214,8 @@
 
   --border: hsla(30, 12%, 20%, 0.12);
   --border-strong: hsla(30, 12%, 20%, 0.22);
+  --glass: rgb(255 255 255 / 0.86);
+  --border-ctl: #8a8378;
 
   --text: #24211d;
   --text-2: #56514a;
@@ -168,6 +233,11 @@
   --success: #2c8551;
   --orchestrate: #5a48c2;
   --danger: #bb4038;
+  --on-danger: #ffffff;
+  --e1: 0 0 0 1px var(--border), 0 1px 2px rgb(64 54 44 / 0.08);
+  --e2: 0 0 0 1px var(--border), 0 2px 8px rgb(64 54 44 / 0.1), 0 1px 2px rgb(64 54 44 / 0.06);
+  --e3: 0 0 0 1px var(--border-strong), 0 12px 32px rgb(64 54 44 / 0.16), 0 2px 6px rgb(64 54 44 / 0.08);
+  --top: inset 0 1px 0 hsla(0, 0%, 100%, 0.85);
 
   --syn-comment: #746d63;
   --syn-string: #8a6a3a;
@@ -193,8 +263,8 @@
     --canvas: #f7f6f3;
     --sidebar: #efede9;
     --sidebar-item: hsla(30, 12%, 20%, 0.07);
-    --surface: #f7f6f3;
     --raised: #ffffff;
+    --raised-2: #ffffff;
     --composer: #ffffff;
     --inset: #eae7e2;
     --terminal: #282c34;
@@ -202,6 +272,8 @@
     --overlay-strong: hsla(30, 12%, 20%, 0.10);
     --border: hsla(30, 12%, 20%, 0.12);
     --border-strong: hsla(30, 12%, 20%, 0.22);
+    --glass: rgb(255 255 255 / 0.86);
+    --border-ctl: #8a8378;
     --text: #24211d;
     --text-2: #56514a;
     --text-3: #615b51;
@@ -216,6 +288,11 @@
     --success: #2c8551;
     --orchestrate: #5a48c2;
     --danger: #bb4038;
+    --on-danger: #ffffff;
+    --e1: 0 0 0 1px var(--border), 0 1px 2px rgb(64 54 44 / 0.08);
+    --e2: 0 0 0 1px var(--border), 0 2px 8px rgb(64 54 44 / 0.1), 0 1px 2px rgb(64 54 44 / 0.06);
+    --e3: 0 0 0 1px var(--border-strong), 0 12px 32px rgb(64 54 44 / 0.16), 0 2px 6px rgb(64 54 44 / 0.08);
+    --top: inset 0 1px 0 hsla(0, 0%, 100%, 0.85);
 
     --syn-comment: #746d63;
     --syn-string: #8a6a3a;
@@ -241,11 +318,11 @@
   --ghost: color-mix(in srgb, var(--text) 72%, var(--canvas));
   --border: color-mix(in srgb, var(--text) 22%, transparent);
   --border-strong: color-mix(in srgb, var(--text) 38%, transparent);
+  --border-ctl: color-mix(in srgb, var(--text) 62%, var(--canvas));
 }
 
 /* Diff colours a red-green colour blindness tells apart: blue for what was
-   added, orange for what was taken out. Unset, a diff paints with
-   --success and --danger. */
+   added, orange for what was taken out. */
 :root[data-diff-colours='safe'] {
   --diff-add: #3d8fd9;
   --diff-del: #e08a1e;
