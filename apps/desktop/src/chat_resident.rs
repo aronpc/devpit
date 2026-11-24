@@ -878,6 +878,11 @@ fn start(staying: &Staying, turn: &Say<'_>, started_as: String) -> Result<Live, 
 /// A turn nobody here asked for has begun: opened in the conversation and
 /// announced, so an open chat joins it through the relay.
 fn woke(app: &AppHandle, conversation: &str, logs: &std::path::Path) -> Woken {
+    // A turn nobody here started asks the person like any other, even after
+    // an interrupted one: it starts where a person's turn would.
+    if let Some(ends) = app.try_state::<crate::asking_wait::Ends>() {
+        ends.started(conversation);
+    }
     let woken_by = Part::Text {
         text: crate::delegations::woken_label(logs),
         parent: None,

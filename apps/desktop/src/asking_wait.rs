@@ -156,6 +156,24 @@ impl Ends {
         Vec::new()
     }
 
+    /// Ends the questions this conversation is waiting on now, and remembers
+    /// nothing for one asked later.
+    pub(crate) fn end_open(&self, conversation_id: &str) -> Vec<String> {
+        let Ok(mut open) = self.0.lock() else {
+            return Vec::new();
+        };
+        let Open {
+            asked_by, ended, ..
+        } = &mut *open;
+        let its: Vec<String> = asked_by
+            .iter()
+            .filter(|(_, by)| by.as_deref() == Some(conversation_id))
+            .map(|(id, _)| id.clone())
+            .collect();
+        ended.extend(its.iter().cloned());
+        its
+    }
+
     /// Ends every question waiting: the app is closing.
     pub(crate) fn end_all(&self) -> Vec<String> {
         if let Ok(mut open) = self.0.lock() {
@@ -171,9 +189,11 @@ impl Ends {
     /// questions, or every one when the app quits. Never a deadline.
     pub(crate) fn over(&self, gone: Over<'_>) -> Vec<String> {
         match gone {
-            Over::Closed(id) | Over::Interrupted(id) | Over::Exited(id) | Over::TurnEnded(id) => {
-                self.end(id)
-            }
+            Over::Closed(id) | Over::Interrupted(id) | Over::Exited(id) => self.end(id),
+            // A turn ends only once the CLI has its answers, so nothing of it
+            // is in flight: ending what is open is enough, and the next turn,
+            // a woken one included, may ask again.
+            Over::TurnEnded(id) => self.end_open(id),
             Over::AppQuit => self.end_all(),
         }
     }
