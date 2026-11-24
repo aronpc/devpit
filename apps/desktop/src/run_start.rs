@@ -49,7 +49,10 @@ impl Sources {
                     .map(|reason| (profile.id.clone(), reason))
             })
             .collect();
-        let vars: Vec<(String, String)> = std::env::vars().collect();
+        // vars() panics on a variable that is not UTF-8; such a one is no key.
+        let vars: Vec<(String, String)> = std::env::vars_os()
+            .filter_map(|(name, value)| Some((name.into_string().ok()?, value.into_string().ok()?)))
+            .collect();
         let inherited = OtherSignIn::of(
             vars.iter()
                 .map(|(name, value)| (name.as_str(), value.as_str())),
