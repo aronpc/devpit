@@ -53,7 +53,7 @@ fn forwarded(
         params,
         text,
         |_| match starts {
-            true => Ok("conv-1".to_owned()),
+            true => Ok(Some("conv-1".to_owned())),
             false => Err("its folder is gone".to_owned()),
         },
         |_| (),
@@ -63,11 +63,11 @@ fn forwarded(
 #[test]
 fn two_ids_stay_two_requests() {
     assert_eq!(
-        keep("dest-two", "orchestrator-a", "one", "c", "first"),
+        keep("dest-two", "orchestrator-a", "one", Some("c"), "first"),
         Ok(false)
     );
     assert_eq!(
-        keep("dest-two", "orchestrator-a", "two", "c", "second"),
+        keep("dest-two", "orchestrator-a", "two", Some("c"), "second"),
         Ok(false)
     );
     assert_eq!(waiting_for("dest-two"), 2);
@@ -76,17 +76,17 @@ fn two_ids_stay_two_requests() {
 #[test]
 fn the_same_id_and_text_again_leaves_one_request() {
     assert_eq!(
-        keep("dest-again", "orchestrator-a", "x", "c", "do it"),
+        keep("dest-again", "orchestrator-a", "x", Some("c"), "do it"),
         Ok(false)
     );
     assert_eq!(
-        keep("dest-again", "orchestrator-a", "x", "c", " do it "),
+        keep("dest-again", "orchestrator-a", "x", Some("c"), " do it "),
         Ok(true)
     );
     assert_eq!(waiting_for("dest-again"), 1);
     // Another sender's id is its own.
     assert_eq!(
-        keep("dest-again", "orchestrator-b", "x", "c", "do it"),
+        keep("dest-again", "orchestrator-b", "x", Some("c"), "do it"),
         Ok(false)
     );
     assert_eq!(waiting_for("dest-again"), 2);
@@ -94,8 +94,9 @@ fn the_same_id_and_text_again_leaves_one_request() {
 
 #[test]
 fn same_id_other_text_is_a_conflict() {
-    keep("dest-conflict", "orchestrator-a", "x", "c", "first").expect("kept");
-    let err = keep("dest-conflict", "orchestrator-a", "x", "c", "other").expect_err("conflict");
+    keep("dest-conflict", "orchestrator-a", "x", Some("c"), "first").expect("kept");
+    let err =
+        keep("dest-conflict", "orchestrator-a", "x", Some("c"), "other").expect_err("conflict");
     assert!(err.contains("other words"), "{err}");
     let held = requests().lock().expect("requests");
     let key = (
@@ -108,25 +109,32 @@ fn same_id_other_text_is_a_conflict() {
 
 #[test]
 fn an_empty_long_or_surplus_request_is_refused_before_it_is_kept() {
-    assert!(keep("dest-refused", "o", "x", "c", "   ").is_err());
-    assert!(keep("dest-refused", "o", "x", "c", &"x".repeat(LONGEST + 1)).is_err());
-    assert!(keep("dest-refused", "o", "  ", "c", "text").is_err());
+    assert!(keep("dest-refused", "o", "x", Some("c"), "   ").is_err());
+    assert!(keep(
+        "dest-refused",
+        "o",
+        "x",
+        Some("c"),
+        &"x".repeat(LONGEST + 1)
+    )
+    .is_err());
+    assert!(keep("dest-refused", "o", "  ", Some("c"), "text").is_err());
     assert!(keep(
         "dest-refused",
         "o",
         &"i".repeat(LONGEST_ID + 1),
-        "c",
+        Some("c"),
         "text"
     )
     .is_err());
     assert_eq!(waiting_for("dest-refused"), 0);
     for n in 0..MOST {
-        keep("dest-full", "o", &format!("id{n}"), "c", "text").expect("room");
+        keep("dest-full", "o", &format!("id{n}"), Some("c"), "text").expect("room");
     }
-    assert!(keep("dest-full", "o", "one-more", "c", "text").is_err());
+    assert!(keep("dest-full", "o", "one-more", Some("c"), "text").is_err());
     assert_eq!(waiting_for("dest-full"), MOST);
     // What is kept already can still be sent again.
-    assert_eq!(keep("dest-full", "o", "id0", "c", "text"), Ok(true));
+    assert_eq!(keep("dest-full", "o", "id0", Some("c"), "text"), Ok(true));
 }
 
 #[test]
@@ -252,9 +260,16 @@ fn through_message_a_destination_unknown_to_the_store_does_not_start() {
 
 #[test]
 fn listing_answers_an_object() {
-    keep("dest-list", "orchestrator-b", "2", "c1", "second").expect("kept");
-    keep("dest-list", "orchestrator-a", "1", "c1", "first").expect("kept");
-    keep("dest-elsewhere", "orchestrator-a", "1", "c9", "not here").expect("kept");
+    keep("dest-list", "orchestrator-b", "2", Some("c1"), "second").expect("kept");
+    keep("dest-list", "orchestrator-a", "1", Some("c1"), "first").expect("kept");
+    keep(
+        "dest-elsewhere",
+        "orchestrator-a",
+        "1",
+        Some("c9"),
+        "not here",
+    )
+    .expect("kept");
     let said = serde_json::to_value(listed("dest-list")).expect("json");
     assert_eq!(
         said,
@@ -268,13 +283,13 @@ fn listing_answers_an_object() {
 
 #[test]
 fn dropping_one_keeps_the_other() {
-    keep("dest-drop", "orchestrator-a", "1", "c", "first").expect("kept");
-    keep("dest-drop", "orchestrator-a", "2", "c", "second").expect("kept");
+    keep("dest-drop", "orchestrator-a", "1", Some("c"), "first").expect("kept");
+    keep("dest-drop", "orchestrator-a", "2", Some("c"), "second").expect("kept");
     keep(
         "dest-drop",
         "orchestrator-b",
         "1",
-        "c",
+        Some("c"),
         "same id, other sender",
     )
     .expect("kept");
@@ -297,7 +312,7 @@ fn dropping_one_keeps_the_other() {
     );
     // Dropped, the sender may send it again and it is kept as new.
     assert_eq!(
-        keep("dest-drop", "orchestrator-a", "1", "c", "first"),
+        keep("dest-drop", "orchestrator-a", "1", Some("c"), "first"),
         Ok(false)
     );
 }
@@ -316,7 +331,7 @@ fn a_kept_request_is_told_to_the_window() {
             &params,
             "look",
             |_| match starts {
-                true => Ok("conv-1".to_owned()),
+                true => Ok(Some("conv-1".to_owned())),
                 false => Err("its folder is gone".to_owned()),
             },
             |project| heard.borrow_mut().push(project.to_owned()),
@@ -357,7 +372,7 @@ fn forwarded_prompt_is_nobodys_word_even_edited_with_a_yes() {
 
 #[test]
 fn forwarded_to_send_needs_the_request_waiting_and_words_a_message_may_be() {
-    keep("prj-send", "orchestrator-a", "1", "conv-1", "words").expect("kept");
+    keep("prj-send", "orchestrator-a", "1", Some("conv-1"), "words").expect("kept");
     let sent = to_send("prj-send", "orchestrator-a", "1", " edited ").expect("a prompt");
     assert_eq!(sent.prompt, prompt_of("orchestrator-a", "edited"));
     put_back(
@@ -387,8 +402,8 @@ fn forwarded_to_send_needs_the_request_waiting_and_words_a_message_may_be() {
 
 #[tokio::test]
 async fn a_sent_request_leaves_the_store_only_when_the_turn_starts() {
-    keep("prj-start", "orchestrator-a", "1", "conv-1", "words").expect("kept");
-    keep("prj-start", "orchestrator-a", "2", "conv-1", "other").expect("kept");
+    keep("prj-start", "orchestrator-a", "1", Some("conv-1"), "words").expect("kept");
+    keep("prj-start", "orchestrator-a", "2", Some("conv-1"), "other").expect("kept");
     let told = Arc::new(AtomicUsize::new(0));
     let (release, wait) = tokio::sync::oneshot::channel::<()>();
     let counted = told.clone();
@@ -422,7 +437,7 @@ async fn a_sent_request_leaves_the_store_only_when_the_turn_starts() {
 async fn a_busy_conversation_keeps_the_request() {
     for code in [ErrorCode::Busy, ErrorCode::Conflict] {
         let to = format!("prj-busy-{code:?}");
-        keep(&to, "orchestrator-a", "1", "conv-1", "words").expect("kept");
+        keep(&to, "orchestrator-a", "1", Some("conv-1"), "words").expect("kept");
         let told = Arc::new(AtomicUsize::new(0));
         let counted = told.clone();
         let reserved = to_send(&to, "orchestrator-a", "1", "words").expect("reserved");
@@ -446,7 +461,14 @@ async fn a_busy_conversation_keeps_the_request() {
 
 #[test]
 fn a_request_being_sent_refuses_a_second_send_or_a_drop() {
-    keep("prj-reserved", "orchestrator-a", "1", "conv-1", "words").expect("kept");
+    keep(
+        "prj-reserved",
+        "orchestrator-a",
+        "1",
+        Some("conv-1"),
+        "words",
+    )
+    .expect("kept");
     to_send("prj-reserved", "orchestrator-a", "1", "edited").expect("reserved");
 
     let second = to_send("prj-reserved", "orchestrator-a", "1", "edited")
@@ -459,7 +481,14 @@ fn a_request_being_sent_refuses_a_second_send_or_a_drop() {
 
 #[tokio::test]
 async fn the_old_turn_does_not_drop_a_request_sent_again() {
-    keep("prj-generation", "orchestrator-a", "1", "conv-1", "old").expect("kept");
+    keep(
+        "prj-generation",
+        "orchestrator-a",
+        "1",
+        Some("conv-1"),
+        "old",
+    )
+    .expect("kept");
     let reserved = to_send("prj-generation", "orchestrator-a", "1", "old").expect("reserved");
     let old_started = Arc::new(Mutex::new(None));
     let captured = old_started.clone();
@@ -482,7 +511,14 @@ async fn the_old_turn_does_not_drop_a_request_sent_again() {
     .await
     .expect_err("old turn refused");
     assert!(dropped("prj-generation", "orchestrator-a", "1").expect("dropped"));
-    keep("prj-generation", "orchestrator-a", "1", "conv-2", "new").expect("sent again");
+    keep(
+        "prj-generation",
+        "orchestrator-a",
+        "1",
+        Some("conv-2"),
+        "new",
+    )
+    .expect("sent again");
     to_send("prj-generation", "orchestrator-a", "1", "new").expect("new generation reserved");
 
     old_started
@@ -498,7 +534,7 @@ async fn the_old_turn_does_not_drop_a_request_sent_again() {
 
 #[tokio::test]
 async fn a_busy_turn_puts_the_request_back_with_its_edited_text() {
-    keep("prj-put-back", "orchestrator-a", "1", "conv-1", "old").expect("kept");
+    keep("prj-put-back", "orchestrator-a", "1", Some("conv-1"), "old").expect("kept");
     let reserved = to_send("prj-put-back", "orchestrator-a", "1", "edited").expect("reserved");
     launched(
         "prj-put-back",
@@ -520,4 +556,21 @@ async fn a_busy_turn_puts_the_request_back_with_its_edited_text() {
     assert_eq!(waiting.len(), 1);
     assert_eq!(waiting[0].text, "edited");
     assert!(dropped("prj-put-back", "orchestrator-a", "1").expect("dropped"));
+}
+
+#[test]
+fn requests_to_a_destination_with_no_conversation_share_one_and_send_there() {
+    keep("dest-fresh", "orchestrator-a", "1", None, "first").expect("kept");
+    keep("dest-fresh", "orchestrator-b", "2", None, "second").expect("kept");
+    let kept = listed("dest-fresh").requests;
+    assert_eq!(kept.len(), 2);
+    assert_eq!(
+        kept[0].conversation, kept[1].conversation,
+        "one conversation"
+    );
+    let reserved = to_send("dest-fresh", "orchestrator-b", "2", "second").expect("reserved");
+    assert_eq!(
+        reserved.conversation, kept[0].conversation,
+        "sent where it waited"
+    );
 }
