@@ -432,6 +432,77 @@ fn a_pause_is_not_work_in_flight_and_survives_the_launch_sweep() {
     );
 }
 
+/// The work migration 36 does over `rows` old runs, in SQLite's own count of
+/// the steps its statements took, and the table `previous_attempt` ends up
+/// pointing at.
+fn migration_36_over(rows: usize) -> (i64, String) {
+    use rusqlite::fallible_iterator::FallibleIterator;
+
+    let dir = tempfile::tempdir().expect("tempdir");
+    let conn = rusqlite::Connection::open(dir.path().join("state.db")).expect("open");
+    super::super::migrations::run_up_to(&conn, 35).expect("migrate to 35");
+    conn.execute_batch(
+        "BEGIN; \
+         INSERT INTO trust_workspace (id, slug, label, color, vault_namespace, created_at) \
+         VALUES ('tw', 'tw', 'TW', '#000000', 'ns', 0); \
+         INSERT INTO project (id, trust_workspace_id, name, root_path, created_at) \
+         VALUES ('p', 'tw', 'p', '/p', 0); \
+         INSERT INTO step (id, project_id, kind, name, config, irreversible, created_at) \
+         VALUES ('s', 'p', 'command', 'tests', '{}', 0, 0); \
+         INSERT INTO board_column (id, project_id, name, position, created_at) \
+         VALUES ('col', 'p', 'todo', 0, 0); \
+         INSERT INTO card (id, project_id, column_id, title, position, created_at, updated_at) \
+         VALUES ('c', 'p', 'col', 'a card', 0, 0, 0);",
+    )
+    .expect("seed");
+    for at in 0..rows {
+        conn.execute(
+            "INSERT INTO run (id, card_id, step_id, state, started_at, ended_at) \
+             VALUES (?1, 'c', 's', 'ok', ?2, ?2)",
+            rusqlite::params![format!("r{at:06}"), at as i64],
+        )
+        .expect("old run");
+    }
+    conn.execute_batch("COMMIT").expect("commit");
+
+    // As `Store::open` runs it: foreign keys on, inside one transaction.
+    conn.pragma_update(None, "foreign_keys", "ON").expect("fk");
+    conn.execute_batch("BEGIN IMMEDIATE").expect("begin");
+    let mut steps = 0_i64;
+    let mut batch = rusqlite::Batch::new(&conn, super::super::migrations::sql_of(36));
+    while let Some(mut statement) = batch.next().expect("parse") {
+        statement.execute([]).expect("apply");
+        steps += i64::from(statement.get_status(rusqlite::StatementStatus::VmStep));
+    }
+    conn.execute_batch("COMMIT").expect("commit");
+
+    let target: String = conn
+        .query_row(
+            "SELECT \"table\" FROM pragma_foreign_key_list('run') WHERE \"from\" = 'previous_attempt'",
+            [],
+            |row| row.get(0),
+        )
+        .expect("the chain's key");
+    (steps, target)
+}
+
+/// Migration 36 rebuilds `run` once per old row, not once per pair of rows:
+/// a key from the new table to the old one made `DROP TABLE run` scan the
+/// new table for every row it deleted, and a few thousand runs held the
+/// write lock for most of a minute.
+#[test]
+fn migration_36_grows_with_the_runs_not_with_their_square() {
+    let (small, target) = migration_36_over(400);
+    let (large, _) = migration_36_over(1_600);
+    assert_eq!(target, "run", "the chain points at the rebuilt table");
+    // Four times the rows: about four times the work when it is linear, about
+    // sixteen when every deleted row scans every new one.
+    assert!(
+        large < small * 8,
+        "400 runs took {small} steps and 1600 took {large}"
+    );
+}
+
 /// Migration 36 over rows an older devpit wrote: they keep everything they
 /// had — state, and the dismissal findings pinned to them — and gain the
 /// attempt columns as NULL, which reads as `unknown` and never as an answer.

@@ -920,7 +920,10 @@ CREATE TABLE run_new (
     -- 1-based, within this step's tries on this card. NULL on rows an older
     -- devpit wrote, which the reader counts as the first.
     attempt INTEGER,
-    previous_attempt TEXT REFERENCES run(id) ON DELETE SET NULL,
+    -- Points at run_new, not run: a key on the old table makes DROP TABLE run
+    -- scan this one for every row it deletes. The rename below turns it into
+    -- run(id).
+    previous_attempt TEXT REFERENCES run_new(id) ON DELETE SET NULL,
     -- Which event asked: 'start', 'retry', 'click' or 'automatic'. Separate
     -- from `paused_because`, because why it was asked and what stopped it are
     -- different questions.
