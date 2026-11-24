@@ -89,3 +89,43 @@ fn two_threads_each_get_their_own_language_whatever_the_process_is_in() {
         "the Portuguese thread was handed another language"
     );
 }
+
+/// Every sentence a catalog holds, its plural forms included.
+fn sentences(entry: &serde_json::Value) -> Vec<&str> {
+    match entry {
+        serde_json::Value::String(one) => vec![one.as_str()],
+        serde_json::Value::Object(forms) => forms.values().filter_map(|f| f.as_str()).collect(),
+        _ => Vec::new(),
+    }
+}
+
+/// A bracketed prefix such as `[devpit, not the person]` is read back by
+/// devpit (`devpit_agentcli::person`), not by a person: a translation that
+/// changed it would make the person's own words stop counting. So every
+/// language keeps an English sentence's leading `[...]` exactly as it is.
+#[test]
+fn a_prefix_devpit_reads_back_is_never_translated() {
+    let english = super::parse(super::ENGLISH);
+    let portuguese = super::parse(super::PORTUGUESE);
+    let mut checked = 0;
+    for (key, entry) in &english {
+        let Some(prefix) = sentences(entry).into_iter().find_map(|one| {
+            one.starts_with('[')
+                .then(|| one.split_inclusive(']').next())
+                .flatten()
+        }) else {
+            continue;
+        };
+        let Some(translated) = portuguese.get(key) else {
+            continue;
+        };
+        for sentence in sentences(translated) {
+            assert!(
+                sentence.starts_with(prefix),
+                "{key} lost its prefix {prefix:?} in pt-BR: {sentence:?}"
+            );
+        }
+        checked += 1;
+    }
+    assert!(checked > 0, "no English sentence carries a prefix any more");
+}

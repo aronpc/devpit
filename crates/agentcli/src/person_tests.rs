@@ -1,8 +1,8 @@
 use serde_json::json;
 
 use super::{
-    asks_to_stop, authorises, by_devpit, from_channel, last_said, on_proposals, said_in, From,
-    Verdict, FROM_THE_REMOTE,
+    asks_to_stop, authorises, by_devpit, from_channel, last_said, on_proposals, said_in,
+    without_notices, From, Verdict, FROM_THE_REMOTE,
 };
 
 /// A log, one entry per line, in the shapes Claude Code 2.1.294 writes.
@@ -463,4 +463,21 @@ fn a_turn_sent_to_another_cli_is_read_as_the_persons_words() {
         Some(From::Channel("telegram"))
     );
     assert!(said_in("t3", &by_devpit("a message from session api.")).is_none());
+}
+
+/// devpit's notice above the person's words, in every language devpit
+/// speaks, is cut before they are read: a translated marker would leave it
+/// in front of the yes, and the yes would stop counting.
+#[test]
+fn devpits_notice_in_any_language_is_cut_before_the_persons_words() {
+    use devpit_core::locale::Locale;
+    for locale in [Locale::En, Locale::PtBr] {
+        let notice = devpit_core::i18n::t_for(locale, "sinceNotice.line", &[("said", "api ended")]);
+        let text = format!("{notice}\n\nsim, pode enviar");
+        assert_eq!(
+            without_notices(&text).map(|(said, _)| said),
+            Some("sim, pode enviar"),
+            "{locale:?}: {notice}"
+        );
+    }
 }

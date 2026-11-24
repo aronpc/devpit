@@ -40,7 +40,7 @@
   "sinceNotice.waiting": "{name} está esperando uma resposta",
   "sinceNotice.finished": "{name} terminou o turno",
   "sinceNotice.ended": "{name} terminou",
-  "sinceNotice.line": "[devpit, não a pessoa] Desde a sua última mensagem: {said}.",
+  "sinceNotice.line": "[devpit, not the person] Desde a sua última mensagem: {said}.",
   "error.outsideProject": "{path} está fora do projeto",
   "error.unreadable": "não foi possível ler {path}: {reason}",
   "error.alreadyExists": "{path} já existe",

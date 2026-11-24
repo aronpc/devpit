@@ -57,7 +57,8 @@ fn what_finished_asks_or_ended_since_the_last_turn_is_said() {
     );
 }
 
-/// The line the orchestrator reads is in the person's language too.
+/// The line the orchestrator reads is in the person's language too, behind
+/// the marker devpit reads back, which stays as it is in every language.
 #[test]
 fn the_notice_is_said_in_portuguese_when_the_person_speaks_it() {
     let _turn = crate::locale_turn::settled(Locale::PtBr);
@@ -71,7 +72,7 @@ fn the_notice_is_said_in_portuguese_when_the_person_speaks_it() {
     let now = [session("api", "idle", 30.0, false)];
     assert_eq!(
         notice(PT, Some(&before), &now).as_deref(),
-        Some("[devpit, não a pessoa] Desde a sua última mensagem: api terminou o turno; old terminou.")
+        Some("[devpit, not the person] Desde a sua última mensagem: api terminou o turno; old terminou.")
     );
 }
 
