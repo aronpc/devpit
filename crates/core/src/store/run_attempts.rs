@@ -43,7 +43,8 @@ pub enum SwitchKind {
 ///
 /// A `retry` carries the last attempt's own instead, because a retry is the
 /// same account trying again — what a caller passed for a start was never
-/// meant for the retry the history turned it into.
+/// meant for the retry the history turned it into. A last attempt with no
+/// snapshot has nothing to carry, so its retry takes the caller's.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct AttemptCarry {
     pub pinned: Option<String>,
@@ -242,15 +243,23 @@ fn asked(
         // Paused, failed or lost: the same step trying again, carrying what
         // the last attempt carried. (`running` lands here too, and never
         // reaches the insert — the card's one-run index refuses it first.)
-        Some((id, _, attempt, pinned, requested_model)) => Transition {
-            card: card.to_owned(),
-            step: step.to_owned(),
-            cause: "retry",
-            attempt: attempt.unwrap_or(1) + 1,
-            previous: Some(id),
-            pinned,
-            requested_model,
-        },
+        Some((id, _, attempt, pinned, requested_model)) => {
+            // No snapshot to carry (a row an older devpit wrote, or one
+            // `start_run` began): the retry runs under what the caller chose.
+            let (pinned, requested_model) = match pinned {
+                Some(pinned) => (Some(pinned), requested_model),
+                None => (carry.pinned.clone(), carry.requested_model.clone()),
+            };
+            Transition {
+                card: card.to_owned(),
+                step: step.to_owned(),
+                cause: "retry",
+                attempt: attempt.unwrap_or(1) + 1,
+                previous: Some(id),
+                pinned,
+                requested_model,
+            }
+        }
     })
 }
 
