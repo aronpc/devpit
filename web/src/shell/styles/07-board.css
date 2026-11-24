@@ -103,7 +103,7 @@
 .tile__log { margin-top: 5px; font-family: var(--mono); font-size: 10.5px; color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* A lane that moves cards without being asked should look different from one
    that does not. Said on the lane, not hidden in its menu. */
-.lstep__auto { margin-left: 5px; padding: 0 5px; border-radius: 4px; background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--accent); font-size: 9.5px; letter-spacing: .04em; text-transform: uppercase; }
+.lstep__auto { margin-left: 5px; padding: 0 5px; border-radius: 4px; background: var(--accent-soft); color: var(--accent-ink); font-size: 9.5px; letter-spacing: .04em; text-transform: uppercase; }
 /* On the tile it appears under the pointer rather than sitting there: the
    board is read far more often than it is played, and a row of triangles
    reads as a list of things waiting to be started. */
@@ -140,7 +140,7 @@
 .tile__blocked { margin-top: 5px; font-size: 11px; color: var(--warning); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tile__closed { margin-top: 5px; font-size: 11px; color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tile__progress[data-done='true'] { color: var(--success); }
-.tile__plan { padding: 0 6px; border-radius: 4px; background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent); font-size: 10.5px; }
+.tile__plan { padding: 0 6px; border-radius: 4px; background: var(--accent-soft); color: var(--accent-ink); font-size: 10.5px; }
 
 /* Right after an archive, the one thing worth offering is taking it back. */
 .undo { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); z-index: 300; display: flex; align-items: center; gap: 14px; padding: 7px 8px 7px 14px; border-radius: 10px; background: var(--raised); border: 1px solid var(--border-strong); box-shadow: 0 12px 30px var(--shade); font-size: 12.5px; color: var(--text); animation: rise 180ms ease-out both; }

@@ -67,7 +67,7 @@
 .rail__dot { position: absolute; right: -2px; bottom: -2px; width: 11px; height: 11px; border-radius: 50%; background: var(--success); border: 2.5px solid var(--sidebar, var(--canvas)); transform: scale(0); transition: transform 150ms ease; }
 .rail__i[data-active='true'] .rail__dot { transform: scale(1); }
 /* What its project agent proposed: a count on the mark's top corner, never a banner. */
-.rail__memo { position: absolute; right: -5px; top: -5px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; background: var(--accent); color: #fff; font-size: 10px; font-weight: 650; line-height: 16px; text-align: center; border: 2px solid var(--sidebar, var(--canvas)); box-sizing: content-box; font-variant-numeric: tabular-nums; }
+.rail__memo { position: absolute; right: -5px; top: -5px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; background: var(--accent); color: var(--on-accent); font-size: 10px; font-weight: 650; line-height: 16px; text-align: center; border: 2px solid var(--sidebar, var(--canvas)); box-sizing: content-box; font-variant-numeric: tabular-nums; }
 .rail__m { flex: none; color: var(--accent); }
 
 .rail__i[data-unreadable='true'] .pmark { filter: grayscale(1); opacity: .5; }

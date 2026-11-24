@@ -21,10 +21,19 @@ const hex = (value: string): Rgb | null => {
 
 /** A token's colour in a theme: a hex, or a mix of two tokens in sRGB, as the more-contrast block writes them. */
 function colour(theme: Map<string, string>, name: string): Rgb {
+  if (name.includes('+')) {
+    const [ground, tint] = name.split('+')
+    const over = /^color-mix\(in srgb, var\((--[a-z0-9-]+)\) (\d+)%, transparent\)$/.exec(theme.get(`--${tint}`) ?? '')
+    if (!over) throw new Error(`--${tint} is not a tint this test reads`)
+    const [ink, base, share] = [colour(theme, over[1]), colour(theme, ground), Number(over[2]) / 100]
+    return ink.map((v, i) => v * share + base[i] * (1 - share)) as Rgb
+  }
   const value = theme.get(name)
   if (!value) throw new Error(`${name} has no value`)
   const solid = hex(value)
   if (solid) return solid
+  const alias = /^var\((--[a-z0-9-]+)\)$/.exec(value)
+  if (alias) return colour(theme, alias[1])
   const mix = /^color-mix\(in srgb, var\((--[a-z0-9-]+)\) (\d+)%, var\((--[a-z0-9-]+)\)\)$/.exec(value)
   if (!mix) throw new Error(`${name}: ${value} is not a colour this test reads`)
   const [a, b, share] = [colour(theme, mix[1]), colour(theme, mix[3]), Number(mix[2]) / 100]
@@ -45,11 +54,15 @@ function contrast(a: Rgb, b: Rgb): number {
 const dark = block(':root {')
 const light = new Map([...dark, ...block(":root[data-theme='light']")])
 const more = block(":root[data-contrast='more']")
+const safe = block(":root[data-diff-colours='safe']")
+const safeLight = block(":root[data-theme='light'][data-diff-colours='safe']")
 const THEMES = {
   dark,
   light,
   'dark, more contrast': new Map([...dark, ...more]),
   'light, more contrast': new Map([...light, ...more]),
+  'dark, safe diffs': new Map([...dark, ...safe]),
+  'light, safe diffs': new Map([...light, ...safe, ...safeLight]),
 }
 
 const SURFACES = ['--canvas', '--sidebar', '--raised', '--raised-2', '--composer', '--inset']
@@ -66,33 +79,15 @@ const PAIRS: [string, string[], number][] = [
   ['--danger', ['--canvas', '--sidebar', '--raised', '--inset'], 4.5],
   ['--on-accent', ['--accent'], 4.5],
   ['--on-danger', ['--danger'], 4.5],
+  ['--text', ['--terminal'], 4.5],
+  ['--text-3', ['--terminal'], 4.5],
+  ['--accent-ink', ['--canvas+accent-soft', '--raised+accent-soft', '--sidebar+accent-soft'], 4.5],
+  ['--diff-add', ['--canvas', '--raised', '--inset'], 3],
+  ['--diff-del', ['--canvas', '--raised', '--inset'], 3],
 ]
 
 /* Pairs below their bar today, each named so it can only be fixed, never joined. */
-const KNOWN_BELOW = new Set<string>([
-  'light: --accent on --canvas',
-  'light: --accent on --sidebar',
-  'light: --accent on --inset',
-  'light: --warning on --canvas',
-  'light: --warning on --sidebar',
-  'light: --warning on --inset',
-  'light: --success on --canvas',
-  'light: --success on --sidebar',
-  'light: --success on --inset',
-  'light: --danger on --inset',
-  'light: --on-accent on --accent',
-  'light, more contrast: --accent on --canvas',
-  'light, more contrast: --accent on --sidebar',
-  'light, more contrast: --accent on --inset',
-  'light, more contrast: --warning on --canvas',
-  'light, more contrast: --warning on --sidebar',
-  'light, more contrast: --warning on --inset',
-  'light, more contrast: --success on --canvas',
-  'light, more contrast: --success on --sidebar',
-  'light, more contrast: --success on --inset',
-  'light, more contrast: --danger on --inset',
-  'light, more contrast: --on-accent on --accent',
-])
+const KNOWN_BELOW = new Set<string>([])
 
 function below(): string[] {
   return Object.entries(THEMES).flatMap(([theme, values]) =>

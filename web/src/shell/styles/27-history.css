@@ -16,7 +16,7 @@
 .hist__scope::before { content: '·'; margin-right: 3px; }
 .hist__kind[data-kind='feat'] { color: var(--success); background: color-mix(in srgb, var(--success) 14%, transparent); }
 .hist__kind[data-kind='fix'] { color: var(--warning); background: color-mix(in srgb, var(--warning) 14%, transparent); }
-.hist__kind[data-kind='perf'] { color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent); }
+.hist__kind[data-kind='perf'] { color: var(--accent-ink); background: var(--accent-soft); }
 .hist__kind[data-kind='breaking'] { color: var(--danger); background: color-mix(in srgb, var(--danger) 14%, transparent); }
 .hist__meta { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 11px; color: var(--text-3); }
 .hist__who { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

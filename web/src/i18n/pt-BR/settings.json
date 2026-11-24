@@ -65,7 +65,7 @@
   "settings.storage.directorySaid": "Cada projeto ganha um, guardando seu quadro, skills, capacidades, transcrições e worktrees. Nada disso fica no repositório.",
   "settings.storage.path": "~/.devpit/projects/<name>-<suffix>",
   "settings.storage.note": "As transcrições são sempre gravadas: uma sessão que um reinício perde é uma sessão que nunca foi sua para voltar. Nada é enviado, e remover um projeto deixa sua pasta onde está.",
-  "settings.appearance.terminalNote": "O terminal mantém seu fundo escuro em todo tema. Um shell pinta suas próprias cores ANSI para um fundo escuro; num claro elas deixam de ser legíveis.",
+  "settings.appearance.terminalNote": "O terminal segue o tema. Cores que um programa pinta para um fundo escuro são realçadas num claro, até onde o Contraste do terminal manda.",
 
   "about.version": "Versão",
   "about.reading": "Lendo…",

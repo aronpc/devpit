@@ -10,7 +10,7 @@
 @keyframes sheet-in { from { opacity: 0; transform: translateY(10px) scale(0.985); } to { opacity: 1; transform: none; } }
 
 .sheet__top { flex: none; display: flex; align-items: center; gap: 8px; padding: 12px 10px 12px 16px; }
-.sheet__lane { font-size: 11px; color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); padding: 2px 7px; border-radius: 5px; }
+.sheet__lane { font-size: 11px; color: var(--accent-ink); background: var(--accent-soft); padding: 2px 7px; border-radius: 5px; }
 .sheet__spacer { flex: 1; }
 .sheet__body { flex: 1; min-height: 0; overflow-y: auto; padding: 0 16px 4px; scrollbar-width: thin; scrollbar-color: var(--scroll-thumb) transparent; }
 .sheet__title { font-size: 17px; line-height: 1.35; color: var(--text); margin: 0 0 10px; }
@@ -83,8 +83,8 @@
 .btn--quiet[data-danger]:hover { color: var(--danger); background: color-mix(in srgb, var(--danger) 12%, transparent); }
 .btn--quiet:disabled:hover { background: transparent; border-color: transparent; }
 
-.btn--danger { color: #fff; background: var(--danger); border-color: color-mix(in srgb, var(--danger) 80%, #000); }
-.btn--danger:hover { color: #fff; background: color-mix(in srgb, var(--danger) 85%, #000); border-color: color-mix(in srgb, var(--danger) 70%, #000); }
+.btn--danger { color: var(--on-danger); background: var(--danger); border-color: color-mix(in srgb, var(--danger) 80%, var(--text)); }
+.btn--danger:hover { color: var(--on-danger); background: color-mix(in srgb, var(--danger) 88%, var(--text)); border-color: color-mix(in srgb, var(--danger) 70%, var(--text)); }
 
 @media (prefers-reduced-motion: reduce) { .scrim, .sheet { animation: none; } .run[data-state='run']::before { animation: none; } }
 

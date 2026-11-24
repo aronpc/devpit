@@ -227,7 +227,7 @@ button.chead__t:hover { background: var(--overlay); }
 .pcorner__sess b { color: var(--warning); font-weight: 600; }
 .sterm__warn { font-size: var(--fs-sm); color: var(--text-2); white-space: nowrap; }
 .sterm__btn--bad { color: var(--danger); }
-.sterm__btn--bad:hover { color: #fff; background: var(--danger); }
+.sterm__btn--bad:hover { color: var(--on-danger); background: var(--danger); }
 
 /* A change to the orchestrator's projects it proposed, waiting on a click. */
 .proposals { display: flex; flex-direction: column; gap: 6px; margin: 0 0 8px; }

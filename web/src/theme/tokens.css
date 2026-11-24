@@ -6,8 +6,8 @@
  * machine is using. Every token exists in all three — a colour defined in only
  * one of them is the classic unreadable-window bug.
  *
- * The terminal is the deliberate exception and pins its own values in
- * shell.css: a shell paints ANSI colours for a dark ground.
+ * The terminal's ground is the one xterm paints in that theme, so the frame
+ * around it and the text drawn on it agree.
  */
 
 /* Geist, shipped rather than fetched: a desktop app that needs the network to
@@ -143,6 +143,8 @@
   --glass-solid: var(--raised);
   --glass-fx: saturate(1.5) blur(16px);
   --accent-soft: color-mix(in srgb, var(--accent) 14%, transparent);
+  /* Accent text on an accent tint: pulled toward the text, so it stays readable there. */
+  --accent-ink: color-mix(in srgb, var(--accent) 78%, var(--text));
   --accent-edge: color-mix(in srgb, var(--accent) 45%, transparent);
   --warning-soft: color-mix(in srgb, var(--warning) 14%, transparent);
   /* A diff paints with these; the colour-blind setting below replaces them. */
@@ -196,10 +198,8 @@
    forward from it. In dark that means darker and lighter; in light it means
    darker and whiter — same relationships, opposite arithmetic.
 
-   The terminal is the deliberate exception. A shell renders its own ANSI
-   palette, tuned for a dark ground; repainting it white would leave the
-   colours the program chose sitting on the wrong background. Editors keep
-   the terminal dark in light themes for exactly this reason, and so do we. */
+   The semantic colours are darker here than in dark, along their own hue, so
+   that each reads as small text (4.5:1) on every light surface. */
 :root[data-theme='light'] {
   --canvas: #f7f6f3;
   --sidebar: #efede9;
@@ -208,7 +208,7 @@
   --raised-2: #ffffff;
   --composer: #ffffff;
   --inset: #eae7e2;
-  --terminal: #282c34;
+  --terminal: #ffffff;
   --overlay: hsla(30, 12%, 20%, 0.05);
   --overlay-strong: hsla(30, 12%, 20%, 0.10);
 
@@ -222,17 +222,17 @@
   --text-3: #615b51;
   --ghost: #6b655b;
 
-  --accent: #c0522f;
+  --accent: #ac492a;
   --gauge: #2563eb;
   --code-text: #9c4a22;
   --code-wash: hsla(30, 12%, 20%, 0.07);
   --inverse: #24211d;
   --on-inverse: #f7f6f3;
 
-  --warning: #9a6a14;
-  --success: #2c8551;
+  --warning: #8a5f12;
+  --success: #277547;
   --orchestrate: #5a48c2;
-  --danger: #bb4038;
+  --danger: #b63e37;
   --on-danger: #ffffff;
   --e1: 0 0 0 1px var(--border), 0 1px 2px rgb(64 54 44 / 0.08);
   --e2: 0 0 0 1px var(--border), 0 2px 8px rgb(64 54 44 / 0.1), 0 1px 2px rgb(64 54 44 / 0.06);
@@ -267,7 +267,7 @@
     --raised-2: #ffffff;
     --composer: #ffffff;
     --inset: #eae7e2;
-    --terminal: #282c34;
+    --terminal: #ffffff;
     --overlay: hsla(30, 12%, 20%, 0.05);
     --overlay-strong: hsla(30, 12%, 20%, 0.10);
     --border: hsla(30, 12%, 20%, 0.12);
@@ -278,16 +278,16 @@
     --text-2: #56514a;
     --text-3: #615b51;
     --ghost: #6b655b;
-    --accent: #c0522f;
+    --accent: #ac492a;
     --gauge: #2563eb;
     --code-text: #9c4a22;
     --code-wash: hsla(30, 12%, 20%, 0.07);
     --inverse: #24211d;
     --on-inverse: #f7f6f3;
-    --warning: #9a6a14;
-    --success: #2c8551;
+    --warning: #8a5f12;
+    --success: #277547;
     --orchestrate: #5a48c2;
-    --danger: #bb4038;
+    --danger: #b63e37;
     --on-danger: #ffffff;
     --e1: 0 0 0 1px var(--border), 0 1px 2px rgb(64 54 44 / 0.08);
     --e2: 0 0 0 1px var(--border), 0 2px 8px rgb(64 54 44 / 0.1), 0 1px 2px rgb(64 54 44 / 0.06);
@@ -322,8 +322,21 @@
 }
 
 /* Diff colours a red-green colour blindness tells apart: blue for what was
-   added, orange for what was taken out. */
+   added, orange for what was taken out. Darker on a light ground, where a
+   gutter mark has to reach 3:1 too. */
 :root[data-diff-colours='safe'] {
   --diff-add: #3d8fd9;
   --diff-del: #e08a1e;
+}
+
+:root[data-theme='light'][data-diff-colours='safe'] {
+  --diff-add: #2c85d6;
+  --diff-del: #b97219;
+}
+
+@media (prefers-color-scheme: light) {
+  :root[data-theme='system'][data-diff-colours='safe'] {
+    --diff-add: #2c85d6;
+    --diff-del: #b97219;
+  }
 }

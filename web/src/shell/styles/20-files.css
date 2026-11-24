@@ -19,7 +19,7 @@
 .fb__places { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
 .fb__place { height: 22px; padding: 0 8px; border-radius: 999px; border: 1px solid var(--border); font-size: 11px; color: var(--text-3); }
 .fb__place:hover { color: var(--text-2); border-color: var(--border-strong); }
-.fb__place[aria-current='true'] { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 45%, transparent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.fb__place[aria-current='true'] { color: var(--accent-ink); border-color: var(--accent-edge); background: var(--accent-soft); }
 
 .fb__tools { display: flex; align-items: center; gap: 8px; }
 .fb__find { flex: 1; min-width: 0; height: 28px; border-radius: 8px; background: var(--inset); border: 1px solid var(--border); padding: 0 10px; font-size: 12.5px; color: var(--text-2); }

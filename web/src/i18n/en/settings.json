@@ -65,7 +65,7 @@
   "settings.storage.directorySaid": "Each project gets one, holding its board, skills, capabilities, transcripts and worktrees. None of it is in the repository.",
   "settings.storage.path": "~/.devpit/projects/<name>-<suffix>",
   "settings.storage.note": "Transcripts are always written: a session that a restart loses is a session that was never yours to come back to. Nothing is uploaded, and removing a project leaves its folder where it is.",
-  "settings.appearance.terminalNote": "The terminal keeps its dark ground in every theme. A shell paints its own ANSI colours for a dark background; on a white one they stop being readable.",
+  "settings.appearance.terminalNote": "The terminal follows the theme. Colours a program paints for a dark background are lifted on a light one, as far as Terminal contrast says.",
 
   "about.version": "Version",
   "about.reading": "Reading…",

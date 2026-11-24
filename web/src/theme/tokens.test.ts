@@ -3,6 +3,8 @@ import { resolve } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
+import { palette } from '../shell/terminal'
+
 /*
  * The stylesheet is read off disk rather than imported: `?raw` comes back
  * empty under vitest, and a test that asserts about an empty string passes
@@ -68,10 +70,9 @@ describe('the palette', () => {
     expect(dark.size).toBeGreaterThan(30)
   })
 
-  it('keeps the terminal dark in the light theme', () => {
-    /* A shell paints its own ANSI palette for a dark ground. Repainting the
-       terminal white leaves those colours on the wrong background. */
-    const light = css.slice(css.indexOf(":root[data-theme='light']"))
-    expect(light).toMatch(/--terminal:\s*#282c34/)
+  it("paints the terminal's frame in the ground xterm paints, in each theme", () => {
+    expect(valuesIn(':root {').get('--terminal')).toBe(palette(true).background)
+    expect(valuesIn(":root[data-theme='light']").get('--terminal')).toBe(palette(false).background)
+    expect(valuesIn(":root[data-theme='system']").get('--terminal')).toBe(palette(false).background)
   })
 })
