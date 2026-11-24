@@ -85,6 +85,7 @@ fn sources() -> crate::run_start::Sources {
         profiles,
         credentials,
         waiting: HashMap::new(),
+        inherited: crate::step_check::OtherSignIn::default(),
     }
 }
 

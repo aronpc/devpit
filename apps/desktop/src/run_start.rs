@@ -5,6 +5,8 @@ use devpit_core::store::{AttemptCarry, RunAsk, SwitchKind};
 use devpit_core::Store;
 use devpit_rpc::{Credentials, Profile, RpcError, Step};
 
+use crate::step_check::OtherSignIn;
+
 pub(crate) struct FixedAgent {
     pub(crate) profile: String,
     pub(crate) runner: Runner,
@@ -29,6 +31,8 @@ pub(crate) struct Sources {
     pub(crate) profiles: Vec<Profile>,
     pub(crate) credentials: Vec<devpit_rpc::ProfileSignIn>,
     pub(crate) waiting: std::collections::HashMap<String, String>,
+    /// What devpit's own environment, which the CLI inherits, signs in with.
+    pub(crate) inherited: OtherSignIn,
 }
 
 impl Sources {
@@ -45,12 +49,18 @@ impl Sources {
                     .map(|reason| (profile.id.clone(), reason))
             })
             .collect();
+        let vars: Vec<(String, String)> = std::env::vars().collect();
+        let inherited = OtherSignIn::of(
+            vars.iter()
+                .map(|(name, value)| (name.as_str(), value.as_str())),
+        );
         Ok(Self {
             home: home.display().to_string(),
             declared,
             profiles,
             credentials,
             waiting,
+            inherited,
         })
     }
 
@@ -103,9 +113,16 @@ impl Sources {
                     .iter()
                     .find(|credentials| credentials.id == pinned.id)
             })
-            .map_or(Credentials::Missing, |credentials| credentials.signed_in);
+            // A CLI whose sign-in devpit cannot read is not known to be out.
+            .map_or(Credentials::Unknown, |credentials| credentials.signed_in);
         let quota = profile.and_then(|profile| quota_for(profile, &self.home));
-        match crate::step_check::check(pinned, profile, credentials, quota.as_ref()) {
+        let other = match (&pinned, profile) {
+            (Some(pinned), Some(profile)) if pinned.agent == "claude" => {
+                settings_sign_in(profile, &self.home).or(self.inherited)
+            }
+            _ => self.inherited,
+        };
+        match crate::step_check::check(pinned, profile, credentials, quota.as_ref(), other) {
             crate::step_check::StepCheck::Blocked(reason) => Err(reason),
             crate::step_check::StepCheck::Ready(pinned) => {
                 let profile = profile.expect("a ready check has a profile");
@@ -152,22 +169,42 @@ pub(crate) fn switch_agent(
     })
 }
 
-fn quota_for(profile: &Profile, home: &str) -> Option<devpit_rpc::AccountQuota> {
-    if profile.base != crate::claude_accounts::DRIVER {
-        return None;
-    }
+/// The Claude folder `profile` runs against.
+fn config_dir(profile: &Profile, home: &str) -> std::path::PathBuf {
     let env: Vec<(String, String)> = profile
         .env
         .iter()
         .map(|one| (one.name.clone(), one.value.clone()))
         .collect();
     let inherited = std::env::var("CLAUDE_CONFIG_DIR").ok();
-    let dir = devpit_agentcli::cli_config::config_dir_of(
+    devpit_agentcli::cli_config::config_dir_of(
         std::path::Path::new(home),
         &env,
         inherited.as_deref(),
-    );
-    crate::account_quota::remembered(&dir.display().to_string())
+    )
+}
+
+/// The most of a `settings.json` read.
+const SETTINGS_CEILING: u64 = 1024 * 1024;
+
+/// What the Claude settings in `profile`'s folder sign in with.
+fn settings_sign_in(profile: &Profile, home: &str) -> OtherSignIn {
+    let Ok(file) = std::fs::File::open(config_dir(profile, home).join("settings.json")) else {
+        return OtherSignIn::default();
+    };
+    let mut text = String::new();
+    match std::io::Read::read_to_string(&mut std::io::Read::take(file, SETTINGS_CEILING), &mut text)
+    {
+        Ok(_) => OtherSignIn::in_settings(&text),
+        Err(_) => OtherSignIn::default(),
+    }
+}
+
+fn quota_for(profile: &Profile, home: &str) -> Option<devpit_rpc::AccountQuota> {
+    if profile.base != crate::claude_accounts::DRIVER {
+        return None;
+    }
+    crate::account_quota::remembered(&config_dir(profile, home).display().to_string())
 }
 
 pub(crate) fn prepare(
