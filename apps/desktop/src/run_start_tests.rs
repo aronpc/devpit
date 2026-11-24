@@ -376,6 +376,48 @@ fn run_start_retries_with_the_previous_attempts_snapshot_and_model() {
     assert_eq!(fixed.model.as_deref(), Some("sonnet"));
 }
 
+/// The "Claude Code" devpit finds on its own is never saved as a profile,
+/// and a step could always name it: the step runs under it, as before.
+#[test]
+fn a_step_on_the_claude_code_devpit_found_runs_as_it_did_before() {
+    let (_dir, store, card, step) = seeded();
+    let mut available = sources(&[]);
+    available.profiles.push(Profile {
+        id: "claude".to_owned(),
+        label: "Claude Code".to_owned(),
+        command: "claude".to_owned(),
+        driver: "claude".to_owned(),
+        path: Some("/usr/bin/claude".to_owned()),
+        reach: Reach::Runnable,
+        base: String::new(),
+        args: Vec::new(),
+        env: Vec::new(),
+        mine: false,
+        models: Vec::new(),
+        offered: Vec::new(),
+        own_models: Vec::new(),
+        efforts: Vec::new(),
+        effort_default: None,
+        metered: true,
+        enabled: true,
+    });
+    assert_eq!(available.preview("claude", None).check, "Ready");
+
+    let begun =
+        begin_profiled(&store, &card, &step, None, "claude", None, &available).expect("begin");
+    assert!(
+        !begun.paused,
+        "the step paused under the Claude Code it named"
+    );
+    let pinned = store
+        .attempt_of(&begun.run_id)
+        .expect("read")
+        .expect("there")
+        .pinned
+        .expect("a snapshot");
+    assert!(pinned.contains(r#""agent":"claude""#), "{pinned}");
+}
+
 /// A profile whose gateway and token live in its Claude folder's
 /// `settings.json`, as z.ai documents, has no `.credentials.json` to read:
 /// it is not paused for one.

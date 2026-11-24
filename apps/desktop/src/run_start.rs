@@ -65,11 +65,20 @@ impl Sources {
     }
 
     pub(crate) fn current(&self, profile_id: &str, model: Option<&str>) -> AttemptCarry {
+        // A saved profile, else one devpit found on its own, such as the
+        // plain "Claude Code" every step could name before.
         let pinned = self
             .declared
             .iter()
             .find(|profile| profile.id == profile_id)
-            .map(|profile| crate::run_pin::pin(profile, model, &self.home));
+            .cloned()
+            .or_else(|| {
+                self.profiles
+                    .iter()
+                    .find(|profile| profile.id == profile_id)
+                    .map(declared_of)
+            })
+            .map(|profile| crate::run_pin::pin(&profile, model, &self.home));
         AttemptCarry {
             requested_model: pinned
                 .as_ref()
@@ -167,6 +176,19 @@ pub(crate) fn switch_agent(
         fixed: Some(fixed),
         paused: false,
     })
+}
+
+/// A found profile as a saved one would read, for its snapshot.
+fn declared_of(profile: &Profile) -> devpit_rpc::Declared {
+    devpit_rpc::Declared {
+        id: profile.id.clone(),
+        label: profile.label.clone(),
+        base: crate::restoring::base_or(Some(&profile.base), &profile.driver).to_owned(),
+        command: profile.command.clone(),
+        args: profile.args.clone(),
+        env: profile.env.clone(),
+        models: profile.models.clone(),
+    }
 }
 
 /// The Claude folder `profile` runs against.
