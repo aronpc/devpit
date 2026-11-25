@@ -107,6 +107,13 @@ describe('a question to the person, on the Remote', () => {
     expect(send).toHaveBeenCalledWith({ t: 'answer', id: 'ask_1', allow: false })
   })
 
+  it('shows a device that may only watch what is asked, as before', () => {
+    const send = vi.fn<(message: RemoteIn) => void>()
+    render(<RemoteWaiting questions={[question('q5', 'AskUserQuestion', [asked('Which colour?', ['Red'])])]} drafts={[]} stops={[]} health={null} answering={false} typing={false} send={send} />)
+    expect(screen.getByText('AskUserQuestion')).toBeTruthy()
+    expect(screen.queryByRole('button')).toBeNull()
+  })
+
   it('still allows a tool', () => {
     const send = asking([question('q4', 'Bash', null)])
     fireEvent.click(screen.getByRole('button', { name: 'Allow' }))
