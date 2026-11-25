@@ -80,7 +80,7 @@ export function RemoteWaiting({
       {questions.map((question) => (
         <div className="rm__ask" key={question.id}>
           <span className="rm__dim">{t('remote.waiting.asksTo', { who: question.project ?? (question.from === 'chat' ? t('remote.waiting.aChat') : t('remote.waiting.aTerminal')) })}</span>
-          {!asksOf(question) && <code className="rm__what">{what(question)}</code>}
+          {!(answering && asksOf(question)) && <code className="rm__what">{what(question)}</code>}
           {answering ? (
             asksOf(question) ? (
               <RemoteChoices
