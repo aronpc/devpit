@@ -143,11 +143,11 @@
   --glass-fx: saturate(1.5) blur(16px);
   --accent-soft: color-mix(in srgb, var(--accent) 14%, transparent);
   /* Accent text on an accent tint: pulled toward the text, so it stays readable there. */
-  --accent-ink: color-mix(in srgb, var(--accent) 78%, var(--text));
+  --accent-ink: color-mix(in srgb, var(--accent) 70%, var(--text));
   --accent-edge: color-mix(in srgb, var(--accent) 45%, transparent);
   --warning-soft: color-mix(in srgb, var(--warning) 14%, transparent);
   /* Amber text on an amber tint: a state chip that waits on someone. */
-  --warning-ink: color-mix(in srgb, var(--warning) 78%, var(--text));
+  --warning-ink: color-mix(in srgb, var(--warning) 70%, var(--text));
   /* The accent's own light: the brand mark, and the button that starts work. */
   --glow: 0 12px 32px color-mix(in srgb, var(--accent) 24%, transparent);
   --glow-sm: 0 2px 8px color-mix(in srgb, var(--accent) 28%, transparent);

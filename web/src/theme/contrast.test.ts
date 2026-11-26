@@ -19,14 +19,34 @@ const hex = (value: string): Rgb | null => {
   return m ? [0, 2, 4].map((at) => parseInt(m[1].slice(at, at + 2), 16)) as Rgb : null
 }
 
-/** A token's colour in a theme: a hex, or a mix of two tokens in sRGB, as the more-contrast block writes them. */
+/** An `hsl[a](h, s%, l%[, a])` as sRGB and its alpha. */
+function hsla(value: string): [Rgb, number] | null {
+  const m = /^hsla?\(\s*([\d.]+)\s*,\s*([\d.]+)%\s*,\s*([\d.]+)%\s*(?:,\s*([\d.]+)\s*)?\)$/.exec(value)
+  if (!m) return null
+  const [h, s, l] = [Number(m[1]), Number(m[2]) / 100, Number(m[3]) / 100]
+  const k = (n: number): number => (n + h / 30) % 12
+  const a = s * Math.min(l, 1 - l)
+  const f = (n: number): number => 255 * (l - a * Math.max(-1, Math.min(k(n) - 3, 9 - k(n), 1)))
+  return [[f(0), f(8), f(4)], m[4] === undefined ? 1 : Number(m[4])]
+}
+
+/**
+ * A token's colour in a theme: a hex, an alias, or a mix of two tokens in sRGB,
+ * as the more-contrast block writes them. `ground+layer+layer` paints each
+ * layer over the one before: a tint (`color-mix(… N%, transparent)`) or a
+ * translucent `hsla`, the way a hover, a selected row or a chip sits on a surface.
+ */
 function colour(theme: Map<string, string>, name: string): Rgb {
   if (name.includes('+')) {
-    const [ground, tint] = name.split('+')
-    const over = /^color-mix\(in srgb, var\((--[a-z0-9-]+)\) (\d+)%, transparent\)$/.exec(theme.get(`--${tint}`) ?? '')
-    if (!over) throw new Error(`--${tint} is not a tint this test reads`)
-    const [ink, base, share] = [colour(theme, over[1]), colour(theme, ground), Number(over[2]) / 100]
-    return ink.map((v, i) => v * share + base[i] * (1 - share)) as Rgb
+    const [ground, ...layers] = name.split('+')
+    return layers.reduce((base, layer) => {
+      const value = theme.get(`--${layer}`) ?? ''
+      const over = /^color-mix\(in srgb, var\((--[a-z0-9-]+)\) (\d+)%, transparent\)$/.exec(value)
+      const glass = hsla(value)
+      if (!over && !glass) throw new Error(`--${layer} is not a layer this test reads`)
+      const [ink, share] = over ? [colour(theme, over[1]), Number(over[2]) / 100] : glass!
+      return ink.map((v, i) => v * share + base[i] * (1 - share)) as Rgb
+    }, colour(theme, ground))
   }
   const value = theme.get(name)
   if (!value) throw new Error(`${name} has no value`)
@@ -72,8 +92,10 @@ const PAIRS: [string, string[], number][] = [
   ['--text-2', SURFACES, 4.5],
   ['--text-3', SURFACES, 4.5],
   ['--ghost', SURFACES, 3],
-  /* The sidebar writes counts and a session's facts in --ghost: there it is text. */
+  /* The sidebar's counts are --ghost on its ground; a session row's quiet line
+     is --text-3, at rest, under the pointer and on the row you are on. */
   ['--ghost', ['--sidebar'], 4.5],
+  ['--text-3', ['--sidebar+sidebar-item', '--sidebar+overlay-strong'], 4.5],
   ['--border-ctl', SURFACES, 3],
   ['--accent', ['--canvas', '--sidebar', '--raised', '--inset'], 4.5],
   ['--warning', ['--canvas', '--sidebar', '--raised', '--inset'], 4.5],
@@ -83,9 +105,9 @@ const PAIRS: [string, string[], number][] = [
   ['--on-danger', ['--danger'], 4.5],
   ['--text', ['--terminal'], 4.5],
   ['--text-3', ['--terminal'], 4.5],
-  ['--accent-ink', ['--canvas+accent-soft', '--raised+accent-soft', '--sidebar+accent-soft'], 4.5],
+  ['--accent-ink', ['--canvas+accent-soft', '--raised+accent-soft', '--sidebar+accent-soft', '--sidebar+overlay-strong+accent-soft'], 4.5],
   /* A session's state chip, waiting on someone, in the sidebar. */
-  ['--warning-ink', ['--sidebar+warning-soft', '--canvas+warning-soft'], 4.5],
+  ['--warning-ink', ['--sidebar+warning-soft', '--canvas+warning-soft', '--sidebar+overlay-strong+warning-soft'], 4.5],
   ['--diff-add', ['--canvas', '--raised', '--inset'], 3],
   ['--diff-del', ['--canvas', '--raised', '--inset'], 3],
 ]
@@ -106,6 +128,8 @@ function below(): string[] {
 describe('contrast', () => {
   it('measures the way WCAG does', () => {
     expect(contrast([0, 0, 0], [255, 255, 255])).toBeCloseTo(21, 5)
+    expect(hsla('hsla(0, 0%, 100%, 0.5)')).toEqual([[255, 255, 255], 0.5])
+    expect(hsla('hsl(120, 100%, 25%)')![0].map(Math.round)).toEqual([0, 128, 0])
     expect(contrast([118, 118, 118], [255, 255, 255])).toBeCloseTo(4.54, 2)
   })
 
