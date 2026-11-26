@@ -43,7 +43,7 @@
    ──────────────────────────────────────────────────────────────────── */
 :root {
   --canvas: #1a1a1a;
-  --sidebar: #181818;
+  --sidebar: #121212;
   --sidebar-item: hsla(0, 0%, 94.1%, 0.06);
   --raised: #232323;
   /* A surface on a raised one: a section in a sheet, the open card of a turn. */
@@ -146,6 +146,8 @@
   --accent-ink: color-mix(in srgb, var(--accent) 78%, var(--text));
   --accent-edge: color-mix(in srgb, var(--accent) 45%, transparent);
   --warning-soft: color-mix(in srgb, var(--warning) 14%, transparent);
+  /* Amber text on an amber tint: a state chip that waits on someone. */
+  --warning-ink: color-mix(in srgb, var(--warning) 78%, var(--text));
   /* The accent's own light: the brand mark, and the button that starts work. */
   --glow: 0 12px 32px color-mix(in srgb, var(--accent) 24%, transparent);
   --glow-sm: 0 2px 8px color-mix(in srgb, var(--accent) 28%, transparent);

@@ -72,6 +72,8 @@ const PAIRS: [string, string[], number][] = [
   ['--text-2', SURFACES, 4.5],
   ['--text-3', SURFACES, 4.5],
   ['--ghost', SURFACES, 3],
+  /* The sidebar writes counts and a session's facts in --ghost: there it is text. */
+  ['--ghost', ['--sidebar'], 4.5],
   ['--border-ctl', SURFACES, 3],
   ['--accent', ['--canvas', '--sidebar', '--raised', '--inset'], 4.5],
   ['--warning', ['--canvas', '--sidebar', '--raised', '--inset'], 4.5],
@@ -82,6 +84,8 @@ const PAIRS: [string, string[], number][] = [
   ['--text', ['--terminal'], 4.5],
   ['--text-3', ['--terminal'], 4.5],
   ['--accent-ink', ['--canvas+accent-soft', '--raised+accent-soft', '--sidebar+accent-soft'], 4.5],
+  /* A session's state chip, waiting on someone, in the sidebar. */
+  ['--warning-ink', ['--sidebar+warning-soft', '--canvas+warning-soft'], 4.5],
   ['--diff-add', ['--canvas', '--raised', '--inset'], 3],
   ['--diff-del', ['--canvas', '--raised', '--inset'], 3],
 ]
@@ -112,5 +116,9 @@ describe('contrast', () => {
   it('lists no pair that has since been fixed', () => {
     const now = new Set(below())
     expect([...KNOWN_BELOW].filter((pair) => !now.has(pair))).toEqual([])
+  })
+
+  it('parts the sidebar from the canvas in the dark theme', () => {
+    expect(contrast(colour(dark, '--sidebar'), colour(dark, '--canvas'))).toBeGreaterThanOrEqual(1.07)
   })
 })

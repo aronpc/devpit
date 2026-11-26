@@ -69,10 +69,10 @@ function raw(css: string, kind: Kind): string[] {
  * a part that loses some lowers its number here, and a new value fails.
  */
 const BUDGET: Record<string, Partial<Record<Kind, number>>> = {
-  '01-frame.css': { size: 23, radius: 13, height: 10 },
+  '01-frame.css': { size: 14, radius: 3, height: 3 },
   '02-sheet.css': { size: 13, radius: 1 },
-  '03-sidebar.css': { size: 73, radius: 33, height: 21 },
-  '04-tabs.css': { size: 8, radius: 6, height: 5 },
+  '03-sidebar.css': { size: 57, radius: 25, height: 15 },
+  '04-tabs.css': { size: 4, radius: 2, height: 4 },
   '05-motion.css': { radius: 1 },
   '06-settings.css': { size: 93, radius: 31, height: 17 },
   '07-board.css': { size: 29, radius: 17, height: 9 },
@@ -94,7 +94,7 @@ const BUDGET: Record<string, Partial<Record<Kind, number>>> = {
   '23-update.css': { size: 7, radius: 5, height: 2 },
   '24-browser.css': { size: 11, radius: 7, height: 1 },
   '25-git.css': { size: 15, radius: 5, height: 6 },
-  '26-rail.css': { size: 25, radius: 15, height: 15 },
+  '26-rail.css': { size: 17, radius: 9, height: 12 },
   '27-history.css': { size: 9, radius: 4, height: 2 },
   '28-blocks.css': { size: 18, radius: 9, height: 8 },
   '29-fields.css': { radius: 1 },

@@ -30,7 +30,7 @@ describe('the version in the status strip', () => {
   it('says which devpit this is, from the app', async () => {
     render(<Version />)
     await waitFor(() => screen.getByRole('button', { name: /v0\.1\.30/ }))
-    expect(document.querySelector('.strip__dot')).toBeNull()
+    expect(document.querySelector('.strip__up')).toBeNull()
   })
 
   it('says when it is a build being worked on', async () => {
@@ -54,7 +54,7 @@ describe('the version in the status strip', () => {
     standing.mockResolvedValueOnce({ type: 'available', version: '0.1.31', notes: '', kind: 'appImage', testFeed: false })
     render(<Version />)
     const button = await waitFor(() => screen.getByTitle(/0\.1\.31 is waiting/))
-    expect(document.querySelector('.strip__dot')).not.toBeNull()
+    expect(document.querySelector('.strip__up')).not.toBeNull()
     fireEvent.click(button)
     expect(shown).toHaveBeenCalledTimes(1)
     window.removeEventListener(SHOW_THE_UPDATE, shown)
@@ -64,6 +64,6 @@ describe('the version in the status strip', () => {
     render(<Version />)
     await waitFor(() => screen.getByRole('button', { name: /v0\.1\.30/ }))
     act(() => heard['update:status']!({ type: 'available', version: '9.9.9', notes: '', kind: 'appImage', testFeed: true }))
-    expect(document.querySelector('.strip__dot')).toBeNull()
+    expect(document.querySelector('.strip__up')).toBeNull()
   })
 })

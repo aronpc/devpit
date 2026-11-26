@@ -88,7 +88,7 @@ export function SessionRows(): React.JSX.Element {
         </span>
         {here || says ? (
           <span
-            className="card__run"
+            className="card__run stchip"
             data-agent={here ? here.agent !== null : true}
             data-doing={says}
             data-unread={unseen || undefined}

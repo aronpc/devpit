@@ -6,7 +6,7 @@
    somewhere else is not asking for names. */
 .app { --rail-w: 56px; }
 .rail { position: relative; z-index: 30; min-width: 0; height: 100%; }
-.rail__panel { position: absolute; inset: 0 auto 0 0; width: var(--rail-w); display: flex; flex-direction: column; padding: 10px 0 8px; background: var(--sidebar, var(--canvas)); border-right: 1px solid var(--border); overflow: hidden; transition: width var(--dur-3) var(--ease-out), box-shadow var(--dur-3) ease; }
+.rail__panel { position: absolute; inset: 0 auto 0 0; width: var(--rail-w); display: flex; flex-direction: column; padding: 10px 0 8px; background: var(--sidebar, var(--canvas)); border-right: 1px solid var(--border); overflow: hidden; transition: width var(--dur-4) var(--ease-panel), box-shadow var(--dur-4) ease; }
 :is(.rail:hover, .rail[data-held='true']) .rail__panel { width: 248px; box-shadow: var(--e3); transition-delay: var(--intent); }
 .rail__list { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; display: flex; flex-direction: column; gap: 4px; }
 /* The scrollbar shows when the rail is in use, and not while it is a strip
@@ -19,17 +19,17 @@
    headings never shrink: when the rail is full, it scrolls. */
 .rail__sect { flex: none; display: flex; flex-direction: column; gap: 4px; }
 .rail__sect + .rail__sect { margin-top: 4px; }
-.rail__group { position: relative; flex: none; display: flex; align-items: center; gap: 6px; height: 20px; margin: 0 6px; padding: 0 6px 0 8px; border-radius: 6px; text-align: left; font-size: 10.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--text-3); white-space: nowrap; overflow: hidden; }
+.rail__group { position: relative; flex: none; display: flex; align-items: center; gap: 6px; height: var(--ctl-xs); margin: 0 6px; padding: 0 6px 0 8px; border-radius: var(--ctl-r-xs); text-align: left; font-size: var(--fs-2xs); font-weight: var(--fw-3); letter-spacing: var(--track-caps); text-transform: uppercase; color: var(--text-3); white-space: nowrap; overflow: hidden; }
 .rail__group::before { content: ''; position: absolute; left: 12px; right: 12px; top: 50%; height: 1px; background: var(--border-strong); transition: opacity var(--dur-1) ease; }
 :is(.rail:hover, .rail[data-held='true']) .rail__group::before { opacity: 0; transition-delay: var(--intent); }
-:is(.rail:hover, .rail[data-held='true']) .rail__group:hover { background: var(--sidebar-item); color: var(--text-2); }
+:is(.rail:hover, .rail[data-held='true']) .rail__group:hover { background: var(--overlay); color: var(--text-2); }
 .rail__group > span { opacity: 0; transition: opacity var(--dur-1) ease; }
 :is(.rail:hover, .rail[data-held='true']) .rail__group > span { opacity: 1; transition-delay: var(--intent-late); }
 .rail__gname { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; }
-.rail__ghid { flex: none; font: 10.5px var(--mono); color: var(--ghost); }
+.rail__ghid { flex: none; font: var(--fs-2xs) var(--mono); color: var(--ghost); }
 .rail__gchev { flex: none; display: flex; color: var(--ghost); transition: transform var(--dur-2) ease; }
 .rail__gchev[data-open='false'] { transform: rotate(-90deg); }
-.rail__rename { width: 100%; height: 20px; padding: 0 6px; border-radius: 5px; border: 1px solid var(--border-strong); background: var(--composer); color: var(--text); font: inherit; font-size: 11.5px; font-weight: 600; letter-spacing: 0; text-transform: none; outline: none; }
+.rail__rename { width: 100%; height: var(--ctl-xs); padding: 0 6px; border-radius: var(--ctl-r-xs); border: 1px solid var(--border-strong); background: var(--composer); color: var(--text); font: inherit; font-size: var(--fs-xs); font-weight: 600; letter-spacing: 0; text-transform: none; outline: none; }
 .rail__group:has(.rail__rename)::before { opacity: 0; }
 
 /* Where a drop lands: a line on the side of the row it would go, or — a
@@ -44,21 +44,21 @@
 .rail { user-select: none; -webkit-user-select: none; }
 
 /* A card: mark, then name over branch and tabs. */
-.rail__i { position: relative; flex: none; display: flex; align-items: center; gap: 10px; height: 44px; margin: 0 6px; padding: 0 4px; border-radius: 10px; text-align: left; color: var(--text-2); transition: background-color var(--dur-1) ease; }
-:is(.rail:hover, .rail[data-held='true']) .rail__i:hover { background: var(--sidebar-item); }
+.rail__i { position: relative; flex: none; display: flex; align-items: center; gap: 10px; height: 44px; margin: 0 6px; padding: 0 4px; border-radius: var(--ctl-r-m); text-align: left; color: var(--text-2); transition: background-color var(--dur-1) ease; }
+:is(.rail:hover, .rail[data-held='true']) .rail__i:hover { background: var(--overlay); }
 :is(.rail:hover, .rail[data-held='true']) .rail__i[aria-current='true'] { background: var(--overlay-strong); }
 .rail__ico { position: relative; flex: none; display: flex; }
 .rail__text { min-width: 0; display: flex; flex-direction: column; gap: 1px; opacity: 0; transition: opacity var(--dur-1) ease; }
 :is(.rail:hover, .rail[data-held='true']) .rail__text { opacity: 1; transition-delay: var(--intent-late); }
-.rail__n { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; color: var(--text); }
+.rail__n { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-md); color: var(--text); }
 .rail__i[aria-current='true'] .rail__n { font-weight: 600; }
-.rail__s { display: flex; gap: 6px; min-width: 0; font-size: 11px; color: var(--text-3); white-space: nowrap; }
-.rail__b { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-family: var(--mono); font-size: 10.5px; }
+.rail__s { display: flex; gap: 6px; min-width: 0; font-size: var(--fs-2xs); color: var(--text-3); white-space: nowrap; }
+.rail__b { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-family: var(--mono); font-size: var(--fs-2xs); }
 .rail__t { flex: none; color: var(--success); }
 
 /* Discord's mark for "you are here": a pill on the edge, tall for the one in
    front, a stub under the pointer. */
-.rail__pill { position: absolute; left: -6px; top: 50%; width: 4px; height: 0; border-radius: 0 4px 4px 0; background: var(--text); transform: translateY(-50%); transition: height var(--dur-2) ease; }
+.rail__pill { position: absolute; left: -6px; top: 50%; width: 4px; height: 0; border-radius: 0 var(--radius-xs) var(--radius-xs) 0; background: var(--text); transform: translateY(-50%); transition: height var(--dur-2) ease; }
 .rail__i:hover .rail__pill { height: 16px; }
 .rail__i[aria-current='true'] .rail__pill { height: 30px; }
 
@@ -67,7 +67,7 @@
 .rail__dot { position: absolute; right: -2px; bottom: -2px; width: 11px; height: 11px; border-radius: 50%; background: var(--success); border: 2.5px solid var(--sidebar, var(--canvas)); transform: scale(0); transition: transform var(--dur-2) ease; }
 .rail__i[data-active='true'] .rail__dot { transform: scale(1); }
 /* What its project agent proposed: a count on the mark's top corner, never a banner. */
-.rail__memo { position: absolute; right: -5px; top: -5px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; background: var(--accent); color: var(--on-accent); font-size: 10px; font-weight: 650; line-height: 16px; text-align: center; border: 2px solid var(--sidebar, var(--canvas)); box-sizing: content-box; font-variant-numeric: tabular-nums; }
+.rail__memo { position: absolute; right: -5px; top: -5px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: var(--radius-pill); background: var(--accent); color: var(--on-accent); font-size: var(--fs-2xs); font-weight: 650; line-height: 16px; text-align: center; border: 2px solid var(--sidebar, var(--canvas)); box-sizing: content-box; font-variant-numeric: tabular-nums; }
 .rail__m { flex: none; color: var(--accent); }
 
 .rail__i[data-unreadable='true'] .pmark { filter: grayscale(1); opacity: .5; }
@@ -75,7 +75,7 @@
 .rail__add { margin-top: 6px; }
 
 /* A project's mark: its icon or initials, in its colour. */
-.pmark { flex: none; display: flex; align-items: center; justify-content: center; border-radius: 11px; font-size: 13px; font-weight: 650; letter-spacing: .02em; color: hsl(var(--hue, 220) 70% 80%); background: hsl(var(--hue, 220) 45% 50% / .22); transition: border-radius var(--dur-2) ease, background-color var(--dur-2) ease; }
+.pmark { flex: none; display: flex; align-items: center; justify-content: center; border-radius: 11px; font-size: var(--fs-md); font-weight: 650; letter-spacing: .02em; color: hsl(var(--hue, 220) 70% 80%); background: hsl(var(--hue, 220) 45% 50% / .22); transition: border-radius var(--dur-2) ease, background-color var(--dur-2) ease; }
 .pmark[data-chosen='true'] { color: var(--mark); background: color-mix(in srgb, var(--mark) 22%, transparent); }
 .rail__i:hover .pmark, .rail__i[aria-current='true'] .pmark { border-radius: 13px; }
 .rail__i[aria-current='true'] .pmark { color: #fff; background: hsl(var(--hue, 220) 50% 46%); }
@@ -91,9 +91,9 @@
 .rail__orchhead { position: relative; display: flex; align-items: center; }
 .rail__orchhead .rail__group { flex: 1; min-width: 0; }
 /* Small and quiet: once there is one, making another is the rarer act. */
-.rail__orchadd { position: absolute; right: 8px; display: grid; place-items: center; width: 18px; height: 18px; border: 0; border-radius: 5px; background: none; color: var(--text-3); opacity: 0; transition: opacity var(--dur-1) ease; }
+.rail__orchadd { position: absolute; right: 8px; display: grid; place-items: center; width: var(--ctl-xs); height: var(--ctl-xs); border: 0; border-radius: var(--ctl-r-xs); background: none; color: var(--text-3); opacity: 0; transition: opacity var(--dur-1) ease; }
 :is(.rail:hover, .rail[data-held='true']) .rail__orchadd { opacity: 1; transition-delay: var(--intent); }
-.rail__orchadd:hover { color: var(--text); background: var(--sidebar-item); }
+.rail__orchadd:hover { color: var(--text); background: var(--overlay); }
 .pmark--orch { --orch: var(--orchestrate); width: 36px; height: 36px; color: var(--orch); background: color-mix(in srgb, var(--orch) 16%, transparent); }
 .rail__i[aria-current='true'] .pmark--orch { color: #fff; background: var(--orch); }
 /* Always there, folded rail or not: making another is one click, not a hover hunt. */

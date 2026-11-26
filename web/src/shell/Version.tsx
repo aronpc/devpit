@@ -39,7 +39,11 @@ export function Version(): React.JSX.Element | null {
       onClick={newer ? () => window.dispatchEvent(new Event(SHOW_THE_UPDATE)) : copy}
     >
       {copied ? t('workspace.version.copied') : `v${info.version}${info.dev ? ' · dev' : ''}`}
-      {newer && <span className="strip__dot" aria-hidden />}
+      {newer && (
+        <svg className="strip__up" aria-hidden width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 19V5M5 12l7-7 7 7" />
+        </svg>
+      )}
     </button>
   )
 }

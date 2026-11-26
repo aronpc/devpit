@@ -10,7 +10,7 @@
  *
  * Maximised, the corners square off: a rounded rectangle floating in the
  * middle of a screen it is supposed to fill reads as a bug. */
-.app { position: relative; display: flex; flex-direction: column; height: 100vh; overflow: hidden; background: var(--canvas); border: 1px solid var(--border-strong); border-radius: 11px; }
+.app { position: relative; display: flex; flex-direction: column; height: 100vh; overflow: hidden; background: var(--canvas); border: 1px solid var(--border); border-radius: var(--radius-lg); }
 .app[data-max='true'] { border-radius: 0; border-color: transparent; }
 
 /* Invisible, and only the cursor says they are there — which is what a window
@@ -43,15 +43,15 @@
    app identity is set in one place, at both sizes. Until an image exists
    the slot is a quiet square: an invented glyph would only be thrown away,
    and a letter is what the old name left behind. */
-.logo { width: 26px; height: 26px; flex: none; display: flex; align-items: center; justify-content: center; background: var(--raised); border: 1px solid var(--border-strong); border-radius: 8px; overflow: hidden; }
+.logo { width: 26px; height: 26px; flex: none; display: flex; align-items: center; justify-content: center; background: var(--raised); border: 1px solid var(--border-strong); border-radius: var(--ctl-r-s); overflow: hidden; }
 .logo:has(img[src]) { background: none; border: none; box-shadow: var(--e1); }
 .mark { width: 100%; height: 100%; object-fit: cover; display: block; }
 .mark:not([src]) { display: none; }
 /* A development build, beside the mark. Warm and small: it has to be seen at a
    glance by someone with two devpits open, and must not read as an error. */
 .top__dev {
-  flex: none; padding: 1px 6px; border-radius: 5px;
-  font: 600 10px/1.5 var(--mono); letter-spacing: 0.04em; text-transform: uppercase;
+  flex: none; padding: 1px 6px; border-radius: var(--radius-xs);
+  font: 600 var(--fs-2xs)/1.5 var(--mono); letter-spacing: 0.04em; text-transform: uppercase;
   color: var(--accent); border: 1px solid currentColor; opacity: 0.85;
 }
 
@@ -59,19 +59,19 @@
    the one thing a control must not look like. It carries its own surface
    now, and the double chevron is the glyph that means "switches between
    values" rather than "expands downwards". */
-.pick { height: 30px; padding: 0 6px 0 10px; border-radius: 8px; display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; background: var(--overlay); border: 1px solid var(--border); transition: background-color var(--dur-1) ease, border-color var(--dur-1) ease; }
+.pick { height: var(--ctl-m); padding: 0 6px 0 10px; border-radius: var(--ctl-r-m); display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; background: var(--overlay); border: 1px solid var(--border); transition: background-color var(--dur-1) ease, border-color var(--dur-1) ease; }
 .pick:hover { background: var(--overlay-strong); border-color: var(--border-strong); }
-.pick[aria-expanded='true'] { background: var(--overlay-strong); border-color: color-mix(in srgb, var(--accent) 55%, transparent); }
-.pick[aria-expanded='true'] .pick__chev { color: var(--accent); }
-.pick__name { flex: 1; min-width: 0; text-align: left; font-size: 13.5px; font-weight: 560; letter-spacing: -0.01em; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pick[aria-expanded='true'] { background: var(--overlay-strong); border-color: var(--border-strong); }
+.pick[aria-expanded='true'] .pick__chev { color: var(--text); }
+.pick__name { flex: 1; min-width: 0; text-align: left; font-size: var(--fs-md); font-weight: var(--fw-3); letter-spacing: var(--track-title); color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pick__chev { color: var(--text-3); flex: none; }
 
 /* The branch is its own control: it changes under you, and swapping it is
    a different act from swapping the project. */
-.branch { height: 26px; padding: 0 9px; border-radius: 7px; display: flex; align-items: center; gap: 6px; flex: none; font-size: 12.5px; color: var(--text-2); background: var(--overlay); transition: background-color var(--dur-1) ease; }
+.branch { height: var(--ctl-s); padding: 0 9px; border-radius: var(--ctl-r-s); display: flex; align-items: center; gap: 6px; flex: none; font-size: var(--fs-sm); color: var(--text-2); background: var(--overlay); transition: background-color var(--dur-1) ease; }
 .branch:hover { background: var(--overlay-strong); color: var(--text); }
-.branch__n { font-family: var(--mono); font-size: 11.5px; }
-.branch__ahead { font-family: var(--mono); font-size: 10.5px; color: var(--success); font-variant-numeric: tabular-nums; }
+.branch__n { font-family: var(--mono); font-size: var(--fs-xs); }
+.branch__ahead { font-family: var(--mono); font-size: var(--fs-2xs); color: var(--success); font-variant-numeric: tabular-nums; }
 
 .win { position: relative; display: grid; grid-template-columns: var(--rail-w, 0px) var(--sidebar-w) minmax(360px, 1fr) var(--files-w); flex: 1; min-height: 0; overflow: hidden; }
 /* On the seam, not in the grid: an edge that were a column of its own would be
@@ -101,17 +101,18 @@
    machine — which people otherwise answer by opening another program. Two
    numbers and a count; everything else is behind a click. */
 .strip { position: relative; flex: none; height: 24px; display: flex; align-items: center; justify-content: flex-end; padding: 0 10px; border-top: 1px solid var(--border); background: var(--sidebar); }
-.strip__go { height: 20px; padding: 0 7px; border-radius: 5px; display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--text-3); }
+.strip__go { height: var(--ctl-xs); padding: 0 7px; border-radius: var(--ctl-r-xs); display: flex; align-items: center; gap: 8px; font-size: var(--fs-xs); color: var(--text-3); }
 .strip__go:hover { background: var(--overlay); color: var(--text-2); }
 .strip__n { font-family: var(--mono); font-variant-numeric: tabular-nums; }
 .strip__c { color: var(--ghost); }
 /* Which devpit this is, pushed to the far left; the rest keep the right. */
-.strip__v { margin-right: auto; height: 20px; padding: 0 7px; border-radius: 5px; display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 10.5px; color: var(--ghost); }
+.strip__v { margin-right: auto; height: var(--ctl-xs); padding: 0 7px; border-radius: var(--ctl-r-xs); display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: var(--fs-2xs); color: var(--ghost); }
 .strip__v:hover { background: var(--overlay); color: var(--text-2); }
-.strip__dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+/* A newer devpit is waiting: an arrow beside the version, not a dot to decode. */
+.strip__up { flex: none; color: var(--accent); }
 /* Pausing devpit, and the way back. */
 .strip__pausebox { position: relative; }
-.strip__pause { height: 20px; padding: 0 7px; border-radius: 5px; display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--ghost); }
+.strip__pause { height: var(--ctl-xs); padding: 0 7px; border-radius: var(--ctl-r-xs); display: flex; align-items: center; gap: 5px; font-size: var(--fs-xs); color: var(--ghost); }
 .strip__pause:hover { background: var(--overlay); color: var(--text-2); }
 .strip__pause[data-on='true'] { color: var(--warning); }
 .strip__pausemenu { position: absolute; bottom: 24px; right: 0; min-width: 190px; }
@@ -135,10 +136,10 @@
 .hudrow__mem { width: 62px; text-align: right; }
 .hudrow__cpu { width: 46px; text-align: right; }
 
-.sq26 { width: 26px; height: 26px; flex: none; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: var(--text-3); }
+.sq26 { width: var(--ctl-s); height: var(--ctl-s); flex: none; border-radius: var(--ctl-r-s); display: flex; align-items: center; justify-content: center; color: var(--text-3); }
 .sq26:hover { background: var(--overlay); }
 .sq26:active { background: var(--overlay-strong); }
-.sq26[aria-pressed='true'] { background: var(--overlay-strong); color: var(--accent); }
+.sq26[aria-pressed='true'] { background: var(--overlay-strong); color: var(--text); }
 .sq26[data-off='true'] { opacity: 0.35; }
 .sq26[data-off='true']:hover { background: none; }
 
@@ -173,6 +174,6 @@ li[data-state='expired'] .mcpchip__s, li[data-state='missing'] .mcpchip__s { col
 .sichip__fix code { font-family: var(--mono); user-select: all; }
 
 /* Another device watching this machine: said, and dropped with a click. */
-.strip__remote { display: inline-flex; align-items: center; gap: 6px; height: 20px; padding: 0 8px; border-radius: 10px; font-size: 11.5px; color: var(--text); background: color-mix(in srgb, var(--warning) 18%, transparent); }
+.strip__remote { display: inline-flex; align-items: center; gap: 6px; height: var(--ctl-xs); padding: 0 8px; border-radius: var(--radius-pill); font-size: var(--fs-xs); color: var(--text); background: color-mix(in srgb, var(--warning) 18%, transparent); }
 .strip__remote:hover { background: color-mix(in srgb, var(--warning) 28%, transparent); }
-.strip__remote-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--warning); }
+.strip__remote-ico { flex: none; color: var(--warning-ink); }

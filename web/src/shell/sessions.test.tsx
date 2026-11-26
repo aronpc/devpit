@@ -85,4 +85,16 @@ describe('the sessions in the sidebar', () => {
     render(<SessionRows />)
     expect(screen.getByText(`${'x'.repeat(30)}…`)).toBeTruthy()
   })
+
+  it('shows what a session is doing as a chip: a mark and a word', () => {
+    shell.open = [chat]
+    shell.renaming = null
+    shell.chatDoing = { c1: 'waiting' }
+    render(<SessionRows />)
+    const chip = document.querySelector('.stchip')
+    expect(chip?.getAttribute('data-doing')).toBe('waiting')
+    expect(chip?.querySelector('.card__ask')).not.toBeNull()
+    expect(chip?.textContent).toContain('waiting on you')
+    shell.chatDoing = {}
+  })
 })

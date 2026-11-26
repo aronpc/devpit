@@ -2,13 +2,13 @@
 
 .mid { display: flex; flex-direction: column; min-width: 0; min-height: 0; background: var(--canvas); }
 .mid__bar { height: 34px; flex: none; display: flex; align-items: center; gap: 6px; padding: 0 8px; }
-.mid__title { font-size: 13px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.netstat { display: flex; align-items: center; gap: 6px; margin-right: 4px; padding-left: 2px; font-size: 12px; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.mid__title { font-size: var(--fs-md); color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.netstat { display: flex; align-items: center; gap: 6px; margin-right: 4px; padding-left: 2px; font-size: var(--fs-sm); font-family: var(--mono); font-variant-numeric: tabular-nums; }
 .add { color: var(--success); }
 .del { color: var(--danger); }
 
 .wctl { display: flex; align-items: center; margin-left: 2px; }
-.wbtn { width: 36px; height: 34px; display: flex; align-items: center; justify-content: center; color: var(--text-2); border-radius: 5px; }
+.wbtn { width: 36px; height: 34px; display: flex; align-items: center; justify-content: center; color: var(--text-2); border-radius: var(--ctl-r-xs); }
 .wbtn:hover { background: var(--overlay); }
 .wbtn:active { background: var(--overlay-strong); }
 .wbtn--x:hover { background: #c42b1c; color: #fff; }
@@ -29,18 +29,18 @@
 .tabs__rail::-webkit-scrollbar { display: none; }
 /* One long filename must not be allowed to take the whole strip. */
 .tab__n { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.tab__host { flex: none; display: inline-flex; gap: 4px; align-items: center; max-width: 140px; padding: 0 5px; border-radius: 4px; font-size: 10.5px; color: var(--text-2); background: var(--overlay-strong); white-space: nowrap; }
+.tab__host { flex: none; display: inline-flex; gap: 4px; align-items: center; max-width: 140px; padding: 0 5px; border-radius: var(--radius-xs); font-size: var(--fs-2xs); color: var(--text-2); background: var(--overlay-strong); white-space: nowrap; }
 .tab__host b { flex: none; font-weight: 600; }
 .tab__hostn { min-width: 0; max-width: 96px; overflow: hidden; text-overflow: ellipsis; }
-.tab__host[data-env='production'] { color: var(--canvas); background: var(--danger); }
+.tab__host[data-env='production'] { color: var(--on-danger); background: var(--danger); }
 .tab__host[data-down='true'] { opacity: .55; text-decoration: line-through; }
-.tab { max-width: 190px; height: 30px; padding: 0 7px 0 11px; border-radius: 7px; display: flex; align-items: center; gap: 8px; font-size: 12.5px; white-space: nowrap; flex: none; }
+.tab { max-width: 190px; height: var(--ctl-s); padding: 0 5px 0 11px; border-radius: var(--ctl-r-s); display: flex; align-items: center; gap: 8px; font-size: var(--fs-sm); white-space: nowrap; flex: none; }
 /* A tab on a host carries its badge besides its name: room for both, so its
    label and close button stay inside it. */
 .tab:has(.tab__host) { max-width: 260px; }
 /* Closed panes are not listed; what you can open lives in the sidebar. */
 .tab[aria-pressed='false'] { display: none; }
-.tab__x { width: 17px; height: 17px; margin-left: 2px; border-radius: 4px; display: flex; align-items: center; justify-content: center; }
+.tab__x { width: var(--ctl-xs); height: var(--ctl-xs); margin-left: 2px; border-radius: var(--ctl-r-xs); display: flex; align-items: center; justify-content: center; }
 .tab__x:hover { background: var(--overlay-strong); color: var(--text); }
 .tabs:empty + .tabs__sep { display: none; }
 .tab__dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
@@ -73,8 +73,8 @@
    at has a background, the others have none. */
 .tab[aria-pressed='true'] { background: transparent; color: var(--text-2); }
 .tab[aria-pressed='true']:hover { background: var(--overlay); color: var(--text); }
-.tab[data-active='true'] { background: var(--overlay-strong); color: var(--text); }
-.tab[data-active='true']:hover { background: var(--overlay-strong); color: var(--text); }
+.tab[data-active='true'] { background: var(--raised); box-shadow: var(--e1), var(--top); color: var(--text); }
+.tab[data-active='true']:hover { background: var(--raised); color: var(--text); }
 .tab__x { color: var(--ghost); }
 .tab:hover .tab__x, .tab[data-active='true'] .tab__x { color: var(--text-3); }
 

@@ -6,11 +6,11 @@
    rather than as a pill floating in a column. */
 .gutter { padding-left: 8px; padding-right: 8px; }
 
-.act { width: 100%; height: 32px; flex: none; padding: 0 10px; border-radius: 7px; display: flex; align-items: center; gap: 10px; }
+.act { width: 100%; height: var(--ctl-m); flex: none; padding: 0 10px; border-radius: var(--ctl-r-m); display: flex; align-items: center; gap: 10px; }
 .act:hover { background: var(--sidebar-item); }
 .act:active { background: var(--overlay-strong); }
-.act__ico { width: 20px; height: 20px; flex: none; display: flex; align-items: center; justify-content: center; color: var(--text-2); }
-.act__label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; color: var(--text-2); }
+.act__ico { width: var(--ctl-xs); height: var(--ctl-xs); flex: none; display: flex; align-items: center; justify-content: center; color: var(--text-2); }
+.act__label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-md); color: var(--text-2); }
 .act__chev { flex: none; color: var(--ghost); }
 .act[aria-expanded='true'] { background: var(--sidebar-item); }
 /* New Task asks what kind before it asks what about: a chat, a shell and
@@ -20,15 +20,15 @@
 .newmenu__pop { position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 60; padding: 4px; border-radius: var(--radius-lg); background: var(--glass-solid); box-shadow: var(--e3), var(--top); animation: pop var(--dur-2) ease-out both; }
 .newmenu__pop[hidden] { display: none; }
 @keyframes pop { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
-.newmenu__item { width: 100%; height: 34px; padding: 0 10px; border-radius: 7px; display: flex; align-items: center; gap: 9px; text-align: left; }
+.newmenu__item { width: 100%; height: var(--ctl-m); padding: 0 10px; border-radius: var(--ctl-r-s); display: flex; align-items: center; gap: 9px; text-align: left; }
 .newmenu__item:hover { background: var(--overlay-strong); }
 .newmenu__ico { width: 18px; flex: none; display: flex; align-items: center; justify-content: center; color: var(--text-3); }
-.newmenu__label { flex: 1; min-width: 0; font-size: 12.5px; color: var(--text-2); }
+.newmenu__label { flex: 1; min-width: 0; font-size: var(--fs-sm); color: var(--text-2); }
 .newmenu__item:hover .newmenu__label { color: var(--text); }
-.newmenu__key { font-family: var(--mono); font-size: 10.5px; color: var(--ghost); }
+.newmenu__key { font-family: var(--mono); font-size: var(--fs-2xs); color: var(--ghost); }
 /* How many there are — deliberately not `__key`, which is the shortcut
    column: a bare `5` sitting where `⌘N` sits reads as a key to press. */
-.newmenu__n { font-size: 11px; color: var(--text-3); font-variant-numeric: tabular-nums; }
+.newmenu__n { font-size: var(--fs-2xs); color: var(--text-3); font-variant-numeric: tabular-nums; }
 .newmenu__rule { height: 1px; margin: 4px 6px; background: var(--border); }
 
 .searchslot { height: 42px; flex: none; }
@@ -39,14 +39,14 @@
    line one, which pushed the title 17px right of the badge under it and
    made every row look like two rows that had drifted apart. It sits on
    line two now, where Waku puts its own context icon. */
-.card { display: flex; flex-direction: column; gap: 2px; width: 100%; min-width: 0; padding: 7px 10px; border-radius: 7px; text-align: left; }
+.card { display: flex; flex-direction: column; gap: 2px; width: 100%; min-width: 0; padding: 7px 10px; border-radius: var(--ctl-r-m); text-align: left; }
 /* Less space inside a row than between two, or the two lines of one
    session read as two sessions. */
 .card + .card { margin-top: 5px; }
 .card:hover, .card[aria-current='true'] { background: var(--sidebar-item); }
 .card__l1 { display: flex; align-items: center; gap: 6px; overflow: hidden; line-height: 18px; }
-.card__t { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13.5px; color: var(--text); }
-.card__l2 { display: flex; align-items: center; gap: 5px; font-size: 12.5px; line-height: 15px; color: var(--text-3); }
+.card__t { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-md); font-weight: var(--fw-2); color: var(--text); }
+.card__l2 { display: flex; align-items: center; gap: 5px; font-size: var(--fs-sm); line-height: 15px; color: var(--text-3); }
 
 .st-work { color: var(--accent); }
 .st-wait { color: var(--warning); }
@@ -57,15 +57,15 @@
 
 /* A nav link is the same action row as New Task, pressed when its pane
    is open — so the sidebar always says what is on screen. */
-.act[aria-pressed='true'] { background: var(--sidebar-item); }
+.act[aria-pressed='true'] { background: var(--overlay-strong); }
 .act[aria-pressed='true'] .act__label { color: var(--text); }
-.act[aria-pressed='true'] .act__ico { color: var(--accent); }
+.act[aria-pressed='true'] .act__ico { color: var(--text); }
 /* A capability switched on is a place to go, not a setting: accent glyph
    and full-strength label, as the prototype's live items. */
 .act--live .act__ico { color: var(--accent); }
 .act--live .act__label { color: var(--text); }
-.act__n { margin-left: auto; flex: none; font-size: 11px; color: var(--text-3); font-variant-numeric: tabular-nums; }
-.act__n--memo { min-width: 16px; padding: 0 5px; border-radius: 8px; background: color-mix(in srgb, var(--accent) 22%, transparent); color: var(--text); text-align: center; line-height: 16px; }
+.act__n { margin-left: auto; flex: none; font-size: var(--fs-2xs); color: var(--text-3); font-variant-numeric: tabular-nums; }
+.act__n--memo { min-width: 16px; padding: 0 5px; border-radius: var(--radius-pill); background: color-mix(in srgb, var(--accent) 22%, transparent); color: var(--text); text-align: center; line-height: 16px; }
 /* Nav rows were flush, so two hover backgrounds met with no seam and the
    list read as one block. Four pixels separates them without opening a gap
    you notice — three did it while the rows were narrower. */
@@ -80,27 +80,34 @@
 /* A session that came from a card carries the card's lane, so you can
    tell work that belongs to the board from a shell you opened by hand. */
 .card__link { display: inline-flex; align-items: center; gap: 5px; min-width: 0; }
-.card__lane { flex: none; font-size: 10.5px; color: var(--accent-ink); background: var(--accent-soft); padding: 1px 5px; border-radius: 4px; }
+.card__lane { flex: none; font-size: var(--fs-2xs); color: var(--accent-ink); background: var(--accent-soft); padding: 1px 5px; border-radius: var(--radius-xs); }
 .card__task { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-3); }
-.card__loose { color: var(--ghost); font-family: var(--mono); font-size: 11px; }
+.card__loose { color: var(--ghost); font-family: var(--mono); font-size: var(--fs-2xs); }
 .card__facts { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .card__pin { flex: none; color: var(--accent); }
 
 /* Status is a word, not only a colour: a dot alone makes you learn a
    legend, and this is the one thing you read the row for. */
-.card__state { flex: none; margin-left: auto; font-size: 11.5px; }
+.card__state { flex: none; margin-left: auto; font-size: var(--fs-xs); }
 .card__state--work { color: var(--accent); }
 .card__state--wait { color: var(--warning); }
 .card__state--fail { color: var(--danger); }
 .card__state--idle { color: var(--ghost); }
+/* A session's state as a chip: its mark and its word on a tint of the state's
+   colour. `.card` in front so it outranks the row's own colours further down
+   the sheet. Accent is for an agent at work, amber for one waiting on you. */
+.card .stchip { flex: 0 1 auto; align-self: flex-start; max-width: 100%; padding: 1px 7px 1px 6px; border-radius: var(--radius-pill); line-height: 16px; font-size: var(--fs-2xs); color: var(--text-2); background: var(--overlay); }
+.card .stchip[data-agent='true'] { color: var(--accent-ink); background: var(--accent-soft); }
+.card .stchip[data-doing='waiting'] { color: var(--warning-ink); background: var(--warning-soft); }
+.card .stchip[data-doing='done'] { color: var(--text-2); background: var(--overlay); }
 
 /* A plain heading. Sessions are few and always worth seeing, so nothing
    here folds away. */
-.heading { height: 26px; display: flex; align-items: center; gap: 6px; padding: 0 10px; font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-3); }
+.heading { height: 26px; display: flex; align-items: center; gap: 6px; padding: 0 10px; font-size: var(--fs-xs); font-weight: var(--fw-3); letter-spacing: var(--track-caps); text-transform: uppercase; color: var(--text-3); }
 .heading__n { font-weight: 500; letter-spacing: 0; color: var(--ghost); font-variant-numeric: tabular-nums; }
 
-.card[aria-pressed='true'] { background: var(--sidebar-item); }
-.card[aria-pressed='true'] .card__kind { color: var(--accent); }
+.card[aria-pressed='true'] { background: var(--overlay-strong); }
+.card[aria-pressed='true'] .card__kind { color: var(--text); }
 
 .spacer10 { height: 10px; }
 /* The foot carries who you are and the gear. It gets a rule of its own
@@ -109,27 +116,27 @@
 body[data-account='in'] .signin { display: none; }
 body[data-account='out'] .acct { display: none; }
 
-.gear { width: 30px; height: 30px; flex: none; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--text-3); transition: background-color var(--dur-1) ease, color var(--dur-1) ease; }
+.gear { width: var(--ctl-m); height: var(--ctl-m); flex: none; border-radius: var(--ctl-r-m); display: flex; align-items: center; justify-content: center; color: var(--text-3); transition: background-color var(--dur-1) ease, color var(--dur-1) ease; }
 .gear:hover { background: var(--sidebar-item); color: var(--text); }
 
 /* Signed out: the invitation, and the reason for it on the second line —
    a bare "Sign in" asks for something without saying what it buys. */
-.signin { flex: 1; min-width: 0; height: 38px; padding: 0 9px; border-radius: 10px; display: flex; align-items: center; gap: 10px; text-align: left; background: color-mix(in srgb, var(--accent) 12%, transparent); border: 1px solid color-mix(in srgb, var(--accent) 26%, transparent); transition: background-color var(--dur-2) ease, border-color var(--dur-2) ease; }
+.signin { flex: 1; min-width: 0; height: var(--ctl-l); padding: 0 9px; border-radius: var(--ctl-r-l); display: flex; align-items: center; gap: 10px; text-align: left; background: color-mix(in srgb, var(--accent) 12%, transparent); border: 1px solid color-mix(in srgb, var(--accent) 26%, transparent); transition: background-color var(--dur-2) ease, border-color var(--dur-2) ease; }
 .signin:hover { background: color-mix(in srgb, var(--accent) 18%, transparent); border-color: color-mix(in srgb, var(--accent) 40%, transparent); }
 .signin__ico { flex: none; color: var(--accent); display: flex; }
 .signin__body { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
-.signin__t { font-size: 12.5px; font-weight: 550; color: var(--text); }
-.signin__d { font-size: 10.5px; color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.signin__t { font-size: var(--fs-sm); font-weight: 550; color: var(--text); }
+.signin__d { font-size: var(--fs-2xs); color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* Signed in: the same footprint, so the sidebar does not jump. */
 .acct { flex: 1; min-width: 0; position: relative; }
-.acct__row { width: 100%; height: 38px; padding: 0 8px; border-radius: 10px; display: flex; align-items: center; gap: 9px; text-align: left; transition: background-color var(--dur-1) ease; }
+.acct__row { width: 100%; height: var(--ctl-l); padding: 0 8px; border-radius: var(--ctl-r-l); display: flex; align-items: center; gap: 9px; text-align: left; transition: background-color var(--dur-1) ease; }
 .acct__row:hover, .acct__row[aria-expanded='true'] { background: var(--sidebar-item); }
-.acct__av { width: 24px; height: 24px; flex: none; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10.5px; font-weight: 600; letter-spacing: 0.02em; color: var(--on-accent); background: var(--accent); }
+.acct__av { width: 24px; height: 24px; flex: none; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: var(--fs-2xs); font-weight: 600; letter-spacing: 0.02em; color: var(--on-accent); background: var(--accent); }
 .acct__av--lg { width: 34px; height: 34px; font-size: 12.5px; }
 .acct__body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
-.acct__n { font-size: 12.5px; font-weight: 550; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.acct__e { font-size: 11px; color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.acct__n { font-size: var(--fs-sm); font-weight: 550; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.acct__e { font-size: var(--fs-2xs); color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .acct__chev { flex: none; color: var(--text-3); display: flex; }
 
 /* Upwards, because the row it belongs to sits on the floor. */
@@ -154,7 +161,7 @@ body[data-account='out'] .acct { display: none; }
 .thm__bar { height: 7px; border-radius: 3px; }
 .thm__bar--s { width: 55%; }
 .thm__p--dark { background: #1a1a1a; }
-.thm__p--dark .thm__side { background: #181818; }
+.thm__p--dark .thm__side { background: #121212; }
 .thm__p--dark .thm__bar { background: #313131; }
 .thm__p--light { background: #f7f6f3; }
 .thm__p--light .thm__side { background: #efede9; }
