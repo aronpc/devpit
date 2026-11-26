@@ -36,6 +36,15 @@ describe('what the agent did, folded', () => {
   })
 })
 
+describe('a single tool', () => {
+  it('is its own line, with no fold around it', () => {
+    const { container } = render(<Acts parts={read('a', 'a.rs')} live={false} />)
+    expect(container.querySelector('.acts__h')).toBeNull()
+    expect(container.querySelectorAll('.arow')).toHaveLength(1)
+    expect(screen.getByText('a.rs')).toBeTruthy()
+  })
+})
+
 describe('a subagent', () => {
   it('takes its first part without breaking the row that started it', () => {
     const call: Part = { kind: 'tool_call', id: 'sub', name: 'Task', input: JSON.stringify({ description: 'look around' }), state: 'running', parent: null }

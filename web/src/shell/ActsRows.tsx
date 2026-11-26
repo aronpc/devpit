@@ -61,6 +61,17 @@ export function Acts({
   }, [live, kept, setOpen])
 
   if (rows.length === 0) return null
+  /* One tool is one line: a fold around it would only repeat its label. A turn
+     that failed keeps the fold, open on the work it ended on. */
+  if (rows.length === 1 && !kept) {
+    return (
+      <MessageContext.Provider value={messageId}>
+        <div className="acts">
+          <Row act={rows[0]!} folded={!open} />
+        </div>
+      </MessageContext.Provider>
+    )
+  }
 
   return (
     <MessageContext.Provider value={messageId}>
@@ -125,19 +136,21 @@ function GroupRow({ group }: { group: Group }): React.JSX.Element {
   )
 }
 
-function Row({ act }: { act: Act }): React.JSX.Element {
+function Row({ act, folded = false }: { act: Act; folded?: boolean }): React.JSX.Element {
   /* A subagent is a stack of its own, folded until asked for: its reads and
      searches are its business, and the thread is about what it came back with.
      Two components, so the row that gains its first child keeps its hooks. */
-  return act.children.length > 0 ? <AgentRow act={act} /> : <LeafRow act={act} />
+  return act.children.length > 0 ? <AgentRow act={act} /> : <LeafRow act={act} folded={folded} />
 }
 
-function LeafRow({ act }: { act: Act }): React.JSX.Element {
+function LeafRow({ act, folded }: { act: Act; folded: boolean }): React.JSX.Element {
   const parts = sections(act)
   /* An edit shows what it changed as soon as it is on screen: the diff is the
-     point of the row, and a chevron in front of it is a click for nothing. */
+     point of the row, and a chevron in front of it is a click for nothing. A
+     row that stands alone in the turn starts as the fold it replaces would
+     have: open while the turn runs, one line once it is over. */
   const edited = act.kind === 'edit' ? editDiff(act.input) : null
-  const [open, setOpen] = useDisclosed(useFoldKey(act.id), edited !== null)
+  const [open, setOpen] = useDisclosed(useFoldKey(act.id), !folded && edited !== null)
 
   return (
     <div className="arow" data-failed={act.failed || undefined}>

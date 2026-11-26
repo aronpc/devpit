@@ -29,4 +29,23 @@ describe('the stylesheet in parts', () => {
       .trim()
     expect(rules).toBe('')
   })
+
+  /* Two @keyframes with one name: the later part's wins everywhere, and the
+     earlier one's look is lost without a word. */
+  it('names every animation once across the parts', () => {
+    const names = parts().flatMap((part) => [...readFileSync(part, 'utf8').matchAll(/@keyframes\s+([\w-]+)/g)].map((m) => m[1]))
+    expect(names.filter((name, at) => names.indexOf(name) !== at)).toEqual([])
+  })
+
+  /* A tool row, an edit and a turn's changes line up as one column of cards. */
+  it('gives every card in a turn the one card width', () => {
+    const rule = (part: string, selector: string): string => {
+      const css = readFileSync(resolve(STYLES, part), 'utf8')
+      const at = css.search(new RegExp(`^\\${selector}\\s*\\{`, 'm'))
+      return at < 0 ? '' : css.slice(at, css.indexOf('}', at))
+    }
+    for (const [part, selector] of [['14-chat.css', '.arow'], ['21-turn.css', '.ecard'], ['21-turn.css', '.tchg']]) {
+      expect(rule(part, selector), selector).toMatch(/max-width:\s*var\(--chat-card-w\)/)
+    }
+  })
 })

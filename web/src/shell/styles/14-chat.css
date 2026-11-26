@@ -5,7 +5,7 @@
    it last had is kept, so the scrollbar does not jump. */
 .turn { display: flex; flex-direction: column; gap: var(--space-2); content-visibility: auto; contain-intrinsic-size: auto 180px; }
 .said { position: relative; display: flex; justify-content: flex-end; }
-.said__b { max-width: 85%; min-width: 0; padding: var(--space-2) var(--space-3); border-radius: var(--radius-lg); background: var(--raised); font-size: var(--fs-lg); line-height: 1.4; color: var(--text); white-space: pre-wrap; word-break: break-word; }
+.said__b { max-width: 85%; min-width: 0; padding: var(--space-2) var(--space-3); border-radius: var(--radius-xl); background: var(--raised); box-shadow: var(--e1); font-size: var(--fs-lg); line-height: 1.4; color: var(--text); white-space: pre-wrap; word-break: break-word; }
 /* A reply is as wide as the thread; the prose cap belongs to documents. */
 .thread .md { max-width: none; }
 /* Heard by a screen reader, never seen: the thread's turn announcer. */
@@ -19,7 +19,7 @@
 .tfbtn { width: 20px; height: 20px; border-radius: var(--radius-xs); display: flex; align-items: center; justify-content: center; color: var(--ghost); }
 .tfbtn:hover { background: var(--overlay); color: var(--text-2); }
 /* The quiet line under a turn: when, on what, how long, how much. */
-.tmeta { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-xs); font-variant-numeric: tabular-nums; color: var(--ghost); }
+.tmeta { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-xs); font-variant-numeric: tabular-nums; color: var(--text-3); }
 /* What can be done with a message, where the pointer or the keyboard is. */
 .hbar { display: flex; align-items: center; gap: 2px; opacity: 0; transition: opacity var(--dur-1) linear; }
 .turn:hover .hbar, .turn:focus-within .hbar, .said:hover .hbar, .said:focus-within .hbar { opacity: 1; }
@@ -48,10 +48,11 @@
 .jumpend { position: absolute; top: -40px; left: 50%; z-index: 2; display: grid; place-items: center; width: 30px; height: 30px; transform: translateX(-50%); border-radius: 50%; background: var(--raised); color: var(--text-2); box-shadow: var(--e2); }
 .jumpend:hover { color: var(--text); }
 .composer__col { position: relative; max-width: var(--chat-max); margin: 0 auto; width: 100%; }
-/* The border lights when the caret is in it, so the thing you are typing in
-   is the thing that looks active. */
-.composer__in { border-radius: var(--radius-lg); border: 1px solid var(--border); background: var(--composer); padding: 10px; }
-.composer__in:focus-within { border-color: var(--border-strong); }
+/* Raised over the thread, and higher while the caret is in it, so the thing
+   you are typing in is the thing that looks active. Its radius is a tool's
+   plus its padding, so the corners inside it stay concentric. */
+.composer__in { border-radius: var(--radius-xl); border: 1px solid var(--border); background: var(--raised); box-shadow: var(--e2), var(--top); padding: var(--space-2); transition: box-shadow var(--dur-2) var(--ease-out); }
+.composer__in:focus-within { box-shadow: var(--e3), var(--top); }
 .composer__files { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 2px 8px; }
 /* Where the work happens: quieter than the chips inside, because these
    describe the conversation rather than steer the turn. */
@@ -63,17 +64,17 @@
 select.chip { appearance: none; border: 0; background: none; font-family: inherit; }
 .send:disabled { opacity: .45; }
 .composer__row { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
-.chip { display: flex; align-items: center; gap: 5px; height: 25px; padding: 0 8px; border-radius: var(--radius-sm); font-size: var(--fs-sm); color: var(--text-3); }
+.chip { display: flex; align-items: center; gap: 5px; height: var(--ctl-s); padding: 0 8px; border-radius: var(--ctl-r-s); font-size: var(--fs-sm); color: var(--text-3); }
 .chip:hover { background: var(--overlay); color: var(--text-2); }
 .chip__thumb { width: 16px; height: 16px; border-radius: var(--radius-xs); object-fit: cover; }
 .chip__sun { color: var(--accent); }
-.send { width: 26px; height: 26px; border-radius: 50%; background: var(--overlay-strong); color: var(--text-2); display: flex; align-items: center; justify-content: center; margin-left: auto; }
+.send { width: var(--ctl-s); height: var(--ctl-s); border-radius: var(--ctl-r-s); background: var(--overlay-strong); color: var(--text-2); display: flex; align-items: center; justify-content: center; margin-left: auto; }
 .send:hover { background: var(--inverse); color: var(--on-inverse); }
 /* Armed: the button stops naming the act and names the key, because the key
    is what the hand is already on. */
 .send__esc { font-size: var(--fs-2xs); font-weight: 600; letter-spacing: .01em; }
 /* Offered when a stop has gone unheeded; it takes the place the stop had. */
-.send__force { margin-left: auto; height: 26px; padding: 0 10px; border-radius: var(--radius-pill); font-size: var(--fs-xs); font-weight: 500; background: var(--overlay-strong); color: var(--text); }
+.send__force { margin-left: auto; height: var(--ctl-s); padding: 0 10px; border-radius: var(--ctl-r-s); font-size: var(--fs-xs); font-weight: 500; background: var(--overlay-strong); color: var(--text); }
 .send__force + .send { margin-left: 6px; }
 
 .wschip { display: flex; align-items: center; gap: 5px; height: 22px; padding: 0 7px; border-radius: var(--radius-xs); font-size: var(--fs-xs); color: var(--text-3); }
@@ -81,7 +82,7 @@ select.chip { appearance: none; border: 0; background: none; font-family: inheri
 
 /* The composer's files and voice, beside send. */
 .ctools { display: inline-flex; align-items: center; gap: 2px; margin-left: auto; }
-.ctools__icon { display: grid; place-items: center; width: 28px; height: 28px; border-radius: var(--radius-sm); color: var(--text-3); }
+.ctools__icon { display: grid; place-items: center; width: var(--ctl-s); height: var(--ctl-s); border-radius: var(--ctl-r-s); color: var(--text-3); }
 .ctools__icon:hover:not(:disabled) { color: var(--text); background: var(--overlay); }
 .ctools__icon:disabled { opacity: .45; }
 .ctools__rec { display: inline-flex; align-items: center; gap: 8px; height: 28px; padding: 0 4px 0 10px; border-radius: var(--radius-pill); font: var(--fs-sm) var(--mono); color: var(--text); background: color-mix(in srgb, var(--danger) 10%, var(--surface)); }
@@ -229,9 +230,9 @@ select.chip { appearance: none; border: 0; background: none; font-family: inheri
   --act: color-mix(in srgb, var(--canvas) 96.5%, var(--text) 3.5%);
   --act-hover: color-mix(in srgb, var(--canvas) 95%, var(--text) 5%);
   --act-down: color-mix(in srgb, var(--canvas) 93.5%, var(--text) 6.5%);
-  min-width: 0; overflow: hidden; border-radius: var(--radius-md); border: 1px solid transparent;
+  max-width: var(--chat-card-w); min-width: 0; overflow: hidden; border-radius: var(--radius-lg); border: 1px solid transparent;
 }
-.arow:has(> .arow__h[aria-expanded='true']) { border-color: var(--border); background: var(--act); }
+.arow:has(> .arow__h[aria-expanded='true']) { background: var(--raised-2); box-shadow: var(--e1); }
 .arow__h { display: flex; align-items: center; gap: 8px; height: 28px; width: 100%; min-width: 0; padding: 0 8px; text-align: left; font-size: var(--fs-sm); }
 .arow__h:not(:disabled):hover { background: var(--act-hover); }
 .arow__h:not(:disabled):active { background: var(--act-down); }
@@ -246,7 +247,7 @@ select.chip { appearance: none; border: 0; background: none; font-family: inheri
 .arow__t[data-state='failed'] { color: var(--danger); }
 /* Alive: the same pulse as the composer's dots, so one language means one
    thing across the pane. */
-.arow__live { flex: none; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: breathe var(--loop-2) ease-in-out infinite; }
+.arow__live { flex: none; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: breathe-in var(--loop-2) ease-in-out infinite; }
 .arow__body { display: flex; flex-direction: column; gap: 8px; min-width: 0; padding: 8px 12px; border-top: 1px solid var(--border); }
 .arow__think { font-size: var(--fs-sm); line-height: 1.55; color: var(--text-2); }
 
@@ -271,10 +272,10 @@ select.chip { appearance: none; border: 0; background: none; font-family: inheri
 .working { display: flex; align-items: center; gap: 8px; height: 22px; font-size: var(--fs-xs); font-weight: 500; color: var(--text-3); }
 .working__dots { display: flex; align-items: center; gap: 3px; }
 .working__what { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.working__dots i { width: 4px; height: 4px; border-radius: 50%; background: currentColor; animation: breathe var(--loop-2) ease-in-out infinite; }
+.working__dots i { width: 4px; height: 4px; border-radius: 50%; background: currentColor; animation: breathe-in var(--loop-2) ease-in-out infinite; }
 .working__dots i:nth-child(2) { animation-delay: var(--dur-1); }
 .working__dots i:nth-child(3) { animation-delay: var(--intent); }
-@keyframes breathe { 0%, 100% { opacity: .3; } 50% { opacity: 1; } }
+@keyframes breathe-in { 0%, 100% { opacity: .3; } 50% { opacity: 1; } }
 .sessions__none { padding: 2px 10px 8px; font-size: var(--fs-xs); color: var(--ghost); }
 
 /* A name being changed in place: the field takes the shape of the label it
@@ -310,7 +311,7 @@ select.chip { appearance: none; border: 0; background: none; font-family: inheri
    is an agent rather than any other program someone started. */
 .card__run { display: flex; align-items: center; gap: 5px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-xs); color: var(--text-2); }
 .card__run[data-agent='true'] { color: var(--accent); }
-.card__dot { flex: none; width: 5px; height: 5px; border-radius: 50%; background: currentColor; animation: breathe var(--loop-3) ease-in-out infinite; }
+.card__dot { flex: none; width: 5px; height: 5px; border-radius: 50%; background: currentColor; animation: breathe-in var(--loop-3) ease-in-out infinite; }
 
 /* What a command came to, in the terminal's own margin. A bar and not a dot:
    it has to be findable while scrolling past, and a dot at this size is a
@@ -318,7 +319,7 @@ select.chip { appearance: none; border: 0; background: none; font-family: inheri
 .cmdmark { width: 3px; height: 100%; border-radius: 0 var(--radius-xs) var(--radius-xs) 0; }
 .cmdmark--ok { background: var(--success); }
 .cmdmark--failed { background: var(--danger); }
-.cmdmark--running { background: var(--accent); animation: breathe var(--loop-3) ease-in-out infinite; }
+.cmdmark--running { background: var(--accent); animation: breathe-in var(--loop-3) ease-in-out infinite; }
 
 /* `/resume`: every earlier conversation, filtered as it is typed. */
 .resume { padding: 6px; }

@@ -1,9 +1,9 @@
 /* ── An edit, in the thread ──────────────────────────────────────────
    Drawn inside the act row it belongs to, so it shares that row's inset
    and never reaches the thread's edges. */
-.ecard { margin: 4px 0 6px; border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; }
+.ecard { max-width: var(--chat-card-w); margin: 4px 0 6px; border-radius: var(--radius-lg); background: var(--raised-2); box-shadow: var(--e1); overflow: hidden; }
 .ecard[data-failed] { border-color: color-mix(in srgb, var(--danger) 45%, transparent); }
-.ecard__h { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 5px 10px; background: var(--overlay); font-family: var(--mono); font-size: var(--fs-xs); }
+.ecard__h { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 5px 10px; background: var(--inset); font-family: var(--mono); font-size: var(--fs-xs); }
 .ecard__p { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; color: var(--text-2); }
 button.ecard__p:hover { color: var(--text); text-decoration: underline; }
 .ecard__n { flex: none; font-variant-numeric: tabular-nums; }
@@ -18,8 +18,8 @@ button.ecard__p:hover { color: var(--text); text-decoration: underline; }
 
 /* ── What a turn changed ─────────────────────────────────────────────
    Under the turn and quieter than it: this is the receipt, not the work. */
-.tchg { margin: 6px 0 2px; border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; font-size: var(--fs-sm); }
-.tchg__h { display: flex; align-items: center; gap: 8px; padding: 5px 10px; background: var(--overlay); color: var(--text-2); font-variant-numeric: tabular-nums; }
+.tchg { max-width: var(--chat-card-w); margin: 6px 0 2px; border-radius: var(--radius-lg); background: var(--raised-2); box-shadow: var(--e1); overflow: hidden; font-size: var(--fs-sm); }
+.tchg__h { display: flex; align-items: center; gap: 8px; padding: 5px 10px; background: var(--inset); color: var(--text-2); font-family: var(--mono); font-size: var(--fs-xs); font-variant-numeric: tabular-nums; }
 .tchg__h > span:first-child { flex: 1; }
 .tchg__f { display: flex; align-items: center; gap: 8px; width: 100%; min-width: 0; padding: 4px 10px; text-align: left; font-family: var(--mono); font-size: var(--fs-xs); font-variant-numeric: tabular-nums; }
 .tchg__f:hover { background: var(--overlay); }

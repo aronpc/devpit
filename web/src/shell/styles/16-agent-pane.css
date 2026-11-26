@@ -49,7 +49,7 @@
    see. `waiting` is the state worth noticing from across the room: the agent
    has stopped and nothing moves until somebody goes back to it. */
 .tab__mk { display: inline-flex; }
-.tab__mk[data-doing='working'] .agmk { animation: breathe var(--loop-3) ease-in-out infinite; }
+.tab__mk[data-doing='working'] .agmk { animation: breathe-in var(--loop-3) ease-in-out infinite; }
 .tab__mk[data-doing='waiting'] .agmk { color: var(--warning); }
 .card__run[data-doing='waiting'] { color: var(--warning); }
 .card__run[data-doing='waiting'] .card__dot { animation: none; }

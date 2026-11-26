@@ -82,7 +82,7 @@ const BUDGET: Record<string, Partial<Record<Kind, number>>> = {
   '11-onboarding.css': { size: 8, radius: 5, height: 2 },
   '12-editor.css': { size: 8, radius: 7, height: 1 },
   '13-markdown.css': { size: 14, radius: 9, height: 3 },
-  '14-chat.css': { height: 22 },
+  '14-chat.css': { height: 18 },
   '15-splits.css': {},
   '16-agent-pane.css': { size: 12, radius: 2, height: 3 },
   '17-worktrees.css': { size: 13, radius: 7, height: 3 },

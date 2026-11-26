@@ -195,8 +195,8 @@ body[data-account='out'] .acct { display: none; }
 .prow__p { font-size: 10.5px; font-family: var(--mono); color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .prow__live { flex: none; display: flex; align-items: center; gap: 5px; font-size: 10.5px; color: var(--text-2); }
 .prow__live[data-live='0'] { display: none; }
-.prow__dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: breathe var(--loop-4) ease-in-out infinite; }
-@keyframes breathe { 0%, 100% { opacity: 1 } 50% { opacity: 0.35 } }
+.prow__dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: breathe-out var(--loop-4) ease-in-out infinite; }
+@keyframes breathe-out { 0%, 100% { opacity: 1 } 50% { opacity: 0.35 } }
 .pickpop__none { padding: 16px 8px 18px; text-align: center; font-size: 12px; color: var(--text-3); }
 .pickpop__sep { height: 1px; margin: 4px; background: var(--border); }
 @media (prefers-reduced-motion: reduce) { .prow__dot { animation: none } }
