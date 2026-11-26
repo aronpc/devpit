@@ -6,8 +6,10 @@ fn never(_: &str, _: Value) -> Result<Value, String> {
     panic!("the app should not have been asked")
 }
 
+/// The answer in English, whatever `DEVPIT_LOCALE` the shell running the
+/// tests carries: a session devpit started has it set to its own language.
 fn reply(line: &str, ask: &dyn Fn(&str, Value) -> Result<Value, String>) -> Value {
-    serde_json::from_str(&handle(line, ask).expect("an answer")).expect("json")
+    serde_json::from_str(&handle_in("en", line, ask).expect("an answer")).expect("json")
 }
 
 fn calling(name: &str) -> String {
