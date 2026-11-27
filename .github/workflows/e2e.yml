@@ -81,6 +81,7 @@ jobs:
       - name: Shell screenshots
         if: always()
         continue-on-error: true
+        timeout-minutes: 25
         run: |
           sudo apt-get install -y ffmpeg xcompmgr xdotool
           node e2e/demo/shots.mjs

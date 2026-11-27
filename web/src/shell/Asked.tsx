@@ -82,7 +82,6 @@ function Allowing({ question, onAnswer }: { question: Question; onAnswer: (said:
       }}
     >
       <div className="asking__t">
-        <CardState state="waiting" />
         {plan ? (
           <>
             {tRich('workspace.asked.planAsk', { plan: <b>{t('workspace.asked.plan')}</b> })}
@@ -95,6 +94,7 @@ function Allowing({ question, onAnswer }: { question: Question; onAnswer: (said:
           </>
         )}
       </div>
+      <CardState state="waiting" />
       {grants.length > 0 && (
         <ul className="asking__grants" aria-label={t('workspace.asked.alsoAsks')}>
           {grants.map((one) => (

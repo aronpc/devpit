@@ -102,6 +102,9 @@ select.chip { appearance: none; border: 0; background: none; font-family: inheri
 /* A permission question, in the thread rather than over it: a dialog would
    hide the output that says why the agent wants this. */
 .asking { margin-bottom: 8px; padding: 11px 12px; border-radius: var(--radius-lg); max-width: var(--chat-card-w); border: 0; background: var(--raised); box-shadow: var(--e2); display: flex; flex-direction: column; gap: 8px; }
+/* The state chip follows the title line in the document, so the title stays
+   the card's first line for a reader, and is drawn above it. */
+.asking > .cstate { order: -1; align-self: flex-start; }
 .asking__t { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); font-size: var(--fs-md); color: var(--text); }
 .asking__in { margin: 0; padding: 8px; border-radius: var(--radius-sm); background: var(--inset); font-family: var(--mono); font-size: var(--fs-xs); line-height: 1.5; max-height: 180px; overflow: auto; white-space: pre-wrap; word-break: break-word; }
 .asking__row { display: flex; gap: 8px; justify-content: flex-end; }

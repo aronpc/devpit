@@ -54,10 +54,10 @@ export function Choosing({
   return (
     <section className="asking" ref={card} tabIndex={-1} onKeyDown={onKeyDown} aria-label={one.question}>
       <div className="asking__t">
-        <CardState state="waiting" />
         {one.header && <span className="asking__h">{one.header}</span>}
         {asked.length > 1 && <span className="asking__step">{t('workspace.choosing.step', { n: chosen.length + 1, total: asked.length })}</span>}
       </div>
+      <CardState state="waiting" />
       <p className="asking__q">{one.question}</p>
       <div className="asking__opts">
         {one.options.map((label, n) => (

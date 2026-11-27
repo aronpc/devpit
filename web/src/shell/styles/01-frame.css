@@ -115,13 +115,13 @@
 .strip__pause { height: var(--ctl-xs); padding: 0 7px; border-radius: var(--ctl-r-xs); display: flex; align-items: center; gap: 5px; font-size: var(--fs-xs); color: var(--ghost); }
 .strip__pause:hover { background: var(--overlay); color: var(--text-2); }
 .strip__pause[data-on='true'] { color: var(--warning); }
-.strip__pausemenu { position: absolute; bottom: 24px; right: 0; min-width: 190px; }
+.strip__pausemenu { position: absolute; bottom: var(--ctl-s); right: 0; min-width: 190px; }
 /* The total might be an overcount, so it says so rather than hoping nobody
    asks. Resident memory overstates a process tree by half. */
 .strip__warn { color: var(--warning); }
 
 /* The monitor, over the strip that opened it. */
-.hud { position: absolute; right: 8px; bottom: 26px; width: 320px; max-height: 60vh; overflow-y: auto; z-index: 60; padding: 10px 12px 10px; border-radius: var(--radius-lg); background: var(--glass-solid); box-shadow: var(--e3), var(--top); }
+.hud { position: absolute; right: 8px; bottom: calc(var(--ctl-s) + 2px); width: 320px; max-height: 60vh; overflow-y: auto; z-index: 60; padding: 10px 12px 10px; border-radius: var(--radius-lg); background: var(--glass-solid); box-shadow: var(--e3), var(--top); }
 .hud__top { display: flex; align-items: center; gap: 10px; padding-bottom: 8px; }
 .hud__t { font-size: var(--fs-sm); color: var(--text); }
 .hud__sum { margin-left: auto; font-family: var(--mono); font-size: var(--fs-xs); color: var(--text-3); font-variant-numeric: tabular-nums; }
