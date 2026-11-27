@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useForwarded } from './forwardedRequests'
 import { ask, commands } from './live'
 import { t } from '../i18n'
+import { CardState } from './CardState'
 
 /*
  * Requests another orchestrator forwarded, in the chat they were kept for.
@@ -47,7 +48,7 @@ export function ForwardedDrafts({ projectId, conversation }: { projectId: string
 
   return (
     <section className="wprompt rdraft" aria-label={t('workspace.forwarded.label')}>
-      <p className="wprompt__t">{t('workspace.forwarded.title')}</p>
+      <p className="wprompt__t"><CardState state="draft" />{t('workspace.forwarded.title')}</p>
       {here.map((one) => {
         const key = `${one.from}\n${one.id}`
         const text = edited[key] ?? one.text

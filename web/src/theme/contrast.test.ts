@@ -107,7 +107,7 @@ const PAIRS: [string, string[], number][] = [
   ['--text-3', ['--terminal'], 4.5],
   ['--accent-ink', ['--canvas+accent-soft', '--raised+accent-soft', '--sidebar+accent-soft', '--sidebar+overlay-strong+accent-soft'], 4.5],
   /* A session's state chip, waiting on someone, in the sidebar. */
-  ['--warning-ink', ['--sidebar+warning-soft', '--canvas+warning-soft', '--sidebar+overlay-strong+warning-soft'], 4.5],
+  ['--warning-ink', ['--sidebar+warning-soft', '--canvas+warning-soft', '--raised+warning-soft', '--sidebar+overlay-strong+warning-soft'], 4.5],
   ['--diff-add', ['--canvas', '--raised', '--inset'], 3],
   ['--diff-del', ['--canvas', '--raised', '--inset'], 3],
 ]

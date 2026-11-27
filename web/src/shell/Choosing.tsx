@@ -4,6 +4,8 @@ import type { IslandAsked } from '../gen/bindings'
 import { keyOn, toggled, useFocused, type Chosen } from './choices'
 import { committed } from './typing'
 import { t } from '../i18n'
+import { CardState } from './CardState'
+import { Icon } from './Icon'
 
 /*
  * A question the agent put to the person, as buttons: 1-9 picks, the arrows
@@ -52,6 +54,7 @@ export function Choosing({
   return (
     <section className="asking" ref={card} tabIndex={-1} onKeyDown={onKeyDown} aria-label={one.question}>
       <div className="asking__t">
+        <CardState state="waiting" />
         {one.header && <span className="asking__h">{one.header}</span>}
         {asked.length > 1 && <span className="asking__step">{t('workspace.choosing.step', { n: chosen.length + 1, total: asked.length })}</span>}
       </div>
@@ -67,6 +70,11 @@ export function Choosing({
           >
             <span className="asking__n">{n + 1}</span>
             {label}
+            {one.multi && ticked.includes(n) && (
+              <Icon size="s" className="asking__tick">
+                <path d="M20 6 9 17l-5-5" />
+              </Icon>
+            )}
           </button>
         ))}
       </div>

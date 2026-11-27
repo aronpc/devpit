@@ -58,20 +58,22 @@ button.chead__t:hover { background: var(--overlay); }
 /* An orchestrator's sessions, down the right of its chat. Over the thread's
    margin on a wide pane; folded to its heading on a narrow one. */
 /* Questions sessions are stopped on, above the list: the thing to act on. */
-.wprompt { margin: 0 0 8px; padding: 10px 12px; border-radius: var(--radius-lg); background: color-mix(in srgb, var(--warning) 9%, var(--surface)); border: 1px solid color-mix(in srgb, var(--warning) 40%, var(--border)); }
-.wprompt__t { margin: 0 0 6px; font-size: var(--fs-xs); font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--warning); }
+.wprompt { max-width: var(--chat-card-w); margin: 0 0 8px; padding: 10px 12px; border-radius: var(--radius-lg); background: var(--raised); box-shadow: var(--e2); }
+.wprompt__t { margin: 0 0 6px; display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); font-size: var(--fs-sm); font-weight: var(--fw-2); color: var(--text-2); }
+/* The state, in the card's header: an icon and a word on a quiet tint, amber
+   for a card that waits on you and neutral for a draft. */
+.cstate { display: inline-flex; align-items: center; gap: 5px; padding: 1px 8px 1px 6px; border-radius: var(--radius-pill); line-height: 16px; font-size: var(--fs-2xs); font-weight: var(--fw-3); letter-spacing: var(--track-caps); text-transform: uppercase; color: var(--text-2); background: var(--overlay); }
+.cstate[data-state='waiting'] { color: var(--warning-ink); background: var(--warning-soft); }
 .wprompt__i + .wprompt__i { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
 .wprompt__who { margin: 0; display: flex; align-items: baseline; gap: 8px; }
 .wprompt__q { margin: 4px 0 8px; font-size: var(--fs-md); line-height: 1.45; color: var(--text); }
 .wprompt__opts { display: flex; flex-wrap: wrap; gap: 6px; }
-.wprompt__o { display: flex; align-items: baseline; gap: 6px; padding: 5px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text-2); font: inherit; font-size: var(--fs-sm); text-align: left; }
-.wprompt__o:hover:not(:disabled) { color: var(--text); border-color: var(--warning); }
+.wprompt__o { display: flex; align-items: center; gap: 6px; min-height: var(--ctl-m); padding: 4px 10px; border: 0; border-radius: var(--ctl-r-m); background: var(--overlay); color: var(--text-2); font: inherit; font-size: var(--fs-sm); text-align: left; }
+.wprompt__o:hover:not(:disabled) { color: var(--text); background: var(--overlay-strong); }
 .wprompt__o:disabled { opacity: .55; }
 .wprompt__n { flex: none; font-family: var(--mono); font-size: var(--fs-xs); color: var(--text-3); }
 .wprompt__esc { align-self: flex-start; font-family: var(--mono); font-size: var(--fs-xs); }
 /* A draft is the person's words before they are sent: their colour, not a warning. */
-.rdraft { background: color-mix(in srgb, var(--accent) 7%, var(--surface)); border-color: color-mix(in srgb, var(--accent) 35%, var(--border)); }
-.rdraft .wprompt__t { color: var(--accent); }
 .rdraft__text { display: block; box-sizing: border-box; width: 100%; margin: 6px 0 8px; padding: 6px 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); font: inherit; font-size: var(--fs-md); line-height: 1.45; resize: vertical; }
 .chat__drop { position: absolute; inset: 6px; z-index: 20; display: flex; align-items: center; justify-content: center; border: 2px dashed color-mix(in srgb, var(--accent) 60%, transparent); border-radius: var(--radius-lg); background: color-mix(in srgb, var(--accent) 8%, var(--canvas)); pointer-events: none; }
 .chat__dropt { font-size: var(--fs-md); color: var(--accent); }

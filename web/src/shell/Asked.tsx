@@ -7,6 +7,7 @@ import { Markdown } from './MarkdownView'
 import { committed, composing } from './typing'
 import { t } from '../i18n'
 import { tRich } from '../i18n/rich'
+import { CardState } from './CardState'
 
 /*
  * What the agent is waiting to be allowed to do, or waiting to be told.
@@ -81,6 +82,7 @@ function Allowing({ question, onAnswer }: { question: Question; onAnswer: (said:
       }}
     >
       <div className="asking__t">
+        <CardState state="waiting" />
         {plan ? (
           <>
             {tRich('workspace.asked.planAsk', { plan: <b>{t('workspace.asked.plan')}</b> })}

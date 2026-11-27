@@ -3,6 +3,7 @@ import { useState } from 'react'
 import type { LiveSession, PendingPrompt } from '../gen/bindings'
 import { ask, commands } from './live'
 import { t } from '../i18n'
+import { CardState } from './CardState'
 
 /*
  * The questions this account's sessions are stopped on, answered from here.
@@ -56,7 +57,7 @@ export function WaitingPrompts({
 
   return (
     <section className="wprompt" aria-label={t('workspace.waitingPrompts.title')}>
-      <p className="wprompt__t">{t('workspace.waitingPrompts.title')}</p>
+      <p className="wprompt__t"><CardState state="waiting" /></p>
       {waiting.map((one) => {
         const busy = sending.has(one.name)
         const told = said[one.name]?.to === asked(one.waiting) ? said[one.name]!.text : ''

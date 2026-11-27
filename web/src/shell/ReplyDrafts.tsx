@@ -3,6 +3,7 @@ import { useState } from 'react'
 import type { LiveSession } from '../gen/bindings'
 import { ask, commands } from './live'
 import { t } from '../i18n'
+import { CardState } from './CardState'
 
 /*
  * Replies the orchestrator drafted, for the person to send as theirs.
@@ -68,7 +69,7 @@ export function ReplyDrafts({
 
   return (
     <section className="wprompt rdraft" aria-label={t('workspace.replyDrafts.title')}>
-      <p className="wprompt__t">{t('workspace.replyDrafts.title')}</p>
+      <p className="wprompt__t"><CardState state="draft" />{t('workspace.replyDrafts.title')}</p>
       {sendable.length > 1 && (
         <div className="wprompt__opts">
           <button className="wprompt__o" disabled={sending !== null} onClick={sendAll}>

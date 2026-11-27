@@ -1573,6 +1573,7 @@
   "workspace.agentRow.docs": "Documentação de {name}",
   "workspace.agentRow.hide": "Ocultar como {name} é iniciado",
   "workspace.agentRow.show": "Mostrar como {name} é iniciado",
+  "workspace.cardState.draft": "Rascunho",
   "workspace.choosing.step": "{n} de {total}",
   "workspace.choosing.own": "Ou responda com as suas palavras e aperte Enter",
   "workspace.choosing.refuse": "Recusar",

@@ -4,6 +4,7 @@ import type { LiveSession, StopAsked } from '../gen/bindings'
 import { ask, commands } from './live'
 import { onCarried } from './window'
 import { t } from '../i18n'
+import { CardState } from './CardState'
 
 /*
  * The stops the orchestrator asked for that the person's own words did not
@@ -61,7 +62,7 @@ export function StopsAsked({
     <section className="wprompt" aria-label={t('workspace.stopsAsked.label')}>
       {shown.length > 0 && (
         <>
-          <p className="wprompt__t">{many ? t('workspace.stopsAsked.stopMany', { count: shown.length }) : t('workspace.stopsAsked.stopOne')} {t('workspace.stopsAsked.lost')}</p>
+          <p className="wprompt__t"><CardState state="waiting" />{many ? t('workspace.stopsAsked.stopMany', { count: shown.length }) : t('workspace.stopsAsked.stopOne')} {t('workspace.stopsAsked.lost')}</p>
           {shown.map((one) => (
             <div className="wprompt__i" key={`${one.name}:${one.pid ?? ''}`}>
               <p className="wprompt__who">

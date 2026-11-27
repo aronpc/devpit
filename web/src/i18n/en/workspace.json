@@ -1573,6 +1573,7 @@
   "workspace.agentRow.docs": "{name} documentation",
   "workspace.agentRow.hide": "Hide how {name} is started",
   "workspace.agentRow.show": "Show how {name} is started",
+  "workspace.cardState.draft": "Draft",
   "workspace.choosing.step": "{n} of {total}",
   "workspace.choosing.own": "Or answer in your own words, then Enter",
   "workspace.choosing.refuse": "Refuse",

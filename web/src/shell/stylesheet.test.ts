@@ -48,4 +48,20 @@ describe('the stylesheet in parts', () => {
       expect(rule(part, selector), selector).toMatch(/max-width:\s*var\(--chat-card-w\)/)
     }
   })
+
+  /* A card waiting on you says so with a chip in its header; the card itself
+     is neutral, so a tinted fill or a coloured edge cannot carry the state. */
+  it('keeps the permission, question and draft cards neutral', () => {
+    const rules = (part: string): [string, string][] =>
+      [...readFileSync(resolve(STYLES, part), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]+)\{([^}]*)\}/g)].map((m) => [m[1].trim(), m[2]])
+    const card = /^(\.asking|\.asking__opt(\[aria-pressed='true'\]|:hover)?|\.wprompt|\.wprompt__o(:hover:not\(:disabled\))?|\.rdraft)$/
+    const painted = [...rules('14-chat.css'), ...rules('21-turn.css')]
+      .filter(([selector]) => selector.split(',').some((one) => card.test(one.trim())))
+      .flatMap(([selector, body]) =>
+        [...body.matchAll(/(background|border(?:-color)?)\s*:\s*([^;]+)/g)]
+          .filter((m) => /--accent|--warning|color-mix/.test(m[2]))
+          .map((m) => `${selector} ${m[1]}: ${m[2]}`),
+      )
+    expect(painted).toEqual([])
+  })
 })
