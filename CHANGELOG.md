@@ -3,6 +3,103 @@
 What changed between releases, written for the people who use devpit. The
 release notes are taken from here when a version is tagged.
 
+## 0.1.54 — 2026-11-26
+
+### A new look
+
+- **One visual system for the whole window.** Every size, radius, shadow
+  and duration comes from one set of tokens, and buttons, fields, tabs and
+  the window's bars share one control ruler. devpit keeps its own look:
+  Geist, the terracotta accent, the same density and the warm paper of the
+  light theme.
+- **Surfaces are raised instead of outlined.** Menus, popovers, ⌘K, sheets
+  and the open card float above the window; board tiles, chat cards and the
+  card panel's sections sit just above it. Hovering a tile on a large board
+  repaints no shadows.
+- **Text reaches AA contrast** in dark, light and more contrast, hover and
+  selected rows included. The light accent, warning, success and danger
+  are darkened along their own hue, and the terminal's frame follows the
+  theme.
+- **One keyboard focus ring** for every control, thin scrollbars that show
+  on hover, and motion that only enters: things appear and leave at once.
+- **The chat is tidier.** Tool rows, edit cards and a turn's changes share
+  one width, a single tool is one line instead of a fold, and the composer
+  is raised and rises further while you type.
+- **A session's state is a chip** with an icon and a word. Permission,
+  question and draft cards are neutral, with their state in a chip, their
+  title on the first line and the chosen option checked.
+- **Settings, empty panes and toasts each follow one pattern**, and the
+  board's undo and the window's last refusal stack as toasts. Every icon is
+  drawn by one component, on one grid and one stroke.
+
+### devpit in Portuguese
+
+- **devpit speaks Portuguese (Brazil).** Settings → General → Language
+  offers System, English and Português (Brasil). The window follows at
+  once, without a restart, and the choice follows you to your other
+  machines, beside the theme. System reads the machine's locale and falls
+  back to English.
+- **Everything devpit says follows it**: the screens, dates, numbers and
+  relative times, the tray, system notifications, the island, the errors
+  that reach the screen, and the Remote, which takes the host's language.
+- **Agents hear devpit in the same language.** The orchestrator's, the
+  assistant's and a session's brief, the project agent and Devflow's
+  sentences have Portuguese versions, and devpit's tools describe
+  themselves in it. A session keeps the language it was born in. Tool
+  names, parameters and formats are the same in every language.
+
+### Questions an agent asks you
+
+- **A question waits for you without a deadline**, until you answer it, its
+  chat is closed or interrupted, or its process is gone. One asked in a
+  turn you did not start, such as a Remote Control message, waits too.
+- **Answer it where you are**: in its chat, on the CLI's own prompt, through
+  Remote Control or on the Remote, which shows the choices and answers with
+  your pick. The first answer wins and the others are withdrawn. A device
+  that may only watch still sees what the question asks.
+
+### Board runs and accounts
+
+- **A step is checked before it runs**: its profile is there and on, signed
+  in (a Claude profile on an API key, a token or a gateway counts), within
+  its Claude quota, with its model available. An unknown answer does not
+  stop it. The step runs under the account it was checked against, and the
+  run keeps the account, the model asked for, the model the CLI used and
+  the attempt.
+- **A blocked step pauses alone, with the reason**, and the chain stops
+  there without repeating the steps before it. The paused step offers the
+  accounts that would pass, and one click switches. A project can let a
+  blocked step take the first account that passes (**Switch accounts
+  automatically**, off by default).
+- The update's database migration stays quick on a board with thousands of
+  runs.
+
+### Orchestrators
+
+- **An orchestrator can hand a request to another.** `devpit_session_message`
+  to `orchestrator-<folder>` leaves it as an editable draft in the other
+  orchestrator's chat, and nothing runs there until you click **Send**,
+  under a notice that its words approve nothing. The sidebar marks the
+  destination without raising the window.
+- **A forwarded or devpit-made turn is a barrier**: a yes you gave before it
+  does not authorise anything after it. So is another session's message or
+  an idle notice.
+- **One message can stop several sessions**, one call each.
+- **Orchestrators reorder by dragging**, keep an order of their own and
+  scroll in their own group, so many of them never push the projects out of
+  the sidebar.
+
+### Fixes
+
+- One line of a CLI's output is capped at 32 MiB, so a CLI that never prints
+  a newline cannot exhaust memory, and devpit's MCP server refuses a message
+  over 1 MiB before reading it.
+- The remote MCP tests answer in English whatever `DEVPIT_LOCALE` the shell
+  carries, and the Portuguese pause test ends in the future, so neither
+  depends on where or when it runs.
+- The docs say where an online board keeps its data, and that personal sync
+  stays sealed and separate from it.
+
 ## 0.1.53 — 2026-11-19
 
 ### Hosts: terminals and sessions on your other machines
