@@ -4,12 +4,12 @@
 .asst[data-on='true'] { color: var(--orchestrate); }
 
 .sched__new { display: flex; gap: 8px; margin: 14px 0 10px; }
-.sched__form { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 6px 0 12px; padding: 10px 12px; border-radius: 10px; background: var(--raised); }
-.sched__form input:not([type='checkbox']), .sched__form select { height: 28px; padding: 0 8px; border-radius: 7px; font-size: 12.5px; color: var(--text); background: var(--inset); border: 1px solid var(--border); }
+.sched__form { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 6px 0 12px; padding: 10px 12px; border-radius: var(--ctl-r-m); background: var(--raised); }
+.sched__form input:not([type='checkbox']), .sched__form select { height: var(--ctl-s); padding: 0 8px; border-radius: var(--radius-md); font-size: var(--fs-sm); color: var(--text); background: var(--inset); border: 1px solid var(--border); }
 .sched__list { display: flex; flex-direction: column; margin-top: 8px; border-top: 1px solid var(--border); }
 /* The actions get a line of their own, so no pane is too narrow to show them. */
-.sched__row { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 0.8fr) minmax(0, 0.7fr) minmax(0, 1fr); gap: 6px 12px; align-items: center; padding: 9px 4px; font-size: 12.5px; color: var(--text-2); border-bottom: 1px solid var(--border); overflow-wrap: anywhere; }
-.sched__row--head { font-size: 11.5px; color: var(--text-3); }
+.sched__row { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 0.8fr) minmax(0, 0.7fr) minmax(0, 1fr); gap: 6px 12px; align-items: center; padding: 9px 4px; font-size: var(--fs-sm); color: var(--text-2); border-bottom: 1px solid var(--border); overflow-wrap: anywhere; }
+.sched__row--head { font-size: var(--fs-xs); color: var(--text-3); }
 .sched__what { color: var(--text); }
 .sched__state { color: var(--text-3); }
 .sched__row[data-state='due'] .sched__state { color: var(--warning); }

@@ -91,16 +91,16 @@ const PAIRS: [string, string[], number][] = [
   ['--text', SURFACES, 4.5],
   ['--text-2', SURFACES, 4.5],
   ['--text-3', SURFACES, 4.5],
-  ['--ghost', SURFACES, 3],
-  /* The sidebar's counts are --ghost on its ground; a session row's quiet line
-     is --text-3, at rest, under the pointer and on the row you are on. */
-  ['--ghost', ['--sidebar'], 4.5],
+  /* --ghost writes counts, hints and meta: it is text too. */
+  ['--ghost', SURFACES, 4.5],
+  /* A session row's quiet line is --text-3, at rest, under the pointer and on
+     the row you are on. */
   ['--text-3', ['--sidebar+sidebar-item', '--sidebar+overlay-strong'], 4.5],
   ['--border-ctl', SURFACES, 3],
-  ['--accent', ['--canvas', '--sidebar', '--raised', '--inset'], 4.5],
-  ['--warning', ['--canvas', '--sidebar', '--raised', '--inset'], 4.5],
-  ['--success', ['--canvas', '--sidebar', '--raised', '--inset'], 4.5],
-  ['--danger', ['--canvas', '--sidebar', '--raised', '--inset'], 4.5],
+  ['--accent', SURFACES, 4.5],
+  ['--warning', SURFACES, 4.5],
+  ['--success', SURFACES, 4.5],
+  ['--danger', SURFACES, 4.5],
   ['--on-accent', ['--accent'], 4.5],
   ['--on-danger', ['--danger'], 4.5],
   ['--text', ['--terminal'], 4.5],

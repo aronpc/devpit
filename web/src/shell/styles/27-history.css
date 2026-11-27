@@ -2,28 +2,28 @@
    Commits under their day, two lines each: the subject with its kind as a
    badge, then who, when and which. */
 .hist { display: flex; flex-direction: column; padding-bottom: 8px; }
-.hist__find { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 6px; margin: 0 8px 4px; padding: 0 8px; height: 28px; border: 1px solid var(--border); border-radius: 7px; background: var(--composer, var(--canvas)); color: var(--text-3); }
+.hist__find { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 6px; margin: 0 8px 4px; padding: 0 8px; height: var(--ctl-s); border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--composer, var(--canvas)); color: var(--text-3); }
 .hist__find:focus-within { border-color: var(--focus); box-shadow: var(--focus-field); color: var(--text-2); }
-.hist__find input { flex: 1; min-width: 0; border: 0; background: none; outline: none; color: var(--text); font: inherit; font-size: 12.5px; }
+.hist__find input { flex: 1; min-width: 0; border: 0; background: none; outline: none; color: var(--text); font: inherit; font-size: var(--fs-sm); }
 .hist__group { display: flex; flex-direction: column; }
-.hist__day { position: sticky; top: 32px; z-index: 1; padding: 8px 14px 4px; font-size: 10.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--text-3); background: var(--sidebar, var(--canvas)); }
+.hist__day { position: sticky; top: 32px; z-index: 1; padding: 8px 14px 4px; font-size: var(--fs-2xs); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--text-3); background: var(--sidebar, var(--canvas)); }
 .hist__row { display: flex; flex-direction: column; gap: 3px; width: 100%; min-width: 0; padding: 6px 14px; text-align: left; border-radius: 0; transition: background-color var(--dur-1) ease; }
 .hist__row:hover, .hist__row[data-menu='true'] { background: var(--sidebar-item); }
 .hist__top { display: flex; align-items: center; gap: 6px; min-width: 0; }
-.hist__s { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12.5px; color: var(--text); }
-.hist__kind { flex: none; display: inline-flex; align-items: center; gap: 3px; height: 16px; padding: 0 5px; border-radius: 4px; font-family: var(--mono); font-size: 10px; font-weight: 600; color: var(--text-2); background: var(--overlay); }
+.hist__s { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-sm); color: var(--text); }
+.hist__kind { flex: none; display: inline-flex; align-items: center; gap: 3px; height: 16px; padding: 0 5px; border-radius: var(--radius-xs); font-family: var(--mono); font-size: var(--fs-2xs); font-weight: 600; color: var(--text-2); background: var(--overlay); }
 .hist__scope { font-weight: 400; opacity: .75; }
 .hist__scope::before { content: '·'; margin-right: 3px; }
 .hist__kind[data-kind='feat'] { color: var(--success); background: color-mix(in srgb, var(--success) 14%, transparent); }
 .hist__kind[data-kind='fix'] { color: var(--warning); background: color-mix(in srgb, var(--warning) 14%, transparent); }
 .hist__kind[data-kind='perf'] { color: var(--accent-ink); background: var(--accent-soft); }
 .hist__kind[data-kind='breaking'] { color: var(--danger); background: color-mix(in srgb, var(--danger) 14%, transparent); }
-.hist__meta { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 11px; color: var(--text-3); }
+.hist__meta { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: var(--fs-xs); color: var(--text-3); }
 .hist__who { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.hist__sha { margin-left: auto; flex: none; padding: 0 4px; border-radius: 4px; font-family: var(--mono); font-size: 10.5px; color: var(--text-3); }
+.hist__sha { margin-left: auto; flex: none; padding: 0 4px; border-radius: var(--radius-xs); font-family: var(--mono); font-size: var(--fs-2xs); color: var(--text-3); }
 .hist__sha:hover { background: var(--overlay-strong); color: var(--text); }
 .hist__sha[data-copied='true'] { color: var(--success); }
-.hist__none { padding: 12px 14px; font-size: 12px; color: var(--text-3); }
-.hist__end { display: flex; justify-content: center; padding: 10px 8px 4px; font-size: 11px; color: var(--ghost); }
-.hist__more { width: 100%; height: 28px; border-radius: 7px; border: 1px dashed var(--border); font-size: 12px; color: var(--text-2); }
+.hist__none { padding: 12px 14px; font-size: var(--fs-sm); color: var(--text-3); }
+.hist__end { display: flex; justify-content: center; padding: 10px 8px 4px; font-size: var(--fs-xs); color: var(--ghost); }
+.hist__more { width: 100%; height: var(--ctl-s); border-radius: var(--radius-md); border: 1px dashed var(--border); font-size: var(--fs-sm); color: var(--text-2); }
 .hist__more:hover:not(:disabled) { border-style: solid; background: var(--sidebar-item); color: var(--text); }

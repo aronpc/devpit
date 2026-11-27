@@ -14,13 +14,13 @@
   box-shadow: var(--e3), var(--top);
 }
 .upd__hd { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
-.upd__t { display: block; font-size: 13.5px; font-weight: 560; color: var(--text); }
+.upd__t { display: block; font-size: var(--fs-lg); font-weight: 560; color: var(--text); }
 .upd__x {
   flex: none;
   width: 24px;
-  height: 24px;
+  height: var(--ctl-s);
   margin: -4px -6px 0 0;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -29,11 +29,11 @@
 .upd__x:hover { background: var(--overlay-strong); color: var(--text); }
 /* The one line that matters: what is ready. Bigger than the reassurance
    under it, because that is the order somebody reads them in. */
-.upd__said { display: block; margin-top: 8px; font-size: 13px; color: var(--text); }
+.upd__said { display: block; margin-top: 8px; font-size: var(--fs-md); color: var(--text); }
 .upd__notes {
   display: inline-block;
   margin-top: 10px;
-  font-size: 12px;
+  font-size: var(--fs-sm);
   color: var(--text-2);
   text-decoration: underline;
   text-underline-offset: 2px;
@@ -49,11 +49,11 @@
   text-align: center;
   text-decoration: none;
   margin-top: 14px;
-  height: 34px;
-  border-radius: 8px;
+  height: var(--ctl-m);
+  border-radius: var(--radius-md);
   background: var(--raised);
   border: 1px solid var(--border-strong);
-  font-size: 13px;
+  font-size: var(--fs-md);
   font-weight: 560;
   color: var(--text);
 }
@@ -62,14 +62,14 @@
   margin-left: 6px;
   padding: 1px 6px;
   border: 1px solid var(--border);
-  border-radius: 999px;
-  font-size: 11px;
+  border-radius: var(--radius-pill);
+  font-size: var(--fs-xs);
   color: var(--text-2);
 }
 .upd__d {
   display: block;
   margin-top: 6px;
-  font-size: 12.5px;
+  font-size: var(--fs-sm);
   line-height: 1.55;
   color: var(--text-2);
   white-space: pre-wrap;
@@ -78,7 +78,7 @@
 .upd__bar {
   margin-top: 10px;
   height: 4px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--border);
   overflow: hidden;
 }
@@ -89,10 +89,10 @@
   margin-top: 10px;
   padding: 8px 10px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: var(--canvas);
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: var(--fs-sm);
   color: var(--text);
   overflow-wrap: anywhere;
 }

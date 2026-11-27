@@ -6,9 +6,9 @@
 .plg-excalidraw__stage > * { flex: 1 1 0; min-height: 0; }
 .plg-excalidraw__loading { background: var(--inset); }
 .plg-excalidraw__new { display: flex; gap: 8px; margin: 0 0 12px; }
-.plg-excalidraw__field { flex: 1; min-width: 0; height: 30px; padding: 0 10px; border-radius: 7px; border: 1px solid var(--border); background: var(--inset); color: var(--text); font: inherit; font-size: 12.5px; outline: none; }
+.plg-excalidraw__field { flex: 1; min-width: 0; height: var(--ctl-s); padding: 0 10px; border-radius: var(--radius-md); border: 1px solid var(--border); background: var(--inset); color: var(--text); font: inherit; font-size: var(--fs-sm); outline: none; }
 .plg-excalidraw__field:focus { border-color: var(--focus); box-shadow: var(--focus-field); }
-.plg-excalidraw__problem { margin: 0 0 12px; font-size: 12px; color: var(--danger); }
+.plg-excalidraw__problem { margin: 0 0 12px; font-size: var(--fs-sm); color: var(--danger); }
 
 /* A note is the editor, and nothing beside it: a pane of source next to a
    pane of output is two things to look at for one document. */
@@ -16,7 +16,7 @@
 /* The formatting bar: sticky, because a note is scrolled and a bar that
    leaves with the first paragraph is a bar you scroll back for. */
 .note__bar { position: sticky; top: 0; z-index: 2; display: flex; flex-wrap: wrap; align-items: center; gap: 2px; padding: 8px 16px; background: var(--canvas); border-bottom: 1px solid var(--border); }
-.note__act { height: 26px; min-width: 28px; padding: 0 7px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--text-2); background: transparent; }
+.note__act { height: var(--ctl-s); min-width: 28px; padding: 0 7px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: var(--fs-sm); color: var(--text-2); background: transparent; }
 .note__act:hover:not(:disabled) { background: var(--overlay-strong); color: var(--text); }
 .note__act:disabled { opacity: 0.4; }
 /* A group ends where the next begins; the gap says so without a rule. */
@@ -26,5 +26,5 @@
 .data { display: grid; grid-template-columns: minmax(240px, 40%) 1fr; height: 100%; overflow: hidden; }
 .data__edit { display: grid; grid-template-rows: 1fr auto; border-right: 1px solid var(--border); overflow: hidden; }
 .data__problem { margin: 0; padding: 6px 10px; border-top: 1px solid var(--border);
-  font-size: 11.5px; color: var(--warn, var(--text-3)); }
+  font-size: var(--fs-xs); color: var(--warn, var(--text-3)); }
 .data__see { overflow: hidden; }

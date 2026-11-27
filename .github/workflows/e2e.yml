@@ -21,8 +21,9 @@ jobs:
     # Bounded, because an e2e that hangs is the one failure mode this suite
     # has: a window that never comes up leaves `tauri-driver` waiting, and
     # without this the job sat for the six-hour default. The release build is
-    # the slow part and lands inside twenty-five minutes on a cold cache.
-    timeout-minutes: 60
+    # the slow part and lands inside twenty-five minutes on a cold cache; the
+    # shell's screenshot set after the suite takes about fifteen more.
+    timeout-minutes: 90
     steps:
       # Pinned like release.yml's: this also runs inside the release.
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -72,4 +73,21 @@ jobs:
           path: |
             target/e2e-shots
             target/e2e-home/app.log
+          if-no-files-found: warn
+
+      # The shell's look on a made-up board, dark and light, from the binary
+      # the suite just built: one night's set held against the next by eye
+      # catches a regression no unit test describes. Never a gate.
+      - name: Shell screenshots
+        if: always()
+        continue-on-error: true
+        run: |
+          sudo apt-get install -y ffmpeg xcompmgr xdotool
+          node e2e/demo/shots.mjs
+      - name: Upload the shell screenshots
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: shell-shots
+          path: target/launch-assets/*.png
           if-no-files-found: warn

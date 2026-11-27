@@ -15,7 +15,7 @@
 .bterm[data-mode='running'] .bterm__list { flex: 0 1 auto; max-height: 35%; }
 .bterm[data-mode='running'] .bterm__list + .bterm__live { border-top: 1px solid var(--border); }
 .bterm[data-mode='running'] .bterm__live { flex: 1 1 auto; }
-.bterm__empty { padding: 18px 16px; font-size: 12.5px; color: var(--text-3); }
+.bterm__empty { padding: 18px 16px; font-size: var(--fs-sm); color: var(--text-3); }
 
 /* A block: a header that stays put while its output scrolls under it. */
 .blk { position: relative; border-bottom: 1px solid var(--border); }
@@ -33,63 +33,63 @@
 .blk__dot { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--text-3); }
 .blk[data-outcome='ok'] .blk__dot { background: var(--success); }
 .blk[data-outcome='failed'] .blk__dot { background: var(--danger); }
-.blk__cmd { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--term-font); font-size: 13px; font-weight: 600; color: var(--text); }
+.blk__cmd { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--term-font); font-size: var(--fs-md); font-weight: 600; color: var(--text); }
 .blk__nocmd { font-weight: 400; color: var(--text-3); font-style: italic; }
-.blk__meta { flex: none; display: flex; align-items: center; gap: 10px; font-size: 11px; color: var(--text-3); font-variant-numeric: tabular-nums; }
+.blk__meta { flex: none; display: flex; align-items: center; gap: 10px; font-size: var(--fs-xs); color: var(--text-3); font-variant-numeric: tabular-nums; }
 .blk__cwd { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--term-font); }
 .blk__code { color: var(--danger); font-weight: 600; }
-.blk__more { flex: none; width: 22px; height: 20px; border-radius: 5px; color: var(--text-3); opacity: 0; transition: opacity var(--dur-1) ease; line-height: 1; }
+.blk__more { flex: none; width: 22px; height: var(--ctl-xs); border-radius: var(--radius-sm); color: var(--text-3); opacity: 0; transition: opacity var(--dur-1) ease; line-height: 1; }
 .blk__more:hover { background: var(--overlay-strong); color: var(--text); }
 .blk__out { padding: 0 14px 8px 14px; }
-.blk__pre { margin: 0; font-family: var(--term-font); font-size: 13px; line-height: 1.35; color: var(--text); white-space: pre; overflow-x: auto; }
+.blk__pre { margin: 0; font-family: var(--term-font); font-size: var(--fs-md); line-height: 1.35; color: var(--text); white-space: pre; overflow-x: auto; }
 .blk__line { min-height: 1.35em; }
-.blk__note { padding: 2px 0 4px; font-size: 12px; color: var(--text-3); }
-.blk__all { display: block; margin: 0 0 4px; padding: 0; font-size: 11.5px; color: var(--accent); }
+.blk__note { padding: 2px 0 4px; font-size: var(--fs-sm); color: var(--text-3); }
+.blk__all { display: block; margin: 0 0 4px; padding: 0; font-size: var(--fs-xs); color: var(--accent); }
 .blk__all:hover { text-decoration: underline; }
 .blk__all:disabled { color: var(--text-3); text-decoration: none; }
-.blk__filter { display: flex; align-items: center; gap: 6px; margin: 0 14px 6px; padding: 0 8px; height: 26px; border: 1px solid var(--border-strong); border-radius: 6px; color: var(--text-3); font-size: 11px; }
-.blk__filter input { flex: 1; min-width: 0; border: 0; background: none; outline: none; color: var(--text); font: inherit; font-size: 12.5px; }
+.blk__filter { display: flex; align-items: center; gap: 6px; margin: 0 14px 6px; padding: 0 8px; height: var(--ctl-s); border: 1px solid var(--border-strong); border-radius: var(--radius-sm); color: var(--text-3); font-size: var(--fs-xs); }
+.blk__filter input { flex: 1; min-width: 0; border: 0; background: none; outline: none; color: var(--text); font: inherit; font-size: var(--fs-sm); }
 
 /* The editor. */
 .cin { position: relative; flex: none; border-top: 1px solid var(--border); padding: 8px 14px 10px; background: var(--canvas); }
 .cin__chips { display: flex; align-items: center; gap: 6px; min-width: 0; margin-bottom: 6px; }
 /* Warp's context chips: filled, borderless, quiet until they carry news. */
-.cin__chip { display: inline-flex; align-items: center; gap: 6px; min-width: 0; max-width: 45%; height: 22px; padding: 0 8px; border-radius: 6px; background: var(--overlay-strong); font-family: var(--term-font); font-size: 12px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cin__chip { display: inline-flex; align-items: center; gap: 6px; min-width: 0; max-width: 45%; height: var(--ctl-xs); padding: 0 8px; border-radius: var(--radius-sm); background: var(--overlay-strong); font-family: var(--term-font); font-size: var(--fs-sm); color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cin__chip svg { flex: none; color: var(--text-3); }
 .cin__chip--git svg { color: var(--accent); }
 .cin__diff { color: var(--text-3); }
 .cin__add { color: var(--success); }
 .cin__del { color: var(--danger); }
-.cin__classic { margin-left: auto; height: 22px; padding: 0 8px; border-radius: 6px; font-size: 11.5px; color: var(--text-3); }
+.cin__classic { margin-left: auto; height: var(--ctl-xs); padding: 0 8px; border-radius: var(--radius-sm); font-size: var(--fs-xs); color: var(--text-3); }
 .cin__classic:hover { background: var(--overlay-strong); color: var(--text); }
 .cin__box { display: flex; align-items: flex-start; }
 .cin__edit { position: relative; flex: 1; min-width: 0; }
-.cin__field, .cin__ghost { width: 100%; margin: 0; padding: 2px 0; border: 0; font-family: var(--term-font); font-size: 14px; line-height: 1.45; white-space: pre-wrap; word-break: break-all; }
+.cin__field, .cin__ghost { width: 100%; margin: 0; padding: 2px 0; border: 0; font-family: var(--term-font); font-size: var(--fs-lg); line-height: 1.45; white-space: pre-wrap; word-break: break-all; }
 .cin__field { position: relative; display: block; resize: none; background: none; outline: none; color: var(--text); caret-color: var(--text); }
 .cin__field::placeholder { color: var(--ghost); }
 .cin__ghost { position: absolute; inset: 0; color: var(--ghost); pointer-events: none; }
 .cin__typed { color: transparent; }
 .cin__search { position: absolute; left: 10px; right: 10px; bottom: calc(100% + 4px); z-index: 20; display: flex; flex-direction: column; max-height: 300px; overflow-y: auto; padding: 4px; border-radius: var(--radius-lg); background: var(--glass-solid); box-shadow: var(--e3), var(--top); }
-.cin__sq { height: 28px; margin-bottom: 4px; padding: 0 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--composer, var(--canvas)); color: var(--text); font: inherit; font-size: 12.5px; outline: none; }
-.cin__hit { padding: 4px 8px; border-radius: 5px; text-align: left; font-family: var(--term-font); font-size: 12.5px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cin__sq { height: var(--ctl-s); margin-bottom: 4px; padding: 0 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--composer, var(--canvas)); color: var(--text); font: inherit; font-size: var(--fs-sm); outline: none; }
+.cin__hit { padding: 4px 8px; border-radius: var(--radius-sm); text-align: left; font-family: var(--term-font); font-size: var(--fs-sm); color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cin__hit:hover { background: var(--overlay); }
 .cin__hit[aria-selected='true'] { background: var(--overlay-strong); color: var(--text); }
-.cin__none { padding: 8px; font-size: 12px; color: var(--text-3); }
+.cin__none { padding: 8px; font-size: var(--fs-sm); color: var(--text-3); }
 
 /* The strip under a terminal while an agent runs in it. */
 .abar { flex: none; border-top: 1px solid var(--border); background: var(--canvas); }
-.abar__row { display: flex; align-items: center; gap: 8px; min-width: 0; height: 36px; padding: 0 12px 0 14px; }
-.abar__agent { flex: none; font-size: 12.5px; font-weight: 600; color: var(--accent); }
+.abar__row { display: flex; align-items: center; gap: 8px; min-width: 0; height: var(--ctl-m); padding: 0 12px 0 14px; }
+.abar__agent { flex: none; font-size: var(--fs-sm); font-weight: 600; color: var(--accent); }
 .abar__gap { flex: 1; }
-.abar__b { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 12.5px; color: var(--text-2); transition: background-color var(--dur-1) ease, border-color var(--dur-1) ease, color var(--dur-1) ease; }
+.abar__b { display: inline-flex; align-items: center; gap: 6px; height: var(--ctl-s); padding: 0 10px; border-radius: var(--radius-sm); border: 1px solid var(--border); font-size: var(--fs-sm); color: var(--text-2); transition: background-color var(--dur-1) ease, border-color var(--dur-1) ease, color var(--dur-1) ease; }
 .abar__b:hover, .abar__b[data-on='true'] { background: var(--overlay-strong); color: var(--text); border-color: var(--border-strong); }
 .abar__compose { padding: 8px 10px 0 12px; }
-.abar__field { width: 100%; resize: none; padding: 8px 10px; border: 1px solid var(--border-strong); border-radius: 8px; background: var(--composer, var(--canvas)); color: var(--text); font: inherit; font-size: 13px; line-height: 1.45; outline: none; }
+.abar__field { width: 100%; resize: none; padding: 8px 10px; border: 1px solid var(--border-strong); border-radius: var(--radius-md); background: var(--composer, var(--canvas)); color: var(--text); font: inherit; font-size: var(--fs-md); line-height: 1.45; outline: none; }
 .cin__choices { max-height: 220px; }
 .blk__link { color: inherit; text-decoration: underline; text-decoration-color: color-mix(in srgb, currentColor 45%, transparent); text-underline-offset: 2px; }
 .blk__link:hover { text-decoration-color: currentColor; }
 /* The plugin offer, green like Warp's: something to do, not a warning. */
-.pchip { display: inline-flex; align-items: center; height: 26px; border: 1px solid color-mix(in srgb, var(--success) 45%, transparent); border-radius: 6px; background: color-mix(in srgb, var(--success) 12%, transparent); color: var(--text); font-size: 12.5px; overflow: hidden; white-space: nowrap; }
+.pchip { display: inline-flex; align-items: center; height: var(--ctl-s); border: 1px solid color-mix(in srgb, var(--success) 45%, transparent); border-radius: var(--radius-sm); background: color-mix(in srgb, var(--success) 12%, transparent); color: var(--text); font-size: var(--fs-sm); overflow: hidden; white-space: nowrap; }
 .pchip[data-step='failed'] { border-color: color-mix(in srgb, var(--danger) 45%, transparent); background: color-mix(in srgb, var(--danger) 10%, transparent); }
 .pchip__go, .pchip__say { display: inline-flex; align-items: center; gap: 6px; height: 100%; padding: 0 10px; color: inherit; }
 .pchip__go:hover { background: color-mix(in srgb, var(--success) 20%, transparent); }

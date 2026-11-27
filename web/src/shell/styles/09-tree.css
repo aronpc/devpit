@@ -6,21 +6,21 @@
 /* An icon and, when there is one, a count. The name is the tooltip: three
    words plus two counts took the whole width of a panel that can now be
    dragged narrow. */
-.rtab { height: 26px; min-width: 30px; padding: 0 8px; border-radius: 6px; display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 12.5px; color: var(--text-3); }
+.rtab { height: var(--ctl-s); min-width: 30px; padding: 0 8px; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; gap: 5px; font-size: var(--fs-sm); color: var(--text-3); }
 .rtab:hover { color: var(--text-2); }
 .rtab[aria-selected='true'] { background: var(--sidebar-item); color: var(--text); }
-.rtab__n { font-family: var(--mono); font-size: 10.5px; color: var(--ghost); font-variant-numeric: tabular-nums; }
+.rtab__n { font-family: var(--mono); font-size: var(--fs-2xs); color: var(--ghost); font-variant-numeric: tabular-nums; }
 .rtab[aria-selected='true'] .rtab__n { color: var(--accent); }
 .rview { display: none; flex: 1; min-height: 0; flex-direction: column; }
 .rview[data-open='true'] { display: flex; }
 
 /* Changed files, grouped by folder so a long list still reads. */
-.chgroup { padding: 8px 10px 2px; font-family: var(--mono); font-size: 10.5px; color: var(--ghost); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.chrow { display: flex; align-items: center; gap: 7px; width: 100%; min-width: 0; overflow: hidden; height: 25px; padding: 0 9px 0 10px; text-align: left; font-size: 12.5px; color: var(--text-2); white-space: nowrap; }
+.chgroup { padding: 8px 10px 2px; font-family: var(--mono); font-size: var(--fs-2xs); color: var(--ghost); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chrow { display: flex; align-items: center; gap: 7px; width: 100%; min-width: 0; overflow: hidden; height: var(--ctl-s); padding: 0 9px 0 10px; text-align: left; font-size: var(--fs-sm); color: var(--text-2); white-space: nowrap; }
 .chrow:hover { background: var(--sidebar-item); }
-.chrow__g { flex: none; width: 11px; font-family: var(--mono); font-size: 10.5px; text-align: center; }
+.chrow__g { flex: none; width: 11px; font-family: var(--mono); font-size: var(--fs-2xs); text-align: center; }
 .chrow__n { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-.chrow__s { flex: none; margin-left: auto; padding-left: 8px; font-family: var(--mono); font-size: 10px; font-variant-numeric: tabular-nums; }
+.chrow__s { flex: none; margin-left: auto; padding-left: 8px; font-family: var(--mono); font-size: var(--fs-2xs); font-variant-numeric: tabular-nums; }
 .chfoot { flex: none; border-top: 1px solid var(--border); padding: 8px; display: flex; gap: 6px; }
 /* Commit takes the room, because its label carries a count that must not
    wrap; Discard is the one you should have to aim at anyway. */
@@ -37,33 +37,33 @@
    was off the screen by the time you had read it. */
 .git__head { flex: none; display: flex; flex-direction: column; gap: 8px; padding: 8px 12px 10px; border-bottom: 1px solid var(--border); }
 .git__row { display: flex; align-items: center; gap: 6px; }
-.pr { height: 26px; padding: 0 10px; border-radius: 7px; display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--text); background: var(--overlay-strong); }
+.pr { height: var(--ctl-s); padding: 0 10px; border-radius: var(--radius-md); display: flex; align-items: center; gap: 6px; font-size: var(--fs-sm); color: var(--text); background: var(--overlay-strong); }
 .pr:hover { background: color-mix(in srgb, var(--accent) 18%, var(--overlay-strong)); }
-.git__branch { font-family: var(--mono); font-size: 12px; color: var(--text); }
-.git__up { margin-left: auto; display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 11.5px; color: var(--gauge); }
+.git__branch { font-family: var(--mono); font-size: var(--fs-sm); color: var(--text); }
+.git__up { margin-left: auto; display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: var(--fs-xs); color: var(--gauge); }
 .git__up svg { color: var(--text-3); }
 
-.msg { margin: 10px 0 0; border: 1px solid var(--border); border-radius: 9px; background: var(--inset); padding: 9px 10px; display: flex; align-items: flex-start; gap: 8px; min-height: 62px; }
-.msg__ph { flex: 1; font-size: 12.5px; color: var(--ghost); }
-.msg__ai { flex: none; width: 20px; height: 20px; border-radius: 5px; display: flex; align-items: center; justify-content: center; color: var(--text-3); }
+.msg { margin: 10px 0 0; border: 1px solid var(--border); border-radius: var(--ctl-r-m); background: var(--inset); padding: 9px 10px; display: flex; align-items: flex-start; gap: 8px; min-height: 62px; }
+.msg__ph { flex: 1; font-size: var(--fs-sm); color: var(--ghost); }
+.msg__ai { flex: none; width: var(--ctl-xs); height: var(--ctl-xs); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; color: var(--text-3); }
 .msg__ai:hover { background: var(--overlay-strong); color: var(--accent); }
 
 .stage { margin-top: 8px; display: flex; gap: 1px; }
-.stage__go { flex: 1; height: 30px; border-radius: 7px 0 0 7px; background: var(--overlay-strong); display: flex; align-items: center; justify-content: center; gap: 7px; font-size: 12.5px; color: var(--text-2); }
+.stage__go { flex: 1; height: var(--ctl-s); border-radius: var(--radius-md) 0 0 var(--radius-md); background: var(--overlay-strong); display: flex; align-items: center; justify-content: center; gap: 7px; font-size: var(--fs-sm); color: var(--text-2); }
 .stage__go:hover { background: color-mix(in srgb, var(--accent) 16%, var(--overlay-strong)); color: var(--text); }
-.stage__more { width: 30px; height: 30px; border-radius: 0 7px 7px 0; background: var(--overlay-strong); display: flex; align-items: center; justify-content: center; color: var(--text-3); }
+.stage__more { width: var(--ctl-s); height: var(--ctl-s); border-radius: 0 var(--radius-md) var(--radius-md) 0; background: var(--overlay-strong); display: flex; align-items: center; justify-content: center; color: var(--text-3); }
 .stage__more:hover { background: var(--overlay-strong); color: var(--text); }
 
 .git__body { flex: 1; min-height: 0; overflow-y: auto; padding: 12px 0 8px; }
-.sect { display: flex; align-items: center; gap: 6px; width: 100%; height: 26px; padding: 0 10px; text-align: left; }
+.sect { display: flex; align-items: center; gap: 6px; width: 100%; height: var(--ctl-s); padding: 0 10px; text-align: left; }
 .sect:hover { background: var(--sidebar-item); }
 .sect__chev { color: var(--text-3); flex: none; }
-.sect__t { font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-2); }
-.sect__n { font-size: 11px; color: var(--ghost); font-variant-numeric: tabular-nums; }
-.sect__all { margin-left: auto; font-size: 11.5px; color: var(--text-3); }
+.sect__t { font-size: var(--fs-xs); font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-2); }
+.sect__n { font-size: var(--fs-xs); color: var(--ghost); font-variant-numeric: tabular-nums; }
+.sect__all { margin-left: auto; font-size: var(--fs-xs); color: var(--text-3); }
 .sect:hover .sect__all { color: var(--gauge); }
 
-.gitrow { display: flex; align-items: center; gap: 6px; width: 100%; min-width: 0; height: 24px; padding-right: 10px; text-align: left; font-size: 12.5px; color: var(--text-2); white-space: nowrap; }
+.gitrow { display: flex; align-items: center; gap: 6px; width: 100%; min-width: 0; height: var(--ctl-s); padding-right: 10px; text-align: left; font-size: var(--fs-sm); color: var(--text-2); white-space: nowrap; }
 .gitrow:hover { background: var(--sidebar-item); }
 .gitrow__chev { width: 12px; flex: none; display: flex; align-items: center; justify-content: center; color: var(--ghost); }
 .gitrow__ico { flex: none; color: var(--text-3); }
@@ -71,8 +71,8 @@
 .gitrow--new .gitrow__ico { color: var(--success); }
 .gitrow__n { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .gitrow--file .gitrow__n, .gitrow--new .gitrow__n { color: var(--text); }
-.gitrow__end { flex: none; margin-left: auto; padding-left: 8px; display: flex; align-items: center; gap: 7px; font-family: var(--mono); font-size: 10.5px; font-variant-numeric: tabular-nums; }
-.gitrow__n2 { flex: none; margin-left: auto; padding-left: 8px; font-size: 11px; color: var(--ghost); font-variant-numeric: tabular-nums; }
+.gitrow__end { flex: none; margin-left: auto; padding-left: 8px; display: flex; align-items: center; gap: 7px; font-family: var(--mono); font-size: var(--fs-2xs); font-variant-numeric: tabular-nums; }
+.gitrow__n2 { flex: none; margin-left: auto; padding-left: 8px; font-size: var(--fs-xs); color: var(--ghost); font-variant-numeric: tabular-nums; }
 /* A folder is chrome and its files are the content, so the folder recedes —
    the eye should land on what changed, not on where it lives. */
 .gitrow--dir .gitrow__n { color: var(--text-3); }
@@ -81,7 +81,7 @@
    moves reads as the same control in two states. */
 .gitrow__chev { transition: transform var(--dur-1) ease; }
 .gitrow__chev[data-open='true'] { transform: rotate(90deg); }
-.gitrow__all { margin: 0 10px 4px auto; display: block; font-size: 11px; color: var(--ghost); }
+.gitrow__all { margin: 0 10px 4px auto; display: block; font-size: var(--fs-xs); color: var(--ghost); }
 .gitrow__all:hover { color: var(--text-2); }
 /* The actions sit over the row and appear under the pointer. Two buttons on
    every one of forty rows is eighty things competing with the names, which
@@ -92,14 +92,14 @@
 .gitrow:hover .gitrow__does, .gitrow__does:focus-within { opacity: 1; pointer-events: auto; }
 @media (hover: none) { .gitrow__does { opacity: 1; pointer-events: auto; } }
 
-.commits { flex: none; height: 34px; display: flex; align-items: center; gap: 7px; padding: 0 10px; border-top: 1px solid var(--border); }
-.commits__t { font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-2); }
+.commits { flex: none; height: var(--ctl-m); display: flex; align-items: center; gap: 7px; padding: 0 10px; border-top: 1px solid var(--border); }
+.commits__t { font-size: var(--fs-xs); font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-2); }
 
 /* The explorer gets Orca's finder above the tree. */
-.find { margin: 8px 10px 0; height: 28px; border-radius: 7px; background: var(--inset); border: 1px solid var(--border); display: flex; align-items: center; gap: 7px; padding: 0 9px; font-size: 12px; color: var(--ghost); }
+.find { margin: 8px 10px 0; height: var(--ctl-s); border-radius: var(--radius-md); background: var(--inset); border: 1px solid var(--border); display: flex; align-items: center; gap: 7px; padding: 0 9px; font-size: var(--fs-sm); color: var(--ghost); }
 .find:hover { border-color: var(--border-strong); }
-.seg { margin: 8px 10px 6px; height: 28px; display: flex; gap: 3px; padding: 2px; border-radius: 8px; background: var(--inset); }
-.segb { flex: 1; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--text-3); }
+.seg { margin: 8px 10px 6px; height: var(--ctl-s); display: flex; gap: 3px; padding: 2px; border-radius: var(--radius-md); background: var(--inset); }
+.segb { flex: 1; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; font-size: var(--fs-sm); color: var(--text-3); }
 .segb[aria-selected='true'], .segb[aria-checked='true'] { background: var(--raised); color: var(--text); }
 .segb:hover:not([aria-selected='true'], [aria-checked='true']) { color: var(--text-2); }
 
@@ -111,4 +111,4 @@
 .gitrow[aria-current='true'] .gitrow__n { color: var(--text); }
 /* Rows and their headings were tight enough that a group read as one block.
    Four more pixels of row and a line above each heading separate them. */
-.gitrow { height: 28px; }
+.gitrow { height: var(--ctl-s); }

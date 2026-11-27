@@ -2,13 +2,13 @@
    Read, never cleared: a list that empties itself is a list where the thing
    you meant to come back to is gone. */
 .bell { position: relative; }
-.bell__b { position: relative; width: 26px; height: 26px; border-radius: 7px; display: flex; align-items: center; justify-content: center; color: var(--text-2); }
+.bell__b { position: relative; width: var(--ctl-s); height: var(--ctl-s); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; color: var(--text-2); }
 .bell__b:hover { background: var(--overlay-strong); color: var(--text); }
-.bell__n { position: absolute; top: 1px; right: 0; min-width: 14px; height: 14px; padding: 0 3px; border-radius: 7px; background: var(--accent); color: var(--on-inverse); font-size: 9.5px; font-weight: 600; line-height: 14px; text-align: center; font-variant-numeric: tabular-nums; }
+.bell__n { position: absolute; top: 1px; right: 0; min-width: 14px; height: 14px; padding: 0 3px; border-radius: var(--radius-md); background: var(--accent); color: var(--on-inverse); font-size: var(--fs-3xs); font-weight: 600; line-height: 14px; text-align: center; font-variant-numeric: tabular-nums; }
 .bell__pop { position: absolute; right: 0; top: calc(100% + 6px); z-index: 200; width: 340px; border-radius: var(--radius-lg); background: var(--glass-solid); box-shadow: var(--e3), var(--top); animation: pop-in var(--dur-2) var(--ease-out) both; overflow: hidden; }
 .bell__top { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-bottom: 1px solid var(--border); }
-.bell__t { font-size: 12px; color: var(--text); }
-.bell__none { padding: 26px 16px; text-align: center; font-size: 12px; line-height: 1.55; color: var(--text-3); }
+.bell__t { font-size: var(--fs-sm); color: var(--text); }
+.bell__none { padding: 26px 16px; text-align: center; font-size: var(--fs-sm); line-height: 1.55; color: var(--text-3); }
 .bell__list { max-height: 380px; overflow-y: auto; }
 .bell__one { width: 100%; display: flex; align-items: flex-start; gap: 11px; padding: 12px 14px; text-align: left; }
 .bell__one:hover { background: var(--sidebar-item); }
@@ -20,8 +20,8 @@
 .bell__ico { flex: none; margin-top: 2px; color: var(--text-3); }
 .bell__one[data-kind='irreversible'] .bell__ico { color: var(--warning); }
 .bell__body { flex: 1; min-width: 0; }
-.bell__line { display: block; font-size: 12.5px; line-height: 1.4; color: var(--text-2); }
-.bell__d { display: block; margin-top: 4px; font-size: 11px; line-height: 1.45; color: var(--text-3); }
-.bell__when { flex: none; font-size: 10.5px; color: var(--ghost); white-space: nowrap; }
+.bell__line { display: block; font-size: var(--fs-sm); line-height: 1.4; color: var(--text-2); }
+.bell__d { display: block; margin-top: 4px; font-size: var(--fs-xs); line-height: 1.45; color: var(--text-3); }
+.bell__when { flex: none; font-size: var(--fs-2xs); color: var(--ghost); white-space: nowrap; }
 
 .apps__opt[aria-checked='true'] { background: var(--sidebar-item); color: var(--text); }

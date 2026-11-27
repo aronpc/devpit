@@ -7,17 +7,17 @@
 .fx { flex: 1; min-height: 0; display: flex; }
 .fx__tree { width: 218px; flex: none; overflow-y: auto; border-right: 1px solid var(--border); padding: 4px 0 10px; }
 .fx__main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.fx__crumb { height: 30px; flex: none; display: flex; align-items: center; gap: 5px; padding: 0 12px; font-family: var(--mono); font-size: 11.5px; color: var(--text-3); border-bottom: 1px solid var(--border); }
+.fx__crumb { height: var(--ctl-s); flex: none; display: flex; align-items: center; gap: 5px; padding: 0 12px; font-family: var(--mono); font-size: var(--fs-xs); color: var(--text-3); border-bottom: 1px solid var(--border); }
 .fx__crumb b { color: var(--text-2); font-weight: 500; }
 .fx__list { flex: 1; overflow-y: auto; padding: 4px 0 12px; }
-.fxrow { display: grid; grid-template-columns: 1fr 44px 74px 96px; align-items: center; gap: 10px; width: 100%; padding: 0 14px; height: 27px; text-align: left; font-size: 12.5px; color: var(--text-2); }
+.fxrow { display: grid; grid-template-columns: 1fr 44px 74px 96px; align-items: center; gap: 10px; width: 100%; padding: 0 14px; height: var(--ctl-s); text-align: left; font-size: var(--fs-sm); color: var(--text-2); }
 .fxrow:hover { background: var(--overlay); }
 .fxrow__n { display: flex; align-items: center; gap: 7px; min-width: 0; overflow: hidden; }
 .fxrow__n span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .fxrow__n svg { color: var(--text-3); }
-.fxrow__g { font-family: var(--mono); font-size: 10.5px; }
-.fxrow__z, .fxrow__t { font-family: var(--mono); font-size: 11px; color: var(--ghost); font-variant-numeric: tabular-nums; text-align: right; }
-.fxhead { color: var(--ghost); font-size: 10.5px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; height: 24px; }
+.fxrow__g { font-family: var(--mono); font-size: var(--fs-2xs); }
+.fxrow__z, .fxrow__t { font-family: var(--mono); font-size: var(--fs-xs); color: var(--ghost); font-variant-numeric: tabular-nums; text-align: right; }
+.fxhead { color: var(--ghost); font-size: var(--fs-2xs); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; height: var(--ctl-s); }
 .fxhead:hover { background: none; }
 
 /* ── Workspace strip ─────────────────────────────────────────────────
@@ -25,51 +25,51 @@
    devpit's own, and the difference decides what gets committed and what
    follows the machine — so every Resources screen opens by saying where
    it is reading from. */
-.wsrow { display: grid; grid-template-columns: 190px 1fr 84px; align-items: center; gap: 12px; width: 100%; padding: 0 10px; height: 34px; text-align: left; border-radius: 7px; }
+.wsrow { display: grid; grid-template-columns: 190px 1fr 84px; align-items: center; gap: 12px; width: 100%; padding: 0 10px; height: var(--ctl-m); text-align: left; border-radius: var(--radius-md); }
 .wsrow:hover { background: var(--overlay); }
-.wsrow__n { display: flex; align-items: center; gap: 8px; min-width: 0; font-family: var(--mono); font-size: 12px; color: var(--text); }
+.wsrow__n { display: flex; align-items: center; gap: 8px; min-width: 0; font-family: var(--mono); font-size: var(--fs-sm); color: var(--text); }
 .wsrow__n svg { flex: none; color: var(--text-3); }
 .wsrow__n span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.wsrow__w { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12.5px; color: var(--text-3); }
-.wsrow__z { font-family: var(--mono); font-size: 11px; color: var(--ghost); text-align: right; font-variant-numeric: tabular-nums; }
+.wsrow__w { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-sm); color: var(--text-3); }
+.wsrow__z { font-family: var(--mono); font-size: var(--fs-xs); color: var(--ghost); text-align: right; font-variant-numeric: tabular-nums; }
 
-.where { display: flex; align-items: center; gap: 8px; margin: 0 0 14px; padding: 8px 10px; border-radius: 9px; background: var(--inset); border: 1px solid var(--border); }
+.where { display: flex; align-items: center; gap: 8px; margin: 0 0 14px; padding: 8px 10px; border-radius: var(--ctl-r-m); background: var(--inset); border: 1px solid var(--border); }
 .where__ico { color: var(--text-3); flex: none; }
-.where__path { flex: 1; min-width: 0; font-family: var(--mono); font-size: 11px; color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.where__path { flex: 1; min-width: 0; font-family: var(--mono); font-size: var(--fs-xs); color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .where__path b { color: var(--text-2); font-weight: 400; }
-.where__go { flex: none; height: 22px; padding: 0 8px; border-radius: 5px; font-size: 11.5px; color: var(--text-3); white-space: nowrap; }
+.where__go { flex: none; height: var(--ctl-xs); padding: 0 8px; border-radius: var(--radius-sm); font-size: var(--fs-xs); color: var(--text-3); white-space: nowrap; }
 .where__go:hover { background: var(--overlay-strong); color: var(--text); }
 
 /* The file a row is defined by, shown on the row, because "where do I edit
    this" is the question that follows every one of these lists. */
-.cap__file { margin-top: 5px; display: flex; align-items: center; gap: 5px; font-family: var(--mono); font-size: 10.5px; color: var(--ghost); }
+.cap__file { margin-top: 5px; display: flex; align-items: center; gap: 5px; font-family: var(--mono); font-size: var(--fs-2xs); color: var(--ghost); }
 .cap:hover .cap__file { color: var(--text-3); }
 
 .list { flex: 1; overflow-y: auto; padding: 6px 0 18px; }
 /* Left-aligned and as wide as the pane: a narrow centred column left half the
    window empty beside a list that had more to show. Prose keeps a measure. */
 .list__in { padding: 0 20px; }
-.list__note { max-width: 78ch; font-size: 12.5px; color: var(--text-3); line-height: 1.5; margin: 2px 0 14px; }
+.list__note { max-width: 78ch; font-size: var(--fs-sm); color: var(--text-3); line-height: 1.5; margin: 2px 0 14px; }
 .list__tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 0 0 14px; }
-.list__search { flex: 1 1 220px; max-width: 360px; height: 30px; padding: 0 10px; border-radius: 7px; border: 1px solid var(--border); background: var(--inset); color: var(--text); font: inherit; font-size: 12.5px; }
+.list__search { flex: 1 1 220px; max-width: 360px; height: var(--ctl-s); padding: 0 10px; border-radius: var(--radius-md); border: 1px solid var(--border); background: var(--inset); color: var(--text); font: inherit; font-size: var(--fs-sm); }
 .list__search:focus { outline: none; border-color: var(--focus); box-shadow: var(--focus-field); }
-.list__seg { display: flex; gap: 3px; height: 30px; padding: 2px; border-radius: 8px; background: var(--inset); }
+.list__seg { display: flex; gap: 3px; height: var(--ctl-s); padding: 2px; border-radius: var(--radius-md); background: var(--inset); }
 .list__seg .segb { flex: none; padding: 0 10px; }
-.list__path { margin: 0 0 4px; font-family: var(--mono); font-size: 11.5px; color: var(--text-3); overflow-wrap: anywhere; }
-.list__h { font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-3); margin: 16px 0 6px; }
+.list__path { margin: 0 0 4px; font-family: var(--mono); font-size: var(--fs-xs); color: var(--text-3); overflow-wrap: anywhere; }
+.list__h { font-size: var(--fs-xs); font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-3); margin: 16px 0 6px; }
 .list__h:first-child { margin-top: 2px; }
 .list__h span { margin-left: 7px; color: var(--ghost); font-weight: 500; letter-spacing: 0; }
 
-.cap { display: flex; align-items: flex-start; gap: 11px; width: 100%; text-align: left; padding: 10px; border-radius: 9px; border: 1px solid transparent; transition: background-color var(--dur-2) ease, border-color var(--dur-2) ease; }
+.cap { display: flex; align-items: flex-start; gap: 11px; width: 100%; text-align: left; padding: 10px; border-radius: var(--ctl-r-m); border: 1px solid transparent; transition: background-color var(--dur-2) ease, border-color var(--dur-2) ease; }
 .cap:hover { background: var(--overlay); border-color: var(--border); }
-.cap__ico { width: 28px; height: 28px; flex: none; border-radius: 8px; background: var(--raised); display: flex; align-items: center; justify-content: center; color: var(--text-2); transition: color var(--dur-3) ease, background-color var(--dur-3) ease; }
+.cap__ico { width: var(--ctl-s); height: var(--ctl-s); flex: none; border-radius: var(--radius-md); background: var(--raised); display: flex; align-items: center; justify-content: center; color: var(--text-2); transition: color var(--dur-3) ease, background-color var(--dur-3) ease; }
 .cap__body { flex: 1; min-width: 0; }
 .cap__top { display: flex; align-items: center; gap: 8px; }
-.cap__name { font-size: 13px; color: var(--text); }
-.cap__ver { font-family: var(--mono); font-size: 10.5px; color: var(--ghost); }
-.cap__what { margin-top: 3px; font-size: 12px; color: var(--text-3); line-height: 1.45; }
+.cap__name { font-size: var(--fs-md); color: var(--text); }
+.cap__ver { font-family: var(--mono); font-size: var(--fs-2xs); color: var(--ghost); }
+.cap__what { margin-top: 3px; font-size: var(--fs-sm); color: var(--text-3); line-height: 1.45; }
 
-.sw { position: relative; width: 30px; height: 18px; flex: none; margin-top: 4px; border-radius: 9px; background: var(--overlay-strong); transition: background-color var(--dur-3) ease; }
+.sw { position: relative; width: 30px; height: var(--ctl-xs); flex: none; margin-top: 4px; border-radius: var(--ctl-r-m); background: var(--overlay-strong); transition: background-color var(--dur-3) ease; }
 .sw::after { content: ''; position: absolute; top: 3px; left: 3px; width: 12px; height: 12px; border-radius: 50%; background: var(--text-3); transition: transform var(--dur-3) var(--ease-out), background-color var(--dur-3) ease; }
 
 /* ── Capabilities, as cards ──────────────────────────────────────────
@@ -77,35 +77,35 @@
    and a column of one reads as a settings page. A card that is on says so
    from across the pane: accent edge, glyph and dot. */
 .capset__quiet { padding: 36px 20px 40px; }
-.capset__problem { margin: 0 0 12px; font-size: 12px; color: var(--danger); }
-.capset__said { margin: 0 0 12px; font-size: 12px; color: var(--text-2); }
+.capset__problem { margin: 0 0 12px; font-size: var(--fs-sm); color: var(--danger); }
+.capset__said { margin: 0 0 12px; font-size: var(--fs-sm); color: var(--text-2); }
 .capgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
-.capcard { display: flex; flex-direction: column; min-width: 0; padding: 14px 14px 10px; border-radius: 11px; background: var(--overlay); border: 1px solid var(--border); transition: border-color var(--dur-3) ease, background-color var(--dur-3) ease; }
+.capcard { display: flex; flex-direction: column; min-width: 0; padding: 14px 14px 10px; border-radius: var(--radius-lg); background: var(--overlay); border: 1px solid var(--border); transition: border-color var(--dur-3) ease, background-color var(--dur-3) ease; }
 .capcard:hover { border-color: var(--border-strong); }
 .capcard[data-on='true'] { border-color: color-mix(in srgb, var(--accent) 40%, var(--border)); background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 9%, transparent), transparent 64%), var(--overlay); }
 .capcard__head { display: flex; align-items: center; gap: 11px; }
-.capcard__ico { width: 34px; height: 34px; flex: none; border-radius: 9px; display: flex; align-items: center; justify-content: center; color: var(--text-2); background: var(--raised); border: 1px solid var(--border); transition: color var(--dur-3) ease, background-color var(--dur-3) ease, border-color var(--dur-3) ease; }
+.capcard__ico { width: var(--ctl-m); height: var(--ctl-m); flex: none; border-radius: var(--ctl-r-m); display: flex; align-items: center; justify-content: center; color: var(--text-2); background: var(--raised); border: 1px solid var(--border); transition: color var(--dur-3) ease, background-color var(--dur-3) ease, border-color var(--dur-3) ease; }
 .capcard[data-on='true'] .capcard__ico { color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, var(--raised)); border-color: color-mix(in srgb, var(--accent) 30%, transparent); }
 .capcard__id { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.capcard__name { font-size: 13.5px; font-weight: 500; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.capcard__ver { font-family: var(--mono); font-size: 10.5px; color: var(--ghost); }
+.capcard__name { font-size: var(--fs-lg); font-weight: 500; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.capcard__ver { font-family: var(--mono); font-size: var(--fs-2xs); color: var(--ghost); }
 /* The switch's own hit area, padded past the track so it is not a 30px target. */
-.capcard__sw { flex: none; align-self: flex-start; padding: 6px; margin: -2px -6px 0 0; border-radius: 12px; }
+.capcard__sw { flex: none; align-self: flex-start; padding: 6px; margin: -2px -6px 0 0; border-radius: var(--radius-lg); }
 .capcard__sw .sw { display: block; margin-top: 0; }
 .capcard__sw:hover .sw { background: var(--border-strong); }
 .capcard__sw[aria-checked='true'] .sw { background: color-mix(in srgb, var(--accent) 45%, transparent); }
 .capcard__sw[aria-checked='true'] .sw::after { transform: translateX(12px); background: var(--accent); }
 .capcard__sw:focus-visible, .capcard__open:focus-visible, .capcard__install:focus-visible, .capcard__uninstall:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 70%, transparent); outline-offset: 1px; }
-.capcard__what { margin: 11px 0 0; font-size: 12px; line-height: 1.45; color: var(--text-3); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.capcard__what { margin: 11px 0 0; font-size: var(--fs-sm); line-height: 1.45; color: var(--text-3); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .capcard__adds { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 5px; }
-.capcard__add { font-size: 11px; line-height: 18px; padding: 0 7px; border-radius: 5px; color: var(--text-2); background: var(--overlay-strong); }
+.capcard__add { font-size: var(--fs-xs); line-height: 18px; padding: 0 7px; border-radius: var(--radius-sm); color: var(--text-2); background: var(--overlay-strong); }
 .capcard__foot { margin-top: auto; padding-top: 14px; display: flex; align-items: center; gap: 8px; min-height: 40px; }
 .capcard__adds + .capcard__foot { margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--border); }
-.capcard__state { display: flex; align-items: center; gap: 7px; font-size: 11.5px; color: var(--ghost); }
+.capcard__state { display: flex; align-items: center; gap: 7px; font-size: var(--fs-xs); color: var(--ghost); }
 .capcard__state::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--ghost); }
 .capcard[data-on='true'] .capcard__state { color: var(--text-2); }
 .capcard[data-on='true'] .capcard__state::before { background: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); }
-.capcard__open, .capcard__install { margin-left: auto; height: 26px; padding: 0 8px 0 10px; border-radius: 7px; display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text); background: color-mix(in srgb, var(--accent) 15%, transparent); border: 1px solid color-mix(in srgb, var(--accent) 32%, transparent); transition: background-color var(--dur-1) ease, border-color var(--dur-1) ease; }
+.capcard__open, .capcard__install { margin-left: auto; height: var(--ctl-s); padding: 0 8px 0 10px; border-radius: var(--radius-md); display: flex; align-items: center; gap: 6px; font-size: var(--fs-sm); color: var(--text); background: color-mix(in srgb, var(--accent) 15%, transparent); border: 1px solid color-mix(in srgb, var(--accent) 32%, transparent); transition: background-color var(--dur-1) ease, border-color var(--dur-1) ease; }
 .capcard__open:hover, .capcard__install:hover { background: color-mix(in srgb, var(--accent) 24%, transparent); border-color: color-mix(in srgb, var(--accent) 50%, transparent); }
 .capcard__open svg, .capcard__install svg { color: var(--accent); transition: transform var(--dur-2) ease; }
 .capcard__open:hover svg { transform: translateX(2px); }
@@ -114,14 +114,14 @@
 .capcard[data-installed='false'] .capcard__ico { background: transparent; border-style: dashed; }
 .capcard[data-installed='false'] .capcard__state::before { background: transparent; box-shadow: inset 0 0 0 1px var(--ghost); }
 /* Quiet and at the far end from Open: the dialogs guard it, distance keeps a reach for Open off it. */
-.capcard__uninstall { height: 24px; padding: 0 7px; margin-left: 2px; border-radius: 6px; font-size: 11.5px; color: var(--ghost); transition: color var(--dur-1) ease, background-color var(--dur-1) ease; }
+.capcard__uninstall { height: var(--ctl-s); padding: 0 7px; margin-left: 2px; border-radius: var(--radius-sm); font-size: var(--fs-xs); color: var(--ghost); transition: color var(--dur-1) ease, background-color var(--dur-1) ease; }
 .capcard__uninstall:hover { color: var(--danger); background: color-mix(in srgb, var(--danger) 10%, transparent); }
 .capcard--ghost { gap: 10px; min-height: 150px; }
-.capcard__ghost { height: 10px; border-radius: 3px; background: linear-gradient(90deg, var(--overlay) 25%, var(--overlay-strong) 37%, var(--overlay) 63%); background-size: 380% 100%; animation: shimmer var(--loop-2) ease-in-out infinite; }
+.capcard__ghost { height: 10px; border-radius: var(--radius-xs); background: linear-gradient(90deg, var(--overlay) 25%, var(--overlay-strong) 37%, var(--overlay) 63%); background-size: 380% 100%; animation: shimmer var(--loop-2) ease-in-out infinite; }
 .capcard__ghost:first-child { width: 45%; height: 14px; }
 .capcard__ghost:last-child { width: 70%; }
 
-.browse { width: 100%; margin-top: 6px; height: 36px; border-radius: 9px; border: 1px dashed var(--border-strong); display: flex; align-items: center; justify-content: center; gap: 7px; font-size: 12.5px; color: var(--text-3); transition: color var(--dur-2) ease, border-color var(--dur-2) ease; }
+.browse { width: 100%; margin-top: 6px; height: var(--ctl-m); border-radius: var(--ctl-r-m); border: 1px dashed var(--border-strong); display: flex; align-items: center; justify-content: center; gap: 7px; font-size: var(--fs-sm); color: var(--text-3); transition: color var(--dur-2) ease, border-color var(--dur-2) ease; }
 .browse:hover { color: var(--text-2); border-color: var(--ghost); }
 
 /* Read-only rows: no hover lift, because nothing here responds to a
@@ -129,11 +129,11 @@
    row that does. */
 .cap--read { padding: 7px 10px; }
 .cap--read:hover { background: none; border-color: transparent; }
-.cap__src { font-size: 10px; color: var(--text-3); background: var(--overlay-strong); padding: 1px 6px; border-radius: 4px; }
+.cap__src { font-size: var(--fs-2xs); color: var(--text-3); background: var(--overlay-strong); padding: 1px 6px; border-radius: var(--radius-xs); }
 
 .mcp__dot { width: 6px; height: 6px; border-radius: 50%; flex: none; }
-.mcp__tools { font-family: var(--mono); font-size: 10.5px; color: var(--ghost); }
-.mcp__err { margin-top: 3px; font-family: var(--mono); font-size: 11px; color: var(--danger); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mcp__tools { font-family: var(--mono); font-size: var(--fs-2xs); color: var(--ghost); }
+.mcp__err { margin-top: 3px; font-family: var(--mono); font-size: var(--fs-xs); color: var(--danger); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 @media (prefers-reduced-motion: reduce) {
   .sw, .sw::after, .capcard, .capcard__ico, .capcard__open svg, .capcard__uninstall { transition: none; }
@@ -142,25 +142,25 @@
 
 .skills { flex: 1; overflow-y: auto; padding: 6px 0 16px; }
 .skills__in { max-width: 620px; margin: 0 auto; padding: 0 16px; }
-.skills__note { font-size: 12.5px; color: var(--text-3); line-height: 1.5; margin: 2px 0 14px; }
-.skill { display: flex; align-items: flex-start; gap: 10px; padding: 10px 10px; border-radius: 9px; border: 1px solid transparent; transition: background-color var(--dur-2) ease, border-color var(--dur-2) ease; }
+.skills__note { font-size: var(--fs-sm); color: var(--text-3); line-height: 1.5; margin: 2px 0 14px; }
+.skill { display: flex; align-items: flex-start; gap: 10px; padding: 10px 10px; border-radius: var(--ctl-r-m); border: 1px solid transparent; transition: background-color var(--dur-2) ease, border-color var(--dur-2) ease; }
 .skill:hover { background: var(--overlay); border-color: var(--border); }
-.skill__ico { width: 26px; height: 26px; flex: none; border-radius: 7px; background: var(--raised); display: flex; align-items: center; justify-content: center; color: var(--text-2); margin-top: 1px; }
+.skill__ico { width: var(--ctl-s); height: var(--ctl-s); flex: none; border-radius: var(--radius-md); background: var(--raised); display: flex; align-items: center; justify-content: center; color: var(--text-2); margin-top: 1px; }
 .skill__body { flex: 1; min-width: 0; }
 .skill__top { display: flex; align-items: center; gap: 8px; }
-.skill__name { font-family: var(--mono); font-size: 12.5px; color: var(--text); }
-.skill__lane { font-size: 11px; color: var(--accent-ink); background: var(--accent-soft); padding: 1px 6px; border-radius: 4px; }
-.skill__model { margin-left: auto; font-family: var(--mono); font-size: 10.5px; color: var(--ghost); }
-.skill__file { margin-top: 4px; display: flex; align-items: center; gap: 5px; font-family: var(--mono); font-size: 10.5px; color: var(--ghost); }
+.skill__name { font-family: var(--mono); font-size: var(--fs-sm); color: var(--text); }
+.skill__lane { font-size: var(--fs-xs); color: var(--accent-ink); background: var(--accent-soft); padding: 1px 6px; border-radius: var(--radius-xs); }
+.skill__model { margin-left: auto; font-family: var(--mono); font-size: var(--fs-2xs); color: var(--ghost); }
+.skill__file { margin-top: 4px; display: flex; align-items: center; gap: 5px; font-family: var(--mono); font-size: var(--fs-2xs); color: var(--ghost); }
 .skill__file svg { flex: none; }
 .skill:hover .skill__file { color: var(--text-3); }
-.skill__what { margin-top: 4px; font-size: 12px; color: var(--text-3); line-height: 1.45; }
-.skill__off { font-size: 11px; color: var(--ghost); background: var(--overlay-strong); padding: 1px 6px; border-radius: 4px; }
+.skill__what { margin-top: 4px; font-size: var(--fs-sm); color: var(--text-3); line-height: 1.45; }
+.skill__off { font-size: var(--fs-xs); color: var(--ghost); background: var(--overlay-strong); padding: 1px 6px; border-radius: var(--radius-xs); }
 
 /* A file, open in the middle. */
 .pane--file { background: var(--inset); }
 .pane--file .pane__bar { border-bottom: 1px solid var(--border); }
-.code { flex: 1; overflow: auto; padding: 8px 0 12px; font-family: var(--mono); font-size: 11.5px; line-height: 1.65; }
+.code { flex: 1; overflow: auto; padding: 8px 0 12px; font-family: var(--mono); font-size: var(--fs-xs); line-height: 1.65; }
 .ln { display: flex; }
 .ln__n { width: 38px; flex: none; text-align: right; padding-right: 12px; color: var(--ghost); font-variant-numeric: tabular-nums; user-select: none; }
 .ln__c { white-space: pre; padding-right: 14px; }

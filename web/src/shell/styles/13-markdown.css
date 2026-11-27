@@ -1,20 +1,20 @@
 /* Markdown, in the theme's own tokens: a preview with a fixed white ground is
    a hole in a dark window. */
-.md { max-width: var(--content-max); margin: 0 auto; padding: 12px 20px 24px; font-family: var(--ui); font-size: calc(13.5px * var(--text-scale, 1)); line-height: 1.65; color: var(--text-2); }
+.md { max-width: var(--content-max); margin: 0 auto; padding: 12px 20px 24px; font-family: var(--ui); font-size: var(--fs-lg); line-height: 1.65; color: var(--text-2); }
 .md__h { margin: 18px 0 8px; color: var(--text); font-weight: 600; line-height: 1.3; }
 .md__p { margin: 0 0 12px; }
 .md__list { margin: 0 0 12px; padding-left: 20px; }
 .md__list li { margin-bottom: 4px; }
 .md__quote { margin: 0 0 12px; padding-left: 12px; border-left: 2px solid var(--border); color: var(--text-3); }
 .md__rule { margin: 18px 0; border: 0; border-top: 1px solid var(--border); }
-.md__code { margin: 0 0 12px; padding: 10px 12px; border-radius: 8px; background: var(--inset); overflow-x: auto; font-family: var(--mono); font-size: var(--fs-code); line-height: 1.6; }
+.md__code { margin: 0 0 12px; padding: 10px 12px; border-radius: var(--radius-md); background: var(--inset); overflow-x: auto; font-family: var(--mono); font-size: var(--fs-code); line-height: 1.6; }
 .md__math[data-display] { display: block; margin: 0 0 12px; overflow-x: auto; }
-.md__tick { padding: 1px 5px; border-radius: 4px; background: var(--overlay); font-family: var(--mono); font-size: var(--fs-code); }
-.md__img { max-width: 100%; border-radius: 6px; }
+.md__tick { padding: 1px 5px; border-radius: var(--radius-xs); background: var(--overlay); font-family: var(--mono); font-size: var(--fs-code); }
+.md__img { max-width: 100%; border-radius: var(--radius-sm); }
 .md__a { display: inline; padding: 0; color: var(--accent); text-decoration: underline; font: inherit; }
 .md__diagram { margin: 0 0 12px; display: flex; justify-content: center; }
-.md__tablewrap { margin: 0 0 12px; overflow-x: auto; border: 1px solid var(--border); border-radius: 8px; }
-.md__table { width: 100%; border-collapse: collapse; font-size: 12.5px; line-height: 1.5; }
+.md__tablewrap { margin: 0 0 12px; overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius-md); }
+.md__table { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); line-height: 1.5; }
 .md__table th { padding: 8px 12px; text-align: left; font-weight: 600; color: var(--text); background: var(--raised); border-bottom: 1px solid var(--border); white-space: nowrap; }
 .md__table td { padding: 8px 12px; vertical-align: top; border-top: 1px solid var(--border); }
 .md__table tbody tr:first-child td { border-top: 0; }
@@ -22,20 +22,20 @@
 /* Changes: three groups, because a commit takes one of them. */
 /* The section's own action sits beside its name. `Unstage all` used to be a
    chip at the top that applied to a group two screens down. */
-.git__group { padding: 14px 10px 6px 12px; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--text-3); display: flex; align-items: center; gap: 6px; }
+.git__group { padding: 14px 10px 6px 12px; font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .04em; color: var(--text-3); display: flex; align-items: center; gap: 6px; }
 .git__count { color: var(--ghost); }
 .git__group .gitrow__act { margin-left: auto; opacity: 0; transition: opacity var(--dur-1) ease; }
 .git__group:hover .gitrow__act, .git__group .gitrow__act:focus-visible { opacity: 1; }
 .gitrow__open { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; text-align: left; padding: 0; background: none; color: inherit; font: inherit; }
-.gitrow__act { width: 18px; height: 18px; border-radius: 4px; color: var(--text-3); font-size: 13px; line-height: 1; }
+.gitrow__act { width: var(--ctl-xs); height: var(--ctl-xs); border-radius: var(--radius-xs); color: var(--text-3); font-size: var(--fs-md); line-height: 1; }
 .gitrow__act:hover { background: var(--overlay); color: var(--text); }
 .gitrow__act:disabled { opacity: .4; }
 /* Full width, because it is the one thing the panel is asking you to do. */
 .git__go { width: 100%; justify-content: center; }
 /* Why a button will not go. A disabled control that does not explain itself
    is a dead end. */
-.git__why { font-size: 11.5px; line-height: 1.5; color: var(--text-3); }
-.git__msg { min-height: 56px; padding: 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--composer); color: var(--text); font-family: inherit; font-size: 12.5px; resize: vertical; outline: none; }
+.git__why { font-size: var(--fs-xs); line-height: 1.5; color: var(--text-3); }
+.git__msg { min-height: 56px; padding: 8px; border-radius: var(--radius-md); border: 1px solid var(--border); background: var(--composer); color: var(--text); font-family: inherit; font-size: var(--fs-sm); resize: vertical; outline: none; }
 .git__msg::placeholder { color: var(--ghost); }
 
 /* A diff. The four kinds of line get their own ground rather than their own
@@ -48,7 +48,7 @@
 .diff__l[data-d='gap'] { background: var(--inset); }
 .diff__two { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--border); }
 .diff__two > div { background: var(--canvas); overflow-x: auto; }
-.diff__moved { padding: 6px 12px; font-size: 12px; color: var(--text-3); }
+.diff__moved { padding: 6px 12px; font-size: var(--fs-sm); color: var(--text-3); }
 /* Whitespace marks sit under the text in weight: they are the answer to a
    question, not part of the code. */
 .diff__ws { color: var(--ghost); }
@@ -58,17 +58,17 @@
 /* A column: the filter stays put while a long list scrolls under it. */
 .branchmenu { position: absolute; top: calc(100% + 6px); right: 0; z-index: 420; display: flex; flex-direction: column; min-width: 240px; max-width: 360px; max-height: min(460px, calc(100vh - 90px)); padding: 4px; border-radius: var(--radius-lg); background: var(--glass-solid); box-shadow: var(--e3), var(--top); }
 .branchmenu__list { min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
-.branchmenu__f { flex: none; height: 28px; margin: 2px 2px 6px; padding: 0 8px; border-radius: 6px; border: 1px solid var(--border); background: var(--inset); font: inherit; font-size: 12px; color: var(--text); }
+.branchmenu__f { flex: none; height: var(--ctl-s); margin: 2px 2px 6px; padding: 0 8px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--inset); font: inherit; font-size: var(--fs-sm); color: var(--text); }
 .branchmenu__f:focus { outline: none; border-color: var(--focus); box-shadow: var(--focus-field); }
-.branchmenu__i { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; width: 100%; padding: 6px 8px; border-radius: 6px; text-align: left; }
+.branchmenu__i { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; width: 100%; padding: 6px 8px; border-radius: var(--radius-sm); text-align: left; }
 .branchmenu__i:hover { background: var(--overlay); }
 .branchmenu__i[aria-current='true'] { background: var(--overlay-strong); }
-.branchmenu__n { font-size: 12.5px; color: var(--text); }
-.branchmenu__s { font-size: 11.5px; color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
-.branchmenu__no { padding: 6px 8px; font-size: 11.5px; color: var(--danger); white-space: pre-wrap; }
+.branchmenu__n { font-size: var(--fs-sm); color: var(--text); }
+.branchmenu__s { font-size: var(--fs-xs); color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.branchmenu__no { padding: 6px 8px; font-size: var(--fs-xs); color: var(--danger); white-space: pre-wrap; }
 
 /* The copy button sits in the block's corner, seen when the block is pointed at. */
 .md__block { position: relative; }
-.md__copy { position: absolute; top: 6px; right: 6px; width: 22px; height: 22px; border-radius: 5px; display: flex; align-items: center; justify-content: center; color: var(--ghost); background: var(--inset); opacity: 0; }
+.md__copy { position: absolute; top: 6px; right: 6px; width: var(--ctl-xs); height: var(--ctl-xs); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; color: var(--ghost); background: var(--inset); opacity: 0; }
 .md__block:hover .md__copy, .md__copy:focus-visible, .md__copy[aria-label="Copied"] { opacity: 1; }
 .md__copy:hover { background: var(--overlay); color: var(--text-2); }

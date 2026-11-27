@@ -1,14 +1,14 @@
 /* ── Middle: however many panes are open ────────────────────────── */
 
 .mid { display: flex; flex-direction: column; min-width: 0; min-height: 0; background: var(--canvas); }
-.mid__bar { height: 34px; flex: none; display: flex; align-items: center; gap: 6px; padding: 0 8px; }
+.mid__bar { height: var(--ctl-m); flex: none; display: flex; align-items: center; gap: 6px; padding: 0 8px; }
 .mid__title { font-size: var(--fs-md); color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .netstat { display: flex; align-items: center; gap: 6px; margin-right: 4px; padding-left: 2px; font-size: var(--fs-sm); font-family: var(--mono); font-variant-numeric: tabular-nums; }
 .add { color: var(--success); }
 .del { color: var(--danger); }
 
 .wctl { display: flex; align-items: center; margin-left: 2px; }
-.wbtn { width: 36px; height: 34px; display: flex; align-items: center; justify-content: center; color: var(--text-2); border-radius: var(--ctl-r-xs); }
+.wbtn { width: 36px; height: var(--ctl-m); display: flex; align-items: center; justify-content: center; color: var(--text-2); border-radius: var(--ctl-r-xs); }
 .wbtn:hover { background: var(--overlay); }
 .wbtn:active { background: var(--overlay-strong); }
 .wbtn--x:hover { background: #c42b1c; color: #fff; }
@@ -46,7 +46,7 @@
 .tab__dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
 /* A chat's turn or an agent finished here while you were elsewhere. */
 .tab__new { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex: none; }
-.tabs__sep { width: 1px; height: 18px; background: var(--border); margin: 0 6px; flex: none; }
+.tabs__sep { width: 1px; height: var(--ctl-xs); background: var(--border); margin: 0 6px; flex: none; }
 
 /* A tab can be dragged into a new place. The strip's order is the array
    below it, so a drag edits that array and the DOM follows — nothing is
@@ -82,15 +82,15 @@
    move is — a bare canvas reads as something failing to load. */
 .blank { display: none; flex: 1; flex-direction: column; align-items: center; justify-content: center; gap: 0; padding-bottom: 40px; }
 .panes[data-empty='true'] .blank { display: flex; }
-.blank__mark { width: 88px; height: 88px; display: flex; align-items: center; justify-content: center; background: var(--raised); border: 1px solid var(--border-strong); border-radius: 26px; overflow: hidden; }
+.blank__mark { width: 88px; height: 88px; display: flex; align-items: center; justify-content: center; background: var(--raised); border: 1px solid var(--border-strong); border-radius: var(--radius-2xl); overflow: hidden; }
 .blank__mark:has(img[src]) { background: none; border: none; box-shadow: var(--glow); }
-.blank__name { margin-top: 16px; font-size: 17px; font-weight: 560; letter-spacing: -0.01em; color: var(--text); }
-.blank__sub { margin-top: 5px; font-size: 12.5px; color: var(--text-3); }
+.blank__name { margin-top: 16px; font-size: var(--fs-xl); font-weight: 560; letter-spacing: -0.01em; color: var(--text); }
+.blank__sub { margin-top: 5px; font-size: var(--fs-sm); color: var(--text-3); }
 .blank__keys { margin-top: 22px; display: flex; flex-direction: column; gap: 2px; }
-.blank__k { display: flex; align-items: center; gap: 10px; height: 30px; padding: 0 10px; border-radius: 8px; min-width: 210px; }
+.blank__k { display: flex; align-items: center; gap: 10px; height: var(--ctl-s); padding: 0 10px; border-radius: var(--radius-md); min-width: 210px; }
 .blank__k:hover { background: var(--overlay); }
 .blank__k svg { color: var(--text-3); flex: none; }
-.blank__k b { flex: 1; font-weight: 400; font-size: 12.5px; color: var(--text-2); text-align: left; }
+.blank__k b { flex: 1; font-weight: 400; font-size: var(--fs-sm); color: var(--text-2); text-align: left; }
 .blank__k:hover b { color: var(--text); }
-.blank__k span { font-family: var(--mono); font-size: 10.5px; color: var(--ghost); }
+.blank__k span { font-family: var(--mono); font-size: var(--fs-2xs); color: var(--ghost); }
 

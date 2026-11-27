@@ -55,55 +55,17 @@ const RAW: Record<Kind, [RegExp, (value: string) => boolean]> = {
   ],
 }
 
-/** Every value of a kind in `css` written by hand, with its line. */
+/** Every value of a kind in `css` written by hand, with its line. A line whose
+    comment starts `raw:` and says why it keeps one is the allowlist, let through. */
 function raw(css: string, kind: Kind): string[] {
   const [declaration, isRaw] = RAW[kind]
+  const kept = new Set(css.split('\n').flatMap((line, at) => (line.includes('/* raw:') ? [at] : [])))
   const bare = css.replace(/\/\*[\s\S]*?\*\//g, (comment) => comment.replace(/[^\n]/g, ' '))
   return bare.split('\n').flatMap((line, at) =>
-    [...line.matchAll(declaration)].filter((m) => isRaw(m[1])).map((m) => `line ${at + 1}: ${m[0].trim()}`),
+    kept.has(at)
+      ? []
+      : [...line.matchAll(declaration)].filter((m) => isRaw(m[1])).map((m) => `line ${at + 1}: ${m[0].trim()}`),
   )
-}
-
-/*
- * How many hand-written values each part may still hold. It only goes down:
- * a part that loses some lowers its number here, and a new value fails.
- */
-const BUDGET: Record<string, Partial<Record<Kind, number>>> = {
-  '01-frame.css': { size: 14, radius: 3, height: 3 },
-  '02-sheet.css': { size: 13, radius: 1 },
-  '03-sidebar.css': { size: 57, radius: 25, height: 15 },
-  '04-tabs.css': { size: 4, radius: 2, height: 4 },
-  '05-motion.css': { radius: 1 },
-  '06-settings.css': { size: 1, height: 16 },
-  '07-board.css': { height: 8 },
-  '08-capabilities.css': { size: 39, radius: 21, height: 14 },
-  '09-tree.css': { size: 21, radius: 9, height: 12 },
-  '10-explorer.css': { size: 39, radius: 24, height: 16 },
-  '11-onboarding.css': { size: 8, radius: 5, height: 2 },
-  '12-editor.css': { size: 8, radius: 7, height: 1 },
-  '13-markdown.css': { size: 11, radius: 9, height: 3 },
-  '14-chat.css': { height: 18 },
-  '15-splits.css': {},
-  '16-agent-pane.css': { size: 12, radius: 2, height: 3 },
-  '17-worktrees.css': { size: 13, radius: 7, height: 3 },
-  '18-card.css': { height: 2 },
-  '19-bell.css': { size: 6, radius: 2, height: 1 },
-  '20-files.css': { size: 8, radius: 3, height: 6 },
-  '21-turn.css': { height: 9 },
-  '22-plugins.css': { size: 4, radius: 2, height: 2 },
-  '23-update.css': { size: 7, radius: 5, height: 2 },
-  '24-browser.css': { size: 11, radius: 7, height: 1 },
-  '25-git.css': { size: 14, radius: 5, height: 6 },
-  '26-rail.css': { size: 17, radius: 9, height: 12 },
-  '27-history.css': { size: 9, radius: 4, height: 2 },
-  '28-blocks.css': { size: 18, radius: 9, height: 8 },
-  '29-fields.css': { radius: 1 },
-  '30-devflow.css': { size: 48, radius: 20, height: 8 },
-  '31-schedules.css': { size: 3, radius: 2, height: 1 },
-  '32-ask.css': { size: 13, radius: 6 },
-  '33-glass.css': {},
-  '34-icon.css': {},
-  '35-toast.css': {},
 }
 
 const KINDS: Kind[] = ['size', 'radius', 'height', 'shadow', 'motion']
@@ -132,17 +94,14 @@ describe("the shell's scales", () => {
     for (const kind of KINDS) expect(raw(tokens, kind)).toEqual([])
   })
 
-  it('has a budget for every part, and a part for every budget', () => {
-    expect(Object.keys(BUDGET).sort()).toEqual(PARTS)
+  it('lets a value through on a line that says why it is kept', () => {
+    expect(raw('.a { font-size: 0.87em; } /* raw: sized against the text around it */', 'size')).toEqual([])
+    expect(raw('.a { font-size: 0.87em; }', 'size')).toHaveLength(1)
   })
 
-  it.each(PARTS)('%s holds no more hand-written values than its budget', (part) => {
+  it.each(PARTS)('%s writes no size, radius, control height, shadow or motion by hand', (part) => {
     const css = read(`${STYLES}/${part}`)
-    const over = KINDS.flatMap((kind) => {
-      const found = raw(css, kind)
-      return found.length > (BUDGET[part]?.[kind] ?? 0) ? [`${kind}: ${found.length} > ${BUDGET[part]?.[kind] ?? 0}`, ...found] : []
-    })
-    expect(over).toEqual([])
+    expect(KINDS.flatMap((kind) => raw(css, kind))).toEqual([])
   })
 
   it.each(PARTS)('%s names only tokens that tokens.css defines', (part) => {

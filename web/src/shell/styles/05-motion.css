@@ -19,7 +19,7 @@
    showing a spinner over nothing — the pane does not jump when the text
    lands. */
 .skel { padding: 12px 0 0; }
-.skel__ln { height: 11px; margin: 0 14px 9px; border-radius: 3px;
+.skel__ln { height: 11px; margin: 0 14px 9px; border-radius: var(--radius-xs);
   background: linear-gradient(90deg, var(--overlay) 25%, var(--overlay-strong) 37%, var(--overlay) 63%);
   background-size: 380% 100%; animation: shimmer var(--loop-2) ease-in-out infinite; }
 @keyframes shimmer { from { background-position: 130% 0; } to { background-position: -30% 0; } }

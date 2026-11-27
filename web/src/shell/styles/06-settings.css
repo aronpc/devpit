@@ -8,7 +8,7 @@
 /* The padding lives on the children, not here: the scrolling list has to
    reach the column's edge or its scrollbar sits in a gutter of its own. */
 .prefs__side { display: flex; flex-direction: column; min-height: 0; background: var(--sidebar); padding: 12px 0; }
-.prefs__back { height: 32px; flex: none; display: flex; align-items: center; gap: 9px; margin: 0 12px; padding: 0 10px; border-radius: var(--radius-md); font-size: var(--fs-md); color: var(--text-2); }
+.prefs__back { height: var(--ctl-m); flex: none; display: flex; align-items: center; gap: 9px; margin: 0 12px; padding: 0 10px; border-radius: var(--radius-md); font-size: var(--fs-md); color: var(--text-2); }
 .prefs__back:hover { background: var(--sidebar-item); color: var(--text); }
 .prefs__find { margin: 12px 12px 0; height: var(--ctl-m); flex: none; border-radius: var(--ctl-r-m); background: var(--inset); border: 1px solid var(--border-ctl); display: flex; align-items: center; gap: 8px; padding: 0 10px; font-size: var(--fs-sm); color: var(--ghost); }
 .prefs__find:focus-within { border-color: var(--focus); box-shadow: var(--focus-field); }
@@ -31,7 +31,7 @@
 .prefs__i[aria-selected='true'] svg { color: var(--text); }
 .prefs__i svg { flex: none; color: var(--text-3); }
 /* Quiet on purpose: a way out to the community, not a pane. */
-.prefs__comm { height: 30px; flex: none; display: flex; align-items: center; gap: 9px; margin: auto 12px 0; padding: 0 10px; border-radius: var(--radius-md); font-size: var(--fs-sm); color: var(--text-3); }
+.prefs__comm { height: var(--ctl-s); flex: none; display: flex; align-items: center; gap: 9px; margin: auto 12px 0; padding: 0 10px; border-radius: var(--radius-md); font-size: var(--fs-sm); color: var(--text-3); }
 .prefs__comm:hover { background: var(--sidebar-item); color: var(--text-2); }
 .prefs__comm svg { flex: none; }
 
@@ -94,7 +94,7 @@
 .card2__top { display: flex; align-items: flex-start; gap: 12px; padding-bottom: 12px; }
 .card2__t { font-size: var(--fs-lg); color: var(--text); }
 .card2__d { margin-top: 4px; font-size: var(--fs-sm); line-height: 1.5; color: var(--text-3); }
-.card2__go { flex: none; height: 28px; padding: 0 11px; border-radius: var(--radius-md); display: flex; align-items: center; gap: 7px; font-size: var(--fs-sm); color: var(--text-2); background: var(--overlay-strong); white-space: nowrap; }
+.card2__go { flex: none; height: var(--ctl-s); padding: 0 11px; border-radius: var(--radius-md); display: flex; align-items: center; gap: 7px; font-size: var(--fs-sm); color: var(--text-2); background: var(--overlay-strong); white-space: nowrap; }
 .card2__go:hover { color: var(--text); }
 .card2__when { margin-top: 6px; font-size: var(--fs-xs); color: var(--ghost); text-align: right; }
 .provnew { display: flex; align-items: center; gap: 14px; padding: 10px 12px; margin-bottom: 10px; border-radius: var(--ctl-r-m); border: 1px dashed var(--border-strong); }
@@ -115,18 +115,18 @@
    `flex: 1` because a segmented control divides a fixed width evenly — so six
    agents came out as six equal columns filling the row, which reads as one
    control with six parts rather than as six things you pick between. */
-.agpick__o { flex: none; height: 30px; padding: 0 11px; border-radius: var(--radius-md); display: flex; align-items: center; gap: 7px; font-size: var(--fs-sm); color: var(--text-2); background: var(--overlay); border: 1px solid transparent; }
+.agpick__o { flex: none; height: var(--ctl-s); padding: 0 11px; border-radius: var(--radius-md); display: flex; align-items: center; gap: 7px; font-size: var(--fs-sm); color: var(--text-2); background: var(--overlay); border: 1px solid transparent; }
 .agpick__o:hover { background: var(--overlay-strong); color: var(--text); }
 .agpick__o[aria-checked='true'] { background: var(--raised); color: var(--text); border-color: var(--border-strong); }
 .agpick__o .agmark { color: var(--text-3); }
 .agpick__o[aria-checked='true'] .agmark { color: var(--accent); }
 .agpick__on { color: var(--accent); font-size: var(--fs-xs); }
 /* Two words, not two paragraphs: this one sits inside a row, not above one. */
-.seg--tight { flex: none; height: 26px; margin: 0; }
+.seg--tight { flex: none; height: var(--ctl-s); margin: 0; }
 .seg--tight .segb { flex: none; padding: 0 9px; font-size: var(--fs-xs); }
 
 .prov { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 11px 0; border-top: 1px solid var(--border); }
-.prov__ico { width: 26px; height: 26px; flex: none; border-radius: var(--radius-md); background: var(--overlay); display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: var(--fs-xs); color: var(--text-2); position: relative; }
+.prov__ico { width: var(--ctl-s); height: var(--ctl-s); flex: none; border-radius: var(--radius-md); background: var(--overlay); display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: var(--fs-xs); color: var(--text-2); position: relative; }
 .prov__dot { position: absolute; bottom: -1px; right: -1px; width: 7px; height: 7px; border-radius: 50%; border: 2px solid var(--raised); }
 .prov__body { flex: 1; min-width: 0; }
 .prov__top { display: flex; align-items: baseline; gap: 8px; }
@@ -161,7 +161,7 @@
 .skrow__b { flex: 1; min-width: 0; }
 .skrow__n { display: block; font-family: var(--mono); font-size: var(--fs-sm); color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .skrow__d { display: block; margin-top: 2px; font-size: var(--fs-xs); color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.sk__foot { flex: none; height: 30px; display: flex; align-items: center; padding: 0 10px; border-top: 1px solid var(--border); font-family: var(--mono); font-size: var(--fs-2xs); color: var(--ghost); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; }
+.sk__foot { flex: none; height: var(--ctl-s); display: flex; align-items: center; padding: 0 10px; border-top: 1px solid var(--border); font-family: var(--mono); font-size: var(--fs-2xs); color: var(--ghost); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; }
 
 .sk__doc { min-width: 0; min-height: 0; overflow-y: auto; padding: 26px 28px 60px; }
 .sk__top { display: flex; align-items: flex-start; gap: 12px; }
@@ -170,7 +170,7 @@
 .sksw { flex: none; margin-top: 4px; }
 .sksw[aria-checked='true'] .sw { background: color-mix(in srgb, var(--accent) 45%, transparent); }
 .sksw[aria-checked='true'] .sw::after { transform: translateX(12px); background: var(--accent); }
-.sk__mark { width: 30px; height: 30px; flex: none; border-radius: var(--radius-md); background: var(--raised); display: flex; align-items: center; justify-content: center; color: var(--accent); }
+.sk__mark { width: var(--ctl-s); height: var(--ctl-s); flex: none; border-radius: var(--radius-md); background: var(--raised); display: flex; align-items: center; justify-content: center; color: var(--accent); }
 .sk__name { font-family: var(--mono); font-size: var(--fs-xl); color: var(--text); }
 .sk__from { margin-top: 3px; font-size: var(--fs-sm); color: var(--text-3); }
 .sk__what { margin: 14px 0 18px; font-size: var(--fs-md); line-height: 1.62; color: var(--text-2); max-width: 76ch; }
@@ -188,7 +188,7 @@
 .use__top { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; margin-bottom: 22px; }
 .use__when { margin-top: 5px; font-size: var(--fs-sm); color: var(--text-3); }
 .seg2 { display: flex; gap: 2px; padding: 2px; border-radius: var(--radius-md); background: var(--inset); flex: none; }
-.seg2 button { height: 26px; padding: 0 11px; border-radius: var(--radius-sm); font-size: var(--fs-sm); color: var(--text-3); }
+.seg2 button { height: var(--ctl-s); padding: 0 11px; border-radius: var(--radius-sm); font-size: var(--fs-sm); color: var(--text-3); }
 .seg2 button[aria-selected='true'] { background: var(--raised); color: var(--text); }
 .use__grid { display: grid; grid-template-columns: 320px 1fr; gap: 28px; align-items: start; }
 .use__label { display: block; margin-bottom: 10px; font-size: var(--fs-xs); font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-3); }
@@ -224,7 +224,7 @@
   .use__cols { grid-template-columns: minmax(0, 1fr); }
   .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
-.use__pick { height: 30px; padding: 0 8px; border-radius: var(--radius-md); background: var(--inset); border: 1px solid var(--border); font: inherit; font-size: var(--fs-sm); color: var(--text); }
+.use__pick { height: var(--ctl-s); padding: 0 8px; border-radius: var(--radius-md); background: var(--inset); border: 1px solid var(--border); font: inherit; font-size: var(--fs-sm); color: var(--text); }
 .use__block { margin-top: 28px; }
 .use__limits { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
 .use__limits .bar { margin-top: 0; padding: 12px 14px; border-radius: var(--ctl-r-m); background: var(--raised); }
@@ -242,7 +242,7 @@
 
 /* Install, then switch on. A toggle on something that is not installed is
    a switch wired to nothing — the row has to offer the step it is at. */
-.cap__get { flex: none; margin-top: 2px; height: 26px; padding: 0 11px; border-radius: var(--radius-md); font-size: var(--fs-sm); color: var(--text-2); background: var(--overlay-strong); white-space: nowrap; transition: background-color var(--dur-2) ease, color var(--dur-2) ease; }
+.cap__get { flex: none; margin-top: 2px; height: var(--ctl-s); padding: 0 11px; border-radius: var(--radius-md); font-size: var(--fs-sm); color: var(--text-2); background: var(--overlay-strong); white-space: nowrap; transition: background-color var(--dur-2) ease, color var(--dur-2) ease; }
 .cap__get:hover { background: color-mix(in srgb, var(--accent) 20%, var(--overlay-strong)); color: var(--text); }
 .cap__get[data-busy='true'] { color: var(--text-3); pointer-events: none; }
 .cap__get[data-busy='true'] svg { animation: spin var(--loop-1) linear infinite; }
@@ -252,7 +252,7 @@
   background: var(--glass-solid);
   box-shadow: var(--e3), var(--top); animation: pop var(--dur-1) ease-out both; }
 .ctx[hidden] { display: none; }
-.ctx__i { width: 100%; height: 30px; padding: 0 9px; border-radius: var(--radius-sm); display: flex; align-items: center; gap: 9px; text-align: left; font-size: var(--fs-sm); color: var(--text-2); }
+.ctx__i { width: 100%; height: var(--ctl-s); padding: 0 9px; border-radius: var(--radius-sm); display: flex; align-items: center; gap: 9px; text-align: left; font-size: var(--fs-sm); color: var(--text-2); }
 .ctx__i:hover, .ctx__i:focus-visible { background: var(--overlay-strong); color: var(--text); outline: none; }
 .ctx__i:disabled { opacity: .45; }
 .ctx__g { width: 14px; flex: none; display: flex; color: var(--text-3); }
@@ -268,13 +268,13 @@
   .skel__ln, .rowskel__ln { animation: none; }
 }
 
-.pane__bar { height: 32px; flex: none; display: flex; align-items: center; gap: 7px; padding: 0 6px 0 12px; }
+.pane__bar { height: var(--ctl-m); flex: none; display: flex; align-items: center; gap: 7px; padding: 0 6px 0 12px; }
 .pane__ico { color: var(--ghost); }
 .pane__t { font-size: var(--fs-sm); color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pane__t b { color: var(--text-2); font-weight: 500; }
 
 .scroll { flex: 1; min-width: 0; overflow-y: auto; }
-code { font-family: var(--mono); font-size: 0.87em; color: var(--code-text); background: var(--code-wash); padding: 1.5px 4px; border-radius: var(--radius-xs); }
+code { font-family: var(--mono); font-size: 0.87em; color: var(--code-text); background: var(--code-wash); padding: 1.5px 4px; border-radius: var(--radius-xs); } /* raw: inline code is sized against the text around it */
 
 /* Terminal */
 /* The terminal's ground follows the theme, as xterm's palette does, so the
@@ -334,7 +334,7 @@ code { font-family: var(--mono); font-size: 0.87em; color: var(--code-text); bac
    markers, so the numbers are drawn here or there are none. */
 .prefhow { margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; font-size: var(--fs-sm); line-height: 1.5; color: var(--text-2); counter-reset: prefhow; }
 .prefhow > li { position: relative; padding-left: 26px; }
-.prefhow > li::before { position: absolute; left: 0; top: 1px; width: 18px; height: 18px; border-radius: 50%; font-size: var(--fs-2xs); font-weight: 600; line-height: 18px; text-align: center; color: var(--text-2); background: var(--overlay-strong); }
+.prefhow > li::before { position: absolute; left: 0; top: 1px; width: var(--ctl-xs); height: var(--ctl-xs); border-radius: 50%; font-size: var(--fs-2xs); font-weight: 600; line-height: 18px; text-align: center; color: var(--text-2); background: var(--overlay-strong); }
 ol.prefhow > li { counter-increment: prefhow; }
 ol.prefhow > li::before { content: counter(prefhow); }
 ul.prefhow > li { padding-left: 14px; }
@@ -357,7 +357,7 @@ ul.prefhow > li::before { content: ''; top: 8px; left: 3px; width: 4px; height: 
 /* What a device may do, as chips that are lit or not — the switches' colour,
    not a form's checkbox. Watch is lit and not a button: it cannot be refused. */
 .remote__chips { display: inline-flex; gap: 6px; flex-wrap: wrap; }
-.remote__chip { height: 24px; padding: 0 10px; border-radius: var(--radius-lg); display: inline-flex; align-items: center; font-size: var(--fs-sm); color: var(--text-3); background: var(--overlay); border: 1px solid transparent; transition: background-color var(--dur-1) ease, border-color var(--dur-1) ease; }
+.remote__chip { height: var(--ctl-s); padding: 0 10px; border-radius: var(--radius-lg); display: inline-flex; align-items: center; font-size: var(--fs-sm); color: var(--text-3); background: var(--overlay); border: 1px solid transparent; transition: background-color var(--dur-1) ease, border-color var(--dur-1) ease; }
 button.remote__chip:hover { color: var(--text); background: var(--overlay-strong); }
 .remote__chip[data-on], .remote__chip[aria-pressed='true'] { color: var(--text); background: color-mix(in srgb, var(--accent) 14%, transparent); border-color: color-mix(in srgb, var(--accent) 38%, transparent); }
 .remote__chip[data-on] { opacity: 0.75; }
@@ -384,7 +384,7 @@ button.remote__chip:hover { color: var(--text); background: var(--overlay-strong
 .kmap__d { display: block; margin-top: 3px; font-size: var(--fs-sm); line-height: 1.45; color: var(--text-3); }
 .kmap__d[data-refused='true'] { color: var(--warning); }
 .kmap__keys { display: inline-flex; flex-wrap: wrap; justify-content: flex-end; gap: 5px; flex: none; }
-.kmap__key { min-width: 22px; height: 22px; padding: 0 7px; border-radius: var(--radius-sm); display: inline-flex; align-items: center; justify-content: center; background: var(--overlay-strong); border: 1px solid var(--border); font: var(--fs-xs) var(--mono); color: var(--text-2); white-space: nowrap; }
+.kmap__key { min-width: 22px; height: var(--ctl-xs); padding: 0 7px; border-radius: var(--radius-sm); display: inline-flex; align-items: center; justify-content: center; background: var(--overlay-strong); border: 1px solid var(--border); font: var(--fs-xs) var(--mono); color: var(--text-2); white-space: nowrap; }
 .kmap__wait { flex: none; font-size: var(--fs-sm); color: var(--accent); }
 
 .ksheet { width: min(900px, calc(100vw - 48px)); max-height: calc(100vh - 64px); overflow-y: auto; }

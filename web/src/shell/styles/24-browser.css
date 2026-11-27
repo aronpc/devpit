@@ -16,18 +16,18 @@
 }
 
 .browser__act {
-  flex: none; width: 26px; height: 26px; border-radius: 6px;
+  flex: none; width: var(--ctl-s); height: var(--ctl-s); border-radius: var(--radius-sm);
   border: 1px solid transparent; background: transparent; color: var(--text-2);
-  font-size: 13px; line-height: 1;
+  font-size: var(--fs-md); line-height: 1;
 }
 .browser__act:hover:not(:disabled) { background: var(--overlay); color: var(--text); }
 .browser__act:disabled { color: var(--ghost); }
 
 .browser__where { flex: 1; min-width: 0; display: flex; }
 .browser__address {
-  flex: 1; min-width: 0; padding: 5px 10px; border-radius: 6px;
+  flex: 1; min-width: 0; padding: 5px 10px; border-radius: var(--radius-sm);
   border: 1px solid var(--border); background: var(--overlay);
-  color: var(--text); font-size: 12px; font-family: var(--mono);
+  color: var(--text); font-size: var(--fs-sm); font-family: var(--mono);
 }
 .browser__address:focus { outline: none; border-color: var(--focus); box-shadow: var(--focus-field); }
 
@@ -37,7 +37,7 @@
 
 .browser__said, .browser__drove {
   flex: none; padding: 8px 12px; border-top: 1px solid var(--border);
-  color: var(--text-2); font-size: 12px;
+  color: var(--text-2); font-size: var(--fs-sm);
 }
 
 /* The menu, in a window of its own.
@@ -82,8 +82,8 @@
 
 .bmenu__i {
   display: flex; align-items: center; gap: 8px; width: 100%;
-  padding: 6px 8px; border-radius: 7px; text-align: left;
-  color: var(--text); font-size: 12px;
+  padding: 6px 8px; border-radius: var(--radius-md); text-align: left;
+  color: var(--text); font-size: var(--fs-sm);
   background: transparent; border: 1px solid transparent;
 }
 .bmenu__i:hover:not(:disabled), .bmenu__has:hover > .bmenu__i { background: var(--overlay); }
@@ -92,27 +92,27 @@
 
 .bmenu__b { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
 .bmenu__n { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.bmenu__w { color: var(--text-3); font-size: 10.5px; line-height: 1.4; }
+.bmenu__w { color: var(--text-3); font-size: var(--fs-2xs); line-height: 1.4; }
 .bmenu__v, .bmenu__c { flex: none; opacity: 0.6; }
 
 .bmenu__rule { height: 1px; margin: 4px 3px; background: var(--border); }
 .bmenu__note {
   margin: 0; padding: 5px 8px 6px;
-  color: var(--text-3); font-size: 10.5px; line-height: 1.5;
+  color: var(--text-3); font-size: var(--fs-2xs); line-height: 1.5;
 }
 
 .bmenu__new, .bmenu__only { display: flex; align-items: center; gap: 6px; padding: 4px 6px; }
-.bmenu__k { flex: none; color: var(--text-3); font-size: 11px; }
+.bmenu__k { flex: none; color: var(--text-3); font-size: var(--fs-xs); }
 .bmenu__in {
-  flex: 1; min-width: 0; padding: 4px 8px; border-radius: 6px;
+  flex: 1; min-width: 0; padding: 4px 8px; border-radius: var(--radius-sm);
   border: 1px solid var(--border); background: var(--sheet);
-  color: var(--text); font-size: 11.5px;
+  color: var(--text); font-size: var(--fs-xs);
 }
 .bmenu__in:focus { outline: none; border-color: var(--focus); box-shadow: var(--focus-field); }
 .bmenu__ok {
-  flex: none; padding: 4px 9px; border-radius: 6px;
+  flex: none; padding: 4px 9px; border-radius: var(--radius-sm);
   border: 1px solid var(--border); background: var(--sheet);
-  color: var(--text); font-size: 11.5px;
+  color: var(--text); font-size: var(--fs-xs);
 }
 .bmenu__ok:disabled { color: var(--ghost); }
 .bmenu__ok:hover:not(:disabled) { border-color: var(--border-strong); }
@@ -121,9 +121,9 @@
    the pane's own strip instead: this panel closes on the click that caused it,
    so a report left here would be a report nobody sees. */
 .bmenu__said {
-  margin: 4px 3px 2px; padding: 7px 8px; border-radius: 7px;
+  margin: 4px 3px 2px; padding: 7px 8px; border-radius: var(--radius-md);
   background: var(--overlay); color: var(--text-2);
-  font-size: 11px; line-height: 1.5;
+  font-size: var(--fs-xs); line-height: 1.5;
 }
 
 /* Find, in the address bar's own slot.
@@ -135,8 +135,8 @@
  * was. */
 .bfind { flex: 1; min-width: 0; display: flex; align-items: center; gap: 4px; }
 .bfind__in {
-  flex: 1; min-width: 0; padding: 5px 10px; border-radius: 6px;
+  flex: 1; min-width: 0; padding: 5px 10px; border-radius: var(--radius-sm);
   border: 1px solid var(--border-strong); background: var(--overlay);
-  color: var(--text); font-size: 12px;
+  color: var(--text); font-size: var(--fs-sm);
 }
 .bfind__in:focus { outline: none; }

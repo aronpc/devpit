@@ -6,7 +6,7 @@
  * softer corner, show the pointer resting on them, and settle into focus.
  */
 .hist__find, .git__find, .fb__find, .sk__find, .prefs__find, .mgr__find, .resume__find {
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   transition: border-color var(--dur-1) ease, background-color var(--dur-1) ease, box-shadow var(--dur-1) ease;
 }
 .hist__find:hover, .git__find:hover, .fb__find:hover, .sk__find:hover, .prefs__find:hover, .mgr__find:hover, .resume__find:hover {

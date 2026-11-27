@@ -159,6 +159,10 @@ Never commit unless asked.
 
 Match the surrounding code: its naming and its idioms.
 
+The window's stylesheets and components keep the rules in
+[`docs/interface.md`](docs/interface.md): tokens only, one control ruler,
+elevation, the accent's meaning, one focus ring, enter-only motion, AA contrast.
+
 Comments explain *why*, not *what*, and they are **short**. One or two lines.
 A comment restating the line below it is noise; a paragraph explaining a
 three-line function is worse, because the next reader skips both. Record the

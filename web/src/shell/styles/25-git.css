@@ -9,28 +9,28 @@
 .git__head { gap: 6px; padding: 6px 12px 8px; }
 .git__row { gap: 4px; min-height: 28px; }
 .git__up { margin-right: 4px; }
-.git__find { height: 26px; padding: 0 8px; border-radius: 6px; border: 1px solid var(--border); background: var(--composer); color: var(--text); font: inherit; font-size: 12px; outline: none; }
+.git__find { height: var(--ctl-s); padding: 0 8px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--composer); color: var(--text); font: inherit; font-size: var(--fs-sm); outline: none; }
 .git__find:focus { border-color: var(--focus); box-shadow: var(--focus-field); }
-.git__msg { min-height: 56px; padding: 6px 8px; border-radius: 6px; font-size: 12px; line-height: 1.5; }
+.git__msg { min-height: 56px; padding: 6px 8px; border-radius: var(--radius-sm); font-size: var(--fs-sm); line-height: 1.5; }
 .git__msg:focus { border-color: var(--focus); box-shadow: var(--focus-field); }
-.git__go { height: 26px; font-size: 12px; }
+.git__go { height: var(--ctl-s); font-size: var(--fs-sm); }
 .git__body { padding: 0 0 8px; }
 
 /* A heading: the whole row lights, the chevron turns, the actions arrive. */
-.scm__head { position: relative; display: flex; align-items: center; gap: 4px; margin: 12px 12px 4px 4px; padding-right: 4px; border-radius: 6px; }
+.scm__head { position: relative; display: flex; align-items: center; gap: 4px; margin: 12px 12px 4px 4px; padding-right: 4px; border-radius: var(--radius-sm); }
 .scm__head:hover { background: var(--sidebar-item); }
-.scm__toggle { flex: 1; min-width: 0; min-height: 24px; display: flex; align-items: center; gap: 4px; padding: 2px 4px; text-align: left; font-size: 11.5px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--text-2); }
+.scm__toggle { flex: 1; min-width: 0; min-height: 24px; display: flex; align-items: center; gap: 4px; padding: 2px 4px; text-align: left; font-size: var(--fs-xs); font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--text-2); }
 .scm__head:hover .scm__toggle { color: var(--text); }
 .scm__chev { display: flex; color: var(--text-3); transition: transform var(--dur-1) ease; }
 .scm__chev[data-open='false'] { transform: rotate(-90deg); }
 .scm__t { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.scm__n { font-size: 11px; font-weight: 500; letter-spacing: 0; color: var(--text-3); font-variant-numeric: tabular-nums; }
+.scm__n { font-size: var(--fs-xs); font-weight: 500; letter-spacing: 0; color: var(--text-3); font-variant-numeric: tabular-nums; }
 .scm__acts { display: flex; align-items: center; gap: 2px; opacity: 0; transition: opacity var(--dur-1) ease; }
 .scm__head:hover .scm__acts, .scm__acts:focus-within { opacity: 1; }
 @media (hover: none) { .scm__acts { opacity: 1; } }
 
 /* A row. */
-.gitrow { height: 24px; gap: 4px; padding-right: 12px; font-size: 12px; }
+.gitrow { height: var(--ctl-s); gap: 4px; padding-right: 12px; font-size: var(--fs-sm); }
 .gitrow:hover { background: color-mix(in srgb, var(--sidebar-item) 70%, transparent); }
 .gitrow[aria-current='true'] { background: var(--sidebar-item); }
 .gitrow__open { gap: 6px; height: 100%; }
@@ -38,20 +38,20 @@
 .gitrow--file .gitrow__n { color: var(--text); }
 /* The folder beside the name, in list view: dimmer and smaller, and the
    first thing to give way when the panel is narrow. */
-.gitrow__dir { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-size: 11px; color: var(--text-3); }
-.gitrow__end { gap: 6px; font-size: 10px; }
+.gitrow__dir { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-size: var(--fs-xs); color: var(--text-3); }
+.gitrow__end { gap: 6px; font-size: var(--fs-2xs); }
 .gitrow__end .add { color: var(--success); }
 .gitrow__end .del { color: var(--danger); }
-.gitrow__end .row__g { width: 16px; text-align: center; font-size: 10px; font-weight: 700; }
+.gitrow__end .row__g { width: 16px; text-align: center; font-size: var(--fs-2xs); font-weight: 700; }
 .gitrow__c { width: 16px; text-align: center; color: var(--text-3); }
 .gitrow__does { gap: 2px; padding: 0 12px 0 8px; background: var(--raised); }
-.gitrow__act { width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; border-radius: 6px; color: var(--text-2); }
+.gitrow__act { width: var(--ctl-xs); height: var(--ctl-xs); display: flex; align-items: center; justify-content: center; border-radius: var(--radius-sm); color: var(--text-2); }
 .gitrow__act:hover { background: var(--overlay-strong); color: var(--text); }
 .gitrow__all { margin: 2px 12px 2px auto; }
 
 /* ── The diff pane ─────────────────────────────────────────────────── */
 .dbar { border-bottom: 1px solid var(--border); gap: 2px; }
-.dbtn { height: 24px; min-width: 24px; padding: 0 5px; display: inline-flex; align-items: center; justify-content: center; gap: 4px; border-radius: 5px; font-size: 12px; color: var(--text-3); }
+.dbtn { height: var(--ctl-s); min-width: 24px; padding: 0 5px; display: inline-flex; align-items: center; justify-content: center; gap: 4px; border-radius: var(--radius-sm); font-size: var(--fs-sm); color: var(--text-3); }
 .dbtn:hover { background: var(--overlay); color: var(--text); }
 .dbtn[aria-pressed='true'] { background: var(--overlay-strong); color: var(--text); }
 .dbtn--go { padding: 0 10px; margin-left: 4px; background: color-mix(in srgb, var(--accent) 22%, transparent); color: var(--text); }
@@ -81,17 +81,17 @@
 .mdiff .cm-merge-a .cm-changedLineGutter, .mdiff .cm-deletedLineGutter { background: var(--diff-del, var(--danger)); }
 .mdiff .cm-merge-b .cm-changedLineGutter, .mdiff .cm-changedLineGutter { background: var(--diff-add, var(--success)); }
 /* A folded stretch of unchanged lines: a quiet bar that opens on a click. */
-.mdiff .cm-collapsedLines { padding: 3px 12px; background: var(--overlay); color: var(--text-3); font-family: var(--ui); font-size: 11.5px; cursor: pointer; }
+.mdiff .cm-collapsedLines { padding: 3px 12px; background: var(--overlay); color: var(--text-3); font-family: var(--ui); font-size: var(--fs-xs); cursor: pointer; }
 .mdiff .cm-collapsedLines:hover { background: var(--overlay-strong); color: var(--text-2); }
 
 /* The branch against its remote. The act that would bring the two sides
    together is the one drawn forward. */
 .gremote { display: flex; align-items: center; gap: 2px; min-height: 26px; }
 .gremote__b[data-lead='true'] { color: var(--accent); }
-.gremote__n { font: 11px var(--mono); font-variant-numeric: tabular-nums; }
-.gremote__sync { height: 24px; margin-left: 4px; padding: 0 10px; font-size: 12px; }
+.gremote__n { font: var(--fs-xs) var(--mono); font-variant-numeric: tabular-nums; }
+.gremote__sync { height: var(--ctl-s); margin-left: 4px; padding: 0 10px; font-size: var(--fs-sm); }
 .gremote__sync[data-lead='true'] { background: var(--inverse); color: var(--on-inverse); font-weight: 550; }
 .gremote__b:disabled, .gremote__sync:disabled { opacity: 0.55; }
-.gremote__said { min-width: 0; margin-left: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11.5px; color: var(--text-3); }
+.gremote__said { min-width: 0; margin-left: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-xs); color: var(--text-3); }
 .gremote__spin { width: 11px; height: 11px; border-radius: 50%; border: 1.5px solid var(--border-strong); border-top-color: var(--accent); animation: gremote-spin var(--loop-1) linear infinite; }
 @keyframes gremote-spin { to { transform: rotate(360deg); } }

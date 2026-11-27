@@ -14,7 +14,7 @@
 .blane { position: relative; width: 236px; flex: none; display: flex; flex-direction: column; min-height: 0; border-radius: var(--radius-xl); padding: 0 4px 4px; transition: background-color var(--dur-3) ease; }
 /* The lane under the pointer, and only while a card is in the air. */
 .blane[data-over='true'] { background: var(--accent-soft); outline: 1px dashed var(--accent-edge); outline-offset: -1px; }
-.blane__top { height: 30px; flex: none; display: flex; align-items: center; gap: 6px; padding: 0 4px; cursor: grab; }
+.blane__top { height: var(--ctl-s); flex: none; display: flex; align-items: center; gap: 6px; padding: 0 4px; cursor: grab; }
 .blane__label { font-size: var(--fs-sm); font-weight: 550; color: var(--text-2); }
 .blane__n { font-size: var(--fs-xs); color: var(--ghost); font-variant-numeric: tabular-nums; transition: color var(--dur-3) ease; }
 .blane[data-over='true'] .blane__n { color: var(--accent); }
@@ -85,12 +85,12 @@
 @keyframes landed { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent); } 100% { box-shadow: 0 0 0 9px transparent; } }
 .tile--landed { animation: landed var(--dur-mark) ease-out; }
 
-.tile__add { flex: none; height: 30px; border-radius: var(--ctl-r-m); border: 1px dashed var(--border-strong); color: var(--text-3); font-size: var(--fs-xs); transition: color var(--dur-2) ease, border-color var(--dur-2) ease; }
+.tile__add { flex: none; height: var(--ctl-s); border-radius: var(--ctl-r-m); border: 1px dashed var(--border-strong); color: var(--text-3); font-size: var(--fs-xs); transition: color var(--dur-2) ease, border-color var(--dur-2) ease; }
 .tile__add:hover { color: var(--text-2); border-color: var(--ghost); }
 /* Where a card or a lane is named as it is made. */
-.tile__new, .blane__newin { flex: none; height: 30px; padding: 0 10px; border-radius: var(--ctl-r-m); border: 1px solid color-mix(in srgb, var(--accent) 60%, transparent); background: var(--raised); font: inherit; font-size: var(--fs-sm); color: var(--text); }
+.tile__new, .blane__newin { flex: none; height: var(--ctl-s); padding: 0 10px; border-radius: var(--ctl-r-m); border: 1px solid color-mix(in srgb, var(--accent) 60%, transparent); background: var(--raised); font: inherit; font-size: var(--fs-sm); color: var(--text); }
 .tile__new:focus, .blane__newin:focus { outline: none; border-color: var(--focus); box-shadow: var(--focus-field); }
-.blane__newin { width: 180px; height: 34px; align-self: flex-start; }
+.blane__newin { width: 180px; height: var(--ctl-m); align-self: flex-start; }
 
 /* A lane's own controls: its menu holds rename, order and delete. */
 .blane__label[contenteditable='true']:focus { outline: var(--focus-ring); outline-offset: var(--focus-offset); border-radius: var(--radius-xs); }
@@ -111,14 +111,14 @@
 /* On the tile it appears under the pointer rather than sitting there: the
    board is read far more often than it is played, and a row of triangles
    reads as a list of things waiting to be started. */
-.tile__play { position: absolute; top: 7px; right: 7px; width: 20px; height: 20px; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; color: var(--text-3); background: var(--overlay-strong); opacity: 0; }
+.tile__play { position: absolute; top: 7px; right: 7px; width: var(--ctl-xs); height: var(--ctl-xs); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; color: var(--text-3); background: var(--overlay-strong); opacity: 0; }
 .tile:hover .tile__play, .tile__play:focus-visible { opacity: 1; }
 .tile__play:hover { color: var(--text); }
 
 /* What a lane runs when a card lands in it — the rule the product turns on,
    and until now the one thing with no way to set it. */
 .lstep { position: relative; margin-left: auto; }
-.lstep__b { display: inline-flex; align-items: center; gap: 5px; height: 20px; padding: 0 7px; border-radius: var(--radius-sm); font-size: var(--fs-2xs); color: var(--text-3); }
+.lstep__b { display: inline-flex; align-items: center; gap: 5px; height: var(--ctl-xs); padding: 0 7px; border-radius: var(--radius-sm); font-size: var(--fs-2xs); color: var(--text-3); }
 .lstep__b:hover { background: var(--overlay-strong); color: var(--text-2); }
 .lstep__pop { position: absolute; right: 0; top: calc(100% + 5px); z-index: 40; min-width: 210px; padding: 6px; border-radius: var(--radius-lg); background: var(--glass-solid); box-shadow: var(--e3), var(--top); animation: pop-in var(--dur-2) var(--ease-out) both; }
 .lstep__pop--wide { width: 290px; max-height: 70vh; padding: 12px; overflow-y: auto; }
@@ -174,9 +174,9 @@ body[data-dragging='true'] .tile::after { opacity: 0; transition: none; }
 .mgr__d { margin: 5px 0 0; font-size: var(--fs-sm); line-height: 1.55; color: var(--text-3); }
 .mgr__filters { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin-bottom: 18px; padding-bottom: 16px; border-bottom: 1px solid var(--border); font-size: var(--fs-sm); color: var(--text-3); }
 .mgr__filters label { display: flex; align-items: center; gap: 7px; }
-.mgr__filters select { height: 28px; padding: 0 8px; border-radius: var(--radius-md); background: var(--inset); border: 1px solid var(--border); font: inherit; font-size: var(--fs-sm); color: var(--text); }
+.mgr__filters select { height: var(--ctl-s); padding: 0 8px; border-radius: var(--radius-md); background: var(--inset); border: 1px solid var(--border); font: inherit; font-size: var(--fs-sm); color: var(--text); }
 .mgr__filters select:focus, .mgr__find:focus { outline: none; border-color: var(--focus); box-shadow: var(--focus-field); }
-.mgr__find { width: 210px; height: 28px; padding: 0 10px; border-radius: var(--radius-md); background: var(--inset); border: 1px solid var(--border); font: inherit; font-size: var(--fs-sm); color: var(--text); }
+.mgr__find { width: 210px; height: var(--ctl-s); padding: 0 10px; border-radius: var(--radius-md); background: var(--inset); border: 1px solid var(--border); font: inherit; font-size: var(--fs-sm); color: var(--text); }
 /* Last and pushed over: it counts what the filters left, so it belongs at
    the end of the row that decided it. */
 .mgr__n { margin-left: auto; font-variant-numeric: tabular-nums; }

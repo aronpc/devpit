@@ -1,9 +1,9 @@
 /* The Explorer's two questions, as two tabs over one tree. */
-.ex__modes { display: flex; gap: 2px; margin: 8px 10px 6px; padding: 2px; border-radius: 8px; background: var(--inset); }
-.exmode__tab { flex: 1; height: 26px; border-radius: 6px; font-size: 12px; color: var(--text-3); }
+.ex__modes { display: flex; gap: 2px; margin: 8px 10px 6px; padding: 2px; border-radius: var(--radius-md); background: var(--inset); }
+.exmode__tab { flex: 1; height: var(--ctl-s); border-radius: var(--radius-sm); font-size: var(--fs-sm); color: var(--text-3); }
 .exmode__tab[aria-selected='true'] { background: var(--raised); color: var(--text); }
 .exmode__tab:hover:not([aria-selected='true']) { color: var(--text-2); }
-.code__body { margin: 0; padding: 8px 12px; font-family: var(--mono); font-size: 12px; line-height: 1.6; white-space: pre; color: var(--text-2); }
+.code__body { margin: 0; padding: 8px 12px; font-family: var(--mono); font-size: var(--fs-sm); line-height: 1.6; white-space: pre; color: var(--text-2); }
 .row__g--modified { color: var(--warning); }
 .row__g--added, .row__g--untracked { color: var(--success); }
 .row__g--deleted { color: var(--danger); }
@@ -22,8 +22,8 @@
    `overflow: hidden`. That is the line cut in half at the bottom of a
    terminal with Claude Code open. */
 .termhost { flex: 1; min-height: 0; }
-.termhost[data-drop] { outline: 1px dashed var(--accent); outline-offset: -3px; border-radius: 6px; }
-.termhost--starting { display: grid; place-items: center; font-size: 12px; color: var(--text-3); }
+.termhost[data-drop] { outline: 1px dashed var(--accent); outline-offset: -3px; border-radius: var(--radius-sm); }
+.termhost--starting { display: grid; place-items: center; font-size: var(--fs-sm); color: var(--text-3); }
 .termhost .xterm { height: 100%; padding: 8px 4px 8px 12px; }
 /* xterm.css paints the viewport `#000`, and the viewport is positioned
    absolutely against the *padding* box — so the padding above is a black
@@ -40,7 +40,7 @@
 
 /* A word that qualifies the row it sits in — an orphaned worktree, a stale
    branch. Never the row's only content. */
-.pill { margin-left: 6px; padding: 1px 6px; border-radius: 4px; background: var(--overlay); color: var(--text-3); font-size: 11px; }
+.pill { margin-left: 6px; padding: 1px 6px; border-radius: var(--radius-xs); background: var(--overlay); color: var(--text-3); font-size: var(--fs-xs); }
 
 /* The editor. A textarea rather than a highlighted surface: the file has to
    come back byte for byte, and every highlighter that owns the text is a
@@ -53,7 +53,7 @@
 .code__wrap { position: relative; height: 100%; min-height: 260px; }
 .code__paint,
 .code__edit,
-.code__lines { position: absolute; inset: 0; margin: 0; border: 0; padding: 8px 12px 8px 52px; font-family: var(--mono); font-size: 12px; line-height: 1.6; tab-size: 2; white-space: pre; }
+.code__lines { position: absolute; inset: 0; margin: 0; border: 0; padding: 8px 12px 8px 52px; font-family: var(--mono); font-size: var(--fs-sm); line-height: 1.6; tab-size: 2; white-space: pre; }
 /* The gutter is one text node, not one element per line: a file of ten
    thousand lines is ten thousand nodes the browser lays out on every
    keystroke, for a column nobody interacts with. */
@@ -74,12 +74,12 @@
 
 /* A save that lost a race says what happened and offers both ways out. */
 .clash { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--border); background: var(--overlay); }
-.clash__t { flex: 1; min-width: 0; font-size: 12px; color: var(--text-2); }
+.clash__t { flex: 1; min-width: 0; font-size: var(--fs-sm); color: var(--text-2); }
 
 /* A picture sits on a chequerboard, so transparency is visible as
    transparency in both themes rather than as whatever the pane is painted. */
 .media { padding: 16px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
-.media__img { max-width: 100%; border-radius: 6px; background-color: var(--inset);
+.media__img { max-width: 100%; border-radius: var(--radius-sm); background-color: var(--inset);
   background-image: linear-gradient(45deg, var(--overlay) 25%, transparent 25%),
     linear-gradient(-45deg, var(--overlay) 25%, transparent 25%),
     linear-gradient(45deg, transparent 75%, var(--overlay) 75%),
@@ -88,12 +88,12 @@
 .media__img { cursor: zoom-in; }
 .media__img[data-actual] { max-width: none; cursor: zoom-out; }
 .media { overflow: auto; }
-.media__video { max-width: 100%; max-height: 80vh; border-radius: 6px; background: #000; }
+.media__video { max-width: 100%; max-height: 80vh; border-radius: var(--radius-sm); background: #000; }
 .media__audio { width: min(520px, 100%); }
-.media__what { font-size: 11.5px; color: var(--text-3); }
+.media__what { font-size: var(--fs-xs); color: var(--text-3); }
 /* A PDF, page under page, drawn by pdf.js. */
 .pdf { padding: 12px 16px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
-.pdf__bar { align-self: stretch; display: flex; align-items: center; justify-content: space-between; font-family: var(--ui, inherit); font-size: 11.5px; color: var(--text-3); }
-.pdf__page { max-width: 100%; border-radius: 4px; background: #fff; box-shadow: var(--e1); }
+.pdf__bar { align-self: stretch; display: flex; align-items: center; justify-content: space-between; font-family: var(--ui, inherit); font-size: var(--fs-xs); color: var(--text-3); }
+.pdf__page { max-width: 100%; border-radius: var(--radius-xs); background: #fff; box-shadow: var(--e1); }
 .pdf__more { margin-bottom: 8px; }
 

@@ -29,20 +29,20 @@
 
 /* What a close would stop, named. `ask__warn` is the yellow box for a
    consequence; this is the subject line — which tab, and what is in it. */
-.ask__subj { margin-top: 10px; font-size: 12.5px; font-weight: 550; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ask__subj { margin-top: 10px; font-size: var(--fs-sm); font-weight: 550; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ask__opt input[type='checkbox'] { flex: none; margin: 1px 0 0; accent-color: var(--danger); }
 
 /* Something went wrong beside the terminal rather than instead of it.
    An agent that could not be started is worth saying, and it is not worth the
    working terminal underneath it — which is still the fastest way to type the
    command by hand. Click to dismiss. */
-.tnote { flex: none; width: 100%; text-align: left; padding: 7px 12px; font-size: 12px; color: var(--text); background: color-mix(in srgb, var(--warning) 14%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--warning) 30%, transparent); }
+.tnote { flex: none; width: 100%; text-align: left; padding: 7px 12px; font-size: var(--fs-sm); color: var(--text); background: color-mix(in srgb, var(--warning) 14%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--warning) 30%, transparent); }
 .tnote:hover { background: color-mix(in srgb, var(--warning) 20%, transparent); }
 /* A start held for a sign-in. Not a button like `.tnote`: it holds the choices. */
-.theld { flex: none; display: flex; align-items: center; gap: 8px; padding: 6px 8px 6px 12px; font-size: 12px; color: var(--text); background: color-mix(in srgb, var(--danger) 12%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--danger) 30%, transparent); }
+.theld { flex: none; display: flex; align-items: center; gap: 8px; padding: 6px 8px 6px 12px; font-size: var(--fs-sm); color: var(--text); background: color-mix(in srgb, var(--danger) 12%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--danger) 30%, transparent); }
 .theld__t { flex: 1; min-width: 0; overflow-wrap: anywhere; }
-.theld__t code { font-family: var(--mono); font-size: 11.5px; user-select: all; }
-.theld__x { padding: 0 6px; font-size: 14px; color: var(--text-3); }
+.theld__t code { font-family: var(--mono); font-size: var(--fs-xs); user-select: all; }
+.theld__x { padding: 0 6px; font-size: var(--fs-lg); color: var(--text-3); }
 .theld__x:hover { color: var(--text); }
 
 /* What the agent says it is doing, which is not what the process table can
@@ -54,31 +54,31 @@
 .card__run[data-doing='waiting'] { color: var(--warning); }
 .card__run[data-doing='waiting'] .card__dot { animation: none; }
 .card__run[data-doing='done'] .card__dot { animation: none; opacity: 0.55; }
-.card__ask { flex: none; display: grid; place-items: center; width: 11px; height: 11px; border: 1px solid currentColor; border-radius: 50%; font-size: 8px; font-style: normal; font-weight: 700; line-height: 1; }
+.card__ask { flex: none; display: grid; place-items: center; width: 11px; height: 11px; border: 1px solid currentColor; border-radius: 50%; font-size: var(--fs-3xs); font-style: normal; font-weight: 700; line-height: 1; }
 /* A finish that happened behind another tab stays loud until someone looks. */
 .card[data-unread='true'] .card__t { font-weight: 600; }
 /* Subagents a terminal's agent started, indented under the agent's own line. */
 .card__subs { display: flex; flex-direction: column; gap: 1px; margin-top: 1px; padding-left: 18px; }
-.card__sub { display: flex; align-items: center; gap: 5px; min-width: 0; font-size: 11.5px; color: var(--text-3); }
+.card__sub { display: flex; align-items: center; gap: 5px; min-width: 0; font-size: var(--fs-xs); color: var(--text-3); }
 .card__subname { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.card__model { flex: none; font-size: 10.5px; opacity: 0.8; }
+.card__model { flex: none; font-size: var(--fs-2xs); opacity: 0.8; }
 .card__run[data-unread='true'] .card__dot { opacity: 1; box-shadow: 0 0 0 2px color-mix(in srgb, currentColor 30%, transparent); }
 
 /* Name search results: one row per path from the flat index, the same
    density as .row and .gitrow so switching between the tree and the results
    does not jump the eye. */
 .results { flex: 1; min-height: 0; overflow-y: auto; padding: 2px 0 10px; }
-.result { display: flex; align-items: center; width: 100%; min-width: 0; height: 24px; padding: 0 9px 0 8px; text-align: left; font-size: 12.5px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.result { display: flex; align-items: center; width: 100%; min-width: 0; height: var(--ctl-s); padding: 0 9px 0 8px; text-align: left; font-size: var(--fs-sm); color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .result:hover { background: var(--sidebar-item); }
 .result__n { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-.result__hit { background: color-mix(in srgb, var(--accent) 25%, transparent); color: var(--text); border-radius: 2px; }
-.results__partial { padding: 8px 12px; font-size: 11.5px; color: var(--ghost); }
+.result__hit { background: color-mix(in srgb, var(--accent) 25%, transparent); color: var(--text); border-radius: var(--radius-xs); }
+.results__partial { padding: 8px 12px; font-size: var(--fs-xs); color: var(--ghost); }
 
 /* Content search results: one header per file, one row per matched line
    under it — the grouping the backend already did, not a re-sort of it. */
-.cresult__file { display: flex; align-items: center; width: 100%; min-width: 0; height: 26px; padding: 0 9px 0 8px; text-align: left; font-size: 12px; font-weight: 550; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cresult__file { display: flex; align-items: center; width: 100%; min-width: 0; height: var(--ctl-s); padding: 0 9px 0 8px; text-align: left; font-size: var(--fs-sm); font-weight: 550; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cresult__file:hover { background: var(--sidebar-item); }
-.cresult__line { display: flex; align-items: center; gap: 8px; width: 100%; min-width: 0; height: 22px; padding: 0 9px 0 22px; text-align: left; font-size: 12px; font-family: var(--mono); color: var(--text-2); white-space: nowrap; overflow: hidden; }
+.cresult__line { display: flex; align-items: center; gap: 8px; width: 100%; min-width: 0; height: var(--ctl-xs); padding: 0 9px 0 22px; text-align: left; font-size: var(--fs-sm); font-family: var(--mono); color: var(--text-2); white-space: nowrap; overflow: hidden; }
 .cresult__line:hover { background: var(--sidebar-item); }
 .cresult__n { flex: none; min-width: 24px; text-align: right; color: var(--ghost); font-variant-numeric: tabular-nums; }
 .cresult__t { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
@@ -92,7 +92,7 @@
    Same shimmer as the file-read skeleton, sized to this panel's 24px rows
    instead of that one's text lines. */
 .rowskel { padding: 6px 0 0; }
-.rowskel__ln { height: 12px; margin: 0 12px 12px; border-radius: 3px;
+.rowskel__ln { height: 12px; margin: 0 12px 12px; border-radius: var(--radius-xs);
   background: linear-gradient(90deg, var(--overlay) 25%, var(--overlay-strong) 37%, var(--overlay) 63%);
   background-size: 380% 100%; animation: shimmer var(--loop-2) ease-in-out infinite; }
 

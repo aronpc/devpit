@@ -16,7 +16,7 @@
 .reply p:last-child { margin-bottom: 0; }
 
 .turn__foot { display: flex; align-items: center; gap: var(--space-2); min-height: 20px; margin-top: 2px; }
-.tfbtn { width: 20px; height: 20px; border-radius: var(--radius-xs); display: flex; align-items: center; justify-content: center; color: var(--ghost); }
+.tfbtn { width: var(--ctl-xs); height: var(--ctl-xs); border-radius: var(--radius-xs); display: flex; align-items: center; justify-content: center; color: var(--ghost); }
 .tfbtn:hover { background: var(--overlay); color: var(--text-2); }
 /* The quiet line under a turn: when, on what, how long, how much. */
 .tmeta { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-xs); font-variant-numeric: tabular-nums; color: var(--text-3); }
@@ -45,7 +45,7 @@
 
 .composer { flex: none; padding: 0 var(--space-3) var(--space-2); }
 .composer__warn { margin: 0 2px 6px; font-size: var(--fs-xs); line-height: 1.5; color: var(--warning); }
-.jumpend { position: absolute; top: -40px; left: 50%; z-index: 2; display: grid; place-items: center; width: 30px; height: 30px; transform: translateX(-50%); border-radius: 50%; background: var(--raised); color: var(--text-2); box-shadow: var(--e2); }
+.jumpend { position: absolute; top: -40px; left: 50%; z-index: 2; display: grid; place-items: center; width: var(--ctl-s); height: var(--ctl-s); transform: translateX(-50%); border-radius: 50%; background: var(--raised); color: var(--text-2); box-shadow: var(--e2); }
 .jumpend:hover { color: var(--text); }
 .composer__col { position: relative; max-width: var(--chat-max); margin: 0 auto; width: 100%; }
 /* Raised over the thread, and higher while the caret is in it, so the thing
@@ -56,7 +56,7 @@
 .composer__files { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 2px 8px; }
 /* Where the work happens: quieter than the chips inside, because these
    describe the conversation rather than steer the turn. */
-.composer__where { display: flex; align-items: center; gap: 4px; height: 30px; padding: 0 6px; font-size: var(--fs-xs); color: var(--text-3); }
+.composer__where { display: flex; align-items: center; gap: 4px; height: var(--ctl-s); padding: 0 6px; font-size: var(--fs-xs); color: var(--text-3); }
 .composer__ph { font-size: var(--fs-lg); color: var(--text); min-height: 34px; width: 100%; border: 0; background: none; resize: none; font-family: inherit; line-height: 1.5; outline: none; }
 .composer__ph::placeholder { color: var(--ghost); }
 /* The chips are buttons and selects side by side; the select has to give up
@@ -77,7 +77,7 @@ select.chip { appearance: none; border: 0; background: none; font-family: inheri
 .send__force { margin-left: auto; height: var(--ctl-s); padding: 0 10px; border-radius: var(--ctl-r-s); font-size: var(--fs-xs); font-weight: 500; background: var(--overlay-strong); color: var(--text); }
 .send__force + .send { margin-left: 6px; }
 
-.wschip { display: flex; align-items: center; gap: 5px; height: 22px; padding: 0 7px; border-radius: var(--radius-xs); font-size: var(--fs-xs); color: var(--text-3); }
+.wschip { display: flex; align-items: center; gap: 5px; height: var(--ctl-xs); padding: 0 7px; border-radius: var(--radius-xs); font-size: var(--fs-xs); color: var(--text-3); }
 .wschip:hover { background: var(--overlay); color: var(--text-2); }
 
 /* The composer's files and voice, beside send. */
@@ -85,11 +85,11 @@ select.chip { appearance: none; border: 0; background: none; font-family: inheri
 .ctools__icon { display: grid; place-items: center; width: var(--ctl-s); height: var(--ctl-s); border-radius: var(--ctl-r-s); color: var(--text-3); }
 .ctools__icon:hover:not(:disabled) { color: var(--text); background: var(--overlay); }
 .ctools__icon:disabled { opacity: .45; }
-.ctools__rec { display: inline-flex; align-items: center; gap: 8px; height: 28px; padding: 0 4px 0 10px; border-radius: var(--radius-pill); font: var(--fs-sm) var(--mono); color: var(--text); background: color-mix(in srgb, var(--danger) 10%, var(--surface)); }
+.ctools__rec { display: inline-flex; align-items: center; gap: 8px; height: var(--ctl-s); padding: 0 4px 0 10px; border-radius: var(--radius-pill); font: var(--fs-sm) var(--mono); color: var(--text); background: color-mix(in srgb, var(--danger) 10%, var(--surface)); }
 .ctools__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--danger); animation: ctools-beat var(--loop-2) ease-in-out infinite; }
 @keyframes ctools-beat { 50% { opacity: .35; } }
 @media (prefers-reduced-motion: reduce) { .ctools__dot { animation: none; } }
-.ctools__btn { height: 22px; padding: 0 8px; border-radius: var(--radius-pill); font-size: var(--fs-sm); color: var(--text-2); }
+.ctools__btn { height: var(--ctl-xs); padding: 0 8px; border-radius: var(--radius-pill); font-size: var(--fs-sm); color: var(--text-2); }
 .ctools__btn:hover { color: var(--text); background: var(--overlay); }
 .ctools__btn--go { color: var(--text); background: color-mix(in srgb, var(--accent) 18%, transparent); }
 .ctools__wait { width: 12px; height: 12px; border: 2px solid var(--text-3); border-top-color: transparent; border-radius: 50%; animation: ctools-spin var(--loop-1) linear infinite; }
@@ -157,7 +157,7 @@ select.chip { appearance: none; border: 0; background: none; font-family: inheri
 .mpick__tab { position: relative; flex: none; display: flex; align-items: center; gap: 9px; width: 100%; min-height: 36px; padding: 5px 8px; border-radius: var(--radius-sm); text-align: left; color: var(--text-3); }
 .mpick__tab:hover { background: var(--overlay); color: var(--text-2); }
 .mpick__tab[data-on='true'] { background: var(--overlay-strong); color: var(--text); }
-.mpick__ti { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: var(--radius-sm); background: var(--overlay); }
+.mpick__ti { flex: none; display: grid; place-items: center; width: var(--ctl-xs); height: var(--ctl-xs); border-radius: var(--radius-sm); background: var(--overlay); }
 .mpick__tab[data-on='true'] .mpick__ti { color: var(--accent); }
 .mpick__tb { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
 .mpick__tn { font-size: var(--fs-sm); font-weight: 550; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -165,10 +165,10 @@ select.chip { appearance: none; border: 0; background: none; font-family: inheri
 /* The account this chat is on, whichever tab is being looked at. */
 .mpick__live { flex: none; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
 .mpick__sep { flex: none; height: 1px; margin: 4px 6px; background: var(--border); }
-.mpick__add { flex: none; margin-top: auto; height: 28px; padding: 0 8px; border-radius: var(--radius-sm); text-align: left; font-size: var(--fs-xs); color: var(--text-3); }
+.mpick__add { flex: none; margin-top: auto; height: var(--ctl-s); padding: 0 8px; border-radius: var(--radius-sm); text-align: left; font-size: var(--fs-xs); color: var(--text-3); }
 .mpick__add:hover { background: var(--overlay); color: var(--text); }
 .mpick__main { display: flex; flex-direction: column; min-width: 0; flex: 1; }
-.mpick__q { flex: none; display: flex; align-items: center; gap: 8px; margin: 9px 10px 4px; padding: 0 9px; height: 32px; border-radius: var(--radius-md); background: var(--inset); color: var(--text-3); }
+.mpick__q { flex: none; display: flex; align-items: center; gap: 8px; margin: 9px 10px 4px; padding: 0 9px; height: var(--ctl-m); border-radius: var(--radius-md); background: var(--inset); color: var(--text-3); }
 .mpick__in { flex: 1; min-width: 0; border: 0; background: none; color: var(--text); font-family: inherit; font-size: var(--fs-sm); outline: none; }
 .mpick__in::placeholder { color: var(--ghost); }
 .mpick__list { flex: 0 1 auto; min-height: 0; overflow-y: auto; padding: 5px 7px 8px; }
@@ -188,7 +188,7 @@ select.chip { appearance: none; border: 0; background: none; font-family: inheri
 .mpick__foot { flex: none; margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 7px 12px; border-top: 1px solid var(--border); font-size: var(--fs-xs); color: var(--text-3); }
 .mpick__dir { flex: 1; min-width: 0; font-family: var(--mono); font-size: var(--fs-2xs); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mpick__hint { flex: none; margin: 0; padding: 0 12px 9px; font-size: var(--fs-xs); line-height: 1.45; color: var(--ghost); }
-.mpick__star { flex: none; display: grid; place-items: center; width: 24px; height: 24px; border-radius: var(--radius-sm); color: var(--ghost); opacity: 0; transition: opacity var(--dur-1) ease; }
+.mpick__star { flex: none; display: grid; place-items: center; width: var(--ctl-s); height: var(--ctl-s); border-radius: var(--radius-sm); color: var(--ghost); opacity: 0; transition: opacity var(--dur-1) ease; }
 /* The star is there when it means something: on a favourite, or on the row being looked at. */
 .mpick__r:hover .mpick__star, .mpick__r[data-at='true'] .mpick__star, .mpick__star[data-on='true'] { opacity: 1; }
 .mpick__star:hover { background: var(--overlay); }
@@ -218,7 +218,7 @@ select.chip { appearance: none; border: 0; background: none; font-family: inheri
 
 /* What the agent did, under a rule: a stack of rows you can open. */
 .acts { min-width: 0; font-size: var(--fs-sm); color: var(--text-3); }
-.acts__h { display: flex; align-items: center; gap: 6px; height: 28px; width: 100%; min-width: 0; border-radius: var(--radius-xs); }
+.acts__h { display: flex; align-items: center; gap: 6px; height: var(--ctl-s); width: 100%; min-width: 0; border-radius: var(--radius-xs); }
 .acts__h:hover { color: var(--text); }
 .acts__t { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; font-size: var(--fs-sm); font-weight: 500; color: var(--text-2); }
 .acts__body { margin-left: 6px; padding-left: 12px; padding-bottom: 2px; border-left: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; min-width: 0; }
@@ -234,7 +234,7 @@ select.chip { appearance: none; border: 0; background: none; font-family: inheri
   max-width: var(--chat-card-w); min-width: 0; overflow: hidden; border-radius: var(--radius-lg); border: 1px solid transparent;
 }
 .arow:has(> .arow__h[aria-expanded='true']) { background: var(--raised-2); box-shadow: var(--e1); }
-.arow__h { display: flex; align-items: center; gap: 8px; height: 28px; width: 100%; min-width: 0; padding: 0 8px; text-align: left; font-size: var(--fs-sm); }
+.arow__h { display: flex; align-items: center; gap: 8px; height: var(--ctl-s); width: 100%; min-width: 0; padding: 0 8px; text-align: left; font-size: var(--fs-sm); }
 .arow__h:not(:disabled):hover { background: var(--act-hover); }
 .arow__h:not(:disabled):active { background: var(--act-down); }
 .arow__i { flex: none; color: var(--text-3); }
@@ -255,8 +255,8 @@ select.chip { appearance: none; border: 0; background: none; font-family: inheri
 /* One disclosure: what it was given, and what came back. Each copyable on its
    own, because you want the command far more often than you want both. */
 .asec { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-.asec__h { display: flex; align-items: center; justify-content: space-between; height: 20px; font-size: var(--fs-2xs); font-weight: 500; color: var(--text-3); }
-.asec__c { display: grid; place-items: center; width: 20px; height: 20px; border-radius: var(--radius-xs); color: var(--ghost); }
+.asec__h { display: flex; align-items: center; justify-content: space-between; height: var(--ctl-xs); font-size: var(--fs-2xs); font-weight: 500; color: var(--text-3); }
+.asec__c { display: grid; place-items: center; width: var(--ctl-xs); height: var(--ctl-xs); border-radius: var(--radius-xs); color: var(--ghost); }
 .asec__c:hover { background: var(--overlay); color: var(--text-2); }
 .asec__img { max-width: 100%; max-height: 420px; object-fit: contain; border-radius: var(--radius-sm); border: 1px solid var(--border); }
 
@@ -264,13 +264,13 @@ select.chip { appearance: none; border: 0; background: none; font-family: inheri
 .ascroll__v { margin: 0; padding: 2px 8px 2px 0; max-height: 320px; overflow: auto; overscroll-behavior: contain; font-family: var(--mono); font-size: var(--fs-2xs); line-height: 1.55; color: var(--text-2); white-space: pre-wrap; word-break: break-word; }
 /* The fade says there is more, without a scrollbar having to appear over the
    text to say it. */
-.ascroll__f { position: absolute; left: 0; right: 8px; height: 20px; pointer-events: none; opacity: 0; transition: opacity var(--dur-1) linear; }
+.ascroll__f { position: absolute; left: 0; right: 8px; height: var(--ctl-xs); pointer-events: none; opacity: 0; transition: opacity var(--dur-1) linear; }
 .ascroll__f[data-on='true'] { opacity: 1; }
 .ascroll__f--t { top: 0; background: linear-gradient(to bottom, var(--act), transparent); }
 .ascroll__f--b { bottom: 0; background: linear-gradient(to top, var(--act), transparent); }
 
 /* Alive, and for how long: the dots answer the first, the seconds the second. */
-.working { display: flex; align-items: center; gap: 8px; height: 22px; font-size: var(--fs-xs); font-weight: 500; color: var(--text-3); }
+.working { display: flex; align-items: center; gap: 8px; height: var(--ctl-xs); font-size: var(--fs-xs); font-weight: 500; color: var(--text-3); }
 .working__dots { display: flex; align-items: center; gap: 3px; }
 .working__what { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .working__dots i { width: 4px; height: 4px; border-radius: 50%; background: currentColor; animation: breathe-in var(--loop-2) ease-in-out infinite; }
@@ -329,10 +329,10 @@ select.chip { appearance: none; border: 0; background: none; font-family: inheri
 .resume__top .resume__find { flex: 1; min-width: 0; }
 /* Whose history this is. Says the account, not "filter", because the account
    is what somebody recognises. */
-.resume__scope { flex: none; max-width: 40%; height: 26px; padding: 0 10px; border-radius: var(--radius-pill); font-size: var(--fs-xs); color: var(--text-2); background: var(--overlay-strong); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.resume__scope { flex: none; max-width: 40%; height: var(--ctl-s); padding: 0 10px; border-radius: var(--radius-pill); font-size: var(--fs-xs); color: var(--text-2); background: var(--overlay-strong); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .resume__scope:hover { color: var(--text); }
 .resume__scope[aria-pressed='true'] { color: var(--accent); }
-.resume__find { height: 32px; padding: 0 10px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--composer); color: var(--text); font: inherit; font-size: var(--fs-md); outline: none; }
+.resume__find { height: var(--ctl-m); padding: 0 10px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--composer); color: var(--text); font: inherit; font-size: var(--fs-md); outline: none; }
 .resume__list { max-height: min(360px, 50vh); overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
 .resume__o { display: flex; flex-direction: column; gap: 2px; padding: 6px 8px; border-radius: var(--radius-md); text-align: left; }
 .resume__o[aria-selected='true'] { background: var(--overlay-strong); }

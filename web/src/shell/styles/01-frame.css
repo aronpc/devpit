@@ -43,7 +43,7 @@
    app identity is set in one place, at both sizes. Until an image exists
    the slot is a quiet square: an invented glyph would only be thrown away,
    and a letter is what the old name left behind. */
-.logo { width: 26px; height: 26px; flex: none; display: flex; align-items: center; justify-content: center; background: var(--raised); border: 1px solid var(--border-strong); border-radius: var(--ctl-r-s); overflow: hidden; }
+.logo { width: var(--ctl-s); height: var(--ctl-s); flex: none; display: flex; align-items: center; justify-content: center; background: var(--raised); border: 1px solid var(--border-strong); border-radius: var(--ctl-r-s); overflow: hidden; }
 .logo:has(img[src]) { background: none; border: none; box-shadow: var(--e1); }
 .mark { width: 100%; height: 100%; object-fit: cover; display: block; }
 .mark:not([src]) { display: none; }
@@ -100,7 +100,7 @@
    It answers one question without being asked — is something eating this
    machine — which people otherwise answer by opening another program. Two
    numbers and a count; everything else is behind a click. */
-.strip { position: relative; flex: none; height: 24px; display: flex; align-items: center; justify-content: flex-end; padding: 0 10px; border-top: 1px solid var(--border); background: var(--sidebar); }
+.strip { position: relative; flex: none; height: var(--ctl-s); display: flex; align-items: center; justify-content: flex-end; padding: 0 10px; border-top: 1px solid var(--border); background: var(--sidebar); }
 .strip__go { height: var(--ctl-xs); padding: 0 7px; border-radius: var(--ctl-r-xs); display: flex; align-items: center; gap: 8px; font-size: var(--fs-xs); color: var(--text-3); }
 .strip__go:hover { background: var(--overlay); color: var(--text-2); }
 .strip__n { font-family: var(--mono); font-variant-numeric: tabular-nums; }
@@ -123,16 +123,16 @@
 /* The monitor, over the strip that opened it. */
 .hud { position: absolute; right: 8px; bottom: 26px; width: 320px; max-height: 60vh; overflow-y: auto; z-index: 60; padding: 10px 12px 10px; border-radius: var(--radius-lg); background: var(--glass-solid); box-shadow: var(--e3), var(--top); }
 .hud__top { display: flex; align-items: center; gap: 10px; padding-bottom: 8px; }
-.hud__t { font-size: 12.5px; color: var(--text); }
-.hud__sum { margin-left: auto; font-family: var(--mono); font-size: 11px; color: var(--text-3); font-variant-numeric: tabular-nums; }
+.hud__t { font-size: var(--fs-sm); color: var(--text); }
+.hud__sum { margin-left: auto; font-family: var(--mono); font-size: var(--fs-xs); color: var(--text-3); font-variant-numeric: tabular-nums; }
 .hud__warn { color: var(--warning); }
 .hudrow { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 7px 0; border-top: 1px solid var(--border); }
 .hudrow:hover { background: var(--overlay); }
-.hudrow__ico { width: 22px; height: 22px; flex: none; border-radius: 6px; background: var(--overlay); display: flex; align-items: center; justify-content: center; color: var(--text-3); }
+.hudrow__ico { width: var(--ctl-xs); height: var(--ctl-xs); flex: none; border-radius: var(--radius-sm); background: var(--overlay); display: flex; align-items: center; justify-content: center; color: var(--text-3); }
 .hudrow__body { flex: 1; min-width: 0; }
-.hudrow__n { display: block; font-size: 12.5px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.hudrow__d { display: block; margin-top: 2px; font-size: 11px; color: var(--ghost); }
-.hudrow__cpu, .hudrow__mem { flex: none; font-family: var(--mono); font-size: 11px; font-variant-numeric: tabular-nums; color: var(--text-3); }
+.hudrow__n { display: block; font-size: var(--fs-sm); color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hudrow__d { display: block; margin-top: 2px; font-size: var(--fs-xs); color: var(--ghost); }
+.hudrow__cpu, .hudrow__mem { flex: none; font-family: var(--mono); font-size: var(--fs-xs); font-variant-numeric: tabular-nums; color: var(--text-3); }
 .hudrow__mem { width: 62px; text-align: right; }
 .hudrow__cpu { width: 46px; text-align: right; }
 
@@ -148,29 +148,29 @@
 .mcpchip { position: relative; margin-right: 4px; }
 .strip__go[data-state='bad'] .strip__n { color: var(--warning); }
 .mcpchip__pop { position: absolute; bottom: calc(100% + 6px); right: 0; z-index: 300; width: 340px; max-height: min(420px, 70vh); display: flex; flex-direction: column; padding: 8px; border-radius: var(--radius-lg); background: var(--glass-solid); box-shadow: var(--e3), var(--top); }
-.mcpchip__h { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 2px 4px 8px; font-size: 12px; font-weight: 550; color: var(--text-2); }
-.mcpchip__again { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 400; color: var(--text-3); padding: 2px 6px; border-radius: 5px; }
+.mcpchip__h { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 2px 4px 8px; font-size: var(--fs-sm); font-weight: 550; color: var(--text-2); }
+.mcpchip__again { display: inline-flex; align-items: center; gap: 5px; font-size: var(--fs-xs); font-weight: 400; color: var(--text-3); padding: 2px 6px; border-radius: var(--radius-sm); }
 .mcpchip__again:hover { color: var(--text); background: var(--overlay); }
-.agentchip__said { margin: 0; padding: 2px 4px 4px; font-size: 12px; color: var(--text-2); display: grid; gap: 4px; }
+.agentchip__said { margin: 0; padding: 2px 4px 4px; font-size: var(--fs-sm); color: var(--text-2); display: grid; gap: 4px; }
 .mcpchip__list { min-height: 0; overflow-y: auto; }
 .mcpchip__list ul { list-style: none; margin: 0 0 6px; padding: 0; }
-.mcpchip__g { margin: 4px 4px 2px; font-size: 10.5px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--text-3); }
+.mcpchip__g { margin: 4px 4px 2px; font-size: var(--fs-2xs); font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--text-3); }
 .mcpchip__g span { font-weight: 400; color: var(--ghost); }
-.mcpchip__list li { display: grid; grid-template-columns: 8px minmax(0, 1fr) auto; align-items: center; column-gap: 8px; padding: 4px; border-radius: 6px; font-size: 12px; }
+.mcpchip__list li { display: grid; grid-template-columns: 8px minmax(0, 1fr) auto; align-items: center; column-gap: 8px; padding: 4px; border-radius: var(--radius-sm); font-size: var(--fs-sm); }
 .mcpchip__list li:hover { background: var(--overlay); }
 .mcpchip__dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success); }
 li[data-state='failed'] .mcpchip__dot { background: var(--danger); }
 li[data-state='needs_auth'] .mcpchip__dot { background: var(--warning); }
-.mcpchip__n { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); font-family: var(--mono); font-size: 11.5px; }
-.mcpchip__s { font-size: 11px; color: var(--text-3); }
+.mcpchip__n { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); font-family: var(--mono); font-size: var(--fs-xs); }
+.mcpchip__s { font-size: var(--fs-xs); color: var(--text-3); }
 li[data-state='failed'] .mcpchip__s { color: var(--danger); }
-.mcpchip__why { grid-column: 2 / -1; margin: 0; font-size: 11px; color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mcpchip__why { grid-column: 2 / -1; margin: 0; font-size: var(--fs-xs); color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* The sign-ins chip shares the list; its states are an account's. The fix
    wraps, because a command cut short is one that cannot be copied. */
 li[data-state='expired'] .mcpchip__dot, li[data-state='missing'] .mcpchip__dot { background: var(--danger); }
 li[data-state='unknown'] .mcpchip__dot { background: var(--ghost); }
 li[data-state='expired'] .mcpchip__s, li[data-state='missing'] .mcpchip__s { color: var(--danger); }
-.sichip__fix { grid-column: 2 / -1; font-size: 11px; color: var(--text-2); overflow-wrap: anywhere; }
+.sichip__fix { grid-column: 2 / -1; font-size: var(--fs-xs); color: var(--text-2); overflow-wrap: anywhere; }
 .sichip__fix code { font-family: var(--mono); user-select: all; }
 
 /* Another device watching this machine: said, and dropped with a click. */

@@ -223,9 +223,9 @@ button.crun__s:hover, .chk__again:hover { text-decoration-style: solid; }
 .remind__what b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
 .remind__when { flex: none; font-size: var(--fs-xs); color: var(--text-3); }
 .remind__acts { flex: none; display: flex; gap: 4px; }
-.remind__btn { height: 22px; padding: 0 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text-2); font: inherit; font-size: var(--fs-xs); }
+.remind__btn { height: var(--ctl-xs); padding: 0 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text-2); font: inherit; font-size: var(--fs-xs); }
 .remind__btn:hover { color: var(--text); border-color: var(--accent); }
 .remind__btn--done { color: var(--text); border-color: color-mix(in srgb, var(--accent) 50%, var(--border)); }
 .remind__more { flex: none; margin-top: 2px; padding: 0 6px; border: 0; background: none; color: var(--accent); font: inherit; font-size: var(--fs-xs); }
 .remind__more:hover { text-decoration: underline; }
-.remind__edit { flex: 1; min-width: 0; height: 22px; padding: 0 6px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); font: inherit; font-size: var(--fs-sm); }
+.remind__edit { flex: 1; min-width: 0; height: var(--ctl-xs); padding: 0 6px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); font: inherit; font-size: var(--fs-sm); }
