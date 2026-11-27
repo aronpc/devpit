@@ -7,6 +7,7 @@ import { SkillDoc } from './SkillDoc'
 import { useInstallations } from './useInstallations'
 import { t } from '../i18n'
 import { Icon } from './Icon'
+import { Empty, SPARK } from './Empty'
 
 /*
  * The skills this machine has.
@@ -102,14 +103,11 @@ export function SkillsPane(): React.JSX.Element {
             </button>
           ))}
           {!loading && shown.length === 0 && (
-            <div className="exempty">
-              <span className="exempty__t">
-                {wanted ? t('workspace.skills.noMatch') : (problem ?? t('workspace.skills.none'))}
-              </span>
-              <span className="exempty__d">
-                {wanted ? t('workspace.skills.searched') : t('workspace.skills.arrive')}
-              </span>
-            </div>
+            <Empty
+              icon={SPARK}
+              title={wanted ? t('workspace.skills.noMatch') : (problem ?? t('workspace.skills.none'))}
+              said={wanted ? t('workspace.skills.searched') : t('workspace.skills.arrive')}
+            />
           )}
         </div>
         {/* Where they were read from. Not decoration: two installations of the

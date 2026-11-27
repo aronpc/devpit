@@ -15,6 +15,7 @@ import { abandoned, composing } from './typing'
 import { useShell } from './useShell'
 import { changed, type UseTree } from './useTree'
 import { t } from '../i18n'
+import { Empty, CHECK } from './Empty'
 
 /*
  * What has changed, and what a commit would take.
@@ -174,10 +175,7 @@ export function Changes({ tree }: { tree: UseTree }): React.JSX.Element {
       <div className="git__body">
         {tree.loading && tree.changes.length === 0 && <Skeleton />}
         {!tree.loading && tree.changes.length === 0 && (
-          <div className="exempty">
-            <span className="exempty__t">{t('workspace.changes.nothingChanged')}</span>
-            {said && <span className="exempty__d">{said}</span>}
-          </div>
+          <Empty icon={CHECK} title={t('workspace.changes.nothingChanged')} said={said} />
         )}
         {wanted && shown.length === 0 && <div className="pempty"><span className="pempty__d">{t('workspace.changes.noMatch')}</span></div>}
         {section('staged', t('workspace.changes.staged'), groups.staged)}

@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 
 import { t } from '../i18n'
+import { Icon } from './Icon'
 import { PROBLEM } from './problems'
+import { Toast } from './Toast'
 
 /* The last refusal `report` heard, at the foot of the window until dismissed
    or replaced. Not on a timer: a reason that leaves before it is read was
@@ -17,11 +19,13 @@ export function Problem(): React.JSX.Element | null {
 
   if (!why) return null
   return (
-    <div className="undo" role="alert">
+    <Toast
+      role="alert"
+      tone="danger"
+      icon={<Icon size="m"><circle cx="12" cy="12" r="9" /><path d="M12 8v5M12 16.5v.01" /></Icon>}
+      action={{ label: t('workspace.problem.dismiss'), onClick: () => setWhy(null) }}
+    >
       {why}
-      <button className="undo__b" onClick={() => setWhy(null)}>
-        {t('workspace.problem.dismiss')}
-      </button>
-    </div>
+    </Toast>
   )
 }

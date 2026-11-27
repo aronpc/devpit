@@ -74,11 +74,11 @@ const BUDGET: Record<string, Partial<Record<Kind, number>>> = {
   '03-sidebar.css': { size: 57, radius: 25, height: 15 },
   '04-tabs.css': { size: 4, radius: 2, height: 4 },
   '05-motion.css': { radius: 1 },
-  '06-settings.css': { size: 93, radius: 31, height: 17 },
+  '06-settings.css': { size: 1, height: 16 },
   '07-board.css': { height: 8 },
   '08-capabilities.css': { size: 39, radius: 21, height: 14 },
   '09-tree.css': { size: 21, radius: 9, height: 12 },
-  '10-explorer.css': { size: 43, radius: 24, height: 16 },
+  '10-explorer.css': { size: 39, radius: 24, height: 16 },
   '11-onboarding.css': { size: 8, radius: 5, height: 2 },
   '12-editor.css': { size: 8, radius: 7, height: 1 },
   '13-markdown.css': { size: 11, radius: 9, height: 3 },
@@ -103,6 +103,7 @@ const BUDGET: Record<string, Partial<Record<Kind, number>>> = {
   '32-ask.css': { size: 13, radius: 6 },
   '33-glass.css': {},
   '34-icon.css': {},
+  '35-toast.css': {},
 }
 
 const KINDS: Kind[] = ['size', 'radius', 'height', 'shadow', 'motion']

@@ -12,6 +12,7 @@ import { CHANGED } from './useTree'
 import { useShell } from './useShell'
 import { t } from '../i18n'
 import { Icon } from './Icon'
+import { Empty, CLOCK } from './Empty'
 
 /*
  * What was committed here, most recent first, under the day it was made.
@@ -121,9 +122,7 @@ export function History(): React.JSX.Element {
       )}
       {loading && commits.length === 0 && <Skeleton />}
       {!error && !loading && commits.length === 0 && (
-        <div className="exempty">
-          <span className="exempty__t">{t('workspace.history.none')}</span>
-        </div>
+        <Empty icon={CLOCK} title={t('workspace.history.none')} />
       )}
       {commits.length > 0 && shown.length === 0 && <div className="hist__none">{t('workspace.history.noMatch')}</div>}
 

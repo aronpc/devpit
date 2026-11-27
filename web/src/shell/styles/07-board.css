@@ -82,7 +82,6 @@
 .tile__time { margin-left: auto; font-variant-numeric: tabular-nums; }
 
 /* A card that just landed, and what rises into view. */
-@keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 @keyframes landed { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent); } 100% { box-shadow: 0 0 0 9px transparent; } }
 .tile--landed { animation: landed var(--dur-mark) ease-out; }
 
@@ -148,11 +147,7 @@
 .tile__plan { padding: 0 6px; border-radius: var(--radius-xs); background: var(--accent-soft); color: var(--accent-ink); font-size: var(--fs-2xs); }
 
 /* Right after an archive, the one thing worth offering is taking it back. */
-.undo { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); z-index: 300; display: flex; align-items: center; gap: 14px; padding: 7px 8px 7px 14px; border-radius: var(--radius-lg); background: var(--glass-solid); box-shadow: var(--e3), var(--top); font-size: var(--fs-sm); color: var(--text); animation: rise var(--dur-3) ease-out both; }
-.undo__b { padding: 3px 9px; border-radius: var(--radius-sm); font-size: var(--fs-sm); font-weight: 550; color: var(--accent); }
-.undo__b:hover { background: var(--overlay-strong); }
 /* The same place says why something asked for did not happen (`Problem`). */
-.undo[role='alert'] { border-color: color-mix(in srgb, var(--danger) 45%, var(--border-strong)); }
 
 /* Every element, not just the body: each control's own hand would win over
    an inherited cursor the moment the card passed over it. */
@@ -193,6 +188,3 @@ body[data-dragging='true'] .tile::after { opacity: 0; transition: none; }
 /* A tile here is not dragged: it goes somewhere, under its project's colour. */
 .mgr__tile { border-left: 2px solid var(--tile-accent, var(--border)); }
 .mgr__who { display: block; margin-bottom: 5px; font-size: var(--fs-2xs); letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-3); }
-/* A refusal sits above the board's undo rather than on it: the undo has a
-   timer, and a reason covering its button would spend it. */
-.undo[role='alert'] { bottom: 70px; }

@@ -34,10 +34,16 @@
 .scope__l { font-size: 10.5px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-3); margin-bottom: 5px; }
 .scope__f { height: 28px; border-radius: 7px; background: var(--inset); border: 1px solid var(--border); display: flex; align-items: center; padding: 0 9px; font-family: var(--mono); font-size: 11px; color: var(--ghost); margin-bottom: 12px; }
 .scope__f:hover { border-color: var(--border-strong); }
-.exempty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 0 20px 40px; text-align: center; }
-.exempty svg { color: var(--ghost); }
-.exempty__t { font-size: 12.5px; color: var(--text-3); }
-.exempty__d { font-size: 11.5px; color: var(--ghost); line-height: 1.5; max-width: 220px; }
+.exempty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-2); padding: 0 var(--space-5) 40px; text-align: center; }
+.exempty__t { font-size: var(--fs-md); color: var(--text-2); }
+.exempty__d { max-width: 46ch; font-size: var(--fs-md); line-height: var(--lh-ui); color: var(--text-3); }
+/* An empty state proper (it has an icon) is one pattern everywhere: the icon
+   on a raised tile, a title, one sentence and its actions. A line that only
+   says what is happening (indexing, an error) stays a line. */
+:is(.exempty, .pempty) > .icon:first-child { width: var(--ctl-l); height: var(--ctl-l); padding: 11px; box-sizing: border-box; border-radius: var(--radius-lg); background: var(--raised); box-shadow: var(--e1); color: var(--text-3); }
+:is(.exempty, .pempty):has(> .icon:first-child) :is(.exempty__t, .pempty__t) { font-size: var(--fs-xl); font-weight: var(--fw-3); color: var(--text); }
+:is(.exempty, .pempty) .btn { height: var(--ctl-m); }
+:is(.exempty, .pempty) .btn + .btn { margin-left: var(--space-2); }
 .exmode { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .exmode[hidden] { display: none; }
 .flag u { text-decoration: underline; text-underline-offset: 2px; }
@@ -177,10 +183,10 @@
   transition: opacity var(--dur-1) ease var(--intent), transform var(--dur-1) ease var(--intent);
 }
 .phead__act:hover::after { opacity: 1; transform: none; }
-.pempty { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 28px 16px; text-align: center; }
-.pempty__t { font-size: 12.5px; color: var(--text-2); }
-.pempty__d { max-width: 240px; font-size: 11.5px; line-height: 1.5; color: var(--text-3); }
-.pempty .btn { margin-top: 6px; }
+.pempty { display: flex; flex-direction: column; align-items: center; gap: var(--space-2); padding: 28px var(--space-4); text-align: center; }
+.pempty__t { font-size: var(--fs-md); color: var(--text-2); }
+.pempty__d { max-width: 46ch; font-size: var(--fs-md); line-height: var(--lh-ui); color: var(--text-3); }
+.pempty .btn { margin-top: var(--space-1); }
 
 /* The tab bar: icons, and the one in front says its name — the panel's
    width goes to the content, and the person still knows where they are. */

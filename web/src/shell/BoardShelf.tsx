@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from 'react'
-import { createPortal } from 'react-dom'
 
 import { t } from '../i18n'
 import { formatDate } from '../i18n/format'
@@ -8,6 +7,7 @@ import { CardEnding, type Ending } from './CardHeader'
 import { ask, commands } from './live'
 import { abandoned } from './typing'
 import { Icon } from './Icon'
+import { Toast } from './Toast'
 
 /*
  * The board's archived cards, and Undo for the card just archived.
@@ -46,14 +46,14 @@ export function UndoArchive({
     })
   }
 
-  return createPortal(
-    <div className="undo" role="status">
-      <span>{problem ?? t('board.cardArchived')}</span>
-      <button className="undo__b" onClick={undo}>
-        {t('board.undo')}
-      </button>
-    </div>,
-    document.body,
+  return (
+    <Toast
+      tone={problem ? 'danger' : 'info'}
+      icon={<Icon size="m"><rect x="3" y="4" width="18" height="4" rx="1" /><path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8M10 12h4" /></Icon>}
+      action={{ label: t('board.undo'), onClick: undo }}
+    >
+      {problem ?? t('board.cardArchived')}
+    </Toast>
   )
 }
 

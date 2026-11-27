@@ -203,8 +203,8 @@ select.chip { appearance: none; border: 0; background: none; font-family: inheri
 .chat__blank--orch .chat__mark { color: var(--orchestrate); }
 .chat__sub { margin: 10px auto 0; max-width: 460px; font-size: var(--fs-md); line-height: 1.55; color: var(--text-3); }
 .chat__tries { margin: 18px auto 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
-.chat__try { padding: 5px 10px; border: 1px solid color-mix(in srgb, var(--orchestrate) 35%, var(--border)); border-radius: var(--radius-pill); background: color-mix(in srgb, var(--orchestrate) 8%, transparent); color: var(--text-2); font-size: var(--fs-sm); }
-.chat__try:hover { color: var(--text); border-color: var(--orchestrate); }
+.chat__try { height: var(--ctl-s); padding: 0 10px; border: 1px solid var(--border-ctl); border-radius: var(--ctl-r-s); background: var(--raised); color: var(--text-2); font-size: var(--fs-sm); }
+.chat__try:hover { color: var(--text); background: var(--overlay-strong); }
 .chat__try--project { border-color: color-mix(in srgb, var(--accent) 30%, var(--border)); background: color-mix(in srgb, var(--accent) 6%, transparent); }
 .chat__try--project:hover { border-color: var(--accent); }
 .chat__recent { width: 100%; max-width: 420px; margin: 28px auto 0; display: flex; flex-direction: column; gap: 2px; text-align: left; }

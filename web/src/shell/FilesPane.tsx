@@ -9,6 +9,7 @@ import { committed } from './typing'
 import { crumbs, fullPath, matching, meta, moved, parentOf, sorted, type Order } from './wsbrowse'
 import { t } from '../i18n'
 import { Icon } from './Icon'
+import { Empty, FOLDER } from './Empty'
 
 /*
  * The devpit workspace, browsed.
@@ -193,16 +194,11 @@ export function FilesPane(): React.JSX.Element {
             {folder.error && <div className="exempty__t">{folder.error}</div>}
 
             {!folder.error && !folder.loading && rows.length === 0 && (
-              <div className="exempty">
-                <span className="exempty__t">
-                  {query ? t('workspace.files.noMatch') : t('workspace.files.empty')}
-                </span>
-                <span className="exempty__d">
-                  {query
-                    ? t('workspace.files.clearFilter')
-                    : t('workspace.files.writesHere')}
-                </span>
-              </div>
+              <Empty
+                icon={FOLDER}
+                title={query ? t('workspace.files.noMatch') : t('workspace.files.empty')}
+                said={query ? t('workspace.files.clearFilter') : t('workspace.files.writesHere')}
+              />
             )}
 
             {rows.map((row) => (

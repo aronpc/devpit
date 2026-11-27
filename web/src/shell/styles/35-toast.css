@@ -1,0 +1,12 @@
+/* ── Toasts: one stack at the foot of the window ───────────────────── */
+.toasts { position: fixed; left: 50%; bottom: 22px; z-index: 300; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: var(--space-2); pointer-events: none; }
+.toasts:empty { display: none; }
+/* The action sits beside the words while both fit on one line, and drops
+   under them when they do not. It arrives with a short rise and leaves at once. */
+.toast { pointer-events: auto; display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); max-width: min(560px, calc(100vw - 48px)); padding: var(--space-2) var(--space-2) var(--space-2) var(--space-3); border-radius: var(--radius-xl); background: var(--glass-solid); box-shadow: var(--e3), var(--top); font-size: var(--fs-sm); color: var(--text); animation: toast-in var(--dur-3) var(--ease-out) both; }
+.toast__ico { flex: none; display: flex; color: var(--text-3); }
+.toast[data-tone='danger'] .toast__ico { color: var(--danger); }
+.toast__t { flex: 1 1 auto; min-width: 0; }
+.toast__act { flex: none; height: var(--ctl-s); padding: 0 var(--space-2); border-radius: var(--ctl-r-s); font-size: var(--fs-sm); font-weight: var(--fw-2); color: var(--accent); }
+.toast__act:hover { background: var(--overlay-strong); }
+@keyframes toast-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }

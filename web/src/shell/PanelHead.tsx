@@ -1,3 +1,6 @@
+import { TRAY } from './Empty'
+import { Icon } from './Icon'
+
 /*
  * What every view of the right panel opens with, and what it says when it
  * has nothing: one title row, one empty state. Six views had four headers
@@ -47,15 +50,19 @@ export function PanelAct({
 export function PanelEmpty({
   title,
   hint,
+  icon,
   children,
 }: {
   title: string
+  /** Its glyph, on the 24 grid; a tray unless said. */
+  icon?: React.ReactNode
   hint?: React.ReactNode
   /** One action that fills it, when there is one. */
   children?: React.ReactNode
 }): React.JSX.Element {
   return (
     <div className="pempty">
+      <Icon size="l">{icon ?? TRAY}</Icon>
       <span className="pempty__t">{title}</span>
       {hint && <span className="pempty__d">{hint}</span>}
       {children}
