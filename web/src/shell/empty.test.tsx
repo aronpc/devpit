@@ -1,5 +1,5 @@
 import { cleanup, render, screen } from '@testing-library/react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { Empty, TRAY } from './Empty'
 
@@ -9,7 +9,7 @@ describe('an empty pane', () => {
   it('leads with its icon, then what is missing, how it fills and the action', () => {
     const { container } = render(
       <Empty icon={TRAY} title="Nothing here" said="Cards land here.">
-        <button>Add</button>
+        <button onClick={vi.fn()}>Add</button>
       </Empty>,
     )
     const box = container.querySelector('.exempty')!
