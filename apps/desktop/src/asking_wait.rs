@@ -243,18 +243,20 @@ pub(crate) enum Over<'a> {
 
 /// Waits as the question's tool says: the person's question without end, any
 /// other for `WAITS`. Giving up denies — a question nobody answered is not a
-/// question someone said yes to.
+/// question someone said yes to. However it ends, nothing is kept for it: the
+/// chat's prompt registers every question it takes, a plan's too.
 pub(crate) fn waits(
     hear: &Receiver<Answer>,
     question: &Question,
     ends: &Ends,
     clock: &dyn Clock,
 ) -> Answer {
-    if !to_the_person(&question.tool) {
-        return within(hear, clock);
-    }
-    ends.open(&question.id, question.conversation_id.as_deref());
-    let answer = wait_for_person(hear, &question.id, ends, clock);
+    let answer = if to_the_person(&question.tool) {
+        ends.open(&question.id, question.conversation_id.as_deref());
+        wait_for_person(hear, &question.id, ends, clock)
+    } else {
+        within(hear, clock)
+    };
     ends.close(&question.id);
     answer
 }

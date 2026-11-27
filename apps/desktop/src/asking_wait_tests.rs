@@ -264,3 +264,36 @@ fn a_supervised_permission_still_ends_at_two_minutes() {
 fn a_plan_still_ends_at_two_minutes() {
     ends_at_two_minutes("ExitPlanMode");
 }
+
+/// The chat's prompt registers every question it takes, a plan's too, before
+/// its wait begins. A plan answered, or one that ran out of time, keeps
+/// nothing: a later end of its conversation finds no question to end.
+#[test]
+fn a_plans_wait_keeps_nothing_once_it_is_over() {
+    let (ends, clock) = (
+        Arc::new(Ends::default()),
+        Arc::new(Ticking::by(Duration::from_secs(10))),
+    );
+    assert!(!ends.open("plan_answered", Some("conv_a")));
+    let (tell, wait) = waiting(
+        asked("plan_answered", "ExitPlanMode", Some("conv_a")),
+        &ends,
+        &clock,
+    );
+    tell.send(Answer::Allow).expect("the wait is listening");
+    assert_eq!(ends_soon(wait), Answer::Allow);
+
+    assert!(!ends.open("plan_expired", Some("conv_a")));
+    let (_tell, wait) = waiting(
+        asked("plan_expired", "ExitPlanMode", Some("conv_a")),
+        &ends,
+        &clock,
+    );
+    let_pass(&clock, TEN_MINUTES, &wait);
+    assert_eq!(ends_soon(wait), Answer::Deny);
+
+    assert!(
+        ends.over(Over::TurnEnded("conv_a")).is_empty(),
+        "a plan whose wait was over was still registered"
+    );
+}
