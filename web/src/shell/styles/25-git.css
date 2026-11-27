@@ -62,7 +62,7 @@
 .mdiff { flex: 1; min-height: 0; overflow: hidden; display: flex; }
 .mdiff > .cm-editor, .mdiff > .cm-mergeView { flex: 1; min-width: 0; height: 100%; }
 .mdiff .cm-mergeView { overflow: auto; }
-.mdiff .cm-editor { background: var(--canvas); color: var(--text); font-size: calc(12px * var(--code-scale, 1)); }
+.mdiff .cm-editor { background: var(--canvas); color: var(--text); font-size: var(--fs-code); }
 .mdiff .cm-scroller { font-family: var(--mono); line-height: 1.6; }
 .mdiff .cm-editor.cm-focused { outline: none; }
 .mdiff .cm-content { caret-color: var(--text); }

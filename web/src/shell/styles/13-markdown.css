@@ -7,9 +7,9 @@
 .md__list li { margin-bottom: 4px; }
 .md__quote { margin: 0 0 12px; padding-left: 12px; border-left: 2px solid var(--border); color: var(--text-3); }
 .md__rule { margin: 18px 0; border: 0; border-top: 1px solid var(--border); }
-.md__code { margin: 0 0 12px; padding: 10px 12px; border-radius: 8px; background: var(--inset); overflow-x: auto; font-family: var(--mono); font-size: calc(11.5px * var(--code-scale, 1)); line-height: 1.6; }
+.md__code { margin: 0 0 12px; padding: 10px 12px; border-radius: 8px; background: var(--inset); overflow-x: auto; font-family: var(--mono); font-size: var(--fs-code); line-height: 1.6; }
 .md__math[data-display] { display: block; margin: 0 0 12px; overflow-x: auto; }
-.md__tick { padding: 1px 5px; border-radius: 4px; background: var(--overlay); font-family: var(--mono); font-size: calc(11.5px * var(--code-scale, 1)); }
+.md__tick { padding: 1px 5px; border-radius: 4px; background: var(--overlay); font-family: var(--mono); font-size: var(--fs-code); }
 .md__img { max-width: 100%; border-radius: 6px; }
 .md__a { display: inline; padding: 0; color: var(--accent); text-decoration: underline; font: inherit; }
 .md__diagram { margin: 0 0 12px; display: flex; justify-content: center; }
@@ -40,7 +40,7 @@
 
 /* A diff. The four kinds of line get their own ground rather than their own
    prefix, because the prefix is what lies. */
-.diff { margin: 0 0 12px; font-family: var(--mono); font-size: calc(11.5px * var(--code-scale, 1)); line-height: 1.55; }
+.diff { margin: 0 0 12px; font-family: var(--mono); font-size: var(--fs-code); line-height: 1.55; }
 .diff__at { padding: 4px 12px; background: var(--overlay); color: var(--text-3); }
 .diff__l { padding: 0 12px; white-space: pre; color: var(--text-2); }
 .diff__l[data-d='add'] { background: color-mix(in srgb, var(--diff-add, var(--success)) 14%, transparent); }

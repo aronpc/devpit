@@ -115,6 +115,7 @@
 
   /* The scales. A size between two steps is a step nobody chose. The text
      scale is Settings → Appearance's text size, 1 unless chosen. */
+  --fs-3xs: calc(9px * var(--text-scale, 1));
   --fs-2xs: calc(10.5px * var(--text-scale, 1));
   --fs-xs: calc(11.5px * var(--text-scale, 1));
   --fs-sm: calc(12px * var(--text-scale, 1));
@@ -122,6 +123,9 @@
   --fs-lg: calc(14px * var(--text-scale, 1));
   --fs-xl: calc(17px * var(--text-scale, 1));
   --fs-2xl: calc(20px * var(--text-scale, 1));
+  --fs-3xl: calc(28px * var(--text-scale, 1));
+  /* Code: Settings → Appearance's code size, 1 unless chosen. */
+  --fs-code: calc(11.5px * var(--code-scale, 1));
 
   --radius-xs: 4px;
   --radius-sm: 6px;
@@ -166,6 +170,7 @@
   --ctl-r-m: 10px;
   --ctl-r-l: 12px;
   --radius-xl: 16px;
+  --radius-2xl: 24px;
   /* Icons: three sizes, grown with the text so they keep to its cap height. */
   --icon-s: calc(14px * var(--text-scale, 1));
   --icon-m: calc(16px * var(--text-scale, 1));

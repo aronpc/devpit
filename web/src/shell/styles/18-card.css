@@ -3,24 +3,24 @@
    that squeezes six lanes into four to show you one card makes you lose
    your place in order to read it. */
 .cardp { position: fixed; inset: 0; z-index: 420; display: flex; align-items: flex-start; justify-content: center; padding: 48px 24px; background: var(--shade); overflow-y: auto; }
-.cardp__box { width: 100%; max-width: 760px; border-radius: var(--radius-xl); background: var(--canvas); box-shadow: var(--e3), var(--top); animation: pop-in var(--dur-2) var(--ease-out) both; }
+.cardp__box { width: 100%; max-width: 760px; border-radius: var(--radius-xl); background: var(--raised); box-shadow: var(--e3), var(--top); animation: pop-in var(--dur-2) var(--ease-out) both; }
 .cardp__top { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--border); }
 .cardp__acts { margin-left: auto; display: flex; align-items: center; gap: 2px; }
-.cardp__col { font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-3); }
+.cardp__col { font-size: var(--fs-2xs); letter-spacing: var(--track-caps); text-transform: uppercase; color: var(--text-3); }
 .cardp__in { padding: 20px 24px 28px; }
-.cardp__no { font-size: 12px; color: var(--text-3); font-variant-numeric: tabular-nums; }
-.cardp__title { width: 100%; background: none; border: 0; font: inherit; font-size: 18px; font-weight: 550; color: var(--text); padding: 4px 0; }
+.cardp__no { font-size: var(--fs-sm); color: var(--text-3); font-variant-numeric: tabular-nums; }
+.cardp__title { width: 100%; background: none; border: 0; font: inherit; font-size: var(--fs-xl); font-weight: var(--fw-3); color: var(--text); padding: 4px 0; }
 .cardp__title:focus { outline: none; border-bottom: 1px solid var(--accent); }
 .cardp__row { display: flex; align-items: center; gap: 14px; margin: 14px 0 4px; }
 .cardp__due { display: flex; align-items: center; gap: 9px; }
-.cardp__date { height: 28px; padding: 0 8px; border-radius: 7px; background: var(--inset); border: 1px solid var(--border); font: inherit; font-size: 12px; color: var(--text); }
+.cardp__date { height: var(--ctl-s); padding: 0 8px; border-radius: var(--ctl-r-s); background: var(--inset); border: 1px solid var(--border-ctl); font: inherit; font-size: var(--fs-sm); color: var(--text); }
 .cardp__date:focus { outline: none; border-color: var(--focus); box-shadow: var(--focus-field); }
-.cardp__near { font-size: 11.5px; color: var(--text-3); }
+.cardp__near { font-size: var(--fs-xs); color: var(--text-3); }
 .cardp__due[data-near='past'] .cardp__near { color: var(--danger); }
 .cardp__due[data-near='today'] .cardp__near { color: var(--warning); }
-.cardp__cost { margin-left: auto; font-size: 11.5px; color: var(--text-3); font-variant-numeric: tabular-nums; }
-.cardp__h { margin: 26px 0 10px; font-size: 11px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-3); }
-.cardp__body { width: 100%; padding: 11px 13px; border-radius: 9px; background: var(--inset); border: 1px solid var(--border); font: inherit; font-size: 13px; line-height: 1.6; color: var(--text); resize: vertical; }
+.cardp__cost { margin-left: auto; font-size: var(--fs-xs); color: var(--text-3); font-variant-numeric: tabular-nums; }
+.cardp__h { margin: 26px 0 10px; font-size: var(--fs-xs); font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-3); }
+.cardp__body { width: 100%; padding: 11px 13px; border-radius: var(--ctl-r-m); background: var(--inset); border: 1px solid var(--border-ctl); font: inherit; font-size: var(--fs-md); line-height: 1.6; color: var(--text); resize: vertical; }
 .cardp__body:focus { outline: none; border-color: var(--focus); box-shadow: var(--focus-field); }
 /* Two columns once there is room: what the card is on the left, what is done
    with it on the right. Narrower, one column, in reading order. */
@@ -29,60 +29,60 @@
   .cardp__grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 340px); gap: 32px; align-items: start; }
 }
 .cardp__lane { display: flex; align-items: center; gap: 9px; margin-bottom: 12px; }
-.cardp__select { height: var(--ctl-s); padding: 0 8px; border-radius: var(--ctl-r-s); background: var(--inset); border: 1px solid var(--border-ctl); font: inherit; font-size: 12px; color: var(--text); }
-.cardp__md { min-height: 64px; padding: 11px 13px; border-radius: 9px; background: var(--inset); border: 1px solid transparent; }
+.cardp__select { height: var(--ctl-s); padding: 0 8px; border-radius: var(--ctl-r-s); background: var(--inset); border: 1px solid var(--border-ctl); font: inherit; font-size: var(--fs-sm); color: var(--text); }
+.cardp__md { min-height: 64px; padding: 11px 13px; border-radius: var(--ctl-r-m); background: var(--inset); border: 1px solid transparent; }
 .cardp__md:hover, .cardp__md:focus-visible { outline: none; border-color: var(--border); }
-.cardp__ph { font-size: 13px; color: var(--text-3); }
-.cardp__saved { margin: 6px 0 0; font-size: 11.5px; color: var(--text-3); }
+.cardp__ph { font-size: var(--fs-md); color: var(--text-3); }
+.cardp__saved { margin: 6px 0 0; font-size: var(--fs-xs); color: var(--text-3); }
 
 /* Acceptance criteria, ticked where they live: the card's body. */
 .crit { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 4px; }
-.crit__one { display: flex; align-items: flex-start; gap: 9px; padding: 6px 10px; border-radius: 8px; background: var(--raised); font-size: 13px; line-height: 1.45; color: var(--text); }
+.crit__one { display: flex; align-items: flex-start; gap: 9px; padding: 6px 10px; border-radius: var(--radius-lg); background: var(--raised-2); box-shadow: var(--e1); font-size: var(--fs-md); line-height: 1.45; color: var(--text); }
 .crit__one input { margin-top: 3px; accent-color: var(--accent); }
 .crit__one[data-done='true'] span { color: var(--text-3); text-decoration: line-through; }
-.crit__note { margin: 0; padding: 6px 10px; border-radius: 8px; background: var(--raised); font-size: 13px; line-height: 1.45; color: var(--text-2); }
+.crit__note { margin: 0; padding: 6px 10px; border-radius: var(--radius-lg); background: var(--raised-2); box-shadow: var(--e1); font-size: var(--fs-md); line-height: 1.45; color: var(--text-2); }
 
 /* A Devflow plan waiting on its epic: cards that do not exist yet. */
-.dplan__note { margin: -4px 0 10px; font-size: 12px; color: var(--text-3); }
+.dplan__note { margin: -4px 0 10px; font-size: var(--fs-sm); color: var(--text-3); }
 .dplan__list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
-.dplan__card { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border-radius: 10px; border: 1px dashed var(--border-strong); }
+.dplan__card { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border-radius: var(--ctl-r-m); border: 1px dashed var(--border-strong); }
 .dplan__head { display: flex; align-items: center; gap: 8px; }
-.dplan__n { flex: none; width: 18px; font-size: 11px; color: var(--text-3); font-variant-numeric: tabular-nums; }
-.dplan__t { flex: 1; min-width: 0; background: none; border: 0; border-bottom: 1px solid transparent; font: inherit; font-size: 13.5px; font-weight: 550; color: var(--text); padding: 2px 0; }
+.dplan__n { flex: none; width: 18px; font-size: var(--fs-xs); color: var(--text-3); font-variant-numeric: tabular-nums; }
+.dplan__t { flex: 1; min-width: 0; background: none; border: 0; border-bottom: 1px solid transparent; font: inherit; font-size: var(--fs-lg); font-weight: 550; color: var(--text); padding: 2px 0; }
 .dplan__t:focus { outline: none; border-bottom-color: var(--accent); }
-.dplan__by { margin: 0; font-size: 11.5px; color: var(--warning); }
-.dplan__ta { width: 100%; padding: 7px 9px; border-radius: 8px; background: var(--inset); border: 1px solid var(--border); font: inherit; font-size: 12.5px; line-height: 1.5; color: var(--text); resize: vertical; }
+.dplan__by { margin: 0; font-size: var(--fs-xs); color: var(--warning); }
+.dplan__ta { width: 100%; padding: 7px 9px; border-radius: var(--radius-md); background: var(--inset); border: 1px solid var(--border-ctl); font: inherit; font-size: var(--fs-sm); line-height: 1.5; color: var(--text); resize: vertical; }
 .dplan__ta:focus { outline: none; border-color: var(--focus); box-shadow: var(--focus-field); }
-.dplan__verify { align-self: flex-start; padding: 2px 7px; border-radius: 5px; background: var(--inset); font-family: var(--mono); font-size: 11px; color: var(--text-2); }
+.dplan__verify { align-self: flex-start; padding: 2px 7px; border-radius: var(--radius-sm); background: var(--inset); font-family: var(--mono); font-size: var(--fs-xs); color: var(--text-2); }
 .dplan__acts { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
 
 /* What ties the card to the others: its epic, its blockers, an epic's cards. */
 .ties { display: flex; flex-direction: column; gap: 10px; margin: 14px 0; }
 .ties__group { display: flex; flex-direction: column; gap: 5px; }
 .ties__list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 3px; }
-.ties__one { padding: 5px 9px; border-radius: 7px; background: var(--raised); font-size: 12px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ties__one { padding: 5px 9px; border-radius: var(--radius-lg); background: var(--raised-2); box-shadow: var(--e1); font-size: var(--fs-sm); color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ties__no { margin-right: 6px; font-variant-numeric: tabular-nums; color: var(--text-3); }
 .ties__one[data-done='true'] { color: var(--text-3); text-decoration: line-through; }
-.ties__closed { margin: 0; font-size: 12px; color: var(--text-3); }
+.ties__closed { margin: 0; font-size: var(--fs-sm); color: var(--text-3); }
 
 /* Where this card's work happens. */
-.cwork__wt { display: flex; align-items: center; gap: 14px; padding: 12px 16px; background: var(--raised); border-radius: 10px; }
+.cwork__wt { display: flex; align-items: center; gap: 14px; padding: 12px 16px; background: var(--raised-2); box-shadow: var(--e1); border-radius: var(--radius-lg); }
 .cwork__wt[data-gone='true'] { opacity: 0.7; }
 .cwork__b { flex: 1; min-width: 0; }
-.cwork__t { display: flex; align-items: center; gap: 9px; font-family: var(--mono); font-size: 12.5px; color: var(--text); }
-.cwork__dirty { font-family: inherit; font-size: 11px; color: var(--warning); }
-.cwork__p { display: block; margin-top: 3px; font-family: var(--mono); font-size: 11px; color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cwork__t { display: flex; align-items: center; gap: 9px; font-family: var(--mono); font-size: var(--fs-sm); color: var(--text); }
+.cwork__dirty { font-family: inherit; font-size: var(--fs-xs); color: var(--warning); }
+.cwork__p { display: block; margin-top: 3px; font-family: var(--mono); font-size: var(--fs-xs); color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cwork__go { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 12px; }
-.crun { display: flex; align-items: center; gap: 14px; padding: 11px 16px; background: var(--raised); border-radius: 10px; }
+.crun { display: flex; align-items: center; gap: 14px; padding: 11px 16px; background: var(--raised-2); box-shadow: var(--e1); border-radius: var(--radius-lg); }
 .crun + .crun { margin-top: 6px; }
 .crun__b { flex: 1; min-width: 0; }
-.crun__t { display: block; font-size: 13px; color: var(--text); }
-.crun__o { display: block; margin-top: 4px; font-family: var(--mono); font-size: 11px; color: var(--text-3); white-space: pre-wrap; max-height: 64px; overflow: hidden; }
-.crun__a { display: block; margin-top: 3px; font-size: 11px; color: var(--text-3); }
+.crun__t { display: block; font-size: var(--fs-md); color: var(--text); }
+.crun__o { display: block; margin-top: 4px; font-family: var(--mono); font-size: var(--fs-xs); color: var(--text-3); white-space: pre-wrap; max-height: 64px; overflow: hidden; }
+.crun__a { display: block; margin-top: 3px; font-size: var(--fs-xs); color: var(--text-3); }
 .pstep { margin-top: 8px; }
 .pstep__why, .pstep__none { margin: 0; font-size: var(--fs-sm); color: var(--text-3); }
 .pstep__profiles { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 7px; }
-.crun__s { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; color: var(--text-3); }
+.crun__s { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-xs); color: var(--text-3); }
 .crun[data-state='lost'] .crun__s { color: var(--warning); }
 /* The board's runs, across every card.
  *
@@ -91,98 +91,98 @@
  * the border and the empty sentence to rest on the bottom edge. */
 .runsp { width: min(760px, 100%); padding: 18px 22px 22px; }
 .runsp__top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
-.runsp__t { margin: 0; font-size: 15px; font-weight: 600; color: var(--text); }
+.runsp__t { margin: 0; font-size: var(--fs-lg); font-weight: 600; color: var(--text); }
 /* The filters are a row of small controls; they line up on their text, and
    the row keeps a line of its own under it. */
-.runsp__filters { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; margin-bottom: 18px; padding-bottom: 16px; border-bottom: 1px solid var(--border); font-size: 12px; color: var(--text-3); }
+.runsp__filters { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; margin-bottom: 18px; padding-bottom: 16px; border-bottom: 1px solid var(--border); font-size: var(--fs-sm); color: var(--text-3); }
 .runsp__filters label { display: flex; align-items: center; gap: 7px; }
-.runsp__filters select, .runsp__filters input { height: var(--ctl-s); padding: 0 8px; border-radius: var(--ctl-r-s); background: var(--inset); border: 1px solid var(--border-ctl); font: inherit; font-size: 12px; color: var(--text); }
+.runsp__filters select, .runsp__filters input { height: var(--ctl-s); padding: 0 8px; border-radius: var(--ctl-r-s); background: var(--inset); border: 1px solid var(--border-ctl); font: inherit; font-size: var(--fs-sm); color: var(--text); }
 .runsp__filters select:focus, .runsp__filters input:focus { outline: none; border-color: var(--focus); box-shadow: var(--focus-field); }
-.runsp__card { display: block; font-size: 13px; color: var(--text); text-align: left; }
+.runsp__card { display: block; font-size: var(--fs-md); color: var(--text); text-align: left; }
 .runsp__card:hover { text-decoration: underline; }
 /* An empty list is one sentence in a big box: it gets room rather than the
    corner the border left it in. */
-.runsp__none { margin: 0; padding: 10px 0 6px; font-size: 12.5px; line-height: 1.55; color: var(--text-3); }
+.runsp__none { margin: 0; padding: 10px 0 6px; font-size: var(--fs-sm); line-height: 1.55; color: var(--text-3); }
 .runsp__more { margin-top: 14px; }
 .crun[data-state='failed'] .crun__s { color: var(--danger); }
 .crun[data-state='ok'] .crun__s { color: var(--success); }
 .crun[data-state='running'] .crun__s { color: var(--warning); }
-.crun__c { flex: none; font-size: 11.5px; color: var(--text-3); font-variant-numeric: tabular-nums; }
+.crun__c { flex: none; font-size: var(--fs-xs); color: var(--text-3); font-variant-numeric: tabular-nums; }
 
 /* Files pinned to a card. A pin is a path, so it can stop being true — and
    one whose file has moved is drawn, not dropped. */
-.pin { display: flex; align-items: center; gap: 14px; padding: 11px 16px; background: var(--raised); border-radius: 10px; }
+.pin { display: flex; align-items: center; gap: 14px; padding: 11px 16px; background: var(--raised-2); box-shadow: var(--e1); border-radius: var(--radius-lg); }
 .pin + .pin { margin-top: 6px; }
 .pin[data-gone='true'] .pin__t { text-decoration: line-through; }
 .pin__ico { flex: none; color: var(--text-3); }
 .pin__b { flex: 1; min-width: 0; }
-.pin__t { display: block; font-size: 13px; color: var(--text); }
-.pin__p { display: block; margin-top: 3px; font-family: var(--mono); font-size: 11px; color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.pin__n { flex: none; font-size: 11px; color: var(--text-3); }
+.pin__t { display: block; font-size: var(--fs-md); color: var(--text); }
+.pin__p { display: block; margin-top: 3px; font-family: var(--mono); font-size: var(--fs-xs); color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pin__n { flex: none; font-size: var(--fs-xs); color: var(--text-3); }
 .pin__acts { flex: none; display: flex; gap: 6px; }
 .pin__acts .btn[data-danger]:hover, .conv__act[data-danger]:hover { color: var(--danger); }
 
 /* The card's conversation, oldest first — the order it was said in. */
-.conv__one { padding: 12px 16px; background: var(--raised); border-radius: 10px; }
+.conv__one { padding: 12px 16px; background: var(--raised-2); box-shadow: var(--e1); border-radius: var(--radius-lg); }
 .conv__one + .conv__one { margin-top: 6px; }
 .conv__one[data-mine='true'] { background: color-mix(in srgb, var(--accent) 7%, var(--raised)); }
 .conv__who { display: flex; align-items: center; gap: 9px; margin-bottom: 6px; }
-.conv__name { font-size: 12.5px; color: var(--text); }
-.conv__when, .conv__edited { font-size: 11px; color: var(--text-3); }
+.conv__name { font-size: var(--fs-sm); color: var(--text); }
+.conv__when, .conv__edited { font-size: var(--fs-xs); color: var(--text-3); }
 .conv__acts { margin-left: auto; display: flex; gap: 8px; opacity: 0; }
 .conv__one:hover .conv__acts, .conv__one:focus-within .conv__acts { opacity: 1; }
-.conv__act { font-size: 11px; color: var(--text-3); }
+.conv__act { font-size: var(--fs-xs); color: var(--text-3); }
 .conv__act:hover { color: var(--text); }
 .conv__new { margin-top: 10px; }
-.conv__f { width: 100%; padding: 10px 12px; border-radius: var(--ctl-r-m); background: var(--inset); border: 1px solid var(--border-ctl); font: inherit; font-size: 12.5px; line-height: 1.55; color: var(--text); resize: vertical; }
+.conv__f { width: 100%; padding: 10px 12px; border-radius: var(--ctl-r-m); background: var(--inset); border: 1px solid var(--border-ctl); font: inherit; font-size: var(--fs-sm); line-height: 1.55; color: var(--text); resize: vertical; }
 .conv__f:focus { outline: none; border-color: var(--focus); box-shadow: var(--focus-field); }
 
 /* Play: do this lane's step on this card, now. */
 .play { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.play__d { font-size: 11.5px; color: var(--text-3); }
-.play__no { font-size: 11.5px; color: var(--danger); }
+.play__d { font-size: var(--fs-xs); color: var(--text-3); }
+.play__no { font-size: var(--fs-xs); color: var(--danger); }
 
 /* What a card changed, against where it started — never against HEAD. */
 .cdiff { margin-top: 22px; }
-.cdiff__f { margin-top: 6px; border-radius: 10px; background: var(--raised); overflow: hidden; }
+.cdiff__f { margin-top: 6px; border-radius: var(--radius-lg); background: var(--raised-2); box-shadow: var(--e1); overflow: hidden; }
 .cdiff__s { display: flex; align-items: center; gap: 12px; padding: 10px 16px; list-style: none; }
 .cdiff__s::-webkit-details-marker { display: none; }
 .cdiff__s:hover { background: var(--overlay); }
-.cdiff__p { flex: 1; min-width: 0; font-family: var(--mono); font-size: 11.5px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.cdiff__n { flex: none; font-size: 11px; color: var(--text-3); }
+.cdiff__p { flex: 1; min-width: 0; font-family: var(--mono); font-size: var(--fs-xs); color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cdiff__n { flex: none; font-size: var(--fs-xs); color: var(--text-3); }
 /* Its own scroller: a diff is the one thing here wider than the pane, and
    letting it widen the pane would move everything else on the card. */
 .cdiff__body { max-height: 340px; overflow: auto; border-top: 1px solid var(--border); }
-.cdiff__hh { padding: 5px 16px; background: var(--inset); font-family: var(--mono); font-size: 10.5px; color: var(--text-3); }
-.cdiff__r { padding: 0 16px; font-family: var(--mono); font-size: calc(11.5px * var(--code-scale, 1)); line-height: 1.55; white-space: pre; color: var(--text-2); }
+.cdiff__hh { padding: 5px 16px; background: var(--inset); font-family: var(--mono); font-size: var(--fs-2xs); color: var(--text-3); }
+.cdiff__r { padding: 0 16px; font-family: var(--mono); font-size: var(--fs-code); line-height: 1.55; white-space: pre; color: var(--text-2); }
 .cdiff__r[data-kind='add'] { background: color-mix(in srgb, var(--diff-add, var(--success)) 14%, transparent); color: var(--text); }
 .cdiff__r[data-kind='del'] { background: color-mix(in srgb, var(--diff-del, var(--danger)) 14%, transparent); color: var(--text); }
 /* A review's finding, on the line it names. */
-.cdiff__fd { margin: 2px 16px 4px; padding: 4px 10px; border-left: 2px solid var(--border); background: var(--inset); border-radius: 6px; font-size: 11.5px; }
+.cdiff__fd { margin: 2px 16px 4px; padding: 4px 10px; border-left: 2px solid var(--border); background: var(--inset); border-radius: var(--radius-sm); font-size: var(--fs-xs); }
 .cdiff__fd > summary { display: flex; gap: 10px; align-items: baseline; list-style: none; }
 .cdiff__fd > summary::-webkit-details-marker { display: none; }
 .cdiff__fd .fnd__y { margin: 6px 0; white-space: normal; }
 .cdiff__fd[data-standing='outdated'], .cdiff__fd[data-dismissed] { opacity: .6; }
 .cdiff__fd[data-standing='outdated'] .fnd__s { color: var(--text-3); }
-.cdiff__fl { font-size: 11px; color: var(--text-3); }
-.cdiff__tally { display: flex; gap: 14px; margin: 8px 0; padding: 6px 10px; background: var(--inset); border: 0; border-radius: 8px; font: inherit; font-size: 12px; }
+.cdiff__fl { font-size: var(--fs-xs); color: var(--text-3); }
+.cdiff__tally { display: flex; gap: 14px; margin: 8px 0; padding: 6px 10px; background: var(--inset); border: 0; border-radius: var(--radius-md); font: inherit; font-size: var(--fs-sm); }
 .cdiff__tally:hover { background: var(--overlay-strong); }
 
 /* What a run proves, under the row that ran it. Every state carries a word as
    well as a colour: the point of this panel is that "green" is not an answer,
    and a panel that said it in colour alone would be saying it again. */
-.chk { margin-top: 8px; padding: 10px 12px; background: var(--inset); border-radius: 8px; }
-.chk__l { display: flex; gap: 8px; align-items: baseline; margin: 0 0 6px; font-size: 12px; color: var(--text-3); }
+.chk { margin-top: 8px; padding: 10px 12px; background: var(--inset); border-radius: var(--radius-md); }
+.chk__l { display: flex; gap: 8px; align-items: baseline; margin: 0 0 6px; font-size: var(--fs-sm); color: var(--text-3); }
 .chk__l b { flex: none; color: var(--text); }
 .chk__l[data-verdict='passed'] b { color: var(--success); }
 .chk__l[data-verdict='failed'] b { color: var(--danger); }
 .chk__l[data-verdict='inconclusive'] b { color: var(--warning); }
 .chk__l[data-validity='stale'] b { color: var(--warning); }
-.chk__no { margin: 0; font-size: 12px; color: var(--text-3); }
-.chk__ran { display: grid; grid-template-columns: max-content 1fr; gap: 3px 12px; margin: 8px 0 0; font-size: 12px; }
+.chk__no { margin: 0; font-size: var(--fs-sm); color: var(--text-3); }
+.chk__ran { display: grid; grid-template-columns: max-content 1fr; gap: 3px 12px; margin: 8px 0 0; font-size: var(--fs-sm); }
 .chk__ran dt { color: var(--text-3); }
 .chk__ran dd { margin: 0; min-width: 0; overflow-wrap: anywhere; color: var(--text); }
-.chk__ran code { font-family: var(--mono); font-size: 11px; }
+.chk__ran code { font-family: var(--mono); font-size: var(--fs-xs); }
 /* The state is the control that opens the rest: the word a person is already
    looking at to ask "what happened", rather than a second thing beside it. */
 button.crun__s { background: none; border: 0; padding: 0; font: inherit; color: inherit; text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 3px; }
@@ -198,18 +198,18 @@ button.crun__s:hover, .chk__again:hover { text-decoration-style: solid; }
   .chk__ran { grid-template-columns: 1fr; gap: 1px 0; }
   .chk__ran dt { margin-top: 5px; }
 }
-.chk__again { background: none; border: 0; padding: 0; font: inherit; font-size: 12px; color: var(--text-2); text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 3px; }
-.chk__who { margin: 0 0 4px; font-size: 12px; color: var(--text-3); }
+.chk__again { background: none; border: 0; padding: 0; font: inherit; font-size: var(--fs-sm); color: var(--text-2); text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 3px; }
+.chk__who { margin: 0 0 4px; font-size: var(--fs-sm); color: var(--text-3); }
 
 /* What a review found. Severity carries a word as well as a colour, for the
    same reason the verdict does. */
 .fnd { margin-top: 8px; }
 .fnd__l { list-style: none; margin: 0 0 6px; padding: 0; }
-.fnd__i { display: grid; grid-template-columns: max-content 1fr; gap: 2px 10px; padding: 6px 0; border-top: 1px solid var(--border); font-size: 12px; }
+.fnd__i { display: grid; grid-template-columns: max-content 1fr; gap: 2px 10px; padding: 6px 0; border-top: 1px solid var(--border); font-size: var(--fs-sm); }
 .fnd__s { font-weight: 550; color: var(--text-2); }
 .fnd__s[data-severity='blocking'] { color: var(--danger); }
 .fnd__s[data-severity='worth'] { color: var(--warning); }
-.fnd__w { font-family: var(--mono); font-size: 11px; color: var(--text); overflow-wrap: anywhere; }
+.fnd__w { font-family: var(--mono); font-size: var(--fs-xs); color: var(--text); overflow-wrap: anywhere; }
 .fnd__y { grid-column: 2; color: var(--text-3); }
 
 /* Reminders that went off, under the top bar until each is dealt with. Its
@@ -218,14 +218,14 @@ button.crun__s:hover, .chk__again:hover { text-decoration-style: solid; }
 .remind__icon { flex: none; margin-top: 5px; color: var(--accent); }
 .remind__list { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
 .remind__one { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.remind__what { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 8px; padding: 0; border: 0; background: none; color: inherit; font: inherit; font-size: 12.5px; text-align: left; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.remind__what { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 8px; padding: 0; border: 0; background: none; color: inherit; font: inherit; font-size: var(--fs-sm); text-align: left; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .remind__what:hover b { text-decoration: underline; }
 .remind__what b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
-.remind__when { flex: none; font-size: 11.5px; color: var(--text-3); }
+.remind__when { flex: none; font-size: var(--fs-xs); color: var(--text-3); }
 .remind__acts { flex: none; display: flex; gap: 4px; }
-.remind__btn { height: 22px; padding: 0 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--text-2); font: inherit; font-size: 11.5px; }
+.remind__btn { height: 22px; padding: 0 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text-2); font: inherit; font-size: var(--fs-xs); }
 .remind__btn:hover { color: var(--text); border-color: var(--accent); }
 .remind__btn--done { color: var(--text); border-color: color-mix(in srgb, var(--accent) 50%, var(--border)); }
-.remind__more { flex: none; margin-top: 2px; padding: 0 6px; border: 0; background: none; color: var(--accent); font: inherit; font-size: 11.5px; }
+.remind__more { flex: none; margin-top: 2px; padding: 0 6px; border: 0; background: none; color: var(--accent); font: inherit; font-size: var(--fs-xs); }
 .remind__more:hover { text-decoration: underline; }
-.remind__edit { flex: 1; min-width: 0; height: 22px; padding: 0 6px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--text); font: inherit; font-size: 12.5px; }
+.remind__edit { flex: 1; min-width: 0; height: 22px; padding: 0 6px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); font: inherit; font-size: var(--fs-sm); }
