@@ -166,6 +166,10 @@
   --ctl-r-m: 10px;
   --ctl-r-l: 12px;
   --radius-xl: 16px;
+  /* Icons: three sizes, grown with the text so they keep to its cap height. */
+  --icon-s: calc(14px * var(--text-scale, 1));
+  --icon-m: calc(16px * var(--text-scale, 1));
+  --icon-l: calc(20px * var(--text-scale, 1));
   /* One width for every card in a turn. */
   --chat-card-w: 640px;
 

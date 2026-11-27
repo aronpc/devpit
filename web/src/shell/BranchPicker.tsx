@@ -5,6 +5,7 @@ import { t } from '../i18n'
 import { useAway } from './away'
 import { ask, commands } from './live'
 import { useShell } from './useShell'
+import { Icon } from './Icon'
 
 /*
  * The branch this checkout is on, and moving it.
@@ -62,12 +63,12 @@ export function BranchPicker({ branch, ahead }: { branch: string; ahead: number 
   return (
     <div className="branchbox" ref={box}>
       <button className="branch" onClick={() => setOpen((was) => !was)} title={t('workspace.branchPicker.switch')}>
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+        <Icon size="s">
           <line x1="6" y1="3" x2="6" y2="15" />
           <circle cx="18" cy="6" r="3" />
           <circle cx="6" cy="18" r="3" />
           <path d="M18 9a9 9 0 0 1-9 9" />
-        </svg>
+        </Icon>
         <span className="branch__n">{branch}</span>
         {ahead > 0 && <span className="branch__ahead">&uarr;{ahead}</span>}
       </button>

@@ -10,6 +10,7 @@ import { Picture } from './Picture'
 import { Streamed } from './Streamed'
 import { useWorkspaceFile } from './useWorkspace'
 import { t } from '../i18n'
+import { Icon } from './Icon'
 
 /*
  * One workspace file, shown beside the list.
@@ -54,7 +55,7 @@ export function WorkspaceFile({
           {t('workspace.workspaceFile.reveal')}
         </button>
         <button className="sq26" onClick={onClose} aria-label={t('workspace.workspaceFile.close')} title={t('workspace.workspaceFile.close')}>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+          <Icon size="s"><path d="M18 6 6 18M6 6l12 12" /></Icon>
         </button>
       </div>
 

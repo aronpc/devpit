@@ -5,6 +5,7 @@ import { formatDate } from '../i18n/format'
 import { useLocale } from '../i18n/LocaleRoot'
 import { useAway } from './away'
 import { pauseOptions, usePause } from './usePause'
+import { Icon } from './Icon'
 
 /*
  * Pausing devpit, from the status strip: for a meeting, a talk, a stretch of
@@ -33,7 +34,7 @@ export function PauseControl(): React.JSX.Element {
   return (
     <div className="strip__pausebox" ref={box}>
       <button className="strip__pause" aria-expanded={open} onClick={() => setOpen((was) => !was)} title={t('pause.pauseTitle')}>
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" /></svg>
+        <Icon size="s" aria-hidden><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" /></Icon>
         {t('pause.title')}
       </button>
       {open && (

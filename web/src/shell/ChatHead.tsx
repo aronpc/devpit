@@ -20,6 +20,7 @@ import { SessionCost } from './SessionCost'
 import { COPIED_MS } from './useCopied'
 import type { ChatCard } from './useChat'
 import { t } from '../i18n'
+import { Icon } from './Icon'
 
 /*
  * A thin bar over the conversation: its name, renamed where it is, and what
@@ -130,9 +131,9 @@ function ChatExport({ onExport }: { onExport: (what: Exported) => Promise<string
         }}
       >
         {copied ? (
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="m5 13 4 4L19 7" /></svg>
+          <Icon size="s"><path d="m5 13 4 4L19 7" /></Icon>
         ) : (
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14" /></svg>
+          <Icon size="s"><path d="M12 3v12M7 10l5 5 5-5M5 21h14" /></Icon>
         )}
       </button>
       {at && (

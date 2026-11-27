@@ -9,6 +9,7 @@ import { short } from './strip'
 import { useShell } from './useShell'
 import { t } from '../i18n'
 import { formatDate } from '../i18n/format'
+import { Icon } from './Icon'
 
 /*
  * The conversations this project has had.
@@ -52,20 +53,9 @@ export function Threads(): React.JSX.Element {
         onClick={() => setShowing((was) => !was)}
       >
         {t('sessions.threads.earlier')}
-        <svg
-          className="heading__v"
-          width="10"
-          height="10"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.4"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          style={{ transform: showing ? 'none' : 'rotate(-90deg)' }}
-        >
+        <Icon size="s" className="heading__v" style={{ transform: showing ? 'none' : 'rotate(-90deg)' }}>
           <path d="m6 9 6 6 6-6" />
-        </svg>
+        </Icon>
       </button>
 
       {showing && error && <div className="sessions__none">{error}</div>}

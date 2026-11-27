@@ -12,6 +12,7 @@ import { useShell } from './useShell'
 import type { Profile } from '../gen/bindings'
 import { intoView } from './intoView'
 import { t } from '../i18n'
+import { Icon, iconSize } from './Icon'
 
 /*
  * Which account and model this conversation runs on.
@@ -165,7 +166,7 @@ export function ModelPicker({
 
           <div className="mpick__main">
             <div className="mpick__q">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
+              <Icon size="s"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></Icon>
               <input
                 ref={field}
                 className="mpick__in"
@@ -288,7 +289,7 @@ export function ModelPicker({
 }
 
 const Star = ({ on, size }: { on: boolean; size: number }): React.JSX.Element => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill={on ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+  <Icon size={iconSize(size)} filled={on} aria-hidden="true">
     <path d="m12 3 2.6 5.6 5.9.8-4.3 4.2 1.1 6-5.3-3-5.3 3 1.1-6L3.5 9.4l5.9-.8Z" />
-  </svg>
+  </Icon>
 )

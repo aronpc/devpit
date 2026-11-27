@@ -19,6 +19,7 @@ import {
   type ShortcutId,
 } from './shortcuts'
 import { abandoned, composing } from './typing'
+import { Icon } from './Icon'
 
 /*
  * Settings → Keyboard: every shortcut, the keys it answers to now, and a way
@@ -99,7 +100,7 @@ export function KeyboardSettings({ onGeneral }: { onGeneral: () => void }): Reac
         {t('workspace.keyboard.note', { keys: sheet.join(t('workspace.keyboard.or')) })}
       </p>
       <label className="kmap__find">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
+        <Icon size="s"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></Icon>
         <input className="prefs__q" value={query} placeholder={t('workspace.keyboard.searchPlaceholder')} spellCheck={false} aria-label={t('workspace.keyboard.searchLabel')} onChange={(event) => setQuery(event.target.value)} />
       </label>
 

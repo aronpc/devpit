@@ -15,6 +15,7 @@ import { useShell } from './useShell'
 import { useShortcut } from './useShortcut'
 import { useWantedLine } from './revealLine'
 import { t } from '../i18n'
+import { Icon } from './Icon'
 
 /*
  * One file, one tab.
@@ -70,7 +71,7 @@ export function FilePane({ tab }: { tab: Tab }): React.JSX.Element {
           </button>
         )}
         <button className="sq26" onClick={() => close(tab.id)} aria-label={t('workspace.filePane.close')} title={t('workspace.filePane.close')}>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+          <Icon size="s"><path d="M18 6 6 18M6 6l12 12" /></Icon>
         </button>
       </div>
 

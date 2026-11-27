@@ -1,3 +1,6 @@
+import { Icon, iconSize } from './Icon'
+
+
 /*
  * The icons of the Changes panel and the diff, drawn here rather than
  * installed: a dozen paths are not worth a dependency, and every other icon in
@@ -8,24 +11,14 @@
 type Paths = readonly string[]
 
 function icon(paths: Paths, extra?: React.ReactNode) {
-  return function Icon({ size = 14 }: { size?: number }): React.JSX.Element {
+  return function GitIcon({ size = 14 }: { size?: number }): React.JSX.Element {
     return (
-      <svg
-        width={size}
-        height={size}
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-      >
+      <Icon size={iconSize(size)} aria-hidden="true">
         {extra}
         {paths.map((d) => (
           <path key={d} d={d} />
         ))}
-      </svg>
+      </Icon>
     )
   }
 }

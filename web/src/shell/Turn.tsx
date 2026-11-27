@@ -18,6 +18,7 @@ import { TurnChanges } from './TurnChangesView'
 import { answerOf, compactedAt, millis, outcome, segments, statusOf, took, type Segment } from './turnFold'
 import { foldOf, useDisclosed } from './useDisclosed'
 import { t } from '../i18n'
+import { Icon } from './Icon'
 
 /*
  * One message, drawn part by part.
@@ -207,9 +208,9 @@ function TurnStatus({
   return (
     <button className="tstat" data-how={message.ended ? outcome(message.ended) : undefined} aria-expanded={open} onClick={toggle}>
       {inner}
-      <svg className="tstat__v" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ transform: open ? 'none' : 'rotate(-90deg)' }}>
+      <Icon size="s" className="tstat__v" style={{ transform: open ? 'none' : 'rotate(-90deg)' }}>
         <path d="m6 9 6 6 6-6" />
-      </svg>
+      </Icon>
     </button>
   )
 }
@@ -292,12 +293,12 @@ function Foot({ message, rewind, edit }: { message: Message; rewind?: () => void
         {said && <CopyButton className="tfbtn" text={said} />}
         {edit && (
           <button className="tfbtn" aria-label={t('sessions.turn.edit')} title={t('sessions.turn.editTitle')} onClick={edit}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
+            <Icon size="s"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></Icon>
           </button>
         )}
         {rewind && (
           <button className="tfbtn" aria-label={t('sessions.turn.fork')} title={t('sessions.turn.forkTitle')} onClick={rewind}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><circle cx="6" cy="5" r="2" /><circle cx="18" cy="5" r="2" /><circle cx="12" cy="19" r="2" /><path d="M6 7v2a3 3 0 0 0 3 3h6a3 3 0 0 0 3-3V7M12 12v5" /></svg>
+            <Icon size="s"><circle cx="6" cy="5" r="2" /><circle cx="18" cy="5" r="2" /><circle cx="12" cy="19" r="2" /><path d="M6 7v2a3 3 0 0 0 3 3h6a3 3 0 0 0 3-3V7M12 12v5" /></Icon>
           </button>
         )}
       </span>

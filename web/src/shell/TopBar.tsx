@@ -14,6 +14,7 @@ import { useShell } from './useShell'
 import { useTrayOpens } from './useTrayOpens'
 import { useTree } from './useTree'
 import { WindowControls } from './WindowControls'
+import { Icon } from './Icon'
 
 /*
  * The window is one project, so the project sits above the columns rather than
@@ -74,7 +75,7 @@ export function TopBar({ onAddProject, maximized }: { onAddProject: () => void; 
           aria-pressed={managing}
           onClick={openManager}
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" /></svg>
+          <Icon size="s"><rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" /></Icon>
         </button>
       </div>
 
@@ -119,10 +120,10 @@ export function TopBar({ onAddProject, maximized }: { onAddProject: () => void; 
         aria-label={t(side ? 'workspace.top.hideSide' : 'workspace.top.showSide')}
         onClick={toggleSide}
       >
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+        <Icon size="m">
           <rect x="3" y="3" width="18" height="18" rx="2" />
           <path d="M9 3v18" />
-        </svg>
+        </Icon>
       </button>
       <button
         className="sq26 tip"
@@ -130,10 +131,10 @@ export function TopBar({ onAddProject, maximized }: { onAddProject: () => void; 
         aria-label={t(files ? 'workspace.top.hideFiles' : 'workspace.top.showFiles')}
         onClick={toggleFiles}
       >
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+        <Icon size="m">
           <rect x="3" y="3" width="18" height="18" rx="2" />
           <path d="M15 3v18" />
-        </svg>
+        </Icon>
       </button>
 
       <WindowControls maximized={maximized} />

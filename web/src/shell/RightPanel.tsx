@@ -12,11 +12,12 @@ import { useFileIndex } from './useFileIndex'
 import { useShellPick } from './shellStore'
 import { useTree } from './useTree'
 import { useLiveSessions } from './liveStatus'
+import { Icon, iconSize } from './Icon'
 
-const Icon = ({ d, size = 15 }: { d: string; size?: number }): React.JSX.Element => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+const Line = ({ d, size = 15 }: { d: string; size?: number }): React.JSX.Element => (
+  <Icon size={iconSize(size)}>
     <path d={d} />
-  </svg>
+  </Icon>
 )
 
 const FOLDER = 'M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z'
@@ -106,12 +107,12 @@ export function RightPanel({ onOpenFile }: { onOpenFile: (path: string) => void 
           aria-label={t('workspace.rightPanel.explorer')}
           onClick={() => pick(() => (setOrch('tree'), setView('tree')))}
         >
-          <Icon d={FOLDER} size={15} />
+          <Line d={FOLDER} size={15} />
           {view === 'tree' && <span className="rtab__l">{t('workspace.rightPanel.explorer')}</span>}
         </button>
         {!git && (
           <button className="rtab rtab--lead" aria-selected={view === 'sessions'} title={t('workspace.rightPanel.sessions')} aria-label={t('workspace.rightPanel.sessions')} onClick={() => pick(() => setOrch('sessions'))}>
-            <Icon d={PEOPLE} size={15} />
+            <Line d={PEOPLE} size={15} />
             {view === 'sessions' && <span className="rtab__l">{t('workspace.rightPanel.sessions')}</span>}
             {waiting > 0 && (
               <span className="rtab__n" data-tone="warn" title={t('workspace.rightPanel.waiting', { count: waiting })}>
@@ -122,7 +123,7 @@ export function RightPanel({ onOpenFile }: { onOpenFile: (path: string) => void 
         )}
         {!git && (
           <button className="rtab rtab--lead" aria-selected={view === 'boards'} title={t('workspace.rightPanel.boards')} aria-label={t('workspace.rightPanel.boards')} onClick={() => pick(() => setOrch('boards'))}>
-            <Icon d={BOARDS} size={15} />
+            <Line d={BOARDS} size={15} />
             {view === 'boards' && <span className="rtab__l">{t('workspace.rightPanel.boards')}</span>}
           </button>
         )}
@@ -135,7 +136,7 @@ export function RightPanel({ onOpenFile }: { onOpenFile: (path: string) => void 
             aria-label={t('workspace.rightPanel.changes')}
             onClick={() => pick(() => setView('changes'))}
           >
-            <Icon d={UPLOAD} size={15} />
+            <Line d={UPLOAD} size={15} />
             {view === 'changes' && <span className="rtab__l">{t('workspace.rightPanel.changes')}</span>}
             {/* A zero is not news. The count is here to say there is something
                 to look at, and `0` says the opposite while taking the room. */}
@@ -148,13 +149,13 @@ export function RightPanel({ onOpenFile }: { onOpenFile: (path: string) => void 
             aria-label={t('workspace.rightPanel.history')}
             onClick={() => pick(() => setView('history'))}
           >
-            <Icon d={CLOCK} size={15} />
+            <Line d={CLOCK} size={15} />
             {view === 'history' && <span className="rtab__l">{t('workspace.rightPanel.history')}</span>}
           </button>
           </>
         )}
         <button className="rtab" aria-selected={view === 'artifacts'} title={t('workspace.rightPanel.artifacts')} aria-label={t('workspace.rightPanel.artifacts')} onClick={() => setArts(true)}>
-          <Icon d={ARCHIVE} size={15} />
+          <Line d={ARCHIVE} size={15} />
           {view === 'artifacts' && <span className="rtab__l">{t('workspace.rightPanel.artifacts')}</span>}
         </button>
       </div>

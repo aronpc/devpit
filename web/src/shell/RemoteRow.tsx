@@ -4,6 +4,7 @@ import type { RemoteAct, Worktree } from '../gen/bindings'
 import { t } from '../i18n'
 import { ask, commands } from './live'
 import { changed } from './useTree'
+import { Icon } from './Icon'
 
 /*
  * The branch against its remote: fetch, pull, push, and sync, which is the
@@ -71,16 +72,16 @@ export function RemoteRow({
 
 function Arrow({ down }: { down?: boolean }): React.JSX.Element {
   return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <Icon size="s" aria-hidden="true">
       <path d={down ? 'M12 5v14M6 13l6 6 6-6' : 'M12 19V5M6 11l6-6 6 6'} />
-    </svg>
+    </Icon>
   )
 }
 
 function Arc(): React.JSX.Element {
   return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <Icon size="s" aria-hidden="true">
       <path d="M21 12a9 9 0 1 1-3-6.7L21 8M21 3v5h-5" />
-    </svg>
+    </Icon>
   )
 }

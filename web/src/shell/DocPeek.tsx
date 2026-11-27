@@ -5,6 +5,7 @@ import { keepWidth, keptWidth, PEEK_DEFAULT, peekWidth } from './peekWidth'
 import { useFile } from './useFile'
 import { useShellPick } from './shellStore'
 import { t } from '../i18n'
+import { Icon } from './Icon'
 
 /*
  * A file an answer points at, read beside the chat rather than instead of it:
@@ -68,10 +69,10 @@ export function DocPeek({ path, onOpen, onClose }: { path: string; onOpen: (path
           aria-label={t('workspace.peek.openTab')}
           onClick={() => (show('file', { id: `file:${path}`, path, title: name }), onClose())}
         >
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" /></svg>
+          <Icon size="s"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" /></Icon>
         </button>
         <button className="sq26" title={t('workspace.peek.closeTitle')} aria-label={t('workspace.peek.close')} onClick={onClose}>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+          <Icon size="s"><path d="M18 6 6 18M6 6l12 12" /></Icon>
         </button>
       </header>
       <div className="peek__body">

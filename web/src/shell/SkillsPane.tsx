@@ -6,6 +6,7 @@ import { InstallationPicker } from './InstallationPicker'
 import { SkillDoc } from './SkillDoc'
 import { useInstallations } from './useInstallations'
 import { t } from '../i18n'
+import { Icon } from './Icon'
 
 /*
  * The skills this machine has.
@@ -20,7 +21,7 @@ import { t } from '../i18n'
  */
 
 const ICON = (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v3M5.6 5.6l2.1 2.1M3 12h3M18 12h3M16.3 7.7l2.1-2.1" /><rect x="7" y="12" width="10" height="9" rx="2" /></svg>
+  <Icon size="s"><path d="M12 3v3M5.6 5.6l2.1 2.1M3 12h3M18 12h3M16.3 7.7l2.1-2.1" /><rect x="7" y="12" width="10" height="9" rx="2" /></Icon>
 )
 
 export function SkillsPane(): React.JSX.Element {
@@ -76,7 +77,7 @@ export function SkillsPane(): React.JSX.Element {
             aria-label={t('workspace.skills.refresh')}
             title={t('workspace.skills.refresh')}
           >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 0 1-15.5 6.2M3 12a9 9 0 0 1 15.5-6.2M3 20v-5h5M21 4v5h-5" /></svg>
+            <Icon size="s"><path d="M21 12a9 9 0 0 1-15.5 6.2M3 12a9 9 0 0 1 15.5-6.2M3 20v-5h5M21 4v5h-5" /></Icon>
           </button>
         </div>
         <div className="sk__inst">

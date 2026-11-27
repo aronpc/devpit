@@ -1,5 +1,6 @@
 import { t } from '../i18n'
 import { ask, commands } from './live'
+import { Icon } from './Icon'
 
 /** The community's Discord. A permanent invite, so an old build still lands. */
 export const COMMUNITY_INVITE = 'https://discord.gg/yW8VUyY63b'
@@ -10,7 +11,7 @@ export function openCommunity(): void {
 }
 
 const icon = (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
+  <Icon size="s"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></Icon>
 )
 
 /** The account menu's row. */

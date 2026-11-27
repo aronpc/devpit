@@ -8,6 +8,7 @@ import { useShell } from "./useShell";
 import { useCopied } from "./useCopied";
 import { t } from "../i18n";
 import { tRich } from "../i18n/rich";
+import { Icon } from './Icon'
 
 /*
  * The MCP servers the agent CLI has, read-only.
@@ -58,19 +59,10 @@ export function McpPane(): React.JSX.Element {
     <>
       <div className="pane__bar">
         <span className="pane__ico">
-          <svg
-            width="12"
-            height="12"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.9"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
+          <Icon size="s">
             <rect x="3" y="8" width="18" height="12" rx="2" />
             <path d="M7 8V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v3M8 14h8" />
-          </svg>
+          </Icon>
         </span>
         <span className="pane__t">
           <b>{t('workspace.mcp.title')}</b>
@@ -86,18 +78,9 @@ export function McpPane(): React.JSX.Element {
           aria-label={t('workspace.mcp.refresh')}
           title={t('workspace.mcp.refresh')}
         >
-          <svg
-            width="12"
-            height="12"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.9"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
+          <Icon size="s">
             <path d="M21 12a9 9 0 0 1-15.5 6.2M3 12a9 9 0 0 1 15.5-6.2M3 20v-5h5M21 4v5h-5" />
-          </svg>
+          </Icon>
         </button>
         <button
           className="sq26"
@@ -105,17 +88,9 @@ export function McpPane(): React.JSX.Element {
           aria-label={t('workspace.mcp.close')}
           title={t('workspace.mcp.close')}
         >
-          <svg
-            width="12"
-            height="12"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.2"
-            strokeLinecap="round"
-          >
+          <Icon size="s">
             <path d="M18 6 6 18M6 6l12 12" />
-          </svg>
+          </Icon>
         </button>
       </div>
 

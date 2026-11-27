@@ -3,6 +3,7 @@ import { useId } from 'react'
 import type { PluginState } from '../gen/bindings'
 import { addsInWords, CapabilityGlyph, isOn } from './capabilities'
 import { t } from '../i18n'
+import { Icon } from './Icon'
 
 /*
  * One capability, as a card.
@@ -79,13 +80,13 @@ export function CapabilityCard({
             {on && onOpen && (
               <button className="capcard__open" onClick={onOpen} aria-label={t('workspace.capCard.openLabel', { name: manifest.name })}>
                 {t('workspace.capCard.open')}
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+                <Icon size="s" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></Icon>
               </button>
             )}
           </>
         ) : (
           <button className="capcard__install" onClick={onInstall} aria-label={t('workspace.capCard.installLabel', { name: manifest.name })}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+            <Icon size="s" aria-hidden="true"><path d="M12 5v14M5 12h14" /></Icon>
             {t('workspace.capCard.install')}
           </button>
         )}

@@ -5,6 +5,7 @@ import { useAway } from './away'
 import { ask, commands } from './live'
 import { useCheckEvery } from './checkEvery'
 import { t } from '../i18n'
+import { Icon } from './Icon'
 
 /*
  * The MCP servers the default account has, as its CLI finds them when it
@@ -79,7 +80,7 @@ export function McpChip({ projectId }: { projectId: string | null }): React.JSX.
           <div className="mcpchip__h">
             <span>{health ? t('workspace.mcpChip.head', { profile: health.profileId }) : t('workspace.mcpChip.title')}</span>
             <button className="mcpchip__again" disabled={asking} onClick={() => check(true)} aria-label={t('workspace.mcpChip.again')}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7L21 8M21 3v5h-5" /></svg>
+              <Icon size="s" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7L21 8M21 3v5h-5" /></Icon>
               {asking ? t('workspace.mcpChip.checking') : t('workspace.mcpChip.refresh')}
             </button>
           </div>

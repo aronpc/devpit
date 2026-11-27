@@ -12,6 +12,7 @@ import { modelName, runningIn } from './subagents'
 import { unreadIn } from './unread'
 import { useShell } from './useShell'
 import { t } from '../i18n'
+import { Icon } from './Icon'
 
 /*
  * The sessions that are open, and only those.
@@ -161,7 +162,7 @@ export function SessionRows(): React.JSX.Element {
         <span className="card__l1">
           <span className="card__t">{short(name, 30)}</span>
           {talk?.marks?.pinned && (
-            <svg className="card__pin" aria-label={t('sessions.rows.pinned')} width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M15 3l6 6-3 1-4 4 1 5-2 2-4-4-5 5-1-1 5-5-4-4 2-2 5 1 4-4z" /></svg>
+            <Icon size="s" filled className="card__pin" aria-label={t('sessions.rows.pinned')}><path d="M15 3l6 6-3 1-4 4 1 5-2 2-4-4-5 5-1-1 5-5-4-4 2-2 5 1 4-4z" /></Icon>
           )}
         </span>
         {below}

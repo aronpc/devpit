@@ -4,6 +4,7 @@ import type { Kept, Store, Taken } from '../gen/bindings'
 import { type Family, grouped, hostOf, type Viewport, viewportLabel, VIEWPORTS } from './browsing'
 import { ask, commands } from './live'
 import { t } from '../i18n'
+import { Icon } from './Icon'
 
 /*
  * Everything a browser pane can be told to do, in one panel.
@@ -77,7 +78,7 @@ function Flyout({
           <span className="bmenu__n">{label}</span>
           {what && <span className="bmenu__w">{what}</span>}
         </span>
-        <svg className="bmenu__v" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6" /></svg>
+        <Icon size="s" className="bmenu__v"><path d="m9 18 6-6-6-6" /></Icon>
       </button>
       {/* Always leftwards. The panel is anchored to the right of its window
           and every bit of empty room is on its left, which is what that window
@@ -121,7 +122,7 @@ function Row({
         {what && <span className="bmenu__w">{what}</span>}
       </span>
       {chosen && (
-        <svg className="bmenu__c" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="m5 13 4 4L19 7" /></svg>
+        <Icon size="s" className="bmenu__c"><path d="m5 13 4 4L19 7" /></Icon>
       )}
     </button>
   )

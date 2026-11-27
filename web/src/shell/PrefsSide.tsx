@@ -5,6 +5,7 @@ import { useLocale } from '../i18n/LocaleRoot'
 import { CommunityFoot } from './Community'
 import { matching } from './prefsNav'
 import type { PrefsPane } from './shape'
+import { Icon } from './Icon'
 
 /*
  * The settings column: back, a search field, and the panes under headings.
@@ -62,12 +63,12 @@ export function PrefsSide({
   return (
     <aside className="prefs__side">
       <button className="prefs__back" onClick={onBack}>
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
+        <Icon size="m"><path d="M19 12H5M12 19l-7-7 7-7" /></Icon>
         {t('prefs.back')}
       </button>
 
       <label className="prefs__find">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
+        <Icon size="s"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></Icon>
         <input
           className="prefs__q"
           value={query}

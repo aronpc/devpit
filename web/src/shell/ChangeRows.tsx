@@ -8,6 +8,7 @@ import { bare, foldered, folders, paths, type Node } from './changeTree'
 import { FileGlyph } from './FileGlyph'
 import { Minus, Plus, Trash, Undo } from './GitIcons'
 import { mark } from './tree'
+import { Icon } from './Icon'
 
 /*
  * The changed files, drawn as the folders they are in.
@@ -130,9 +131,9 @@ export function ChangeRows({
             }
           >
             <span className="gitrow__chev" data-open={open}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <Icon size="s">
                 <path d="m9 18 6-6-6-6" />
-              </svg>
+              </Icon>
             </span>
             <span className="gitrow__n">{node.name}</span>
           </button>

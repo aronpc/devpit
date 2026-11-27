@@ -7,6 +7,7 @@ import { since } from './projects'
 import { nextThatNeedsYou } from './headsDown'
 import { useShortcut } from './useShortcut'
 import type { Bell } from './useNotices'
+import { Icon } from './Icon'
 
 /*
  * The bell.
@@ -81,9 +82,9 @@ export function Notices({
         aria-expanded={open}
         onClick={() => setOpen((was) => !was)}
       >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <Icon size="m">
           <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0" />
-        </svg>
+        </Icon>
         {/* The count, capped: past a certain number the exact figure stops
             being information and starts being a wall of digits. */}
         {bell.unread > 0 && <span className="bell__n">{bell.unread > 99 ? '99+' : bell.unread}</span>}
@@ -114,9 +115,9 @@ export function Notices({
                 data-kind={one.kind}
                 onClick={() => act(one)}
               >
-                <svg className="bell__ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                <Icon size="s" className="bell__ico">
                   {glyphFor(one.kind)}
-                </svg>
+                </Icon>
                 <span className="bell__body">
                   <span className="bell__line">{one.title}</span>
                   {one.detail && <span className="bell__d">{one.detail}</span>}
@@ -134,9 +135,9 @@ export function Notices({
               <span className="bell__t">{t('workspace.notices.held')}</span>
               {bell.waiting.map((one) => (
                 <span className="bell__one" key={one.id} data-kind={one.kind}>
-                  <svg className="bell__ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                  <Icon size="s" className="bell__ico">
                     {glyphFor(one.kind)}
-                  </svg>
+                  </Icon>
                   <span className="bell__body">
                     <span className="bell__line">{one.title}</span>
                   </span>

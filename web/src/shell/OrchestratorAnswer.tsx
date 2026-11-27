@@ -9,6 +9,7 @@ import { stateOfOne } from './sessionsPanel'
 import type { OwnAsked } from './slash'
 import { t } from '../i18n'
 import { formatDate } from '../i18n/format'
+import { Icon } from './Icon'
 
 /*
  * An orchestrator chat's shortcut, answered above the composer from what
@@ -56,7 +57,7 @@ export function OrchestratorAnswer({ asked, profileId, onClose }: { asked: OwnAs
       <div className="oans__top">
         <p className="oans__t">/{[asked.name, asked.arg].filter(Boolean).join(' ')}</p>
         <button className="sq26" onClick={onClose} aria-label={t('sessions.ans.close')} title={t('sessions.ans.close')}>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+          <Icon size="s"><path d="M18 6 6 18M6 6l12 12" /></Icon>
         </button>
       </div>
       {asked.name === 'sessions' && <AllSessions live={live} ended={ended} />}

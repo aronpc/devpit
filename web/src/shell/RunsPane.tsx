@@ -10,6 +10,7 @@ import { abandoned } from './typing'
 import { RunIdentity } from './PausedStep'
 import { t } from '../i18n'
 import { formatDate } from '../i18n/format'
+import { Icon } from './Icon'
 
 /*
  * Every run on the board, newest first.
@@ -81,7 +82,7 @@ export function RunsPane({
         <header className="runsp__top">
           <h2 className="runsp__t">{t('sessions.runs.title')}</h2>
           <button className="sq26" onClick={onClose} aria-label={t('sessions.runs.close')} title={t('sessions.runs.close')}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+            <Icon size="s"><path d="M18 6 6 18M6 6l12 12" /></Icon>
           </button>
         </header>
 

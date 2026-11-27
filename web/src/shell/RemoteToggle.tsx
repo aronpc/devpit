@@ -5,6 +5,7 @@ import { t } from '../i18n'
 import { ask, commands } from './live'
 import { went } from './problems'
 import { onRemoteConnected } from './window'
+import { Icon } from './Icon'
 
 /*
  * Remote Control for a chat — a project's or an orchestrator's: the same
@@ -60,11 +61,11 @@ export function RemoteToggle({
   return (
     <>
       <button className="sq26 rctl" data-on={state.on ? 'true' : undefined} disabled={busy || (supervised && !state.on)} title={title} aria-label={t('workspace.remoteToggle.label')} aria-pressed={state.on} onClick={flip}>
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><rect x="7" y="2" width="10" height="20" rx="2" /><path d="M11 18h2" /></svg>
+        <Icon size="s"><rect x="7" y="2" width="10" height="20" rx="2" /><path d="M11 18h2" /></Icon>
       </button>
       {state.on && state.url && (
         <button className="sq26" title={t('workspace.remoteToggle.open', { url: state.url })} aria-label={t('workspace.remoteToggle.openLabel')} onClick={() => void ask(() => commands.urlOpen(state.url!)).then(went)}>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 4h6v6M20 4l-9 9M19 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5" /></svg>
+          <Icon size="s"><path d="M14 4h6v6M20 4l-9 9M19 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5" /></Icon>
         </button>
       )}
     </>

@@ -6,6 +6,7 @@ import { useAway } from './away'
 import { ask, commands } from './live'
 import { went } from './problems'
 import { useShell } from './useShell'
+import { Icon } from './Icon'
 
 /*
  * A new terminal on a host the project is linked to: a tab whose shell runs
@@ -48,7 +49,7 @@ export function HostTerminals(): React.JSX.Element | null {
         disabled={opening !== null}
         onClick={() => setOpen(!open)}
       >
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="7" rx="1" /><rect x="3" y="13" width="18" height="7" rx="1" /><path d="M7 7.5h.01M7 16.5h.01" /></svg>
+        <Icon size="s"><rect x="3" y="4" width="18" height="7" rx="1" /><rect x="3" y="13" width="18" height="7" rx="1" /><path d="M7 7.5h.01M7 16.5h.01" /></Icon>
       </button>
       {open && (
         <div className="hostterm__menu" role="menu">

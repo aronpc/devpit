@@ -12,6 +12,7 @@ import { abandoned, committed } from './typing'
 import { SecretFields } from './SecretFields'
 import { useShell } from './useShell'
 import { WorktreeSetupFields } from './WorktreeSetupFields'
+import { Icon } from './Icon'
 
 /*
  * A project's name, group and mark, set in one place.
@@ -101,11 +102,11 @@ export function ProjectDialog({ project, onClose }: { project: Project; onClose:
             </button>
             {Object.entries(ICONS).map(([key, paths]) => (
               <button key={key} className="pdlg__icon" aria-pressed={icon === `icon:${key}`} onClick={() => setIcon(`icon:${key}`)} title={key}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <Icon size="m">
                   {paths.map((d) => (
                     <path key={d} d={d} />
                   ))}
-                </svg>
+                </Icon>
               </button>
             ))}
           </div>

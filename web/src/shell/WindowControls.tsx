@@ -1,5 +1,6 @@
 import { t } from '../i18n'
 import { close, minimize, toggleMaximize } from './window'
+import { Icon } from './Icon'
 
 /*
  * A frameless window still has to be minimised, maximised and closed; these
@@ -11,26 +12,26 @@ export function WindowControls({ maximized }: { maximized: boolean }): React.JSX
   return (
     <span className="wctl">
       <button className="wbtn tip" data-tip={t('workspace.window.minimize')} aria-label={t('workspace.window.minimize')} onClick={minimize}>
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round">
+        <Icon size="s">
           <path d="M5 12h14" />
-        </svg>
+        </Icon>
       </button>
       <button className="wbtn tip" data-tip={middle} aria-label={middle} onClick={toggleMaximize}>
         {maximized ? (
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round">
+          <Icon size="s">
             <rect x="4" y="8" width="12" height="12" rx="1.5" />
             <path d="M8 8V5.5A1.5 1.5 0 0 1 9.5 4h9A1.5 1.5 0 0 1 20 5.5v9a1.5 1.5 0 0 1-1.5 1.5H16" />
-          </svg>
+          </Icon>
         ) : (
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
+          <Icon size="s">
             <rect x="5" y="5" width="14" height="14" rx="1.5" />
-          </svg>
+          </Icon>
         )}
       </button>
       <button className="wbtn wbtn--x tip" data-tip={t('workspace.window.close')} aria-label={t('workspace.window.close')} onClick={close}>
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round">
+        <Icon size="s">
           <path d="M18 6 6 18M6 6l12 12" />
-        </svg>
+        </Icon>
       </button>
     </span>
   )

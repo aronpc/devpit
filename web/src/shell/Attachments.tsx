@@ -10,6 +10,7 @@ import { useOpeners } from './useOpeners'
 import { usePlugins } from './usePlugins'
 import { useShellPick } from './shellStore'
 import { t } from '../i18n'
+import { Icon } from './Icon'
 
 /*
  * The files pinned to a card.
@@ -52,7 +53,7 @@ export function Attachments({
       <div className="prefs__hrow">
         <h2 className="cardp__h">{t('workspace.attachments.files')}</h2>
         <button className="btn" onClick={() => void add()}>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14" /></svg>
+          <Icon size="s"><path d="M12 5v14M5 12h14" /></Icon>
           {t('workspace.attachments.pin')}
         </button>
       </div>
@@ -67,9 +68,9 @@ export function Attachments({
         const drawing = one.exists ? drawingOf(one, offers) : null
         return (
           <div className="pin" key={one.id} data-gone={!one.exists}>
-            <svg className="pin__ico" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+            <Icon size="m" className="pin__ico">
               <path d="M14 3v6h5l-7 12-7-12h5V3Z" transform="rotate(180 12 12)" />
-            </svg>
+            </Icon>
             <span className="pin__b">
               <span className="pin__t">{one.label}</span>
               <span className="pin__p" title={one.path}>{one.path}</span>

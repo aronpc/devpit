@@ -12,6 +12,7 @@ import { tabOfPane } from './strip'
 import { useShell } from './useShell'
 import { useUsage } from './useUsage'
 import { counted, cpu, measured, size } from './watching'
+import { Icon } from './Icon'
 
 /*
  * A strip along the bottom, saying what is running.
@@ -61,7 +62,7 @@ export function StatusStrip(): React.JSX.Element | null {
         title={counted(usage)}
         onClick={() => setOpen((was) => !was)}
       >
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M3 17l4-6 4 3 5-8 5 5" /></svg>
+        <Icon size="s"><path d="M3 17l4-6 4 3 5-8 5 5" /></Icon>
         {numbers && (
           <>
             <span className="strip__n">{cpu(usage.cpuTenths)}</span>

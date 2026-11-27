@@ -5,6 +5,7 @@ import { t } from '../i18n'
 import { useAway } from './away'
 import { Confirm } from './Confirm'
 import { anyLive, liveBody, type LiveWork } from './liveWork'
+import { Icon } from './Icon'
 
 /*
  * The open card's header, and the two ways a card ends.
@@ -53,11 +54,11 @@ export function CardHeader({
             aria-expanded={open}
             onClick={() => setOpen((was) => !was)}
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+            <Icon size="s" filled>
               <circle cx="5" cy="12" r="1.8" />
               <circle cx="12" cy="12" r="1.8" />
               <circle cx="19" cy="12" r="1.8" />
-            </svg>
+            </Icon>
           </button>
           {open && (
             <div className="ctlmenu ctlmenu--down" role="menu" aria-label={t('card.actions')}>
@@ -75,9 +76,9 @@ export function CardHeader({
           )}
         </div>
         <button className="sq26" aria-label={t('card.close')} title={t('card.close')} onClick={onClose}>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+          <Icon size="s">
             <path d="M18 6 6 18M6 6l12 12" />
-          </svg>
+          </Icon>
         </button>
       </span>
     </header>

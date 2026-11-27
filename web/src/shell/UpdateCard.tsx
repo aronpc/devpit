@@ -6,6 +6,7 @@ import { useLocale } from '../i18n/LocaleRoot'
 import { ask, commands } from './live'
 import { useFocusIsOn } from './useHeadsDown'
 import { onCarried } from './window'
+import { Icon } from './Icon'
 
 /*
  * The offer, over the window and never in front of it.
@@ -289,9 +290,9 @@ export function UpdateCard(): React.JSX.Element | null {
           {fromATestFeed && <span className="upd__tag">{t('update.testFeed')}</span>}
         </span>
         <button className="upd__x" aria-label={t('update.close')} title={t('update.close')} onClick={close}>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+          <Icon size="s">
             <path d="M6 6l12 12M18 6 6 18" />
-          </svg>
+          </Icon>
         </button>
       </div>
 

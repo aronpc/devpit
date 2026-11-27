@@ -18,6 +18,7 @@ import { RemoteControlMark } from './RemoteControlMark'
 import { SessionCommand } from './SessionCommand'
 import { REMOTE_CONTROL } from './sessionCommands'
 import { SessionCost } from './SessionCost'
+import { Icon } from './Icon'
 
 /*
  * The sessions an orchestrator works with, in one place: how each stands,
@@ -226,10 +227,10 @@ export function SessionsView({ shown }: { shown: boolean }): React.JSX.Element {
           active={showEmpty}
           onClick={() => setShowEmpty((was) => (keepEmpty(!was), !was))}
         >
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7h18M3 12h18M3 17h10" /></svg>
+          <Icon size="s"><path d="M3 7h18M3 12h18M3 17h10" /></Icon>
         </PanelAct>
         <PanelAct label={t('sessions.readAgain')} onClick={() => (profileId && refreshSessions(profileId), readHistory())}>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8M21 3v5h-5" /></svg>
+          <Icon size="s"><path d="M21 12a9 9 0 1 1-3-6.7L21 8M21 3v5h-5" /></Icon>
         </PanelAct>
       </PanelHead>
 
@@ -265,10 +266,10 @@ export function SessionsView({ shown }: { shown: boolean }): React.JSX.Element {
             {where && (
               <>
                 <button className="sess__icon" onClick={() => newTerminal(where)} title={t('sessions.newTerminal.title', { name: where.name })} aria-label={t('sessions.newTerminal', { name: where.name })}>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m5 8 4 4-4 4M12 16h7" /></svg>
+                  <Icon size="s"><path d="m5 8 4 4-4 4M12 16h7" /></Icon>
                 </button>
                 <button className="sess__icon" onClick={() => newChat(where)} title={t('sessions.newChat', { name: where.name })} aria-label={t('sessions.newChat', { name: where.name })}>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9.9 9.9 0 0 1-4.2-.9L3 20.5l1.6-4.4A8.4 8.4 0 0 1 3.6 11.5 8.4 8.4 0 0 1 12 3.1a8.4 8.4 0 0 1 9 8.4Z" /></svg>
+                  <Icon size="s"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9.9 9.9 0 0 1-4.2-.9L3 20.5l1.6-4.4A8.4 8.4 0 0 1 3.6 11.5 8.4 8.4 0 0 1 12 3.1a8.4 8.4 0 0 1 9 8.4Z" /></Icon>
                 </button>
               </>
             )}
@@ -300,16 +301,16 @@ export function SessionsView({ shown }: { shown: boolean }): React.JSX.Element {
                   <RemoteControlMark remote={one.remote} name={one.name} />
                   {one.pane && (
                     <button className="sess__icon" onClick={() => setTerminal(one)} title={t('sessions.openTerminal.title')} aria-label={t('sessions.openTerminal', { name: one.name })}>
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="m7 10 3 2-3 2M13 14h4" /></svg>
+                      <Icon size="s"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="m7 10 3 2-3 2M13 14h4" /></Icon>
                     </button>
                   )}
                   {one.projectId && (
                     <button className="sess__icon" onClick={() => go(one)} title={t('sessions.go.title')} aria-label={t('sessions.go', { name: one.name })}>
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17 17 7M8 7h9v9" /></svg>
+                      <Icon size="s"><path d="M7 17 17 7M8 7h9v9" /></Icon>
                     </button>
                   )}
                   <button className="sess__icon sess__icon--stop" onClick={() => setStopping(rowOf(one))} title={t('sessions.stop.title')} aria-label={t('sessions.stop', { name: one.name })}>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="6" y="6" width="12" height="12" rx="2" /></svg>
+                    <Icon size="s"><rect x="6" y="6" width="12" height="12" rx="2" /></Icon>
                   </button>
                 </div>
                 {stopping === rowOf(one) && (

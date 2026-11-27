@@ -5,6 +5,7 @@ import type { OpenApp } from '../gen/bindings'
 import { useAway } from './away'
 import { ask, commands } from './live'
 import { went } from './problems'
+import { Icon } from './Icon'
 
 /*
  * "Open in", where a folder is.
@@ -47,7 +48,7 @@ export function OpenIn({
     <div className="opin" ref={box}>
       <button className="btn" aria-expanded={open} onClick={() => setOpen((was) => !was)}>
         {t('workspace.openIn.title')}
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+        <Icon size="s"><path d="m6 9 6 6 6-6" /></Icon>
       </button>
       {open && (
         <div className="apps__menu" role="menu">

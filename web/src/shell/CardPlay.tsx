@@ -6,6 +6,7 @@ import { tRich } from '../i18n/rich'
 import { Confirm } from './Confirm'
 import { ask, commands } from './live'
 import { useShell } from './useShell'
+import { Icon } from './Icon'
 
 /*
  * Play: do this lane's step on this card, now.
@@ -83,7 +84,7 @@ export function CardPlay({
 }
 
 const Triangle = (): React.JSX.Element => (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+  <Icon size="s" filled>
     <path d="M8 5.5v13l11-6.5z" />
-  </svg>
+  </Icon>
 )

@@ -12,6 +12,7 @@ import { menuPoint } from './menuRules'
 import { orchestratorsInOrder, placed, saveOrchestrators, savedOrchestrators } from './rail'
 import { useRailDrag, type Grab, type Spot } from './useRailDrag'
 import { useShell } from './useShell'
+import { Icon } from './Icon'
 
 /*
  * The orchestrators, as a group of their own above the projects.
@@ -169,7 +170,7 @@ export function RailOrchestrators({
                 <ProjectMark project={one} />
               ) : (
                 <span className="pmark pmark--orch" style={{ '--orch': tintOf(one.id) } as React.CSSProperties}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><circle cx="4.5" cy="5" r="2" /><circle cx="19.5" cy="5" r="2" /><circle cx="4.5" cy="19" r="2" /><circle cx="19.5" cy="19" r="2" /><path d="m6 6.4 3.8 3.6M18 6.4l-3.8 3.6M6 17.6l3.8-3.6M18 17.6l-3.8-3.6" /></svg>
+                  <Icon size="m"><circle cx="12" cy="12" r="3" /><circle cx="4.5" cy="5" r="2" /><circle cx="19.5" cy="5" r="2" /><circle cx="4.5" cy="19" r="2" /><circle cx="19.5" cy="19" r="2" /><path d="m6 6.4 3.8 3.6M18 6.4l-3.8 3.6M6 17.6l3.8-3.6M18 17.6l-3.8-3.6" /></Icon>
                 </span>
               )}
             </span>

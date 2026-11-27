@@ -13,6 +13,7 @@ import { Pathed } from './MdTick'
 import { took } from './turnFold'
 import { useDisclosed } from './useDisclosed'
 import { Zoomable } from './Zoom'
+import { Icon } from './Icon'
 
 /*
  * What the agent did, as a foldable stack of rows.
@@ -97,7 +98,7 @@ function AgentRow({ act }: { act: Act }): React.JSX.Element {
   return (
     <div className="arow">
       <button className="arow__h" aria-expanded={open} onClick={() => setOpen((was) => !was)}>
-        <Icon kind={act.kind} />
+        <KindIcon kind={act.kind} />
         <span className="arow__k">{actionLabel(act.kind)}</span>
         {act.target && <span className="arow__d">{act.target}</span>}
         <Ran act={act} />
@@ -120,7 +121,7 @@ function GroupRow({ group }: { group: Group }): React.JSX.Element {
   return (
     <div className="arow">
       <button className="arow__h" aria-expanded={open} onClick={() => setOpen((was) => !was)}>
-        <Icon kind={group.kind} />
+        <KindIcon kind={group.kind} />
         <span className="arow__k">{actionLabel(group.kind)}</span>
         <span className="arow__d">{groupTarget(group)}</span>
         <Chevron open={open} className="arow__v" />
@@ -160,7 +161,7 @@ function LeafRow({ act, folded }: { act: Act; folded: boolean }): React.JSX.Elem
         disabled={parts.length === 0}
         onClick={() => setOpen((was) => !was)}
       >
-        <Icon kind={act.kind} />
+        <KindIcon kind={act.kind} />
         <span className="arow__k">{rowLabel(act)}</span>
         {act.target && <span className="arow__d">{act.target}</span>}
         {act.server && <span className="arow__s">{act.server}</span>}
@@ -354,7 +355,7 @@ function State({ act, open, hasBody }: { act: Act; open: boolean; hasBody: boole
   if (hasBody) return <Chevron open={open} className="arow__v" />
   if (act.failed) {
     return (
-      <svg className="arow__x" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" aria-label={t('acts.failed')}><circle cx="12" cy="12" r="9" /><path d="M12 8v5M12 16.5v.01" /></svg>
+      <Icon size="s" className="arow__x" aria-label={t('acts.failed')}><circle cx="12" cy="12" r="9" /><path d="M12 8v5M12 16.5v.01" /></Icon>
     )
   }
   if (!act.done) return <span className="arow__live" aria-label={t('acts.running')} />
@@ -363,20 +364,9 @@ function State({ act, open, hasBody }: { act: Act; open: boolean; hasBody: boole
 
 function Chevron({ open, className }: { open: boolean; className?: string }): React.JSX.Element {
   return (
-    <svg
-      className={className}
-      width="10"
-      height="10"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.4"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      style={{ transform: open ? 'none' : 'rotate(-90deg)' }}
-    >
+    <Icon size="s" className={className} style={{ transform: open ? 'none' : 'rotate(-90deg)' }}>
       <path d="m6 9 6 6 6-6" />
-    </svg>
+    </Icon>
   )
 }
 
@@ -395,16 +385,16 @@ const PATHS: Readonly<Record<Kind, React.JSX.Element>> = {
   tool: <path d="M14.7 6.3a4 4 0 0 1 5 5l-9.6 9.6a2.1 2.1 0 0 1-3-3l9.6-9.6a1 1 0 0 0-1.4-1.4L5.7 16.5a4 4 0 0 1-1-5.4" />,
 }
 
-const Icon = ({ kind }: { kind: Kind }): React.JSX.Element => (
-  <svg className="arow__i" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+const KindIcon = ({ kind }: { kind: Kind }): React.JSX.Element => (
+  <Icon size="s" className="arow__i">
     {PATHS[kind]}
-  </svg>
+  </Icon>
 )
 
 const Tick = (): React.JSX.Element => (
-  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="m5 13 4 4L19 7" /></svg>
+  <Icon size="s"><path d="m5 13 4 4L19 7" /></Icon>
 )
 
 const Copy = (): React.JSX.Element => (
-  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="12" height="12" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
+  <Icon size="s"><rect x="9" y="9" width="12" height="12" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></Icon>
 )

@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { t } from '../i18n'
 import { tRich } from '../i18n/rich'
 import { useShell } from './useShell'
+import { Icon } from './Icon'
 
 /* Where a project's devpit workspace lives; a path, so it is not translated. */
 const WORKSPACES = '~/.devpit/projects'
@@ -40,10 +41,10 @@ export function RemoveProject({
         </p>
 
         <div className="ask__warn" hidden={live === 0}>
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+          <Icon size="m">
             <path d="M12 9v4M12 17v.01" />
             <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" />
-          </svg>
+          </Icon>
           <span>
             {t('workspace.removeProject.live', { count: live })}
           </span>
@@ -56,9 +57,9 @@ export function RemoveProject({
           onClick={() => setWipe((was) => !was)}
         >
           <span className="box">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+            <Icon size="s">
               <path d="M20 6 9 17l-5-5" />
-            </svg>
+            </Icon>
           </span>
           <span>
             <span className="ask__ot">{t('workspace.removeProject.wipe')}</span>

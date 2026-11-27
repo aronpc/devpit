@@ -8,6 +8,7 @@ import { millis } from './turnFold'
 import { foldOf, useDisclosed } from './useDisclosed'
 import { Zoomable } from './Zoom'
 import { t } from '../i18n'
+import { Icon } from './Icon'
 
 /* What a person said: the files as chips and pictures, then the words.
    `onResend` when it was steered into a turn that ended without taking it in.
@@ -60,12 +61,12 @@ export function Said({
         <CopyButton className="tfbtn" text={copiedOf(text)} label={t('workspace.said.copy')} />
         {onEdit && (
           <button className="tfbtn" aria-label={t('workspace.said.editLabel')} title={t('workspace.said.editTitle')} onClick={onEdit}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
+            <Icon size="s"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></Icon>
           </button>
         )}
         {onAgain && (
           <button className="tfbtn" aria-label={t('workspace.said.againLabel')} title={t('workspace.said.againTitle')} onClick={onAgain}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7" /><path d="M21 4v5h-5" /></svg>
+            <Icon size="s"><path d="M21 12a9 9 0 1 1-3-6.7" /><path d="M21 4v5h-5" /></Icon>
           </button>
         )}
       </div>

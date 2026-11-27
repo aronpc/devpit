@@ -9,6 +9,7 @@ import { ask, commands } from './live'
 import { keysLabel, matches } from './shortcuts'
 import { abandoned, committed } from './typing'
 import { t } from '../i18n'
+import { Icon } from './Icon'
 
 /*
  * Where the next line is typed, below the blocks.
@@ -192,7 +193,7 @@ export const CommandInput = forwardRef<CommandInputHandle, {
         )}
         {glance && (
           <span className="cin__chip cin__chip--git" title={t('sessions.cmd.branchTitle')}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="6" cy="6" r="3" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="8" r="3" /><path d="M6 9v6M18 11a6 6 0 0 1-6 6H9" /></svg>
+            <Icon size="s"><circle cx="6" cy="6" r="3" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="8" r="3" /><path d="M6 9v6M18 11a6 6 0 0 1-6 6H9" /></Icon>
             {glance.branch}
             {glance.files > 0 && (
               <span className="cin__diff">

@@ -7,6 +7,7 @@ import { ask, commands } from './live'
 import type { FileNode } from '../gen/bindings'
 import { mark, ordered, refreshChildren } from './tree'
 import { useRowDrag } from './useRowDrag'
+import { Icon } from './Icon'
 
 /* A folder with a few thousand entries would build a few thousand buttons.
    Capped the same way `SearchResults` caps a match list — the true count is
@@ -15,22 +16,22 @@ import { useRowDrag } from './useRowDrag'
 const MOST_SHOWN = 300
 
 const Chev = ({ open }: { open: boolean }): React.JSX.Element => (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: open ? 'rotate(90deg)' : 'none' }}>
+  <Icon size="s" style={{ transform: open ? 'rotate(90deg)' : 'none' }}>
     <path d="m9 6 6 6-6 6" />
-  </svg>
+  </Icon>
 )
 
 const Doc = (): React.JSX.Element => (
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+  <Icon size="s">
     <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
     <path d="M14 2v5h5" />
-  </svg>
+  </Icon>
 )
 
 const Dir = (): React.JSX.Element => (
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+  <Icon size="s">
     <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" />
-  </svg>
+  </Icon>
 )
 
 export function Row({

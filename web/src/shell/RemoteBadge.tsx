@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { t } from '../i18n'
 import { commands } from './live'
 import { onCarried } from './window'
+import { Icon } from './Icon'
 
 /*
  * Said on the desk while another device watches this machine: how many, and
@@ -15,10 +16,10 @@ export function RemoteBadge(): React.JSX.Element | null {
   if (watching === 0) return null
   return (
     <button className="strip__remote" onClick={() => commands.remoteDrop()} title={t('workspace.remoteBadge.title')}>
-      <svg className="strip__remote-ico" aria-hidden width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <Icon size="s" className="strip__remote-ico" aria-hidden>
         <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z" />
         <circle cx="12" cy="12" r="3" />
-      </svg>
+      </Icon>
       {t('workspace.remoteBadge.watched', { count: watching })}
     </button>
   )

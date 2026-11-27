@@ -11,6 +11,7 @@ import { Skeleton } from './Skeleton'
 import { CHANGED } from './useTree'
 import { useShell } from './useShell'
 import { t } from '../i18n'
+import { Icon } from './Icon'
 
 /*
  * What was committed here, most recent first, under the day it was made.
@@ -109,7 +110,7 @@ export function History(): React.JSX.Element {
       {menu && project && <CommitMenu projectId={project.id} at={menu} onOpen={openCommit} onClose={closeMenu} />}
       {commits.length > 0 && (
         <label className="hist__find">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+          <Icon size="s"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></Icon>
           <input value={query} placeholder={t('workspace.history.filter')} spellCheck={false} aria-label={t('workspace.history.filter')} onChange={(event) => setQuery(event.target.value)} />
         </label>
       )}

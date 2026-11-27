@@ -20,6 +20,7 @@ import { SkillsPane } from './SkillsPane'
 import type { Tab } from './strip'
 import { TerminalPane } from './TerminalPane'
 import { WorkspacePane } from './WorkspacePane'
+import { Icon } from './Icon'
 
 /* One row per pane kind: what mounts it, and whether it is drawn once or
  * once per open tab. A new kind is a row here plus a row in `PANES`. */
@@ -48,9 +49,9 @@ interface Many {
 export type PaneMount = Single | Many
 
 const closeIcon = (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+  <Icon size="s">
     <path d="M18 6 6 18M6 6l12 12" />
-  </svg>
+  </Icon>
 )
 
 export const PANE_MOUNTS: readonly PaneMount[] = [
@@ -63,7 +64,7 @@ export const PANE_MOUNTS: readonly PaneMount[] = [
       <>
         <div className="pane__bar">
           <span className="pane__ico">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M9 3v18M15 3v18" /></svg>
+            <Icon size="s"><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M9 3v18M15 3v18" /></Icon>
           </span>
           <span className="pane__t"><b>{t('workspace.pane.board.title')}</b></span>
           <span className="drag"></span>
@@ -84,7 +85,7 @@ export const PANE_MOUNTS: readonly PaneMount[] = [
       <>
         <div className="pane__bar">
           <span className="pane__ico">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v3M5.6 5.6l2.1 2.1M3 12h3M18 12h3M16.3 7.7l2.1-2.1" /><rect x="7" y="12" width="10" height="9" rx="2" /></svg>
+            <Icon size="s"><path d="M12 3v3M5.6 5.6l2.1 2.1M3 12h3M18 12h3M16.3 7.7l2.1-2.1" /><rect x="7" y="12" width="10" height="9" rx="2" /></Icon>
           </span>
           <span className="pane__t"><b>{t('workspace.pane.skills.title')}</b></span>
           <span className="drag"></span>
@@ -102,7 +103,7 @@ export const PANE_MOUNTS: readonly PaneMount[] = [
       <>
         <div className="pane__bar">
           <span className="pane__ico">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><circle cx="5" cy="6" r="2" /><circle cx="12" cy="18" r="2" /><circle cx="19" cy="6" r="2" /><path d="M5 8v2a4 4 0 0 0 4 4h1M19 8v2a4 4 0 0 1-4 4h-1" /></svg>
+            <Icon size="s"><circle cx="5" cy="6" r="2" /><circle cx="12" cy="18" r="2" /><circle cx="19" cy="6" r="2" /><path d="M5 8v2a4 4 0 0 0 4 4h1M19 8v2a4 4 0 0 1-4 4h-1" /></Icon>
           </span>
           <span className="pane__t"><b>{t('workspace.pane.devflow.title')}</b></span>
           <span className="drag"></span>
@@ -124,7 +125,7 @@ export const PANE_MOUNTS: readonly PaneMount[] = [
       <>
         <div className="pane__bar">
           <span className="pane__ico">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><path d="M9.5 9.2a2.6 2.6 0 0 1 5 .8c0 1.7-2.5 2.3-2.5 3.8M12 17h.01" /></svg>
+            <Icon size="s"><circle cx="12" cy="12" r="9" /><path d="M9.5 9.2a2.6 2.6 0 0 1 5 .8c0 1.7-2.5 2.3-2.5 3.8M12 17h.01" /></Icon>
           </span>
           <span className="pane__t"><b>{t('workspace.pane.ask.title')}</b></span>
           <span className="drag"></span>
@@ -142,7 +143,7 @@ export const PANE_MOUNTS: readonly PaneMount[] = [
       <>
         <div className="pane__bar">
           <span className="pane__ico">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M12 4a3 3 0 0 0-3 3 3 3 0 0 0-3 3c0 1 .4 1.8 1 2.4A3 3 0 0 0 9 18a3 3 0 0 0 3 2 3 3 0 0 0 3-2 3 3 0 0 0 2-5.6c.6-.6 1-1.4 1-2.4a3 3 0 0 0-3-3 3 3 0 0 0-3-3Z" /><path d="M12 4v16" /></svg>
+            <Icon size="s"><path d="M12 4a3 3 0 0 0-3 3 3 3 0 0 0-3 3c0 1 .4 1.8 1 2.4A3 3 0 0 0 9 18a3 3 0 0 0 3 2 3 3 0 0 0 3-2 3 3 0 0 0 2-5.6c.6-.6 1-1.4 1-2.4a3 3 0 0 0-3-3 3 3 0 0 0-3-3Z" /><path d="M12 4v16" /></Icon>
           </span>
           <span className="pane__t"><b>{t('workspace.pane.memory.title')}</b></span>
           <span className="drag"></span>

@@ -8,6 +8,7 @@ import { useShell } from './useShell'
 import { letsGo, matches } from './shortcuts'
 import { useKeys, useShortcut } from './useShortcut'
 import { t } from '../i18n'
+import { Icon } from './Icon'
 
 /*
  * The composer's two ways in besides typing: files, chosen from the system's
@@ -190,7 +191,7 @@ export function ComposerTools({ chat, mine, onHeard }: { chat: Chat; mine: boole
       ) : (
         <>
           <button className="ctools__icon" onClick={() => void pick()} title={t('workspace.composerTools.attachTitle', { keys: keys('attach') })} aria-label={t('workspace.composerTools.attach')}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.4 11.6-9.2 9.2a6 6 0 0 1-8.5-8.5l9.2-9.2a4 4 0 0 1 5.7 5.7l-9.2 9.2a2 2 0 0 1-2.8-2.8l8.5-8.5" /></svg>
+            <Icon size="m"><path d="m21.4 11.6-9.2 9.2a6 6 0 0 1-8.5-8.5l9.2-9.2a4 4 0 0 1 5.7 5.7l-9.2 9.2a2 2 0 0 1-2.8-2.8l8.5-8.5" /></Icon>
           </button>
           <button
             className="ctools__icon"
@@ -208,7 +209,7 @@ export function ComposerTools({ chat, mine, onHeard }: { chat: Chat; mine: boole
             {hearing ? (
               <span className="ctools__wait" />
             ) : (
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5 11a7 7 0 0 0 14 0M12 18v3" /></svg>
+              <Icon size="m"><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5 11a7 7 0 0 0 14 0M12 18v3" /></Icon>
             )}
           </button>
         </>

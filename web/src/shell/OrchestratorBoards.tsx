@@ -11,6 +11,7 @@ import { PanelAct, PanelEmpty, PanelHead } from './PanelHead'
 import { ProjectMark } from './ProjectMark'
 import { useProjectBoards } from './useProjectBoards'
 import { useShell } from './useShell'
+import { Icon } from './Icon'
 
 /*
  * The boards of the projects this orchestrator is linked to, at a glance,
@@ -83,13 +84,13 @@ export function OrchestratorBoards({ shown }: { shown: boolean }): React.JSX.Ele
     <div className="oboards">
       <PanelHead title={t('workspace.orchestratorBoards.title')} meta={linked && linked.length > 0 ? t('workspace.orchestratorBoards.linked', { count: linked.length }) : null}>
         <PanelAct label={linking ? t('workspace.orchestratorBoards.stopLinking') : t('workspace.orchestratorBoards.linkProjects')} active={linking !== null} onClick={() => setLinking(linking ? null : new Set(linked ?? []))}>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7" /></svg>
+          <Icon size="s"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7" /></Icon>
         </PanelAct>
         <PanelAct label={t('workspace.orchestratorBoards.addProject')} onClick={() => void addFolder()}>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
+          <Icon size="s"><path d="M12 5v14M5 12h14" /></Icon>
         </PanelAct>
         <PanelAct label={t('workspace.orchestratorBoards.everyBoard')} onClick={openManager}>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" /></svg>
+          <Icon size="s"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" /></Icon>
         </PanelAct>
       </PanelHead>
       {adding && here && (

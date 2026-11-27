@@ -10,6 +10,7 @@ import { tabTitle, twice, type Clicked, type Tab } from './strip'
 import { unreadIn } from './unread'
 import { useShell } from './useShell'
 import { useKeys, useShortcut } from './useShortcut'
+import { Icon } from './Icon'
 
 /*
  * The strip is the order. A tab is appended when it opens and only moves when
@@ -213,9 +214,9 @@ export function TabStrip(): React.JSX.Element {
               close(tab.id)
             }}
           >
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round">
+            <Icon size="s">
               <path d="M18 6 6 18M6 6l12 12" />
-            </svg>
+            </Icon>
           </span>
         </button>
         ),
@@ -230,9 +231,9 @@ export function TabStrip(): React.JSX.Element {
           agent. A plain terminal is the first row in it, and ⌘T still opens
           one without stopping to ask. */}
       <button className="tab tab--new" title={t('workspace.tabs.newKeys', { keys: keys('palette') })} aria-label={t('workspace.tabs.new')} onClick={openPalette}>
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+        <Icon size="s">
           <path d="M12 5v14M5 12h14" />
-        </svg>
+        </Icon>
       </button>
     </div>
   )

@@ -2,6 +2,7 @@ import type { Project, Thread } from '../gen/bindings'
 import { since } from './projects'
 import { t } from '../i18n'
 import { tRich } from '../i18n/rich'
+import { Icon } from './Icon'
 
 const PREFERENCES = 'context/preferences.md'
 
@@ -33,9 +34,9 @@ export function ChatBlank({
     <div className={orchestrating ? 'chat__blank chat__blank--orch' : 'chat__blank'}>
       <div className="chat__ask">
         {orchestrating ? (
-          <svg className="chat__mark" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><circle cx="4.5" cy="5" r="2" /><circle cx="19.5" cy="5" r="2" /><circle cx="4.5" cy="19" r="2" /><circle cx="19.5" cy="19" r="2" /><path d="m6 6.4 3.8 3.6M18 6.4l-3.8 3.6M6 17.6l3.8-3.6M18 17.6l-3.8-3.6" /></svg>
+          <Icon size="l" className="chat__mark"><circle cx="12" cy="12" r="3" /><circle cx="4.5" cy="5" r="2" /><circle cx="19.5" cy="5" r="2" /><circle cx="4.5" cy="19" r="2" /><circle cx="19.5" cy="19" r="2" /><path d="m6 6.4 3.8 3.6M18 6.4l-3.8 3.6M6 17.6l3.8-3.6M18 17.6l-3.8-3.6" /></Icon>
         ) : (
-          <svg className="chat__mark" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4" /></svg>
+          <Icon size="l" className="chat__mark"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4" /></Icon>
         )}
         {orchestrating ? (
           <>

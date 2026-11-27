@@ -1,4 +1,5 @@
 import { ofPath } from './languages'
+import { Icon } from './Icon'
 
 /*
  * What kind of file a row is about.
@@ -75,20 +76,9 @@ const PATHS: Readonly<Record<Glyph, React.JSX.Element>> = {
 /** The mark for this path, taking its colour from whoever draws it. */
 export function FileGlyph({ path }: { path: string }): React.JSX.Element {
   return (
-    <svg
-      className="gitrow__ico"
-      width="13"
-      height="13"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
+    <Icon size="s" className="gitrow__ico" aria-hidden="true">
       {PATHS[shapeOf(path)]}
-    </svg>
+    </Icon>
   )
 }
 

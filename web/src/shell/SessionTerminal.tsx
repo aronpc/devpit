@@ -12,6 +12,7 @@ import { useSessionChanges } from './useSessionChanges'
 import { useShell } from './useShell'
 import { formatRelative } from '../i18n/format'
 import { t } from '../i18n'
+import { Icon } from './Icon'
 
 /*
  * A session's own terminal, opened over the orchestrator's chat: the same
@@ -226,10 +227,10 @@ export function SessionTerminal({
           </button>
           <button className="sterm__btn" onClick={onGo} title={t('sessions.term.goTitle')}>
             {t('sessions.term.go')}
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17 17 7M8 7h9v9" /></svg>
+            <Icon size="s"><path d="M7 17 17 7M8 7h9v9" /></Icon>
           </button>
           <button className="sterm__x" onClick={onClose} aria-label={t('sessions.term.hide')} title={t('sessions.term.hideTitle')}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+            <Icon size="s"><path d="M18 6 6 18M6 6l12 12" /></Icon>
           </button>
         </header>
         <div className="sterm__main">

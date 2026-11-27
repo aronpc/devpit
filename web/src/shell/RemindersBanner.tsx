@@ -5,6 +5,7 @@ import { t } from '../i18n'
 import { dueLabel } from './due'
 import { useShell } from './useShell'
 import { laterOptions, useReminders } from './useReminders'
+import { Icon } from './Icon'
 
 /*
  * The reminders that went off, under the top bar, until each is dealt with.
@@ -86,7 +87,7 @@ export function RemindersBanner(): React.JSX.Element | null {
 
   return (
     <section className="remind" role="alert" aria-label={t('workspace.reminders.label')}>
-      <svg className="remind__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><circle cx="12" cy="13" r="8" /><path d="M12 9v4l2 2M5 3 2 6M22 6l-3-3" /></svg>
+      <Icon size="s" className="remind__icon" aria-hidden><circle cx="12" cy="13" r="8" /><path d="M12 9v4l2 2M5 3 2 6M22 6l-3-3" /></Icon>
       <div className="remind__list">
         {shown.map((one) => (
           <Row

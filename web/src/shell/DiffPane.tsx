@@ -7,6 +7,7 @@ import type { Tab } from './strip'
 import { useShell } from './useShell'
 import { viewPrefs } from './viewPrefs'
 import { t } from '../i18n'
+import { Icon } from './Icon'
 
 /* The merge editor is CodeMirror and its merge view: loaded with the first
    file diff opened, not with the window. */
@@ -41,7 +42,7 @@ export function DiffPane({ tab }: { tab: Tab }): React.JSX.Element {
       <span className="drag" />
       {controls}
       <button className="sq26" onClick={() => close(tab.id)} aria-label={t('workspace.diffPane.close')} title={t('workspace.diffPane.close')}>
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+        <Icon size="s"><path d="M18 6 6 18M6 6l12 12" /></Icon>
       </button>
     </div>
   )

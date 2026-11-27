@@ -8,6 +8,7 @@ import { tRich } from '../i18n/rich'
 import { ask, commands } from './live'
 import { useShell } from './useShell'
 import { committed } from './typing'
+import { Icon } from './Icon'
 
 /*
  * Where new worktrees are created.
@@ -83,7 +84,7 @@ export function WorktreeBase(): React.JSX.Element {
           onKeyDown={(event) => committed(event) && save(draft)}
         />
         <button className="btn" onClick={() => void browse()}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" /></svg>
+          <Icon size="s"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" /></Icon>
           {t('workspace.worktreeBase.browse')}
         </button>
         {/* Only once the read has come back and said there is something to

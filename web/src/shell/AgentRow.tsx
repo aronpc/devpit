@@ -7,6 +7,7 @@ import type { Draft } from './profiles'
 import type { KnownAgent } from '../gen/bindings'
 import { ask, commands } from './live'
 import { t } from '../i18n'
+import { Icon } from './Icon'
 
 /*
  * One agent in the catalogue.
@@ -111,7 +112,7 @@ export function AgentRow({
             title={t('workspace.agentRow.docs', { name: entry.label })}
             aria-label={t('workspace.agentRow.docs', { name: entry.label })}
           >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 4h6v6M20 4 10 14M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" /></svg>
+            <Icon size="s"><path d="M14 4h6v6M20 4 10 14M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" /></Icon>
           </a>
         )}
 

@@ -6,6 +6,7 @@ import { t } from '../i18n'
 import { useAway } from './away'
 import { Confirm } from './Confirm'
 import { laneMenu } from './laneMenu'
+import { Icon } from './Icon'
 
 /** What the dialog says when a lane still holds cards: the backend's count, and a choice. */
 export const moveTitle = (inTheWay: number, lane: string): string => t('lane.moveOut', { count: inTheWay, lane })
@@ -60,11 +61,11 @@ export function LaneMenu({
   return (
     <div className="ctl" ref={box} onPointerDown={stay}>
       <button className="sq26" aria-label={t('lane.actions', { name })} title={t('lane.actions', { name })} aria-expanded={open} onClick={() => onOpen(!open)}>
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+        <Icon size="s" filled>
           <circle cx="5" cy="12" r="1.8" />
           <circle cx="12" cy="12" r="1.8" />
           <circle cx="19" cy="12" r="1.8" />
-        </svg>
+        </Icon>
       </button>
       {open && (
         <div className="ctlmenu ctlmenu--down" role="menu" aria-label={t('lane.actions', { name })}>

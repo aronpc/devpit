@@ -27,6 +27,7 @@ import { Usage } from './Usage'
 import { LookSettings } from './ViewSettings'
 import { Worktrees } from './Worktrees'
 import { onEvent } from './window'
+import { Icon } from './Icon'
 
 /* Settings takes the window. Back and Escape leave; the gear and every
    account-menu row land here on the pane they name. */
@@ -118,7 +119,7 @@ export function Settings({
           <section className="prefs__in" hidden={pane !== 'projects'}>
             <div className="prefs__hrow">
               <h1 className="prefs__h">{t('prefs.nav.projects')}</h1>
-              <button className="btn btn--go" onClick={onAddProject}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14" /></svg>{t('settings.projects.add')}</button>
+              <button className="btn btn--go" onClick={onAddProject}><Icon size="s"><path d="M12 5v14M5 12h14" /></Icon>{t('settings.projects.add')}</button>
             </div>
         <ProjectRows onRemove={onRemove} />
             <p className="acc__note">{t('settings.projects.note')}</p>

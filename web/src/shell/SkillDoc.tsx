@@ -5,6 +5,7 @@ import { ask, commands } from './live'
 import { Markdown } from './MarkdownView'
 import { useCopied } from './useCopied'
 import { t } from '../i18n'
+import { Icon } from './Icon'
 
 /*
  * One skill, as written.
@@ -51,7 +52,7 @@ export function SkillDoc({
     <>
       <div className="sk__top">
         <span className="sk__mark">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v3M5.6 5.6l2.1 2.1M3 12h3M18 12h3M16.3 7.7l2.1-2.1" /><rect x="7" y="12" width="10" height="9" rx="2" /></svg>
+          <Icon size="s"><path d="M12 3v3M5.6 5.6l2.1 2.1M3 12h3M18 12h3M16.3 7.7l2.1-2.1" /><rect x="7" y="12" width="10" height="9" rx="2" /></Icon>
         </span>
         <div>
           <div className="sk__name">{skill.name}</div>

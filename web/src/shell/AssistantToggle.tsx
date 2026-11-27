@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 
 import { t } from '../i18n'
 import { ask, commands } from './live'
+import { Icon } from './Icon'
 
 /*
  * Assistant mode for an orchestrator's chat: off by default, kept per
@@ -34,7 +35,7 @@ export function AssistantToggle({ projectId }: { projectId: string }): React.JSX
       : t('workspace.assistantToggle.off')
   return (
     <button className="sq26 asst" data-on={on ? 'true' : undefined} disabled={busy} title={title} aria-label={t('workspace.assistantToggle.label')} aria-pressed={on} onClick={flip}>
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="13" r="8" /><path d="M12 9v4l2 2M5 3 2 6M22 6l-3-3" /></svg>
+      <Icon size="s"><circle cx="12" cy="13" r="8" /><path d="M12 9v4l2 2M5 3 2 6M22 6l-3-3" /></Icon>
     </button>
   )
 }

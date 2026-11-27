@@ -4,6 +4,7 @@ import mark from '../assets/brand/mark.png'
 import { useShell } from './useShell'
 import { t } from '../i18n'
 import { tRich } from '../i18n/rich'
+import { Icon } from './Icon'
 
 /* Signing in.
  *
@@ -35,7 +36,7 @@ export function SignIn({ onClose }: { onClose: () => void }): React.JSX.Element 
     >
       <div className="auth__box" role="dialog" aria-label={t('workspace.signIn.dialog')}>
         <button className="auth__x" aria-label={t('workspace.signIn.close')} title={t('workspace.signIn.close')} onClick={close}>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+          <Icon size="s"><path d="M18 6 6 18M6 6l12 12" /></Icon>
         </button>
         <span className="auth__mark"><img
             className="mark"
@@ -64,7 +65,7 @@ export function SignIn({ onClose }: { onClose: () => void }): React.JSX.Element 
               </p>
             )}
             <button className="auth__b" onClick={() => void membership.signIn()}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3" /></svg>
+              <Icon size="m"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3" /></Icon>
               {t('workspace.signIn.continue')}
             </button>
             <p className="auth__fine">

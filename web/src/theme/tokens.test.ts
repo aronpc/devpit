@@ -76,3 +76,14 @@ describe('the palette', () => {
     expect(valuesIn(":root[data-theme='system']").get('--terminal')).toBe(palette(false).background)
   })
 })
+
+describe('the icon sizes', () => {
+  it('are three steps every theme shares, scaled with the text', () => {
+    const root = valuesIn(':root {')
+    expect(['--icon-s', '--icon-m', '--icon-l'].map((name) => root.get(name))).toEqual([
+      'calc(14px * var(--text-scale, 1))',
+      'calc(16px * var(--text-scale, 1))',
+      'calc(20px * var(--text-scale, 1))',
+    ])
+  })
+})

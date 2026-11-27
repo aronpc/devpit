@@ -7,6 +7,7 @@ import type { ArchivedCard, DeleteRefusal } from '../gen/bindings'
 import { CardEnding, type Ending } from './CardHeader'
 import { ask, commands } from './live'
 import { abandoned } from './typing'
+import { Icon } from './Icon'
 
 /*
  * The board's archived cards, and Undo for the card just archived.
@@ -111,7 +112,7 @@ export function ArchivedPane({
         <header className="runsp__top">
           <h2 className="runsp__t">{t('board.archived')}</h2>
           <button className="sq26" onClick={onClose} aria-label={t('board.closeArchived')} title={t('board.closeArchived')}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+            <Icon size="s"><path d="M18 6 6 18M6 6l12 12" /></Icon>
           </button>
         </header>
 

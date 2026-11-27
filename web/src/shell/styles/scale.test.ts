@@ -102,6 +102,7 @@ const BUDGET: Record<string, Partial<Record<Kind, number>>> = {
   '31-schedules.css': { size: 3, radius: 2, height: 1 },
   '32-ask.css': { size: 13, radius: 6 },
   '33-glass.css': {},
+  '34-icon.css': {},
 }
 
 const KINDS: Kind[] = ['size', 'radius', 'height', 'shadow', 'motion']

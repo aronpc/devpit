@@ -7,6 +7,7 @@ import { remote, since } from './projects'
 import { Rename } from './Rename'
 import { useOpeners } from './useOpeners'
 import { useShell } from './useShell'
+import { Icon } from './Icon'
 
 /*
  * One row per project, showing what the backend already knew.
@@ -22,9 +23,9 @@ import { useShell } from './useShell'
  */
 
 const Folder = (): React.JSX.Element => (
-  <svg className="pj__ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+  <Icon size="m" className="pj__ico">
     <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" />
-  </svg>
+  </Icon>
 )
 
 export function ProjectRows({ onRemove }: { onRemove: (id: string) => void }): React.JSX.Element {
@@ -97,10 +98,10 @@ export function ProjectRows({ onRemove }: { onRemove: (id: string) => void }): R
 
             {row.unreadable && (
               <span className="pj__warn">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                <Icon size="s">
                   <path d="M12 9v4M12 17v.01" />
                   <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" />
-                </svg>
+                </Icon>
                 {row.unreadable}
               </span>
             )}

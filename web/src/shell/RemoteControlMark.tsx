@@ -2,6 +2,7 @@ import type { RemoteState } from '../gen/bindings'
 import { t } from '../i18n'
 import { ask, commands } from './live'
 import { went } from './problems'
+import { Icon } from './Icon'
 
 /** Remote Control's state, in words. */
 export function remoteSays(remote: RemoteState): string {
@@ -16,7 +17,7 @@ export function remoteSays(remote: RemoteState): string {
 export function RemoteControlMark({ remote, name }: { remote: RemoteState; name: string }): React.JSX.Element {
   const said = remoteSays(remote)
   const icon = (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><rect x="7" y="2" width="10" height="20" rx="2" /><path d="M11 18h2" /></svg>
+    <Icon size="s"><rect x="7" y="2" width="10" height="20" rx="2" /><path d="M11 18h2" /></Icon>
   )
   if (remote.on && remote.url) {
     const url = remote.url

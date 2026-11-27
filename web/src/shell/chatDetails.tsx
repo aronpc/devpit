@@ -3,6 +3,7 @@ import { useState, useSyncExternalStore } from 'react'
 import { Menu, MenuItem } from './Menu'
 import { menuPoint } from './menuRules'
 import { t } from '../i18n'
+import { Icon } from './Icon'
 
 /*
  * Which details a conversation's header and its "where" line show, chosen
@@ -66,7 +67,7 @@ export function useDetails(): (id: Detail) => boolean {
 }
 
 const TICK = (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="m5 13 4 4L19 7" /></svg>
+  <Icon size="s"><path d="m5 13 4 4L19 7" /></Icon>
 )
 
 /* A right-click on the header or on this line picks which details they show. */

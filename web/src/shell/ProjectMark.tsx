@@ -1,5 +1,6 @@
 import type { Project } from '../gen/bindings'
 import { hueOf, initials } from './rail'
+import { Icon, iconSize } from './Icon'
 
 /*
  * How a project looks in the rail: the icon a person chose — one of these, or
@@ -65,11 +66,11 @@ export function ProjectMark({
   return (
     <span className="pmark" data-chosen={project.color ? 'true' : undefined} style={style}>
       {paths ? (
-        <svg width={size * 0.5} height={size * 0.5} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <Icon size={iconSize(size * 0.5)} aria-hidden="true">
           {paths.map((d) => (
             <path key={d} d={d} />
           ))}
-        </svg>
+        </Icon>
       ) : project.icon ? (
         <span className="pmark__emoji" style={{ fontSize: size * 0.5 }}>{project.icon}</span>
       ) : (

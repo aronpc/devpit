@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from 'react'
 
 import { useAway } from './away'
+import { Icon } from './Icon'
 
 /*
  * One chip that opens a list of choices.
@@ -48,7 +49,7 @@ export function ControlMenu({
         onClick={() => setOpen((was) => !was)}
       >
         <span className="ctl__l">{label}</span>
-        <svg className="ctl__v" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+        <Icon size="s" className="ctl__v"><path d="m6 9 6 6 6-6" /></Icon>
       </button>
 
       {open && (
@@ -75,7 +76,7 @@ export function ControlMenu({
                   {choice.what && <span className="ctlmenu__w">{choice.what}</span>}
                 </span>
                 {choice.selected && (
-                  <svg className="ctlmenu__c" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="m5 13 4 4L19 7" /></svg>
+                  <Icon size="s" className="ctlmenu__c"><path d="m5 13 4 4L19 7" /></Icon>
                 )}
               </button>
             </div>

@@ -9,6 +9,7 @@ import { useShell } from './useShell'
 import { listen } from './useShortcut'
 import { onCarried } from './window'
 import { t } from '../i18n'
+import { Icon } from './Icon'
 
 /*
  * A page, in a webview that is not ours.
@@ -329,10 +330,10 @@ export function BrowserPane({ tab }: { tab: Tab }): React.JSX.Element {
           disabled={!at}
           onClick={() => setFinding((was) => !was)}
         >
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <Icon size="s">
             <circle cx="11" cy="11" r="7" />
             <path d="m20 20-4.3-4.3" />
-          </svg>
+          </Icon>
         </button>
         {/* The menu is a window, not a panel in this document. A pane's page
             is a second native webview and two native webviews have no z-order
@@ -362,7 +363,7 @@ export function BrowserPane({ tab }: { tab: Tab }): React.JSX.Element {
             )
           }}
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8" /><circle cx="12" cy="12" r="1.8" /><circle cx="19" cy="12" r="1.8" /></svg>
+          <Icon size="s" filled><circle cx="5" cy="12" r="1.8" /><circle cx="12" cy="12" r="1.8" /><circle cx="19" cy="12" r="1.8" /></Icon>
         </button>
       </div>
       {/* The hole. The page is drawn over this by the window, not by React. */}

@@ -12,45 +12,35 @@ import { closedLabel, named, stillBlocking } from './planEdit'
 import { abandoned, committed } from './typing'
 import { memo, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-
-const line = {
-  width: 11,
-  height: 11,
-  viewBox: '0 0 24 24',
-  fill: 'none',
-  stroke: 'currentColor',
-  strokeWidth: 1.9,
-  strokeLinecap: 'round',
-  strokeLinejoin: 'round',
-} as const
+import { Icon } from './Icon'
 
 const Clock = (): React.JSX.Element => (
-  <svg {...line}><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
+  <Icon size="s"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></Icon>
 )
 
 const Speech = (): React.JSX.Element => (
-  <svg {...line}><path d="M21 12a8 8 0 0 1-8 8H7l-4 3V12a8 8 0 0 1 8-8h2a8 8 0 0 1 8 8Z" /></svg>
+  <Icon size="s"><path d="M21 12a8 8 0 0 1-8 8H7l-4 3V12a8 8 0 0 1 8-8h2a8 8 0 0 1 8 8Z" /></Icon>
 )
 
 const Clip = (): React.JSX.Element => (
-  <svg {...line}><path d="M21 12.5 12.9 20.6a5 5 0 0 1-7.1-7.1l8.1-8.1a3.3 3.3 0 1 1 4.7 4.7l-8.1 8.1a1.7 1.7 0 0 1-2.4-2.4l7.5-7.4" /></svg>
+  <Icon size="s"><path d="M21 12.5 12.9 20.6a5 5 0 0 1-7.1-7.1l8.1-8.1a3.3 3.3 0 1 1 4.7 4.7l-8.1 8.1a1.7 1.7 0 0 1-2.4-2.4l7.5-7.4" /></Icon>
 )
 
 /* An epic's cards. */
 const Stack = (): React.JSX.Element => (
-  <svg {...line}><rect x="4" y="9" width="16" height="11" rx="2" /><path d="M7 5h10" /></svg>
+  <Icon size="s"><rect x="4" y="9" width="16" height="11" rx="2" /><path d="M7 5h10" /></Icon>
 )
 
 /* Criteria met. */
 const CheckBox = (): React.JSX.Element => (
-  <svg {...line}><rect x="3.5" y="3.5" width="17" height="17" rx="3" /><path d="m8 12 3 3 5-6" /></svg>
+  <Icon size="s"><rect x="3.5" y="3.5" width="17" height="17" rx="3" /><path d="m8 12 3 3 5-6" /></Icon>
 )
 
 const Spark = (): React.JSX.Element => (
-  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+  <Icon size="s">
     <path d="M12 3v3M5.6 5.6l2.1 2.1M3 12h3M18 12h3M16.3 7.7l2.1-2.1" />
     <rect x="7" y="12" width="10" height="9" rx="2" />
-  </svg>
+  </Icon>
 )
 
 /* Memoized, with callbacks that take the card: one card's activity or a run's
@@ -111,9 +101,9 @@ export const Tile = memo(function Tile({
             void onPlay(card.id, false).then((answer) => setAsking(Boolean(answer?.needsConfirming)))
           }}
         >
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+          <Icon size="s" filled>
             <path d="M8 5.5v13l11-6.5z" />
-          </svg>
+          </Icon>
         </button>
       )}
       {/* What the step is printing, as it prints it. One line, the last one:

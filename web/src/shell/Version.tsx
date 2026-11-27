@@ -6,6 +6,7 @@ import { ask, commands } from './live'
 import { SHOW_THE_UPDATE } from './UpdateCard'
 import { aNewerOne, useUpdateStatus } from './useUpdateStatus'
 import { useCopied } from './useCopied'
+import { Icon } from './Icon'
 
 /*
  * Which devpit this is, at the left end of the status strip.
@@ -40,9 +41,9 @@ export function Version(): React.JSX.Element | null {
     >
       {copied ? t('workspace.version.copied') : `v${info.version}${info.dev ? ' · dev' : ''}`}
       {newer && (
-        <svg className="strip__up" aria-hidden width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <Icon size="s" className="strip__up" aria-hidden>
           <path d="M12 19V5M5 12l7-7 7 7" />
-        </svg>
+        </Icon>
       )}
     </button>
   )

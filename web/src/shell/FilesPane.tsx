@@ -8,6 +8,7 @@ import { WorkspaceFile } from './WorkspaceFile'
 import { committed } from './typing'
 import { crumbs, fullPath, matching, meta, moved, parentOf, sorted, type Order } from './wsbrowse'
 import { t } from '../i18n'
+import { Icon } from './Icon'
 
 /*
  * The devpit workspace, browsed.
@@ -75,7 +76,7 @@ export function FilesPane(): React.JSX.Element {
     <>
       <div className="pane__bar">
         <span className="pane__ico">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" /></svg>
+          <Icon size="s"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" /></Icon>
         </span>
         <span className="pane__t">
           <b>{t('workspace.files.title')}</b>
@@ -89,13 +90,13 @@ export function FilesPane(): React.JSX.Element {
           aria-label={t('workspace.files.reveal')}
           title={t('workspace.files.reveal')}
         >
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /></svg>
+          <Icon size="s"><path d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /></Icon>
         </button>
         <button className="sq26" onClick={folder.reload} aria-label={t('workspace.files.refresh')} title={t('workspace.files.refresh')}>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 0 1-15.5 6.2M3 12a9 9 0 0 1 15.5-6.2M3 20v-5h5M21 4v5h-5" /></svg>
+          <Icon size="s"><path d="M21 12a9 9 0 0 1-15.5 6.2M3 12a9 9 0 0 1 15.5-6.2M3 20v-5h5M21 4v5h-5" /></Icon>
         </button>
         <button className="sq26" onClick={() => close('files')} aria-label={t('workspace.files.close')} title={t('workspace.files.close')}>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+          <Icon size="s"><path d="M18 6 6 18M6 6l12 12" /></Icon>
         </button>
       </div>
 
@@ -110,7 +111,7 @@ export function FilesPane(): React.JSX.Element {
                 aria-label={t('workspace.files.up')}
                 title={t('workspace.files.up')}
               >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19V5M5 12l7-7 7 7" /></svg>
+                <Icon size="s"><path d="M12 19V5M5 12l7-7 7 7" /></Icon>
               </button>
               {crumbs(here, project ?? null).map((crumb, index, all) => (
                 <span className="fb__crumb" key={crumb.path}>
@@ -215,7 +216,7 @@ export function FilesPane(): React.JSX.Element {
               >
                 <span className="fb__ico">
                   {row.isDir ? (
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" /></svg>
+                    <Icon size="s"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" /></Icon>
                   ) : (
                     <FileGlyph path={row.name} />
                   )}
@@ -224,7 +225,7 @@ export function FilesPane(): React.JSX.Element {
                 <span className="fb__m">{meta(row)}</span>
                 {row.isDir && (
                   <span className="fb__go">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 6 6 6-6 6" /></svg>
+                    <Icon size="s"><path d="m9 6 6 6-6 6" /></Icon>
                   </span>
                 )}
               </button>

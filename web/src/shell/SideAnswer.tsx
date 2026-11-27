@@ -4,6 +4,7 @@ import { ask, commands } from './live'
 import { Markdown } from './MarkdownView'
 import { ASIDE } from './slash'
 import { t } from '../i18n'
+import { Icon } from './Icon'
 
 /*
  * `/btw`: a side question, answered above the composer from what the
@@ -26,7 +27,7 @@ export function SideAnswer({ question, projectId, conversationId, onClose }: { q
       <div className="oans__top">
         <p className="oans__t">/{[ASIDE, question].filter(Boolean).join(' ')}</p>
         <button className="sq26" onClick={onClose} aria-label={t('workspace.sideAnswer.close')} title={t('workspace.sideAnswer.close')}>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+          <Icon size="s"><path d="M18 6 6 18M6 6l12 12" /></Icon>
         </button>
       </div>
       <div aria-live="polite">

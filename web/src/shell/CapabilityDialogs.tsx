@@ -2,6 +2,7 @@ import { useId, useState } from 'react'
 
 import { t } from '../i18n'
 import { tRich } from '../i18n/rich'
+import { Icon } from './Icon'
 
 /*
  * Installing and uninstalling a capability, each behind a dialog.
@@ -128,9 +129,9 @@ export function UninstallCapability({
       <p className="ask__d">{t('workspace.capDialog.unlessTick')}</p>
       <button className="ask__opt" role="checkbox" aria-checked={deleteData} onClick={() => setDeleteData((was) => !was)}>
         <span className="box">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <Icon size="s" aria-hidden="true">
             <path d="M20 6 9 17l-5-5" />
-          </svg>
+          </Icon>
         </span>
         <span>
           <span className="ask__ot">{t('workspace.capDialog.alsoDelete', { name })}</span>

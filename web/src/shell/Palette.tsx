@@ -9,6 +9,7 @@ import { PaletteKeys, PaletteList } from './PaletteList'
 import { useReachable } from './paletteReach'
 import { useShell } from './useShell'
 import { committed } from './typing'
+import { Icon } from './Icon'
 
 /*
  * One field over the window, for reaching what the window has.
@@ -70,10 +71,10 @@ export function Palette({ onClose }: { onClose: () => void }): React.JSX.Element
     <div className="cmd" data-open="true" onClick={(event) => event.target === event.currentTarget && onClose()}>
       <div className="cmd__box" role="dialog" aria-label={t('workspace.palette.search')}>
         <div className="cmd__q">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+          <Icon size="m">
             <circle cx="11" cy="11" r="8" />
             <path d="m21 21-4.3-4.3" />
-          </svg>
+          </Icon>
           <input
             ref={field}
             className="cmd__in"

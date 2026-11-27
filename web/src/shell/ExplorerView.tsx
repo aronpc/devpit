@@ -10,11 +10,12 @@ import type { UseFileIndex } from './useFileIndex'
 import type { UseTree } from './useTree'
 import type { Project, SearchHits } from '../gen/bindings'
 import { t } from '../i18n'
+import { Icon, iconSize } from './Icon'
 
-const Icon = ({ d, size = 15 }: { d: string; size?: number }): React.JSX.Element => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+const Line = ({ d, size = 15 }: { d: string; size?: number }): React.JSX.Element => (
+  <Icon size={iconSize(size)}>
     <path d={d} />
-  </svg>
+  </Icon>
 )
 
 const COLLAPSE = 'M4 7h16M4 12h16M4 17h16'
@@ -106,18 +107,18 @@ export function Explorer({
       <div className="ex__head">
         <span className="ex__proj">{project?.name ?? t('workspace.explorer.noProject')}</span>
         <button className="sq26 tip" data-tip={t('workspace.explorer.collapseAll')} aria-label={t('workspace.explorer.collapseAll')} onClick={() => setCollapsed((was) => was + 1)}>
-          <Icon d={COLLAPSE} />
+          <Line d={COLLAPSE} />
         </button>
         <button className="sq26 tip" data-tip={t('workspace.explorer.refresh')} aria-label={t('workspace.explorer.refresh')} onClick={tree.reload}>
-          <Icon d={REFRESH} />
+          <Line d={REFRESH} />
         </button>
       </div>
 
       <div className="ex__search">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+        <Icon size="s">
           <circle cx="11" cy="11" r="8" />
           <path d={SEARCH} />
-        </svg>
+        </Icon>
         <input
           className="ex__q"
           placeholder={mode === 'contents' ? t('workspace.explorer.searchInFiles') : t('workspace.explorer.search')}

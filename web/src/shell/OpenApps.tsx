@@ -5,6 +5,7 @@ import { t } from '../i18n'
 import { useAway } from './away'
 import { ask, commands } from './live'
 import { PrefRow } from './PrefRow'
+import { Icon } from './Icon'
 
 /*
  * The apps a folder can be handed to.
@@ -60,7 +61,7 @@ export function OpenApps(): React.JSX.Element {
         <div className="apps__add" ref={menu}>
           <button className="btn" onClick={() => setAdding((was) => !was)}>
             {t('workspace.openApps.add')}
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+            <Icon size="s"><path d="m6 9 6 6 6-6" /></Icon>
           </button>
           {adding && (
             <div className="apps__menu" role="menu">

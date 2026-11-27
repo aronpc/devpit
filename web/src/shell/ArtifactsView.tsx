@@ -8,6 +8,7 @@ import { ask, commands } from './live'
 import { PanelAct, PanelEmpty, PanelHead } from './PanelHead'
 import { useShell } from './useShell'
 import { t } from '../i18n'
+import { Icon } from './Icon'
 
 /*
  * The project's artifacts: files kept for it outside its repository, in its
@@ -66,11 +67,11 @@ export function ArtifactsView({ shown }: { shown: boolean }): React.JSX.Element 
     <div className="arts" ref={box} data-drop={hovering ? 'true' : undefined}>
       <PanelHead title={t('workspace.artifacts.title')} meta={items.length > 0 ? items.length : null}>
         <PanelAct label={t('workspace.artifacts.add')} onClick={choose}>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
+          <Icon size="s"><path d="M12 5v14M5 12h14" /></Icon>
         </PanelAct>
         {found && (
           <PanelAct label={t('workspace.artifacts.reveal')} onClick={() => void ask(() => commands.pathReveal(found.folder))}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" /></svg>
+            <Icon size="s"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" /></Icon>
           </PanelAct>
         )}
       </PanelHead>
@@ -101,10 +102,10 @@ export function ArtifactsView({ shown }: { shown: boolean }): React.JSX.Element 
               ) : (
                 <>
                   <button className="arts__x" aria-label={t('workspace.artifacts.openLabel', { name: one.name })} title={t('workspace.artifacts.openTitle')} onClick={() => void ask(() => commands.pathOpen(path))}>
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17 17 7M8 7h9v9" /></svg>
+                    <Icon size="s"><path d="M7 17 17 7M8 7h9v9" /></Icon>
                   </button>
                   <button className="arts__x" aria-label={t('workspace.artifacts.removeLabel', { name: one.name })} title={t('workspace.artifacts.remove')} onClick={() => setRemoving(one.name)}>
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+                    <Icon size="s"><path d="M18 6 6 18M6 6l12 12" /></Icon>
                   </button>
                 </>
               )}

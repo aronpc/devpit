@@ -9,6 +9,7 @@ import { StepNew } from './StepNew'
 import { useAway } from './away'
 import { stepFields } from './stepConfig'
 import { identityWords } from './wouldRun'
+import { Icon } from './Icon'
 
 /* Presses inside stay here: the lane head around this is its drag handle. */
 const stay = (event: React.SyntheticEvent): void => event.stopPropagation()
@@ -70,10 +71,10 @@ export function LaneStep({
         title={step ? t('step.runs', { name: step.name }) : t('step.runsNothing')}
         onClick={() => setOpen((was) => !was)}
       >
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+        <Icon size="s">
           <path d="M12 3v3M5.6 5.6l2.1 2.1M3 12h3M18 12h3M16.3 7.7l2.1-2.1" />
           <rect x="7" y="12" width="10" height="9" rx="2" />
-        </svg>
+        </Icon>
         {step?.name ?? t('step.noStep')}
         {fixed && ` · ${fixed}`}
         {/* Said on the lane, not hidden in its menu: a lane that moves cards

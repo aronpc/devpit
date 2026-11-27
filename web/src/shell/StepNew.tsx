@@ -7,6 +7,7 @@ import { offers, onProfilesChanged } from './profiles'
 import { filled, RECIPES, type Recipe } from './recipes'
 import { ShellStoreContext } from './shellStore'
 import { CONTEXT_KEYS, stepConfig, stepFields, type Fields } from './stepConfig'
+import { Icon } from './Icon'
 
 /*
  * The form that makes a step.
@@ -216,9 +217,9 @@ export function StepNew({
               onClick={() => inject(key)}
             >
               <span className="box">
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <Icon size="s">
                   <path d="M20 6 9 17l-5-5" />
-                </svg>
+                </Icon>
               </span>
               <span className="ask__ot">{key}</span>
             </button>
@@ -260,9 +261,9 @@ export function StepNew({
         onClick={() => setIrreversible((was) => !was)}
       >
         <span className="box">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+          <Icon size="s">
             <path d="M20 6 9 17l-5-5" />
-          </svg>
+          </Icon>
         </span>
         <span>
           <span className="ask__ot">{t('step.noUndoTitle')}</span>

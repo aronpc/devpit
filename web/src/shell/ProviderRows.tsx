@@ -18,6 +18,7 @@ import { ProfileEditor } from './ProfileEditor'
 import { ProfilesWaiting } from './ProfilesWaiting'
 import { blank, declaredFrom, draftOf, profilesChanged, type Draft } from './profiles'
 import { useKnownAgents } from './useKnownAgents'
+import { Icon } from './Icon'
 
 /*
  * The agents this computer can start, and what each one runs.
@@ -218,7 +219,7 @@ export function ProviderRows(): React.JSX.Element {
           </div>
           <div>
             <button className="card2__go" onClick={refresh}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4" /><path d="M21 3v6h-6" /></svg>
+              <Icon size="s"><path d="M21 12a9 9 0 1 1-2.6-6.4" /><path d="M21 3v6h-6" /></Icon>
               {t('providers.refresh')}
             </button>
             {checked && <div className="card2__when">{t('providers.checked', { time: checked })}</div>}
@@ -228,7 +229,7 @@ export function ProviderRows(): React.JSX.Element {
         <div className="provnew">
           <span className="provnew__d">{t('providers.newSaid')}</span>
           <button className="card2__go" aria-expanded={open === NEW} onClick={create}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
+            <Icon size="s"><path d="M12 5v14M5 12h14" /></Icon>
             {t('providers.newProfile')}
           </button>
         </div>

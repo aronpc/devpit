@@ -16,6 +16,7 @@ import { ask, commands } from './live'
 import { usePlugins } from './usePlugins'
 import { useShell } from './useShell'
 import { t } from '../i18n'
+import { Icon } from './Icon'
 
 /*
  * The capabilities devpit ships, and which this project installed and has on.
@@ -71,7 +72,7 @@ export function PluginsPane(): React.JSX.Element {
         </span>
         <span className="drag"></span>
         <button className="sq26" onClick={() => close('plugins')} aria-label={t('workspace.plugins.closeLabel')} title={t('workspace.plugins.closeLabel')}>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+          <Icon size="s"><path d="M18 6 6 18M6 6l12 12" /></Icon>
         </button>
       </div>
 

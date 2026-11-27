@@ -1,4 +1,5 @@
 import { t } from '../i18n'
+import { Icon } from './Icon'
 
 /* The composer's one button: send, or — while a turn runs — stop it. The
 import { t } from '../i18n'
@@ -24,14 +25,14 @@ export function SendButton({ sending, showEsc, can, onSend, onStop, onForce }: {
           {showEsc ? (
             <span className="send__esc">{t('workspace.sendButton.esc')}</span>
           ) : (
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="5" width="14" height="14" rx="2" /></svg>
+            <Icon size="s" filled><rect x="5" y="5" width="14" height="14" rx="2" /></Icon>
           )}
         </button>
       </>
     )
   return (
     <button className="send" onClick={onSend} disabled={!can} aria-label={t('workspace.sendButton.send')} title={t('workspace.sendButton.send')}>
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19V5M5 12l7-7 7 7" /></svg>
+      <Icon size="s"><path d="M12 19V5M5 12l7-7 7 7" /></Icon>
     </button>
   )
 }

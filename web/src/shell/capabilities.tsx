@@ -3,6 +3,7 @@ import { DRAWINGS, PLUGIN_ID as EXCALIDRAW } from '../plugins/excalidraw/drawing
 import { NOTES, PLUGIN_ID as NOTES_ID } from '../plugins/notes/noteFiles'
 import type { PaneName } from './paneList'
 import type { Tab } from './strip'
+import { Icon, iconSize } from './Icon'
 
 /*
  * A plugin, as the person reads it: a capability.
@@ -122,16 +123,16 @@ const GLYPHS: Readonly<Record<string, React.JSX.Element>> = {
 /** A capability's mark. One this build has no glyph for is drawn as a block. */
 export function CapabilityGlyph({ id, size }: { id: string; size: number }): React.JSX.Element {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <Icon size={iconSize(size)} aria-hidden="true">
       {GLYPHS[id] ?? <rect x="4" y="4" width="16" height="16" rx="3" />}
-    </svg>
+    </Icon>
   )
 }
 
 /** The mark of Capabilities itself, as in the prototype. */
 export const CAPABILITIES_ICON = (size: number): React.JSX.Element => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+  <Icon size={iconSize(size)} aria-hidden="true">
     <path d="M12 2 4 6v6c0 5 3.4 9.1 8 10 4.6-.9 8-5 8-10V6Z" />
     <path d="m9 12 2 2 4-4" />
-  </svg>
+  </Icon>
 )
