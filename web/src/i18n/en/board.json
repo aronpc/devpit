@@ -183,6 +183,7 @@
   "card.changes": "Changes",
   "card.showChanged": "Show what changed",
   "card.readAgain": "Read again",
+  "card.reviewFindings": "Review findings",
   "card.nothingChanged": "Nothing has changed since this card started.",
   "card.elsewhere": "Changed in other repositories",
   "card.alsoChanged": {

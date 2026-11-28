@@ -226,9 +226,9 @@ export function CardPane({
                 />
               )}
 
-              {/* Only once the card has a checkout: there is nothing to
-                  compare against until it has started somewhere. */}
-              {detail.worktree?.exists && <CardDiff cardId={cardId} />}
+              {/* A diff only once the card has a checkout; without one, still
+                  its review's findings, which are set aside nowhere else. */}
+              <CardDiff key={cardId} cardId={cardId} checkout={detail.worktree?.exists === true} />
               <CardElsewhere cardId={cardId} />
 
               <Comments

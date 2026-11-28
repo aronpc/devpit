@@ -744,6 +744,7 @@
   "workspace.diffFiles.falsePositive": "Falso positivo",
   "workspace.diffFiles.keep": "Manter",
   "workspace.diffFiles.dismiss": "Dispensar",
+  "workspace.diffFiles.notInDiff": "Fora deste diff",
   "workspace.fileDialogs.newFolder": "Nova pasta",
   "workspace.fileDialogs.newFile": "Novo arquivo",
   "workspace.fileDialogs.folderExample": "componentes",

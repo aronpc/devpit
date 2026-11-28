@@ -183,6 +183,7 @@
   "card.changes": "Mudanças",
   "card.showChanged": "Mostrar o que mudou",
   "card.readAgain": "Ler de novo",
+  "card.reviewFindings": "Achados da revisão",
   "card.nothingChanged": "Nada mudou desde que este cartão começou.",
   "card.elsewhere": "Mudou em outros repositórios",
   "card.alsoChanged": {

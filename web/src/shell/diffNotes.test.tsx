@@ -57,6 +57,14 @@ describe('findings on a card diff', () => {
     expect(markers[1].querySelector('button')?.textContent).toBe('Dismiss')
   })
 
+  it('keeps a finding on a file the diff does not touch, with its button', () => {
+    const devflow = { ...found('current', [{ ...finding(93), file: 'app/Shipping.php' }]), runId: 'devflow:card_1/20261127T195214Z' }
+    const { container } = render(<DiffFiles diff={DIFF} notes={notesOf({ reviews: [devflow] })} onDismiss={() => undefined} />)
+    const marker = container.querySelector('.cdiff__fd')!
+    expect(marker.textContent).toContain('app/Shipping.php')
+    expect(marker.querySelector('button')?.textContent).toBe('False positive')
+  })
+
   it('counts only what was not set aside', () => {
     const notes = notesOf({ reviews: [found('current', [finding(12), finding(13, 'noted')], [0])] })
     expect(tally(notes)).toEqual({ blocking: 0, worth: 0, noted: 1 })

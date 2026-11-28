@@ -744,6 +744,7 @@
   "workspace.diffFiles.falsePositive": "False positive",
   "workspace.diffFiles.keep": "Keep",
   "workspace.diffFiles.dismiss": "Dismiss",
+  "workspace.diffFiles.notInDiff": "Not in this diff",
   "workspace.fileDialogs.newFolder": "New folder",
   "workspace.fileDialogs.newFile": "New file",
   "workspace.fileDialogs.folderExample": "components",

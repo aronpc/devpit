@@ -1,8 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { t } from '../i18n'
 import { ask, commands } from './live'
-import { DiffFiles } from './DiffFiles'
+import { DiffFiles, Findings } from './DiffFiles'
 import { notesOf, SHAPE, tally, type Note } from './diffNotes'
 import { severityWord } from './found'
 import { went } from './problems'
@@ -17,9 +17,13 @@ import { went } from './problems'
  * Asked for rather than loaded: a diff is a `git diff` over a whole checkout,
  * and most of the time somebody opening a card wants to read its description.
  * The button says how much there is once it knows.
+ *
+ * A card whose work happened in a checkout devpit did not make still has its
+ * Devflow review, and this is the one place a finding is called a false
+ * positive: without a checkout it shows the findings alone.
  */
 
-export function CardDiff({ cardId }: { cardId: string }): React.JSX.Element {
+export function CardDiff({ cardId, checkout = true }: { cardId: string; checkout?: boolean }): React.JSX.Element | null {
   const [raw, setRaw] = useState<string | null>(null)
   const [files, setFiles] = useState<readonly string[]>([])
   const [problem, setProblem] = useState<string | null>(null)
@@ -40,10 +44,34 @@ export function CardDiff({ cardId }: { cardId: string }): React.JSX.Element {
     setRaw(answer.data.diff)
   }
 
+  useEffect(() => {
+    if (checkout) return
+    let live = true
+    void ask(() => commands.cardFindings(cardId)).then((found) => {
+      if (live) setNotes(found.data ? notesOf(found.data) : [])
+    })
+    return () => {
+      live = false
+    }
+  }, [cardId, checkout])
+
   const dismiss = async (note: Note, dismissed: boolean): Promise<void> => {
     const answer = await ask(() => commands.findingDismiss(note.runId, note.at, dismissed))
     if (!went(answer)) return
     setNotes((was) => was.map((one) => (one === note ? { ...one, dismissed } : one)))
+  }
+
+  const onDismiss = (note: Note, dismissed: boolean): void => void dismiss(note, dismissed)
+
+  if (!checkout) {
+    if (notes.length === 0) return null
+    return (
+      <section className="cdiff">
+        <h2 className="cardp__h">{t('card.reviewFindings')}</h2>
+        <Tally notes={notes} />
+        <Findings notes={notes} onDismiss={onDismiss} />
+      </section>
+    )
   }
 
   return (
@@ -62,7 +90,7 @@ export function CardDiff({ cardId }: { cardId: string }): React.JSX.Element {
       )}
 
       {raw && notes.length > 0 && <Tally notes={notes} />}
-      {raw && <DiffFiles diff={raw} notes={notes} onDismiss={(note, dismissed) => void dismiss(note, dismissed)} />}
+      {raw && <DiffFiles diff={raw} notes={notes} onDismiss={onDismiss} />}
     </section>
   )
 }

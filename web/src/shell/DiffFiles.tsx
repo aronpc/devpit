@@ -20,9 +20,14 @@ export function DiffFiles({
 }): React.JSX.Element {
   const prefs = useViewPrefs()
   const ignore = prefs.diffWhitespace === 'ignore'
+  const files = parse(diff)
+  const touched = new Set(files.map((file) => file.path))
+  // A review can name a file the card's diff does not show; its finding still
+  // has to be read and set aside somewhere.
+  const unplaced = notes.filter((note) => !touched.has(note.finding.file))
   return (
     <>
-      {parse(diff).map((parsed) => {
+      {files.map((parsed) => {
         const file = ignore ? { ...parsed, hunks: ignoringWhitespace(parsed.hunks) } : parsed
         const here = notes.filter((note) => note.finding.file === file.path)
         const shown = new Set(file.hunks.flatMap(newLines))
@@ -64,11 +69,45 @@ export function DiffFiles({
           </details>
         )
       })}
+      {unplaced.length > 0 && (
+        <details className="cdiff__f" open>
+          <summary className="cdiff__s">
+            <span className="cdiff__p">{t('workspace.diffFiles.notInDiff')}</span>
+          </summary>
+          <Findings notes={unplaced} onDismiss={onDismiss} />
+        </details>
+      )}
     </>
   )
 }
 
-function Marker({ note, onDismiss }: { note: Note; onDismiss?: (note: Note, dismissed: boolean) => void }): React.JSX.Element {
+/* Findings with no diff line to sit on, each saying its file. */
+export function Findings({
+  notes,
+  onDismiss,
+}: {
+  notes: readonly Note[]
+  onDismiss?: (note: Note, dismissed: boolean) => void
+}): React.JSX.Element {
+  return (
+    <>
+      {notes.map((note) => (
+        <Marker key={`${note.runId}:${note.at}`} note={note} onDismiss={onDismiss} named />
+      ))}
+    </>
+  )
+}
+
+function Marker({
+  note,
+  onDismiss,
+  named = false,
+}: {
+  note: Note
+  onDismiss?: (note: Note, dismissed: boolean) => void
+  /** Says its file, where no file section around it does. */
+  named?: boolean
+}): React.JSX.Element {
   const { finding } = note
   const old = note.standing === 'outdated'
   const falsePositive = falsePositiveOf(note)
@@ -78,6 +117,7 @@ function Marker({ note, onDismiss }: { note: Note; onDismiss?: (note: Note, dism
         <span className="fnd__s" data-severity={finding.severity}>
           {SHAPE[finding.severity]} {severityWord(finding.severity)}
         </span>
+        {named && <span className="cdiff__fl">{finding.file}</span>}
         {finding.line !== null && <span className="cdiff__fl">{t('workspace.diffFiles.line', { line: finding.line })}</span>}
         {old && <span className="cdiff__fl">{t('workspace.diffFiles.outdated', { at: note.atRevision?.slice(0, 10) ?? t('workspace.diffFiles.unknownCommit') })}</span>}
         {note.dismissed && <span className="cdiff__fl">{falsePositive ? t('workspace.diffFiles.falsePositiveSaid') : t('workspace.diffFiles.dismissedSaid')}</span>}
